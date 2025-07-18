@@ -1,0 +1,42 @@
+{
+  "name": "X-ray ANWH",
+  "short_name": "X-ray ANWH",
+  "description": "Professional work schedule management system by NARAYYA",
+  "start_url": "https://jarivatoi.github.io/anwh/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "prefer_related_applications": false,
+  "scope": "https://jarivatoi.github.io/anwh/",
+  "id": "xray-anwh-pwa",
+  "icons": [
+    {
+      "src": "https://jarivatoi.github.io/anwh/Icon.PNG",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://jarivatoi.github.io/anwh/Icon.PNG",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://jarivatoi.github.io/anwh/Icon.PNG",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "business", "utilities"],
+  "lang": "en",
+  "dir": "ltr",
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "shortcuts": [
+    { "name": "Open Calendar", "url": "/anwh/", "icons": [{ "src": "/anwh/icon.svg", "sizes": "any" }] }
+  ]
+}
