@@ -50,7 +50,13 @@ export const MenuPanel: React.FC<MenuPanelProps> = ({
         button.textContent = 'Exporting...';
       }
       
-      await onExportData();
+      // Get export data with filename
+      const exportData = await (window as any).workScheduleDB?.exportAllData();
+      if (exportData) {
+        await performExport(exportData, exportData.filename);
+      } else {
+        await onExportData();
+      }
       
       // Show success notification
       alert('✅ Data exported successfully! Check your downloads folder.');
@@ -66,6 +72,60 @@ export const MenuPanel: React.FC<MenuPanelProps> = ({
     }
   };
 
+  const performExport = async (data: any, filename: string) => {
+    const dataStr = JSON.stringify(data, null, 2);
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                 (window.navigator as any).standalone === true;
+    
+    // Try Web Share API first (works well on iPhone)
+    if (navigator.share && navigator.canShare) {
+      try {
+        const file = new File([dataStr], filename, { type: 'application/json' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: 'ANWH Schedule Export',
+            text: 'Your work schedule data export'
+          });
+          return;
+        }
+      } catch (error) {
+        console.log('Web Share API failed, trying fallback');
+      }
+    }
+    
+    // PWA-specific handling
+    if (isPWA) {
+      try {
+        // Try clipboard copy for PWA
+        await navigator.clipboard.writeText(dataStr);
+        alert(`📋 Data copied to clipboard!\n\nTo save as file:\n1. Open Notes app\n2. Paste the data\n3. Tap Share → Save to Files\n4. Name it: ${filename}`);
+        return;
+      } catch (error) {
+        console.log('Clipboard failed in PWA');
+      }
+    }
+    
+    // Fallback: Create download link
+    try {
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      // Last resort: Open in new tab
+      const newWindow = window.open();
+      if (newWindow) {
+        newWindow.document.write(`<pre>${dataStr}</pre>`);
+        alert(`File opened in new tab. To save:\n1. Right-click → Save As\n2. Name it: ${filename}`);
+      }
+    }
+  };
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;

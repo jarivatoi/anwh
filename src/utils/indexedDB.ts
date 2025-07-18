@@ -405,6 +405,19 @@ class WorkScheduleDB {
   async exportAllData(): Promise<any> {
     console.log('🔄 Exporting all data from IndexedDB...');
     
+    // Create filename with ANWH_DDMMYYYY-HHMMSS format
+    const createExportFilename = (): string => {
+      const now = new Date();
+      const day = now.getDate().toString().padStart(2, '0');
+      const month = (now.getMonth() + 1).toString().padStart(2, '0');
+      const year = now.getFullYear();
+      const hours = now.getHours().toString().padStart(2, '0');
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      const seconds = now.getSeconds().toString().padStart(2, '0');
+      
+      return `ANWH_${day}${month}${year}-${hours}${minutes}${seconds}.json`;
+    };
+
     const [schedule, specialDates, settings, scheduleTitle] = await Promise.all([
       this.getSchedule(),
       this.getSpecialDates(),
@@ -430,7 +443,8 @@ class WorkScheduleDB {
       settings: finalSettings,
       scheduleTitle: scheduleTitle || 'Work Schedule',
       exportDate: new Date().toISOString(),
-      version: '3.0'
+      version: '3.0',
+      filename: createExportFilename()
     };
 
     console.log('📦 Export data prepared:', {
