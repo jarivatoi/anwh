@@ -336,6 +336,7 @@ function App() {
   const handleExportData = async () => {
     try {
       const exportData = await workScheduleDB.exportAllData();
+      console.log('📦 Export data with filename:', exportData.filename);
       
       const dataStr = JSON.stringify(exportData, null, 2);
       const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -343,7 +344,7 @@ function App() {
       
       const link = document.createElement('a');
       link.href = url;
-      link.download = `work-schedule-${new Date().toISOString().split('T')[0]}.json`;
+      link.download = exportData.filename || 'ANWH_export.json';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
