@@ -50,13 +50,8 @@ export const MenuPanel: React.FC<MenuPanelProps> = ({
         button.textContent = 'Exporting...';
       }
       
-      // Get export data with filename
-      const exportData = await (window as any).workScheduleDB?.exportAllData();
-      if (exportData) {
-        await performExport(exportData, exportData.filename);
-      } else {
-        await onExportData();
-      }
+      // Call the onExportData function which will handle the export
+      await onExportData();
       
       // Show success notification
       alert('✅ Data exported successfully! Check your downloads folder.');
@@ -69,6 +64,13 @@ export const MenuPanel: React.FC<MenuPanelProps> = ({
     } catch (error) {
       console.error('Export failed:', error);
       alert('❌ Export failed. Please try again.');
+      
+      // Reset button on error
+      const button = document.querySelector('.export-button') as HTMLButtonElement;
+      if (button) {
+        button.disabled = false;
+        button.textContent = 'Export Schedule';
+      }
     }
   };
 

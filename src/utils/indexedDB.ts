@@ -451,7 +451,8 @@ class WorkScheduleDB {
       scheduleEntries: Object.keys(exportData.schedule).length,
       specialDatesEntries: Object.keys(exportData.specialDates).length,
       settingsIncluded: !!exportData.settings,
-      shiftCombinations: exportData.settings?.shiftCombinations?.length || 0
+      shiftCombinations: exportData.settings?.shiftCombinations?.length || 0,
+      filename: exportData.filename
     });
 
     return exportData;
