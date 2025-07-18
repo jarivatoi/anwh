@@ -657,7 +657,7 @@ export const Calendar: React.FC<CalendarProps> = ({
             <button
               {...longPressHandlers}
               onClick={handleMonthYearFallbackClick}
-             className="text-lg sm:text-xl font-semibold text-gray-700 text-center px-3 sm:px-4 py-2 rounded-lg select-none"
+             className="text-lg sm:text-xl font-bold text-gray-700 text-center px-3 sm:px-4 py-2 rounded-lg select-none"
               style={{ 
                 userSelect: 'none', 
                 WebkitUserSelect: 'none',
