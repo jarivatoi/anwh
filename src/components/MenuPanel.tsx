@@ -195,6 +195,27 @@ export const MenuPanel: React.FC<MenuPanelProps> = ({
                 <li>• Version 1.0: Basic compatibility (special dates reset)</li>
               </ul>
             </div>
+            
+            {/* PWA-specific information */}
+            {(() => {
+              const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                           (window.navigator as any).standalone === true;
+              const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+              
+              if (isPWA && isIOS) {
+                return (
+                  <div className="border-t border-indigo-200 pt-3">
+                    <p className="text-center font-medium mb-2 text-amber-700">📱 PWA Mode (Installed App):</p>
+                    <ul className="space-y-1 text-center text-amber-600">
+                      <li>• Data will be copied to clipboard</li>
+                      <li>• Use Notes app to save as file</li>
+                      <li>• Or use browser version for direct download</li>
+                    </ul>
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
         </div>
 
