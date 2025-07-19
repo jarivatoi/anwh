@@ -43,7 +43,7 @@ export class AddToHomescreen {
   constructor(options: AddToHomescreenOptions = {}) {
     this.options = {
       appName: 'X-ray ANWH',
-      appIconUrl: 'https://jarivatoi.github.io/anwh/Icon.PNG',
+      appIconUrl: 'https://jarivatoi.github.io/anwh/icon.png',
       maxModalDisplayCount: 3,
       skipFirstVisit: false,
       startDelay: 2000,
