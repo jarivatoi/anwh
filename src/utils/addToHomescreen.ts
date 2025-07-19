@@ -76,6 +76,8 @@ export class AddToHomescreen {
       isMobile: this.isMobile,
       isChrome: this.isChrome,
       isSafari: this.isSafari,
+      isSamsung: this.isSamsung,
+      isFirefox: this.isFirefox,
       isStandalone: this.isStandaloneMode,
       userAgent: ua
     });
@@ -127,7 +129,8 @@ export class AddToHomescreen {
     const canShow = !this.isStandaloneMode && 
                    !hasBeenShown &&
                    this.modalDisplayCount < this.maxModalDisplayCount &&
-                   this.isMobile;
+                   this.isMobile &&
+                   (this.isAndroid || this.isIOS); // Explicitly check for Android or iOS
     
     console.log('✅ Can Prompt Check:', {
       isStandalone: this.isStandaloneMode,
@@ -135,6 +138,8 @@ export class AddToHomescreen {
       displayCount: this.modalDisplayCount,
       maxCount: this.maxModalDisplayCount,
       isMobile: this.isMobile,
+      isAndroid: this.isAndroid,
+      isIOS: this.isIOS,
       canShow
     });
     
@@ -169,8 +174,12 @@ export class AddToHomescreen {
       return `Install ${this.options.appName} on your iPhone: tap the Share button and then "Add to Home Screen".`;
     } else if (this.isAndroid && this.isChrome) {
       return `Install ${this.options.appName} on your Android device: tap the menu button and then "Add to Home Screen" or "Install App".`;
+    } else if (this.isAndroid && this.isSamsung) {
+      return `Install ${this.options.appName} on your Samsung device: tap the menu button (⋮) and then "Add page to" or "Install App".`;
+    } else if (this.isAndroid && this.isFirefox) {
+      return `Install ${this.options.appName} on your Android device: tap the menu button (⋮) and then "Install" or "Add to Home Screen".`;
     } else if (this.isAndroid) {
-      return `Install ${this.options.appName} on your Android device: look for "Add to Home Screen" or "Install" in your browser menu.`;
+      return `Install ${this.options.appName} on your Android device: look for "Add to Home Screen", "Install App", or "Install" in your browser menu.`;
     } else {
       return `Add ${this.options.appName} to your device for quick access!`;
     }
@@ -280,11 +289,12 @@ export class AddToHomescreen {
       `;
     } else if (this.isAndroid) {
       instructions.innerHTML = `
-        <div style="font-weight: 600; margin-bottom: 8px; color: #166534;">📱 How to install on Android:</div>
+        <div style="font-weight: 600; margin-bottom: 8px; color: #166534;">🤖 How to install on Android:</div>
         <div style="font-size: 14px; color: #14532d; line-height: 1.5;">
-          1. Tap the <strong>Menu</strong> button <span style="font-size: 18px;">⋮</span> in your browser<br>
-          2. Look for <strong>"Add to Home Screen"</strong> or <strong>"Install App"</strong><br>
-          3. Tap <strong>"Install"</strong> or <strong>"Add"</strong> to confirm
+          1. Tap the <strong>Menu</strong> button <span style="font-size: 18px;">⋮</span> (three dots)<br>
+          2. Look for <strong>"Add to Home Screen"</strong>, <strong>"Install App"</strong>, or <strong>"Install"</strong><br>
+          3. Tap <strong>"Install"</strong> or <strong>"Add"</strong> to confirm<br>
+          <small style="color: #16a34a; margin-top: 4px; display: block;">📌 Works in Chrome, Samsung Browser, Firefox, and Edge</small>
         </div>
       `;
     } else {
