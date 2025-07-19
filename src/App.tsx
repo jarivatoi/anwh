@@ -111,22 +111,31 @@ function App() {
         mustShowCustomPrompt: false, // Use normal detection logic
         displayPace: 999999 // Very large number to prevent showing again
       });
-      // The AddToHomescreen instance will handle timing with startDelay
-      console.log('⏰ Checking if can prompt...');
-      console.log('Debug info:', {
-        isStandalone: addToHomescreenInstance.isStandalone(),
-        canPrompt: addToHomescreenInstance.canPrompt(),
-        localStorage: localStorage.getItem('addToHomescreenInstallPromptShown'),
-        modalCount: localStorage.getItem('addToHomescreenModalCount'),
-        permanentlyDismissed: localStorage.getItem('addToHomescreenPermanentlyDismissed')
-      });
       
-      if (addToHomescreenInstance.canPrompt()) {
-        console.log('✅ Showing Add to Homescreen prompt');
-        addToHomescreenInstance.show();
-      } else {
-        console.log('❌ Cannot show Add to Homescreen prompt - conditions not met');
-      }
+      // Check if can prompt (now async)
+      const checkAndShow = async () => {
+        console.log('⏰ Checking if can prompt...');
+        
+        const canShow = await addToHomescreenInstance.canPrompt();
+        console.log('Debug info:', {
+          isStandalone: addToHomescreenInstance.isStandalone(),
+          canPrompt: canShow,
+          localStorage: localStorage.getItem('addToHomescreenInstallPromptShown'),
+          modalCount: localStorage.getItem('addToHomescreenModalCount'),
+          permanentlyDismissed: localStorage.getItem('addToHomescreenPermanentlyDismissed')
+        });
+        
+        if (canShow) {
+          console.log('✅ Showing Add to Homescreen prompt after 3 seconds');
+          setTimeout(() => {
+            addToHomescreenInstance.show();
+          }, 3000); // 3 second delay
+        } else {
+          console.log('❌ Cannot show Add to Homescreen prompt - conditions not met');
+        }
+      };
+      
+      checkAndShow();
     }
   }, [isLoading]);
 

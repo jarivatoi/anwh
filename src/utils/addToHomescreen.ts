@@ -314,6 +314,8 @@ export class AddToHomescreen {
     closeBtn.addEventListener('click', () => {
       // Store dismissal time
       localStorage.setItem('addToHomescreenLastDismissed', Date.now().toString());
+      // Mark as manually installed if user dismisses (they might have installed manually)
+      localStorage.setItem('appManuallyInstalled', 'true');
       document.body.removeChild(overlay);
       document.head.removeChild(style);
     });
