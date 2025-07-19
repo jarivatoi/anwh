@@ -44,11 +44,11 @@ export class AddToHomescreen {
     this.options = {
       appName: 'X-ray ANWH',
       appIconUrl: '/icon.png',
-      maxModalDisplayCount: 999,
+      maxModalDisplayCount: 1,
       skipFirstVisit: false,
       startDelay: 3000, // Default 3 seconds delay
       lifespan: 15000,
-      displayPace: 0, // Shows instantly if not installed
+      displayPace: 999999, // Very large number to prevent showing again
       mustShowCustomPrompt: false,
       ...options
     };
@@ -120,32 +120,21 @@ export class AddToHomescreen {
   }
 
   canPrompt(): boolean {
-    // Check display pace timing
-    const lastShown = localStorage.getItem('addToHomescreenLastShown');
-    const now = Date.now();
+    // Check if already shown once
+    const hasBeenShown = localStorage.getItem('addToHomescreenShownOnce') === 'true';
     
-    if (lastShown && this.options.displayPace && this.options.displayPace > 0) {
-      const timeSinceLastShown = now - parseInt(lastShown, 10);
-      if (timeSinceLastShown < this.options.displayPace) {
-        console.log('🕐 Display pace not met, skipping prompt');
-        return false;
-      }
-    }
-    
-    // Enhanced logic - check installation and display count
+    // Enhanced logic - only show once on first visit
     const canShow = !this.isStandaloneMode && 
-                   !this.isAppInstalled() &&
+                   !hasBeenShown &&
                    this.modalDisplayCount < this.maxModalDisplayCount &&
                    this.isMobile;
     
     console.log('✅ Can Prompt Check:', {
       isStandalone: this.isStandaloneMode,
-      isAppInstalled: this.isAppInstalled(),
+      hasBeenShown: hasBeenShown,
       displayCount: this.modalDisplayCount,
       maxCount: this.maxModalDisplayCount,
       isMobile: this.isMobile,
-      displayPace: this.options.displayPace,
-      lastShown: lastShown,
       canShow
     });
     
@@ -161,8 +150,8 @@ export class AddToHomescreen {
     this.modalDisplayCount++;
     localStorage.setItem('addToHomescreenModalCount', this.modalDisplayCount.toString());
     
-    // Track when last shown for display pace
-    localStorage.setItem('addToHomescreenLastShown', Date.now().toString());
+    // Mark as shown once to prevent future displays
+    localStorage.setItem('addToHomescreenShownOnce', 'true');
 
     const message = customMessage || this.getDefaultMessage();
     this.showModal(message);
@@ -172,8 +161,7 @@ export class AddToHomescreen {
     this.modalDisplayCount = 0;
     localStorage.removeItem('addToHomescreenModalCount');
     localStorage.removeItem('addToHomescreenFirstVisit');
-    localStorage.removeItem('addToHomescreenLastShown');
-    localStorage.removeItem('appManuallyInstalled');
+    localStorage.removeItem('addToHomescreenShownOnce');
   }
 
   private getDefaultMessage(): string {
