@@ -412,7 +412,7 @@ class WorkScheduleDB {
       const month = (now.getMonth() + 1).toString().padStart(2, '0');
       const year = now.getFullYear();
       
-      return `Anwh_${day}${month}${year}.json`;
+      return `Anwh_${day}-${month}-${year}.json`;
     };
 
     const [schedule, specialDates, settings, scheduleTitle] = await Promise.all([
