@@ -34,13 +34,13 @@ export const SHIFTS: Shift[] = [
 export const DEFAULT_SHIFT_COMBINATIONS: ShiftCombination[] = [
   { id: '9-4', combination: '9-4', hours: 6.5 },
   { id: '9-4+4-10', combination: '9-4 + 4-10', hours: 12 },
-  { id: '9-4+N', combination: '9-4 + N', hours: 17.5 },
-  { id: '9-4+4-10+N', combination: '9-4 + 4-10 + N', hours: 23 },
+  { id: '9-4+N', combination: '9-4 + N', hours: 19 },
+  { id: '9-4+4-10+N', combination: '9-4 + 4-10 + N', hours: 24.5 },
   { id: 'AM+12-10', combination: 'AM + 12-10', hours: 9 },
-  { id: 'AM+12-10+N', combination: 'AM + 12-10 + N', hours: 20 },
+  { id: 'AM+12-10+N', combination: 'AM + 12-10 + N', hours: 21.5 },
   { id: '12-10', combination: '12-10', hours: 9.5 },
-  { id: '12-10+N', combination: '12-10 + N', hours: 20.5 },
+  { id: '12-10+N', combination: '12-10 + N', hours: 22 },
   { id: '4-10', combination: '4-10', hours: 5.5 },
-  { id: '4-10+N', combination: '4-10 + N', hours: 16.5 },
-  { id: 'N', combination: 'N', hours: 11 }
+  { id: '4-10+N', combination: '4-10 + N', hours: 18 },
+  { id: 'N', combination: 'N', hours: 12.5 }
 ];
