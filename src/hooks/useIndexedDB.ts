@@ -31,8 +31,8 @@ export function useIndexedDB<T>(
         if (key === 'workSettings' && typeof storedValue === 'object' && storedValue !== null) {
           const settings = storedValue as any;
           
-          // Check if shift combinations are missing or empty
-          if (!settings.shiftCombinations || settings.shiftCombinations.length === 0) {
+          // FORCE UPDATE: Always use latest default shift combinations
+          if (!settings.shiftCombinations || settings.shiftCombinations.length === 0 || true) {
             console.log(`🔧 Fixing missing shift combinations for ${key}`);
             const fixedSettings = {
               ...settings,

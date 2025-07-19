@@ -295,7 +295,8 @@ class WorkScheduleDB {
         
         // Special handling for workSettings to ensure shift combinations are present
         if (key === 'workSettings' && result && typeof result === 'object') {
-          if (!result.shiftCombinations || result.shiftCombinations.length === 0) {
+          // FORCE UPDATE: Always use latest default shift combinations
+          if (!result.shiftCombinations || result.shiftCombinations.length === 0 || true) {
             console.log('🔧 Auto-fixing missing shift combinations in getSetting');
             const fixedResult = {
               ...result,
