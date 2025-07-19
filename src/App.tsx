@@ -104,12 +104,12 @@ function App() {
       const addToHomescreenInstance = new AddToHomescreen({
         appName: 'X-ray ANWH',
         appIconUrl: 'https://jarivatoi.github.io/anwh/Icon.PNG',
-        maxModalDisplayCount: 1, // Only show once
+        maxModalDisplayCount: 999, // Allows many prompts
         skipFirstVisit: false, // Show on first visit
         startDelay: 3000, // 3 seconds delay for first visit
         lifespan: 20000,
         mustShowCustomPrompt: false, // Use normal detection logic
-        displayPace: 999999 // Very large number to prevent showing again
+        displayPace: 0 // Shows instantly if not installed
       });
       
       // Check if can prompt (now async)
