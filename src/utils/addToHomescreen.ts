@@ -93,15 +93,30 @@ export class AddToHomescreen {
     const isIOSStandalone = (window.navigator as any).standalone === true;
     const isAndroidStandalone = document.referrer.includes('android-app://');
     const isFullscreen = window.matchMedia('(display-mode: fullscreen)').matches;
+    const isMinimalUI = window.matchMedia('(display-mode: minimal-ui)').matches;
+    
+    // Additional checks for installed PWA
+    const hasStandaloneInURL = window.location.search.includes('standalone=true');
+    const isInWebApk = 'matchMedia' in window && window.matchMedia('(display-mode: standalone)').matches && window.navigator.userAgent.includes('wv');
     
     console.log('📱 Standalone Detection:', {
       isStandaloneDisplay,
       isIOSStandalone,
       isAndroidStandalone,
-      isFullscreen
+      isFullscreen,
+      isMinimalUI,
+      hasStandaloneInURL,
+      isInWebApk,
+      userAgent: navigator.userAgent
     });
     
-    return isStandaloneDisplay || isIOSStandalone || isAndroidStandalone || isFullscreen;
+    return isStandaloneDisplay || 
+           isIOSStandalone || 
+           isAndroidStandalone || 
+           isFullscreen || 
+           isMinimalUI ||
+           hasStandaloneInURL ||
+           isInWebApk;
   }
 
   canPrompt(): boolean {
