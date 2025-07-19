@@ -46,7 +46,7 @@ export class AddToHomescreen {
       appIconUrl: '/icon.png',
       maxModalDisplayCount: 1,
       skipFirstVisit: false,
-      startDelay: 2000,
+      startDelay: 3000, // Default 3 seconds delay
       lifespan: 15000,
       displayPace: 999999, // Very large number to prevent showing again
       mustShowCustomPrompt: false,
