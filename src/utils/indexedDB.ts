@@ -31,7 +31,7 @@ interface DBSchema {
 class WorkScheduleDB {
   private db: IDBDatabase | null = null;
   private readonly dbName = 'WorkScheduleDB';
-  private readonly version = 1;
+  private readonly version = 2;
   private initPromise: Promise<void> | null = null;
 
   async init(): Promise<void> {
