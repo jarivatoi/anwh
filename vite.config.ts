@@ -9,7 +9,7 @@ export default defineConfig(({ command, mode }) => {
                    process.env.NETLIFY === 'true';
   
   return {
-    base: isNetlify ? '/' : '/workschedule/',
+    base: isNetlify ? '/' : '/anwh/',
     plugins: [react()],
     resolve: {
       alias: [{ find: "@", replacement: path.resolve(__dirname, "./src") }],
