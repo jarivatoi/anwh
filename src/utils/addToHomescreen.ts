@@ -43,7 +43,7 @@ export class AddToHomescreen {
   constructor(options: AddToHomescreenOptions = {}) {
     this.options = {
       appName: 'X-ray ANWH',
-      appIconUrl: '/icon.png',
+      appIconUrl: '/anwh/icon.png',
       maxModalDisplayCount: 1,
       skipFirstVisit: false,
       startDelay: 3000, // Default 3 seconds delay
