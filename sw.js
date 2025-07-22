@@ -1,8 +1,19 @@
-const CACHE_NAME = 'xray-anwh-v7';
+const CACHE_NAME = 'xray-anwh-v8';
+
+// Dynamic URL detection for GitHub Pages vs other deployments
+const getBaseUrl = () => {
+  const pathname = self.location.pathname;
+  if (pathname.includes('/anwh/')) {
+    return '/anwh/';
+  }
+  return '/';
+};
+
+const BASE_URL = getBaseUrl();
 const urlsToCache = [
-  '/anwh/',
-  '/anwh/index.html',
-  '/anwh/manifest.json'
+  BASE_URL,
+  BASE_URL + 'index.html',
+  BASE_URL + 'manifest.json'
 ];
 
 // Install event - cache essential resources
@@ -57,11 +68,11 @@ self.addEventListener('fetch', (event) => {
             return response;
           }
           // If network fails or returns error, try cache
-          return caches.match('/anwh/index.html') || caches.match('/anwh/');
+          return caches.match(BASE_URL + 'index.html') || caches.match(BASE_URL);
         })
         .catch(() => {
           // Network completely failed, try cache
-          return caches.match('/anwh/index.html') || caches.match('/anwh/') || 
+          return caches.match(BASE_URL + 'index.html') || caches.match(BASE_URL) || 
                  new Response(`
                    <!DOCTYPE html>
                    <html>
