@@ -158,6 +158,22 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
       >
         {children || text}
       </div>
+      
+      {/* Custom CSS for subtle pulse animation */}
+      <style jsx>{`
+        @keyframes subtlePulse {
+          0%, 100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.85;
+          }
+        }
+        
+        .subtle-pulse {
+          animation: subtlePulse 3s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 };

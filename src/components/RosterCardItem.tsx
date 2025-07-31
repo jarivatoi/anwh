@@ -252,7 +252,7 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
             {isUpdating ? 'Updating...' : (
               <ScrollingText 
                 text={entry.assigned_name}
-                className={hasBeenEdited(entry) ? 'animate-pulse text-red-600' : ''}
+                className={hasBeenEdited(entry) ? 'subtle-pulse text-red-600' : ''}
               />
             )}
           </div>
