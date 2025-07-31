@@ -343,8 +343,6 @@ export const syncRosterToCalendar = (
   if (checkShiftConflicts(date, shiftType, currentShifts)) {
     console.log(`❌ rosterCalendarSync.ts: Shift conflict detected for ${calendarShiftId} on ${date} with existing shifts:`, currentShifts);
     return false; // Don't sync if there are conflicts
-    return false; // Don't sync if there are conflicts
-    return false; // Don't sync if there are conflicts
   }
   
   // Apply changes to calendar
@@ -360,31 +358,6 @@ export const syncRosterToCalendar = (
   }
   
   // Add shift to calendar if not already present
-      window,
-      document.querySelector('[style*="overflow: auto"]'),
-      document.querySelector('[style*="overflow-y: auto"]'),
-      document.querySelector('.overflow-y-auto'),
-      document.querySelector('[style*="height: 70vh"]'), // Roster table container
-      document.querySelector('[style*="height: 60vh"]'), // Roster card container
-    ].filter(Boolean);
-
-    // Add scroll listeners to all containers
-    scrollableContainers.forEach(container => {
-      container?.addEventListener('scroll', handleScroll, { passive: true });
-    });
-
-    return () => {
-      // Cleanup scroll listeners
-      scrollableContainers.forEach(container => {
-        container?.removeEventListener('scroll', handleScroll);
-      });
-      
-      // Clear timeout
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-    };
-  }, [isScrolling, pausedProgress]);
   if (!currentShifts.includes(calendarShiftId)) {
     console.log(`✅ rosterCalendarSync.ts: Adding shift ${calendarShiftId} to calendar on ${date}`);
     setSchedule(prev => ({
@@ -394,7 +367,6 @@ export const syncRosterToCalendar = (
     calendarUpdated = true;
   } else {
     console.log(`ℹ️ rosterCalendarSync.ts: Shift ${calendarShiftId} already exists in calendar on ${date}`);
-        isScrolling,
   }
   
   if (calendarUpdated) {
@@ -424,11 +396,6 @@ export const syncRosterToCalendar = (
     document.body.appendChild(notification);
     
     // Auto-remove after 3 seconds
-      // Don't start new animations while scrolling
-      if (isScrolling) {
-        console.log('🚫 ScrollingText: Skipping animation check while scrolling');
-        return;
-      }
     setTimeout(() => {
       if (document.body.contains(notification)) {
         notification.style.animation = 'slideInRight 0.3s ease-out reverse';
@@ -443,8 +410,3 @@ export const syncRosterToCalendar = (
   
   return calendarUpdated;
 };
-  }, [text, children, isScrolling]);
-      
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
