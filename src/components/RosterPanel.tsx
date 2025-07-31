@@ -1,5 +1,6 @@
 import { DaySchedule, SpecialDates } from '../types';
 
+const RosterManagement = () => {
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-4">
@@ -410,8 +411,6 @@ export const syncRosterToCalendar = (
   if (checkShiftConflicts(date, shiftType, currentShifts)) {
     console.log(`❌ rosterCalendarSync.ts: Shift conflict detected for ${calendarShiftId} on ${date} with existing shifts:`, currentShifts);
     return false; // Don't sync if there are conflicts
-    return false; // Don't sync if there are conflicts
-    return false; // Don't sync if there are conflicts
   }
   
   // Apply changes to calendar
@@ -426,6 +425,18 @@ export const syncRosterToCalendar = (
     calendarUpdated = true;
   }
   
+  const renderAdminActions = () => {
+    switch (currentView) {
+      case 'table':
+        return (
+          <div className="space-y-2">
+            <button
+              onClick={() => {
+                setShowAdminActions(false);
+                // Add table-specific admin action
+              }}
+              className="w-full p-2 text-left hover:bg-gray-50 rounded-lg flex items-center gap-2"
+            >
               <Upload className="w-5 h-5 text-blue-600" />
               <span className="text-blue-700 font-medium">Import from PDF</span>
             </button>
@@ -435,6 +446,7 @@ export const syncRosterToCalendar = (
         return null;
     }
   };
+  
   // Add shift to calendar if not already present
   if (!currentShifts.includes(calendarShiftId)) {
     console.log(`✅ rosterCalendarSync.ts: Adding shift ${calendarShiftId} to calendar on ${date}`);
