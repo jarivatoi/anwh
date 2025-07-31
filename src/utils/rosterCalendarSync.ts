@@ -207,14 +207,20 @@ export const syncRosterToCalendar = (
     calendarBaseName: calendarLabel.replace(/\(R\)$/, '').trim().toUpperCase(),
     currentScheduleKeys: Object.keys(schedule).length,
     currentSpecialDates: Object.keys(specialDates).length
+  });
+  
   // Handle removal action
   if (action === 'removed') {
     console.log('🗑️ rosterCalendarSync.ts: Processing removal action');
     return handleRemovalSync(date, shiftType, assignedName, { schedule, specialDates, setSchedule, setSpecialDates });
   }
+  
   // Check if this date needs special marking for the shift to be valid
   const needsSpecial = requiresSpecialDate(date, shiftType);
   const currentIsSpecial = specialDates[date] === true;
+  
+  console.log('🔍 rosterCalendarSync.ts: Special date analysis:', {
+    date,
     shiftType,
     needsSpecial,
     dayOfWeek: new Date(date).getDay()
@@ -224,11 +230,13 @@ export const syncRosterToCalendar = (
   const finalSpecialStatus = needsSpecial || currentIsSpecial;
   
   // Validate the shift for this date
+  const shiftMapping: Record<string, string> = {
     'Morning Shift (9-4)': '9-4',
     'Evening Shift (4-10)': '4-10',
     'Saturday Regular (12-10)': '12-10',
     'Night Duty': 'N',
     'Sunday/Public Holiday/Special': '9-4'
+  };
   
   const calendarShiftId = shiftMapping[shiftType];
   if (!calendarShiftId) {
@@ -243,6 +251,7 @@ export const syncRosterToCalendar = (
   // Check for conflicts
   if (checkShiftConflicts(date, shiftType, currentShifts)) {
     console.log(`❌ rosterCalendarSync.ts: Shift conflict detected for ${calendarShiftId} on ${date} with existing shifts:`, currentShifts);
+    return false;
   }
   
   // Apply changes to calendar
@@ -251,6 +260,7 @@ export const syncRosterToCalendar = (
   if (needsSpecial && !currentIsSpecial) {
     console.log(`✅ rosterCalendarSync.ts: Marking ${date} as special date`);
     setSpecialDates(prev => ({
+      ...prev,
       [date]: true
     }));
     calendarUpdated = true;
@@ -259,6 +269,7 @@ export const syncRosterToCalendar = (
   // Add shift to calendar if not already present
   if (!currentShifts.includes(calendarShiftId)) {
     console.log(`✅ rosterCalendarSync.ts: Adding shift ${calendarShiftId} to calendar on ${date}`);
+    setSchedule(prev => ({
       ...prev,
       [date]: [...currentShifts, calendarShiftId]
     }));
@@ -268,6 +279,7 @@ export const syncRosterToCalendar = (
   }
   
   if (calendarUpdated) {
+    console.log('✅ rosterCalendarSync.ts: Calendar updated successfully');
     
     // Show success notification
     const notification = document.createElement('div');
@@ -276,6 +288,8 @@ export const syncRosterToCalendar = (
       top: 80px;
       background: #10b981;
       color: white;
+    `;
+  }
   
   return calendarUpdated;
 };
