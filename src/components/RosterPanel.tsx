@@ -1,5 +1,72 @@
 import { DaySchedule, SpecialDates } from '../types';
 
+  return (
+    <div className="p-4">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold">Roster Management</h2>
+        <button
+          onTouchStart={handleLongPress}
+          onMouseDown={handleLongPress}
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <Settings className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Admin Authentication Modal */}
+      {showAdminModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-80 max-w-sm mx-4">
+            <h3 className="text-lg font-semibold mb-4">Admin Authentication Required</h3>
+            <input
+              type="text"
+              value={adminCode}
+              onChange={(e) => setAdminCode(e.target.value)}
+              placeholder="Enter admin code"
+              className="w-full p-3 border rounded-lg mb-4"
+              autoFocus
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowAdminModal(false)}
+                className="flex-1 p-2 border rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAdminAuth}
+                className="flex-1 p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Authenticate
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Actions Modal */}
+      {showAdminActions && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-80 max-w-sm mx-4">
+            <h3 className="text-lg font-semibold mb-4">
+              {currentView === 'table' && 'Table View Admin Actions'}
+              {currentView === 'log' && 'Log View Admin Actions'}
+              {currentView === 'card' && 'Card View Admin Actions'}
+            </h3>
+            {renderAdminActions()}
+            <button
+              onClick={() => setShowAdminActions(false)}
+              className="w-full mt-4 p-2 border rounded-lg hover:bg-gray-50"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export interface RosterCalendarSyncOptions {
   calendarLabel: string;
   schedule: DaySchedule;
@@ -343,6 +410,8 @@ export const syncRosterToCalendar = (
   if (checkShiftConflicts(date, shiftType, currentShifts)) {
     console.log(`❌ rosterCalendarSync.ts: Shift conflict detected for ${calendarShiftId} on ${date} with existing shifts:`, currentShifts);
     return false; // Don't sync if there are conflicts
+    return false; // Don't sync if there are conflicts
+    return false; // Don't sync if there are conflicts
   }
   
   // Apply changes to calendar
@@ -357,6 +426,15 @@ export const syncRosterToCalendar = (
     calendarUpdated = true;
   }
   
+              <Upload className="w-5 h-5 text-blue-600" />
+              <span className="text-blue-700 font-medium">Import from PDF</span>
+            </button>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
   // Add shift to calendar if not already present
   if (!currentShifts.includes(calendarShiftId)) {
     console.log(`✅ rosterCalendarSync.ts: Adding shift ${calendarShiftId} to calendar on ${date}`);
