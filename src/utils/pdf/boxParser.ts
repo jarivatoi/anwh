@@ -1,0 +1,281 @@
+// Individual staff analysis parser - no box grouping
+import { availableNames } from '../rosterAuth';
+
+export interface ParsedEntry {
+  date: string;
+  shiftType: string;
+  assignedName: string;
+}
+
+export class BoxParser {
+  
+  /**
+   * Parse PDF page using individual staff analysis:
+   * 1. Find each staff member individually
+   * 2. For each staff member, go UP to find their specific date
+   * 3. For each staff member, go LEFT to find their specific shift
+   * 4. Create entry for that specific staff member
+   */
+  parsePageAsBoxes(textItems: Array<{text: string, x: number, y: number}>): ParsedEntry[] {
+    const entries: ParsedEntry[] = [];
+    
+    // STEP 1: Find all staff names with their exact positions
+    const allStaffPositions = this.findAllStaffNames(textItems);
+    
+    // STEP 2: For each staff member individually, find their date and shift
+    for (let i = 0; i < allStaffPositions.length; i++) {
+      const staff = allStaffPositions[i];
+      
+      // Find date by going UP from this specific staff member
+      const date = this.findDateAboveStaff(textItems, staff);
+      if (!date) {
+        continue;
+      }
+      
+      // Find shift by going LEFT from this specific staff member
+      const shift = this.findShiftInFirstColumn(textItems, staff);
+      if (!shift) {
+        continue;
+      }
+      
+      entries.push({
+        date: date,
+        shiftType: shift,
+        assignedName: staff.name
+      });
+    }
+    
+    return entries;
+  }
+  
+  /**
+   * Find all staff names in the PDF
+   */
+  private findAllStaffNames(textItems: Array<{text: string, x: number, y: number}>): Array<{name: string, x: number, y: number}> {
+    const staffNames: Array<{name: string, x: number, y: number}> = [];
+    
+    for (const item of textItems) {
+      const matchedName = this.findMatchingStaffName(item.text);
+      if (matchedName) {
+        staffNames.push({
+          name: matchedName,
+          x: item.x,
+          y: item.y
+        });
+      }
+    }
+    
+    return staffNames;
+  }
+  
+  /**
+   * Find date above a specific staff member
+   */
+  private findDateAboveStaff(textItems: Array<{text: string, x: number, y: number}>, staff: {name: string, x: number, y: number}): string | null {
+    // Look for items above this staff member (smaller Y coordinate) and close horizontally
+    const itemsAbove = textItems.filter(item => 
+      item.y < staff.y && // Above the staff member
+      Math.abs(item.x - staff.x) < 50 // Close horizontally (within 50px)
+    );
+    
+    // Sort by distance from staff member (closest first)
+    itemsAbove.sort((a, b) => {
+      const distanceA = Math.sqrt(Math.pow(staff.y - a.y, 2) + Math.pow(staff.x - a.x, 2));
+      const distanceB = Math.sqrt(Math.pow(staff.y - b.y, 2) + Math.pow(staff.x - b.x, 2));
+      return distanceA - distanceB;
+    });
+    
+    // Look for date patterns in items above
+    for (const item of itemsAbove) {
+      const dateMatch = this.extractDateFromText(item.text);
+      if (dateMatch) {
+        return dateMatch.date;
+      }
+    }
+    
+    return null;
+  }
+  
+  /**
+   * Find shift to the left of a specific staff member
+   */
+  private findShiftInFirstColumn(textItems: Array<{text: string, x: number, y: number}>, staff: {name: string, x: number, y: number}): string | null {
+    // Look for items in the FIRST COLUMN (leftmost x positions) that are in the same row
+    // First, find the leftmost X coordinate in the document
+    const allXPositions = textItems.map(item => item.x).sort((a, b) => a - b);
+    const leftmostX = allXPositions[0];
+    const firstColumnMaxX = leftmostX + 100; // First column extends up to 100px from leftmost
+    
+    const itemsInFirstColumn = textItems.filter(item => 
+      item.x >= leftmostX && item.x <= firstColumnMaxX && // In the first column
+      Math.abs(item.y - staff.y) < 30 // Close vertically (within 30px)
+    );
+    
+    // Sort by vertical distance from staff member (closest row first)
+    itemsInFirstColumn.sort((a, b) => {
+      const distanceA = Math.abs(staff.y - a.y);
+      const distanceB = Math.abs(staff.y - b.y);
+      return distanceA - distanceB;
+    });
+    
+    // Look for shift patterns in the first column
+    for (const item of itemsInFirstColumn) {
+      const shiftType = this.identifyShiftTypeFromText(item.text);
+      if (shiftType) {
+        return shiftType;
+      }
+    }
+    
+    return null;
+  }
+  
+  /**
+   * Extract date from text
+   */
+  private extractDateFromText(text: string): {date: string, dayOfWeek: number} | null {
+    const cleanText = text.trim();
+    
+    // DD MM YYYY format (like "01 07 2025")
+    const dayMonthYearPattern = /^(\d{1,2})\s+(\d{1,2})\s+(\d{4})$/;
+    const dayMonthYearMatch = cleanText.match(dayMonthYearPattern);
+    if (dayMonthYearMatch) {
+      const [, day, month, year] = dayMonthYearMatch;
+      const standardDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      const dateObj = new Date(standardDate);
+      
+      // Validate the date
+      if (dateObj.getFullYear() === parseInt(year) && 
+          dateObj.getMonth() === parseInt(month) - 1 && 
+          dateObj.getDate() === parseInt(day)) {
+        return {
+          date: standardDate,
+          dayOfWeek: dateObj.getDay()
+        };
+      }
+    }
+    
+    // DD MM format (like "01 07") - assume 2025
+    const dayMonthPattern = /^(\d{1,2})\s+(\d{1,2})$/;
+    const dayMonthMatch = cleanText.match(dayMonthPattern);
+    if (dayMonthMatch && parseInt(dayMonthMatch[1]) >= 1 && parseInt(dayMonthMatch[1]) <= 31 && 
+        parseInt(dayMonthMatch[2]) >= 1 && parseInt(dayMonthMatch[2]) <= 12) {
+      const day = dayMonthMatch[1].padStart(2, '0');
+      const month = dayMonthMatch[2].padStart(2, '0');
+      const standardDate = `2025-${month}-${day}`;
+      const dateObj = new Date(standardDate);
+      return { date: standardDate, dayOfWeek: dateObj.getDay() };
+    }
+    
+    // Single day number (like "01") - assume July 2025
+    const singleDayPattern = /^(\d{1,2})$/;
+    const dayMatch = cleanText.match(singleDayPattern);
+    if (dayMatch && parseInt(dayMatch[1]) >= 1 && parseInt(dayMatch[1]) <= 31) {
+      const day = dayMatch[1].padStart(2, '0');
+      const standardDate = `2025-07-${day}`;
+      const dateObj = new Date(standardDate);
+      return { date: standardDate, dayOfWeek: dateObj.getDay() };
+    }
+    
+    return null;
+  }
+  
+  /**
+   * Identify shift type from text - PRIORITIZE EVENING SHIFT DETECTION
+   */
+  private identifyShiftTypeFromText(text: string): string | null {
+    const lowerText = text.toLowerCase();
+    
+    // HIGHEST PRIORITY: Evening Shift patterns (check these FIRST)
+    if (lowerText.includes('4-10') || lowerText.includes('16hrs-22hrs') || lowerText.includes('16-22')) {
+      return 'Evening Shift (4-10)';
+    }
+    
+    if (lowerText.includes('evening') || lowerText.includes('4pm') || lowerText.includes('16:')) {
+      return 'Evening Shift (4-10)';
+    }
+    
+    // Single letter patterns
+    if (text.trim() === 'N' || lowerText === 'night' || lowerText === 'n') {
+      return 'Night Duty';
+    }
+    
+    // Other time patterns
+    if (lowerText.includes('9-4') || lowerText.includes('9hrs-16hrs')) {
+      return 'Morning Shift (9-4)';
+    }
+    
+    if (lowerText.includes('12-10') || lowerText.includes('12hrs-22hrs')) {
+      return 'Saturday Regular (12-10)';
+    }
+    
+    if (lowerText.includes('22hrs-9hrs') || lowerText.includes('22-9')) {
+      return 'Night Duty';
+    }
+    
+    // Word-based patterns
+    if (lowerText.includes('morning')) {
+      return 'Morning Shift (9-4)';
+    }
+    
+    if (lowerText.includes('saturday')) {
+      return 'Saturday Regular (12-10)';
+    }
+    
+    if (lowerText.includes('sunday') || lowerText.includes('special') || lowerText.includes('holiday')) {
+      return 'Sunday/Public Holiday/Special';
+    }
+    
+    if (lowerText.includes('duty') || lowerText.includes('night')) {
+      return 'Night Duty';
+    }
+    
+    return null;
+  }
+  
+  /**
+   * Find matching staff name
+   */
+  private findMatchingStaffName(text: string): string | null {
+    const cleanText = text.trim().toUpperCase();
+    
+    // Skip very short text or obvious non-names
+    if (cleanText.length < 3) {
+      return null;
+    }
+    
+    // Skip common non-name patterns
+    const skipPatterns = [
+      /^\d+$/, // Pure numbers
+      /^[A-Z]{1,2}$/, // Single/double letters
+      /SHIFT/i, /DUTY/i, /MORNING/i, /EVENING/i, /NIGHT/i, /SATURDAY/i, /SUNDAY/i,
+      /HRS/i, /^AM$/i, /^PM$/i, /DATE/i, /TIME/i
+    ];
+    
+    for (const pattern of skipPatterns) {
+      if (pattern.test(cleanText)) {
+        return null;
+      }
+    }
+    
+    // PRIORITY 1: Perfect exact match - text must match staff name exactly (including "(R)" if present)
+    for (const nameUpper of availableNames) {
+      // Extract base name without (R) for comparison
+      const baseName = nameUpper.replace(/\(R\)$/, '').trim();
+      const cleanTextBase = cleanText.replace(/\(R\)$/, '').trim();
+      
+      // Base name exact match (without (R) suffix)
+      if (cleanTextBase === baseName && baseName.length >= 3) {
+        console.log(`✅ PRIORITY 2 - BASE NAME EXACT MATCH: "${cleanText}" base matches "${nameUpper}" (base: "${baseName}")`);
+        return nameUpper;
+      }
+      
+      if (cleanText === nameUpper) {
+        console.log(`✅ PRIORITY 1 - EXACT MATCH: "${cleanText}" exactly matches "${nameUpper}"`);
+        return nameUpper;
+      }
+    }
+    
+    console.log(`❌ NO MATCH: "${cleanText}" does not match any staff name (tried both exact and base name matching)`);
+    return null;
+  }
+}
