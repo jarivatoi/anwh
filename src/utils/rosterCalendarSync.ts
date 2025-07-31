@@ -125,15 +125,36 @@ const handleRemovalSync = (
   date: string,
   shiftType: string,
   assignedName: string,
-  options: Pick<RosterCalendarSyncOptions, 'schedule' | 'specialDates' | 'setSchedule' | 'setSpecialDates'>
+  options: Pick<RosterCalendarSyncOptions, 'calendarLabel' | 'schedule' | 'specialDates' | 'setSchedule' | 'setSpecialDates'>
 ): boolean => {
-  const { schedule, specialDates, setSchedule, setSpecialDates } = options;
+  const { calendarLabel, schedule, specialDates, setSchedule, setSpecialDates } = options;
   
   console.log('🗑️ rosterCalendarSync.ts: Processing removal for:', {
     date,
     shiftType,
-    assignedName
+    assignedName,
+    calendarLabel
   });
+  
+  // CRITICAL: Only sync removal if the assigned name matches the calendar label
+  const assignedBaseName = assignedName.replace(/\(R\)$/, '').trim().toUpperCase();
+  const calendarBaseName = calendarLabel.replace(/\(R\)$/, '').trim().toUpperCase();
+  
+  console.log('🔍 rosterCalendarSync.ts: Removal name matching check:', {
+    assignedName,
+    calendarLabel,
+    assignedBaseName,
+    calendarBaseName,
+    namesMatch: assignedBaseName === calendarBaseName
+  });
+  
+  // If names don't match, don't sync removal to calendar
+  if (assignedBaseName !== calendarBaseName) {
+    console.log(`❌ rosterCalendarSync.ts: Names don't match for removal - skipping sync. Assigned: "${assignedBaseName}", Calendar: "${calendarBaseName}"`);
+    return false;
+  }
+  
+  console.log(`✅ rosterCalendarSync.ts: Names match for removal - proceeding with sync`);
   
   // Map roster shift type to calendar shift ID
   const shiftMapping: Record<string, string> = {
@@ -252,16 +273,37 @@ export const syncRosterToCalendar = (
     editorName,
     action,
     calendarLabel,
-    assignedBaseName: assignedName.replace(/\(R\)$/, '').trim().toUpperCase(),
-    calendarBaseName: calendarLabel.replace(/\(R\)$/, '').trim().toUpperCase(),
+    assignedName,
+    calendarLabel,
     currentScheduleKeys: Object.keys(schedule).length,
     currentSpecialDates: Object.keys(specialDates).length
   });
   
+  // CRITICAL: Only sync if the assigned name matches the calendar label
+  // This prevents other people's roster changes from affecting your personal calendar
+  const assignedBaseName = assignedName.replace(/\(R\)$/, '').trim().toUpperCase();
+  const calendarBaseName = calendarLabel.replace(/\(R\)$/, '').trim().toUpperCase();
+  
+  console.log('🔍 rosterCalendarSync.ts: Name matching check:', {
+    assignedName,
+    calendarLabel,
+    assignedBaseName,
+    calendarBaseName,
+    namesMatch: assignedBaseName === calendarBaseName
+  });
+  
+  // If names don't match, don't sync to calendar
+  if (assignedBaseName !== calendarBaseName) {
+    console.log(`❌ rosterCalendarSync.ts: Names don't match - skipping sync. Assigned: "${assignedBaseName}", Calendar: "${calendarBaseName}"`);
+    return false;
+  }
+  
+  console.log(`✅ rosterCalendarSync.ts: Names match - proceeding with sync`);
+  
   // Handle removal action
   if (action === 'removed') {
     console.log('🗑️ rosterCalendarSync.ts: Processing removal action');
-    return handleRemovalSync(date, shiftType, assignedName, { schedule, specialDates, setSchedule, setSpecialDates });
+    return handleRemovalSync(date, shiftType, assignedName, { calendarLabel, schedule, specialDates, setSchedule, setSpecialDates });
   }
   
   // Check if this date needs special marking for the shift to be valid
