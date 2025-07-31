@@ -17,7 +17,7 @@ export interface RosterChangeEvent {
 }
 
 /**
- * Validates if a shift is allowed on a specific date
+ * Validates if a shift is allowed on a specific date.
  */
 export const validateShiftForDate = (date: string, shiftType: string, isSpecialDate: boolean): boolean => {
   const dateObj = new Date(date);
