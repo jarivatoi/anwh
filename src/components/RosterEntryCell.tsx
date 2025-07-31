@@ -295,7 +295,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
           {isUpdating ? 'Updating...' : (
             <ScrollingText 
               text={entry.assigned_name}
-              className={hasBeenEdited(entry) ? 'text-red-600' : ''}
+              className={hasBeenEdited(entry) ? 'text-red-600 animate-pulse' : ''}
             />
           )}
         </div>
