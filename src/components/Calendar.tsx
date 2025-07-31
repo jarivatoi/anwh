@@ -108,7 +108,7 @@ export const Calendar: React.FC<CalendarProps> = ({
       // Set initial state with hardware acceleration
       gsap.set(dayBoxes, {
         opacity: 0,
-        y: 20,  // Use Y transform instead of X for better performance
+        x: 30,  // Slide from right
         scale: 0.95,
         force3D: true,  // Force hardware acceleration
         transformOrigin: "center center"
@@ -118,7 +118,7 @@ export const Calendar: React.FC<CalendarProps> = ({
       const shiftTexts = calendarGridRef.current.querySelectorAll('.shift-text');
       gsap.set(shiftTexts, {
         opacity: 0,
-        y: 5,   // Minimal movement
+        x: 10,  // Slide from right
         scale: 0.9,
         force3D: true
       });
@@ -128,7 +128,7 @@ export const Calendar: React.FC<CalendarProps> = ({
       gsap.set(specialTexts, {
         opacity: 0,
         scale: 0.9,
-        y: -5,
+        x: 15,  // Slide from right
         force3D: true
       });
 
@@ -155,7 +155,7 @@ export const Calendar: React.FC<CalendarProps> = ({
         // Animate the main box with smooth entrance
         masterTl.to(box, {
           opacity: 1,
-          y: 0,
+          x: 0,  // Slide to final position
           scale: 1,
           duration: 0.6,
           delay: delay,
@@ -167,7 +167,7 @@ export const Calendar: React.FC<CalendarProps> = ({
           shiftElements.forEach(el => animatedElementsRef.current.add(el as HTMLElement));
           masterTl.to(shiftElements, {
             opacity: 1,
-            y: 0,
+            x: 0,  // Slide to final position
             scale: 1,
             duration: 0.4,
             stagger: 0.06,
@@ -180,7 +180,7 @@ export const Calendar: React.FC<CalendarProps> = ({
           specialElements.forEach(el => animatedElementsRef.current.add(el as HTMLElement));
           masterTl.to(specialElements, {
             opacity: 1,
-            y: 0,
+            x: 0,  // Slide to final position
             scale: 1,
             duration: 0.4,
             ease: "elastic.out(1, 0.5)" // Gentle elastic effect
