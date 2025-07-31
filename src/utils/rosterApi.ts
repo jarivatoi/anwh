@@ -64,15 +64,17 @@ export const addRosterEntry = async (formData: RosterFormData, editorName: strin
 
     console.log('✅ Successfully added roster entry:', data);
     
-    // Dispatch event for calendar synchronization
+    // Dispatch event for calendar synchronization with detailed logging
+    const syncEvent = {
+      date: formData.date,
+      shiftType: formData.shiftType,
+      assignedName: formData.assignedName,
+      editorName: editorName,
+      action: 'added'
+    };
+    console.log('🔄 Dispatching rosterCalendarSync event:', syncEvent);
     window.dispatchEvent(new CustomEvent('rosterCalendarSync', {
-      detail: {
-        date: formData.date,
-        shiftType: formData.shiftType,
-        assignedName: formData.assignedName,
-        editorName: editorName,
-        action: 'added'
-      }
+      detail: syncEvent
     }));
     
     return data;
@@ -116,26 +118,17 @@ export const updateRosterEntry = async (id: string, formData: RosterFormData, ed
 
     console.log('✅ Successfully updated roster entry:', data);
     
-    // Dispatch event for calendar synchronization
+    // Dispatch event for calendar synchronization with detailed logging
+    const syncEvent = {
+      date: formData.date,
+      shiftType: formData.shiftType,
+      assignedName: formData.assignedName,
+      editorName: editorName,
+      action: 'updated'
+    };
+    console.log('🔄 Dispatching rosterCalendarSync event:', syncEvent);
     window.dispatchEvent(new CustomEvent('rosterCalendarSync', {
-      detail: {
-        date: formData.date,
-        shiftType: formData.shiftType,
-        assignedName: formData.assignedName,
-        editorName: editorName,
-        action: 'updated'
-      }
-    }));
-    
-    // Dispatch event for calendar synchronization
-    window.dispatchEvent(new CustomEvent('rosterCalendarSync', {
-      detail: {
-        date: formData.date,
-        shiftType: formData.shiftType,
-        assignedName: formData.assignedName,
-        editorName: editorName,
-        action: 'updated'
-      }
+      detail: syncEvent
     }));
     
     return data;
