@@ -242,11 +242,6 @@ function App() {
   const handleRosterCalendarSync = useCallback((event: CustomEvent) => {
     const rosterChange = event.detail;
     
-    console.log('🔄 App.tsx: Received rosterCalendarSync event:', rosterChange);
-    console.log('🔄 App.tsx: Current calendar title:', scheduleTitle);
-    console.log('🔄 App.tsx: Current schedule state:', Object.keys(schedule).length, 'entries');
-    console.log('🔄 App.tsx: Current special dates:', Object.keys(specialDates).length, 'entries');
-    
     const syncResult = syncRosterToCalendar(rosterChange, {
       calendarLabel: scheduleTitle, // Use the calendar title as the label
       schedule,
@@ -258,18 +253,13 @@ function App() {
     if (syncResult) {
       // Force refresh calculations after sync
       setRefreshKey(prev => prev + 1);
-      console.log('✅ App.tsx: Calendar synchronized with roster change');
-    } else {
-      console.log('❌ App.tsx: Calendar sync failed or skipped');
     }
   }, [scheduleTitle, schedule, specialDates, setSchedule, setSpecialDates]);
 
   // Listen for roster changes
   useEffect(() => {
-    console.log('🔄 App.tsx: Setting up rosterCalendarSync event listener');
     window.addEventListener('rosterCalendarSync', handleRosterCalendarSync as EventListener);
     return () => {
-      console.log('🔄 App.tsx: Removing rosterCalendarSync event listener');
       window.removeEventListener('rosterCalendarSync', handleRosterCalendarSync as EventListener);
     };
   }, [handleRosterCalendarSync]);

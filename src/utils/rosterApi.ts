@@ -72,7 +72,6 @@ export const addRosterEntry = async (formData: RosterFormData, editorName: strin
       editorName: editorName,
       action: 'added'
     };
-    console.log('🔄 Dispatching rosterCalendarSync event:', syncEvent);
     window.dispatchEvent(new CustomEvent('rosterCalendarSync', {
       detail: syncEvent
     }));
@@ -126,7 +125,6 @@ export const updateRosterEntry = async (id: string, formData: RosterFormData, ed
       editorName: editorName,
       action: 'updated'
     };
-    console.log('🔄 Dispatching rosterCalendarSync event:', syncEvent);
     window.dispatchEvent(new CustomEvent('rosterCalendarSync', {
       detail: syncEvent
     }));
@@ -179,7 +177,6 @@ export const deleteRosterEntry = async (id: string): Promise<void> => {
         editorName: entryToDelete.last_edited_by || 'Unknown',
         action: 'removed'
       };
-      console.log('🔄 Dispatching rosterCalendarSync event for removal:', syncEvent);
       window.dispatchEvent(new CustomEvent('rosterCalendarSync', {
         detail: syncEvent
       }));

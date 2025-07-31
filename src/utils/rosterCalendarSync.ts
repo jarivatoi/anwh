@@ -129,12 +129,6 @@ const handleRemovalSync = (
 ): boolean => {
   const { schedule, specialDates, setSchedule, setSpecialDates } = options;
   
-  console.log('🗑️ rosterCalendarSync.ts: Processing removal for:', {
-    date,
-    shiftType,
-    assignedName
-  });
-  
   // Map roster shift type to calendar shift ID
   const shiftMapping: Record<string, string> = {
     'Morning Shift (9-4)': '9-4',
@@ -146,22 +140,18 @@ const handleRemovalSync = (
   
   const calendarShiftId = shiftMapping[shiftType];
   if (!calendarShiftId) {
-    console.log(`❌ rosterCalendarSync.ts: Cannot map shift type for removal: ${shiftType}`);
     return false;
   }
   
   // Get current shifts for this date
   const currentShifts = schedule[date] || [];
-  console.log(`🔍 rosterCalendarSync.ts: Current shifts for ${date}:`, currentShifts);
   
   // Check if the shift exists in calendar
   if (!currentShifts.includes(calendarShiftId)) {
-    console.log(`ℹ️ rosterCalendarSync.ts: Shift ${calendarShiftId} not found in calendar for ${date}`);
     return false;
   }
   
   // Remove the shift from calendar
-  console.log(`🗑️ rosterCalendarSync.ts: Removing shift ${calendarShiftId} from calendar on ${date}`);
   setSchedule(prev => {
     const newSchedule = { ...prev };
     const updatedShifts = currentShifts.filter(shift => shift !== calendarShiftId);
@@ -186,7 +176,6 @@ const handleRemovalSync = (
   });
   
   if (!stillNeedsSpecial && specialDates[date]) {
-    console.log(`🗑️ rosterCalendarSync.ts: Removing special date marking for ${date}`);
     setSpecialDates(prev => {
       const newSpecialDates = { ...prev };
       delete newSpecialDates[date];
@@ -194,44 +183,6 @@ const handleRemovalSync = (
     });
   }
   
-  // Show removal notification
-  const notification = document.createElement('div');
-  notification.style.cssText = `
-    position: fixed;
-    top: 80px;
-    right: 20px;
-    background: #ef4444;
-    color: white;
-    padding: 12px 16px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    z-index: 999999;
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    animation: slideInRight 0.3s ease-out;
-  `;
-  
-  notification.innerHTML = `
-    📅 Calendar updated: ${shiftType} removed from ${date}
-    ${!stillNeedsSpecial ? '<br>📌 Special date marking removed' : ''}
-  `;
-  
-  document.body.appendChild(notification);
-  
-  // Auto-remove after 3 seconds
-  setTimeout(() => {
-    if (document.body.contains(notification)) {
-      notification.style.animation = 'slideInRight 0.3s ease-out reverse';
-      setTimeout(() => {
-        if (document.body.contains(notification)) {
-          document.body.removeChild(notification);
-        }
-      }, 300);
-    }
-  }, 3000);
-  
-  console.log(`✅ rosterCalendarSync.ts: Calendar removal completed for ${date}`);
   return true;
 };
 
@@ -256,33 +207,16 @@ export const syncRosterToCalendar = (
     calendarBaseName: calendarLabel.replace(/\(R\)$/, '').trim().toUpperCase(),
     currentScheduleKeys: Object.keys(schedule).length,
     currentSpecialDates: Object.keys(specialDates).length
-  });
-  
-  // Check if the ASSIGNED name matches the calendar label (case-insensitive)
-  const assignedBaseName = assignedName.replace(/\(R\)$/, '').trim().toUpperCase();
-  const calendarBaseName = calendarLabel.replace(/\(R\)$/, '').trim().toUpperCase();
-  
-  if (assignedBaseName !== calendarBaseName) {
-    console.log(`❌ rosterCalendarSync.ts: Name mismatch - Assigned "${assignedBaseName}" ≠ Calendar "${calendarBaseName}"`);
-    return false;
-  }
-  
-  console.log(`✅ rosterCalendarSync.ts: Name match confirmed - Assigned "${assignedBaseName}" = Calendar "${calendarBaseName}"`);
-  
   // Handle removal action
   if (action === 'removed') {
     console.log('🗑️ rosterCalendarSync.ts: Processing removal action');
     return handleRemovalSync(date, shiftType, assignedName, { schedule, specialDates, setSchedule, setSpecialDates });
   }
-  
   // Check if this date needs special marking for the shift to be valid
   const needsSpecial = requiresSpecialDate(date, shiftType);
   const currentIsSpecial = specialDates[date] === true;
-  
-  console.log(`🔍 rosterCalendarSync.ts: Special date analysis for ${date}:`, {
     shiftType,
     needsSpecial,
-    currentIsSpecial,
     dayOfWeek: new Date(date).getDay()
   });
   
@@ -290,19 +224,11 @@ export const syncRosterToCalendar = (
   const finalSpecialStatus = needsSpecial || currentIsSpecial;
   
   // Validate the shift for this date
-  if (!validateShiftForDate(date, shiftType, finalSpecialStatus)) {
-    console.log(`❌ rosterCalendarSync.ts: Shift validation failed for ${shiftType} on ${date} (special: ${finalSpecialStatus})`);
-    return false;
-  }
-  
-  // Map roster shift type to calendar shift ID
-  const shiftMapping: Record<string, string> = {
     'Morning Shift (9-4)': '9-4',
     'Evening Shift (4-10)': '4-10',
     'Saturday Regular (12-10)': '12-10',
     'Night Duty': 'N',
     'Sunday/Public Holiday/Special': '9-4'
-  };
   
   const calendarShiftId = shiftMapping[shiftType];
   if (!calendarShiftId) {
@@ -317,17 +243,14 @@ export const syncRosterToCalendar = (
   // Check for conflicts
   if (checkShiftConflicts(date, shiftType, currentShifts)) {
     console.log(`❌ rosterCalendarSync.ts: Shift conflict detected for ${calendarShiftId} on ${date} with existing shifts:`, currentShifts);
-    return false;
   }
   
   // Apply changes to calendar
   let calendarUpdated = false;
   
-  // Update special date status if needed
   if (needsSpecial && !currentIsSpecial) {
     console.log(`✅ rosterCalendarSync.ts: Marking ${date} as special date`);
     setSpecialDates(prev => ({
-      ...prev,
       [date]: true
     }));
     calendarUpdated = true;
@@ -336,7 +259,6 @@ export const syncRosterToCalendar = (
   // Add shift to calendar if not already present
   if (!currentShifts.includes(calendarShiftId)) {
     console.log(`✅ rosterCalendarSync.ts: Adding shift ${calendarShiftId} to calendar on ${date}`);
-    setSchedule(prev => ({
       ...prev,
       [date]: [...currentShifts, calendarShiftId]
     }));
@@ -346,58 +268,14 @@ export const syncRosterToCalendar = (
   }
   
   if (calendarUpdated) {
-    console.log(`✅ rosterCalendarSync.ts: Calendar updated successfully for ${date}`);
     
     // Show success notification
     const notification = document.createElement('div');
     notification.style.cssText = `
       position: fixed;
       top: 80px;
-      right: 20px;
       background: #10b981;
       color: white;
-      padding: 12px 16px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      z-index: 999999;
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 14px;
-      font-weight: 500;
-      animation: slideInRight 0.3s ease-out;
-    `;
-    
-    notification.innerHTML = `
-      📅 Calendar updated: ${shiftType} added to ${date}
-      ${needsSpecial ? '<br>📌 Date marked as special' : ''}
-    `;
-    
-    // Add animation CSS
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes slideInRight {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-      }
-    `;
-    document.head.appendChild(style);
-    
-    document.body.appendChild(notification);
-    
-    // Auto-remove after 3 seconds
-    setTimeout(() => {
-      if (document.body.contains(notification)) {
-        notification.style.animation = 'slideInRight 0.3s ease-out reverse';
-        setTimeout(() => {
-          if (document.body.contains(notification)) {
-            document.body.removeChild(notification);
-            document.head.removeChild(style);
-          }
-        }, 300);
-      }
-    }, 3000);
-  } else {
-    console.log(`ℹ️ rosterCalendarSync.ts: No calendar update needed for ${date}`);
-  }
   
   return calendarUpdated;
 };

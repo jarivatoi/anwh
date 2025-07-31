@@ -203,11 +203,6 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
       const editorName = validateAuthCode(authCode);
       if (!editorName) return;
 
-      console.log('🔄 RosterEntryCell: About to update entry with sync event');
-      console.log('🔄 RosterEntryCell: Editor name:', editorName);
-      console.log('🔄 RosterEntryCell: Entry date:', entry.date);
-      console.log('🔄 RosterEntryCell: Entry shift:', entry.shift_type);
-      console.log('🔄 RosterEntryCell: New name:', newName);
       const updatedEntry = await updateRosterEntry(entry.id, {
         date: entry.date,
         shiftType: entry.shift_type,
@@ -300,7 +295,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
           {isUpdating ? 'Updating...' : (
             <ScrollingText 
               text={entry.assigned_name}
-              className={hasBeenEdited(entry) ? 'animate-pulse text-red-600' : ''}
+              className={hasBeenEdited(entry) ? 'text-red-600' : ''}
             />
           )}
         </div>
@@ -459,7 +454,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
                   value={authCode}
                   onChange={(e) => setAuthCode(e.target.value.toUpperCase())}
                   className="w-full px-4 py-4 border-2 border-indigo-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 text-center font-mono text-xl tracking-widest bg-gradient-to-r from-indigo-50 to-blue-50 transition-all duration-200 shadow-inner"
-                  placeholder="ENTER CODE"
+                  placeholder="Enter admin code"
                   maxLength={4}
                   autoComplete="off"
                   style={{
