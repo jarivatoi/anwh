@@ -932,6 +932,7 @@ export const Calendar: React.FC<CalendarProps> = ({
         {/* Calendar grid - MOBILE OPTIMIZED ANIMATIONS */}
         <div 
           className="mb-4 sm:mb-6 select-none w-full mx-auto"
+          ref={calendarGridRef}
           style={{
             userSelect: 'none',
             WebkitUserSelect: 'none',
@@ -956,7 +957,7 @@ export const Calendar: React.FC<CalendarProps> = ({
               <div
                 key={index}
                 data-day={day}
-                className={`p-1 sm:p-2 rounded-lg border-2 transition-colors duration-200 overflow-hidden relative select-none ${
+                className={`day-box p-1 sm:p-2 rounded-lg border-2 transition-colors duration-200 overflow-hidden relative select-none ${
                   day 
                     ? todayDate
                       ? `cursor-pointer border-indigo-400 shadow-lg bg-yellow-100 hover:bg-yellow-200 active:bg-yellow-200` // TODAY: Permanent hover state
@@ -1029,7 +1030,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                       {/* Special date indicator */}
                       {hasSpecialDate && (
                         <div 
-                          className="text-[8px] sm:text-[9px] text-red-500 font-bold leading-none mt-0.5 flex justify-center select-none"
+                          className="special-text text-[8px] sm:text-[9px] text-red-500 font-bold leading-none mt-0.5 flex justify-center select-none"
                         >
                           <div className="text-center select-none">SPECIAL</div>
                         </div>
@@ -1041,7 +1042,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                         return shift ? (
                           <div
                             key={`${shiftId}-${idx}`}
-                            className={`text-[8px] sm:text-[11px] font-bold leading-tight text-black flex-shrink-0 w-full select-none whitespace-nowrap overflow-hidden ${pastDate ? 'opacity-60' : ''}`}
+                            className={`shift-text text-[8px] sm:text-[11px] font-bold leading-tight text-black flex-shrink-0 w-full select-none whitespace-nowrap overflow-hidden ${pastDate ? 'opacity-60' : ''}`}
                           >
                             <div className="text-center select-none truncate px-0.5">{shift.time}</div>
                           </div>
