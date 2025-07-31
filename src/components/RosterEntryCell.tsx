@@ -203,6 +203,11 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
       const editorName = validateAuthCode(authCode);
       if (!editorName) return;
 
+      console.log('🔄 RosterEntryCell: About to update entry with sync event');
+      console.log('🔄 RosterEntryCell: Editor name:', editorName);
+      console.log('🔄 RosterEntryCell: Entry date:', entry.date);
+      console.log('🔄 RosterEntryCell: Entry shift:', entry.shift_type);
+      console.log('🔄 RosterEntryCell: New name:', newName);
       const updatedEntry = await updateRosterEntry(entry.id, {
         date: entry.date,
         shiftType: entry.shift_type,

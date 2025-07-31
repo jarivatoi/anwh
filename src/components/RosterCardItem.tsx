@@ -176,6 +176,11 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
       const editorName = validateAuthCode(authCode);
       if (!editorName) return;
 
+      console.log('🔄 RosterCardItem: About to update entry with sync event');
+      console.log('🔄 RosterCardItem: Editor name:', editorName);
+      console.log('🔄 RosterCardItem: Entry date:', entry.date);
+      console.log('🔄 RosterCardItem: Entry shift:', entry.shift_type);
+      console.log('🔄 RosterCardItem: New name:', newName);
       const updatedEntry = await updateRosterEntry(entry.id, {
         date: entry.date,
         shiftType: entry.shift_type,
