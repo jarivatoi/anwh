@@ -13,7 +13,7 @@ export const authCodes: AuthCode[] = [
   { code: 'S069', name: 'GHOORAN' },
   { code: 'H13D', name: 'HOSENBUX' },
   { code: 'J149', name: 'JUMMUN' },
-  { code: 'M176', name: 'MAUDHOO' },
+  { code: 'M17G', name: 'MAUDHOO' },
   { code: 'N28C', name: 'NARAYYA' },
   { code: 'P09A', name: 'PITTEA' },
   { code: 'R16G', name: 'RUNGADOO' },
