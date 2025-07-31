@@ -63,6 +63,18 @@ export const addRosterEntry = async (formData: RosterFormData, editorName: strin
     }
 
     console.log('✅ Successfully added roster entry:', data);
+    
+    // Dispatch event for calendar synchronization
+    window.dispatchEvent(new CustomEvent('rosterCalendarSync', {
+      detail: {
+        date: formData.date,
+        shiftType: formData.shiftType,
+        assignedName: formData.assignedName,
+        editorName: editorName,
+        action: 'added'
+      }
+    }));
+    
     return data;
   } catch (error) {
     console.error('❌ Network error adding roster entry:', error);
@@ -103,6 +115,17 @@ export const updateRosterEntry = async (id: string, formData: RosterFormData, ed
     }
 
     console.log('✅ Successfully updated roster entry:', data);
+    
+    // Dispatch event for calendar synchronization
+    window.dispatchEvent(new CustomEvent('rosterCalendarSync', {
+      detail: {
+        date: formData.date,
+        shiftType: formData.shiftType,
+        assignedName: formData.assignedName,
+        editorName: editorName,
+        action: 'updated'
+      }
+    }));
     
     // Dispatch event for calendar synchronization
     window.dispatchEvent(new CustomEvent('rosterCalendarSync', {

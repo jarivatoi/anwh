@@ -134,7 +134,9 @@ export const syncRosterToCalendar = (
     assignedName,
     editorName,
     action,
-    calendarLabel
+    calendarLabel,
+    editorBaseName: editorName.replace(/\(R\)$/, '').trim().toUpperCase(),
+    calendarBaseName: calendarLabel.replace(/\(R\)$/, '').trim().toUpperCase()
   });
   
   // Check if the editor name matches the calendar label (case-insensitive)

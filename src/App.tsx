@@ -242,12 +242,6 @@ function App() {
   const handleRosterCalendarSync = useCallback((event: CustomEvent) => {
     const rosterChange = event.detail;
     
-    // Only sync if we're currently on the calendar tab
-    if (activeTab !== 'calendar') {
-      console.log('⏭️ Not on calendar tab, skipping sync');
-      return;
-    }
-    
     console.log('🔄 Processing roster change for calendar sync:', rosterChange);
     
     const syncResult = syncRosterToCalendar(rosterChange, {
@@ -263,7 +257,7 @@ function App() {
       setRefreshKey(prev => prev + 1);
       console.log('✅ Calendar synchronized with roster change');
     }
-  }, [activeTab, scheduleTitle, schedule, specialDates, setSchedule, setSpecialDates]);
+  }, [scheduleTitle, schedule, specialDates, setSchedule, setSpecialDates]);
 
   // Listen for roster changes
   useEffect(() => {
