@@ -1,414 +1,748 @@
-import { DaySchedule, SpecialDates } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { X, Edit, Calendar, User, Clock } from 'lucide-react';
+import { RosterEntry } from '../types/roster';
+import { useLongPress } from '../hooks/useLongPress';
+import { availableNames, validateAuthCode } from '../utils/rosterAuth';
+import { updateRosterEntry } from '../utils/rosterApi';
+import { parseNameChange, isPastDate } from '../utils/rosterHelpers';
+import { ScrollingText } from './ScrollingText';
+import { StaffSelectionModal } from './StaffSelectionModal';
+import { gsap } from 'gsap';
 
-export interface RosterCalendarSyncOptions {
-  calendarLabel: string;
-  schedule: DaySchedule;
-  specialDates: SpecialDates;
-  setSchedule: (schedule: DaySchedule | ((prev: DaySchedule) => DaySchedule)) => void;
-  setSpecialDates: (specialDates: SpecialDates | ((prev: SpecialDates) => SpecialDates)) => void;
+interface RosterEntryCellProps {
+  entry: RosterEntry;
+  onUpdate?: (updatedEntry: RosterEntry) => void;
+  onShowDetails?: (entry: RosterEntry) => void;
+  allEntriesForShift?: RosterEntry[];
 }
 
-export interface RosterChangeEvent {
-  date: string;
-  shiftType: string;
-  assignedName: string;
-  editorName: string;
-  action: 'added' | 'updated' | 'removed';
-}
+export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
+  entry,
+  onUpdate,
+  onShowDetails,
+  allEntriesForShift
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authCode, setAuthCode] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showStaffModal, setShowStaffModal] = useState(false);
+  const selectRef = useRef<HTMLSelectElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const cellRef = useRef<HTMLDivElement>(null);
 
-/**
- * Validates if a shift is allowed on a specific date
- */
-export const validateShiftForDate = (date: string, shiftType: string, isSpecialDate: boolean): boolean => {
-  const dateObj = new Date(date);
-  const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 6 = Saturday
-  
-  console.log(`🔍 Validating shift: ${shiftType} on ${date} (day ${dayOfWeek}, special: ${isSpecialDate})`);
-  
-  // Map roster shift types to calendar shift IDs
-  const shiftMapping: Record<string, string> = {
-    'Morning Shift (9-4)': '9-4',
-    'Evening Shift (4-10)': '4-10',
-    'Saturday Regular (12-10)': '12-10',
-    'Night Duty': 'N',
-    'Sunday/Public Holiday/Special': '9-4' // Special Sunday shift maps to 9-4
-  };
-  
-  const calendarShiftId = shiftMapping[shiftType];
-  if (!calendarShiftId) {
-    console.log(`❌ Unknown shift type: ${shiftType}`);
-    return false;
-  }
-  
-  // Validation rules based on day and special status
-  if (isSpecialDate) {
-    // Special dates allow: 9-4, 4-10, N (but not 12-10)
-    const allowedOnSpecial = ['9-4', '4-10', 'N'];
-    const isValid = allowedOnSpecial.includes(calendarShiftId);
-    console.log(`🔍 Special date validation: ${calendarShiftId} ${isValid ? 'allowed' : 'not allowed'}`);
-    return isValid;
-  } else {
-    // Regular day validation
-    if (dayOfWeek === 6) { // Saturday
-      const allowedOnSaturday = ['12-10', 'N'];
-      const isValid = allowedOnSaturday.includes(calendarShiftId);
-      console.log(`🔍 Saturday validation: ${calendarShiftId} ${isValid ? 'allowed' : 'not allowed'}`);
-      return isValid;
-    } else if (dayOfWeek === 0) { // Sunday
-      const allowedOnSunday = ['9-4', '4-10', 'N'];
-      const isValid = allowedOnSunday.includes(calendarShiftId);
-      console.log(`🔍 Sunday validation: ${calendarShiftId} ${isValid ? 'allowed' : 'not allowed'}`);
-      return isValid;
-    } else { // Weekdays (Monday-Friday)
-      const allowedOnWeekday = ['4-10', 'N'];
-      const isValid = allowedOnWeekday.includes(calendarShiftId);
-      console.log(`🔍 Weekday validation: ${calendarShiftId} ${isValid ? 'allowed' : 'not allowed'}`);
-      return isValid;
+  // Get available staff (excluding others already working this shift, including same base names)
+  const getAvailableStaff = () => {
+    if (!allEntriesForShift || allEntriesForShift.length === 0) {
+      return availableNames.filter(name => name !== 'ADMIN');
     }
-  }
-};
 
-/**
- * Checks if shift conflicts with existing shifts in calendar
- */
-export const checkShiftConflicts = (date: string, newShiftType: string, currentShifts: string[]): boolean => {
-  const shiftMapping: Record<string, string> = {
-    'Morning Shift (9-4)': '9-4',
-    'Evening Shift (4-10)': '4-10',
-    'Saturday Regular (12-10)': '12-10',
-    'Night Duty': 'N',
-    'Sunday/Public Holiday/Special': '9-4'
-  };
-  
-  const newShiftId = shiftMapping[newShiftType];
-  if (!newShiftId) return true; // Unknown shift = conflict
-  
-  // Check for conflicts
-  // 9-4 and 12-10 cannot overlap
-  if (newShiftId === '9-4' && currentShifts.includes('12-10')) return true;
-  if (newShiftId === '12-10' && currentShifts.includes('9-4')) return true;
-  
-  // 12-10 and 4-10 cannot overlap
-  if (newShiftId === '12-10' && currentShifts.includes('4-10')) return true;
-  if (newShiftId === '4-10' && currentShifts.includes('12-10')) return true;
-  
-  // Check if shift already exists
-  if (currentShifts.includes(newShiftId)) return true;
-  
-  return false; // No conflicts
-};
-
-/**
- * Determines if a date needs to be marked as special for the shift to be valid
- */
-export const requiresSpecialDate = (date: string, shiftType: string): boolean => {
-  const dateObj = new Date(date);
-  const dayOfWeek = dateObj.getDay();
-  
-  // Saturday with Morning Shift (9-4) requires special marking
-  if (dayOfWeek === 6 && shiftType === 'Morning Shift (9-4)') {
-    return true;
-  }
-  
-  // Weekday with Morning Shift (9-4) requires special marking
-  if (dayOfWeek >= 1 && dayOfWeek <= 5 && shiftType === 'Morning Shift (9-4)') {
-    return true;
-  }
-  
-  return false;
-};
-
-/**
- * Handle removal synchronization - remove shift from calendar
- */
-const handleRemovalSync = (
-  date: string,
-  shiftType: string,
-  assignedName: string,
-  options: Pick<RosterCalendarSyncOptions, 'calendarLabel' | 'schedule' | 'specialDates' | 'setSchedule' | 'setSpecialDates'>
-): boolean => {
-  const { calendarLabel, schedule, specialDates, setSchedule, setSpecialDates } = options;
-  
-  console.log('🗑️ rosterCalendarSync.ts: Processing removal for:', {
-    date,
-    shiftType,
-    assignedName,
-    calendarLabel
-  });
-  
-  // CRITICAL: Only sync removal if the assigned name matches the calendar label
-  const assignedBaseName = assignedName.replace(/\(R\)$/, '').trim().toUpperCase();
-  const calendarBaseName = calendarLabel.replace(/\(R\)$/, '').trim().toUpperCase();
-  
-  console.log('🔍 rosterCalendarSync.ts: Removal name matching check:', {
-    assignedName,
-    calendarLabel,
-    assignedBaseName,
-    calendarBaseName,
-    namesMatch: assignedBaseName === calendarBaseName
-  });
-  
-  // If names don't match, don't sync removal to calendar
-  if (assignedBaseName !== calendarBaseName) {
-    console.log(`❌ rosterCalendarSync.ts: Names don't match for removal - skipping sync. Assigned: "${assignedBaseName}", Calendar: "${calendarBaseName}"`);
-    return false;
-  }
-  
-  console.log(`✅ rosterCalendarSync.ts: Names match for removal - proceeding with sync`);
-  
-  // Map roster shift type to calendar shift ID
-  const shiftMapping: Record<string, string> = {
-    'Morning Shift (9-4)': '9-4',
-    'Evening Shift (4-10)': '4-10',
-    'Saturday Regular (12-10)': '12-10',
-    'Night Duty': 'N',
-    'Sunday/Public Holiday/Special': '9-4'
-  };
-  
-  const calendarShiftId = shiftMapping[shiftType];
-  if (!calendarShiftId) {
-    console.log(`❌ rosterCalendarSync.ts: Cannot map shift type for removal: ${shiftType}`);
-    return false;
-  }
-  
-  // Get current shifts for this date
-  const currentShifts = schedule[date] || [];
-  console.log(`🔍 rosterCalendarSync.ts: Current shifts for ${date}:`, currentShifts);
-  
-  // Check if the shift exists in calendar
-  if (!currentShifts.includes(calendarShiftId)) {
-    console.log(`ℹ️ rosterCalendarSync.ts: Shift ${calendarShiftId} not found in calendar for ${date}`);
-    return false;
-  }
-  
-  // Remove the shift from calendar
-  console.log(`🗑️ rosterCalendarSync.ts: Removing shift ${calendarShiftId} from calendar on ${date}`);
-  setSchedule(prev => {
-    const newSchedule = { ...prev };
-    const updatedShifts = currentShifts.filter(shift => shift !== calendarShiftId);
+    // Get all currently assigned staff for this shift
+    const currentlyAssigned = allEntriesForShift.map(e => e.assigned_name);
     
-    if (updatedShifts.length === 0) {
-      // If no shifts left, remove the date entry completely
-      delete newSchedule[date];
-    } else {
-      // Otherwise, update with remaining shifts
-      newSchedule[date] = updatedShifts;
-    }
-    
-    return newSchedule;
-  });
-  
-  // Check if we should remove special date marking
-  // Only remove special marking if no other shifts require it
-  const remainingShifts = currentShifts.filter(shift => shift !== calendarShiftId);
-  const stillNeedsSpecial = remainingShifts.some(shift => {
-    const remainingShiftType = Object.entries(shiftMapping).find(([_, id]) => id === shift)?.[0];
-    return remainingShiftType ? requiresSpecialDate(date, remainingShiftType) : false;
-  });
-  
-  if (!stillNeedsSpecial && specialDates[date]) {
-    console.log(`🗑️ rosterCalendarSync.ts: Removing special date marking for ${date}`);
-    setSpecialDates(prev => {
-      const newSpecialDates = { ...prev };
-      delete newSpecialDates[date];
-      return newSpecialDates;
-    });
-  }
-  
-  // Show removal notification
-  const notification = document.createElement('div');
-  notification.style.cssText = `
-    position: fixed;
-    top: 80px;
-    right: 20px;
-    background: #ef4444;
-    color: white;
-    padding: 12px 16px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    z-index: 999999;
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    animation: slideInRight 0.3s ease-out;
-  `;
-  
-  notification.innerHTML = `
-    📅 Calendar updated: ${shiftType} removed from ${date}
-    ${!stillNeedsSpecial ? '<br>📌 Special date marking removed' : ''}
-  `;
-  
-  document.body.appendChild(notification);
-  
-  // Auto-remove after 3 seconds
-  setTimeout(() => {
-    if (document.body.contains(notification)) {
-      notification.style.animation = 'slideInRight 0.3s ease-out reverse';
-      setTimeout(() => {
-        if (document.body.contains(notification)) {
-          document.body.removeChild(notification);
-        }
-      }, 300);
-    }
-  }, 3000);
-  
-  console.log(`✅ rosterCalendarSync.ts: Calendar removal completed for ${date}`);
-  return true;
-};
-
-/**
- * Main synchronization function
- */
-export const syncRosterToCalendar = (
-  rosterChange: RosterChangeEvent,
-  options: RosterCalendarSyncOptions
-): boolean => {
-  const { calendarLabel, schedule, specialDates, setSchedule, setSpecialDates } = options;
-  const { date, shiftType, assignedName, editorName, action } = rosterChange;
-  
-  console.log('🔄 rosterCalendarSync.ts: Sync triggered with data:', {
-    date,
-    shiftType,
-    assignedName,
-    editorName,
-    action,
-    calendarLabel,
-    assignedName,
-    calendarLabel,
-    currentScheduleKeys: Object.keys(schedule).length,
-    currentSpecialDates: Object.keys(specialDates).length
-  });
-  
-  // CRITICAL: Only sync if the assigned name matches the calendar label
-  // This prevents other people's roster changes from affecting your personal calendar
-  const assignedBaseName = assignedName.replace(/\(R\)$/, '').trim().toUpperCase();
-  const calendarBaseName = calendarLabel.replace(/\(R\)$/, '').trim().toUpperCase();
-  
-  console.log('🔍 rosterCalendarSync.ts: Name matching check:', {
-    assignedName,
-    calendarLabel,
-    assignedBaseName,
-    calendarBaseName,
-    namesMatch: assignedBaseName === calendarBaseName
-  });
-  
-  // If names don't match, don't sync to calendar
-  if (assignedBaseName !== calendarBaseName) {
-    console.log(`❌ rosterCalendarSync.ts: Names don't match - skipping sync. Assigned: "${assignedBaseName}", Calendar: "${calendarBaseName}"`);
-    return false;
-  }
-  
-  console.log(`✅ rosterCalendarSync.ts: Names match - proceeding with sync`);
-  
-  // Handle removal action
-  if (action === 'removed') {
-    console.log('🗑️ rosterCalendarSync.ts: Processing removal action');
-    return handleRemovalSync(date, shiftType, assignedName, { calendarLabel, schedule, specialDates, setSchedule, setSpecialDates });
-  }
-  
-  // Check if this date needs special marking for the shift to be valid
-  const needsSpecial = requiresSpecialDate(date, shiftType);
-  const currentIsSpecial = specialDates[date] === true;
-  
-  console.log('🔍 rosterCalendarSync.ts: Special date analysis:', {
-    date,
-    shiftType,
-    needsSpecial,
-    dayOfWeek: new Date(date).getDay()
-  });
-  
-  // Determine final special date status
-  const finalSpecialStatus = needsSpecial || currentIsSpecial;
-  
-  // Validate the shift for this date
-  const shiftMapping: Record<string, string> = {
-    'Morning Shift (9-4)': '9-4',
-    'Evening Shift (4-10)': '4-10',
-    'Saturday Regular (12-10)': '12-10',
-    'Night Duty': 'N',
-    'Sunday/Public Holiday/Special': '9-4'
-  };
-  
-  const calendarShiftId = shiftMapping[shiftType];
-  if (!calendarShiftId) {
-    console.log(`❌ rosterCalendarSync.ts: Cannot map shift type: ${shiftType}`);
-    return false;
-  }
-  
-  // Get current shifts for this date
-  const currentShifts = schedule[date] || [];
-  console.log(`🔍 rosterCalendarSync.ts: Current shifts for ${date}:`, currentShifts);
-  
-  // Check for conflicts
-  if (checkShiftConflicts(date, shiftType, currentShifts)) {
-    console.log(`❌ rosterCalendarSync.ts: Shift conflict detected for ${calendarShiftId} on ${date} with existing shifts:`, currentShifts);
-    return false; // Don't sync if there are conflicts
-    return false; // Don't sync if there are conflicts
-    return false; // Don't sync if there are conflicts
-  }
-  
-  // Apply changes to calendar
-  let calendarUpdated = false;
-  
-  if (needsSpecial && !currentIsSpecial) {
-    console.log(`✅ rosterCalendarSync.ts: Marking ${date} as special date`);
-    setSpecialDates(prev => ({
-      ...prev,
-      [date]: true
-    }));
-    calendarUpdated = true;
-  }
-  
-  // Add shift to calendar if not already present
-  if (!currentShifts.includes(calendarShiftId)) {
-    console.log(`✅ rosterCalendarSync.ts: Adding shift ${calendarShiftId} to calendar on ${date}`);
-    setSchedule(prev => ({
-      ...prev,
-      [date]: [...currentShifts, calendarShiftId]
-    }));
-    calendarUpdated = true;
-  } else {
-    console.log(`ℹ️ rosterCalendarSync.ts: Shift ${calendarShiftId} already exists in calendar on ${date}`);
-  }
-  
-  if (calendarUpdated) {
-    // Show success notification
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-      position: fixed;
-      top: 80px;
-      right: 20px;
-      background: #10b981;
-      color: white;
-      padding: 12px 16px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      z-index: 999999;
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 14px;
-      font-weight: 500;
-      animation: slideInRight 0.3s ease-out;
-    `;
-    
-    notification.innerHTML = `
-      📅 Calendar updated: ${shiftType} added to ${date}
-      ${needsSpecial ? '<br>📌 Date marked as special' : ''}
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Auto-remove after 3 seconds
-    setTimeout(() => {
-      if (document.body.contains(notification)) {
-        notification.style.animation = 'slideInRight 0.3s ease-out reverse';
-        setTimeout(() => {
-          if (document.body.contains(notification)) {
-            document.body.removeChild(notification);
-          }
-        }, 300);
+    // Filter out staff who are already working, including matching base names
+    return availableNames.filter(staffName => {
+      // Exclude ADMIN from selection
+      if (staffName === 'ADMIN') {
+        return false;
       }
-    }, 3000);
-  }
-  
-  return calendarUpdated;
+      
+      // Don't filter out the current assignment (allow keeping same person)
+      if (staffName === entry.assigned_name) {
+        return true;
+      }
+      
+      // Check if this staff member (or their counterpart) is already assigned
+      const baseName = staffName.replace(/\(R\)$/, '').trim();
+      const isAlreadyAssigned = currentlyAssigned.some(assigned => {
+        const assignedBaseName = assigned.replace(/\(R\)$/, '').trim();
+        return baseName === assignedBaseName;
+      });
+      
+      return !isAlreadyAssigned;
+    });
+  };
+
+  // Check if entry has been edited
+  const hasBeenEdited = (entry: RosterEntry) => {
+    return entry.change_description && 
+           entry.change_description.includes('Name changed from') &&
+           entry.last_edited_by;
+  };
+
+  // Handle long press for entry details
+  const handleLongPress = () => {
+    // Long press shows authentication for editing
+    setShowAuthModal(true);
+  };
+
+  const handleDoublePress = () => {
+    // Double tap shows details for edited entries
+    if (hasBeenEdited(entry)) {
+      console.log('🔍 Double-click detected on edited entry in RosterEntryCell, calling onShowDetails');
+      onShowDetails?.(entry);
+    }
+  };
+
+  const interactionHandlers = useLongPress({
+    onLongPress: handleLongPress,
+    onDoublePress: handleDoublePress,
+    delay: 5000
+  });
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (showAuthModal) {
+      // Disable body scroll
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = '0';
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.bottom = '0';
+      
+      // CRITICAL: Disable scrolling on ALL table containers
+      const tableContainers = document.querySelectorAll('[style*="overflow: auto"], [style*="overflow-y: auto"], .overflow-y-auto');
+      tableContainers.forEach(container => {
+        (container as HTMLElement).style.overflow = 'hidden';
+        (container as HTMLElement).style.overflowY = 'hidden';
+      });
+      
+      // Also disable scrolling on the main table container
+      const mainTableContainer = document.querySelector('[style*="height: 100%; overflow: auto"]');
+      if (mainTableContainer) {
+        (mainTableContainer as HTMLElement).style.overflow = 'hidden';
+        (mainTableContainer as HTMLElement).style.overflowY = 'hidden';
+      }
+      
+      // Disable scrolling on roster table view specifically
+      const rosterTableView = document.querySelector('[style*="height: 70vh"]');
+      if (rosterTableView) {
+        (rosterTableView as HTMLElement).style.overflow = 'hidden';
+        (rosterTableView as HTMLElement).style.overflowY = 'hidden';
+      }
+      
+      // Find and disable any scrollable divs in table view
+      const scrollableDivs = document.querySelectorAll('div[style*="overflow: auto"]');
+      scrollableDivs.forEach(div => {
+        (div as HTMLElement).style.overflow = 'hidden';
+      });
+      
+      // Additional table container handling
+      const tableContainer = document.querySelector('[style*="height: 100%; overflow: auto"], [style*="overflow: hidden"]');
+      if (tableContainer) {
+        (tableContainer as HTMLElement).style.overflow = 'hidden';
+      }
+    }
+
+    return () => {
+      // Re-enable body scroll
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.bottom = '';
+      
+      // Re-enable table scrolling on ALL containers
+      const tableContainers = document.querySelectorAll('[style*="overflow: hidden"], [style*="overflow-y: hidden"]');
+      tableContainers.forEach(container => {
+        (container as HTMLElement).style.overflow = 'auto';
+        (container as HTMLElement).style.overflowY = 'auto';
+      });
+      
+      // Re-enable main table container scrolling
+      const mainTableContainer = document.querySelector('[style*="height: 100%; overflow: hidden"]');
+      if (mainTableContainer) {
+        (mainTableContainer as HTMLElement).style.overflow = 'auto';
+        (mainTableContainer as HTMLElement).style.overflowY = 'auto';
+      }
+      
+      // Re-enable roster table view scrolling
+      const rosterTableView = document.querySelector('[style*="height: 70vh"]');
+      if (rosterTableView) {
+        (rosterTableView as HTMLElement).style.overflow = 'auto';
+        (rosterTableView as HTMLElement).style.overflowY = 'auto';
+      }
+      
+      // Re-enable scrollable divs
+      const scrollableDivs = document.querySelectorAll('div[style*="overflow: hidden"]');
+      scrollableDivs.forEach(div => {
+        (div as HTMLElement).style.overflow = 'auto';
+      });
+      
+      // Re-enable table scrolling
+      const tableContainer = document.querySelector('[style*="height: 100%; overflow: auto"], [style*="overflow: hidden"]');
+      if (tableContainer) {
+        (tableContainer as HTMLElement).style.overflow = 'auto';
+      }
+    };
+  }, [showAuthModal]);
+
+  const handleAuthSubmit = () => {
+    const editorName = validateAuthCode(authCode);
+    if (!editorName) {
+      setAuthError('Invalid authentication code');
+      return;
+    }
+    
+    setShowAuthModal(false);
+    setShowStaffModal(true);
+  };
+
+  const handleStaffSelect = async (newName: string) => {
+    if (newName === entry.assigned_name || !newName) {
+      setShowStaffModal(false);
+      return;
+    }
+
+    setIsUpdating(true);
+    
+    try {
+      const editorName = validateAuthCode(authCode);
+      if (!editorName) return;
+
+      const updatedEntry = await updateRosterEntry(entry.id, {
+        date: entry.date,
+        shiftType: entry.shift_type,
+        assignedName: newName,
+        changeDescription: `Name changed from "${entry.assigned_name}" to "${newName}"`
+      }, editorName);
+
+      // Update the entry object directly for immediate UI reflection
+      entry.assigned_name = newName;
+      entry.last_edited_by = editorName;
+      entry.last_edited_at = updatedEntry.last_edited_at;
+      entry.change_description = updatedEntry.change_description;
+      
+      // Add bounce animation to highlight the change
+      if (cellRef.current) {
+        gsap.fromTo(cellRef.current,
+          {
+            scale: 1,
+            backgroundColor: '#fef2f2', // Light red background
+            force3D: true
+          },
+          {
+            scale: 1.05,
+            duration: 0.2,
+            ease: "back.out(1.7)",
+            yoyo: true,
+            repeat: 1,
+            force3D: true,
+            onComplete: () => {
+              // Fade background back to normal
+              gsap.to(cellRef.current, {
+                backgroundColor: 'transparent',
+                duration: 0.5,
+                ease: "power2.out"
+              });
+            }
+          }
+        );
+      }
+      
+      // Call parent update callback with updated entry
+      onUpdate?.(updatedEntry);
+      
+      // Force a re-render by dispatching a custom event
+      window.dispatchEvent(new CustomEvent('rosterUpdated', { 
+        detail: {
+          ...updatedEntry,
+          assigned_name: newName,
+          last_edited_by: editorName,
+          last_edited_at: updatedEntry.last_edited_at,
+          change_description: updatedEntry.change_description
+        }
+      }));
+      
+    } catch (error) {
+      console.error('Failed to update entry:', error);
+      alert('Failed to update entry. Please try again.');
+    } finally {
+      setIsUpdating(false);
+      setShowStaffModal(false);
+      setAuthCode('');
+    }
+  };
+
+  const handleCancel = () => {
+    setShowAuthModal(false);
+    setShowStaffModal(false);
+    setAuthCode('');
+    setAuthError('');
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+        setShowAuthModal(false);
+      }
+    };
+
+    if (showAuthModal) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showAuthModal]);
+
+  const formatTimestamp = (timestamp: string) => {
+    try {
+      const [datePart, timePart] = timestamp.split(' ');
+      const [day, month, year] = datePart.split('-');
+      const [hour, minute, second] = timePart.split(':');
+      
+      const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute), parseInt(second || '0'));
+      
+      const formattedDate = `${day}-${month}-${year}`;
+      const formattedTime = `${hour}h${minute}`;
+      return `${formattedDate} at ${formattedTime}`;
+    } catch (error) {
+      return timestamp;
+    }
+  };
+
+  return (
+    <>
+      <div 
+        ref={cellRef}
+        className={`text-center rounded p-1 sm:p-2 transition-colors w-full flex items-center justify-center ${
+          'cursor-pointer'
+        }`}
+        {...interactionHandlers}
+        style={{ 
+          userSelect: 'none', 
+          WebkitUserSelect: 'none',
+          zIndex: 10, // Lower z-index so sticky headers appear above
+          minHeight: '20px'
+        }}
+      >
+        <div className="text-[8px] sm:text-[10px] font-medium text-gray-900 leading-tight w-full flex items-center justify-center">
+          {isUpdating ? 'Updating...' : (
+            <ScrollingText 
+              text={entry.assigned_name}
+              className={hasBeenEdited(entry) ? 'text-red-600 animate-pulse' : ''}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Staff Selection Modal */}
+      <StaffSelectionModal
+        isOpen={showStaffModal}
+        entry={entry}
+        availableStaff={getAvailableStaff()}
+        allEntriesForShift={allEntriesForShift}
+        onSelectStaff={handleStaffSelect}
+        onClose={() => setShowStaffModal(false)}
+      />
+
+      {/* Authentication Modal */}
+      {showAuthModal && createPortal(
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 2147483647,
+            backgroundColor: 'rgba(0, 0, 0, 0.98)',
+            display: 'flex',
+            alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
+            justifyContent: 'center',
+            padding: window.innerWidth > window.innerHeight ? '8px' : '20px',
+            paddingTop: window.innerWidth > window.innerHeight ? '4px' : '20px',
+            overflow: 'auto',
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)'
+          }}
+          onTouchStart={(e) => {
+            // Prevent any touch events from reaching the table
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.target === e.currentTarget) {
+              handleCancel();
+            }
+          }}
+          onTouchMove={(e) => {
+            // Allow touch movement for scrolling, but prevent propagation
+            e.stopPropagation();
+          }}
+          onTouchEnd={(e) => {
+            // Prevent touch end events
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.target === e.currentTarget) {
+              handleCancel();
+            }
+          }}
+        >
+          <div 
+            ref={modalRef} 
+            style={{ 
+              userSelect: 'none', 
+              WebkitUserSelect: 'none',
+              maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
+              height: 'auto', // Allow natural height
+              minHeight: window.innerWidth > window.innerHeight ? '200px' : '400px',
+              backgroundColor: '#ffffff', // Ensure solid white background
+              opacity: 1, // Ensure full opacity
+              display: 'flex',
+              flexDirection: 'column',
+              margin: window.innerWidth > window.innerHeight ? '4px auto' : '16px auto',
+              marginTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
+              marginBottom: window.innerWidth > window.innerHeight ? '4px' : '16px',
+              position: 'relative', // Ensure proper stacking
+              zIndex: 2147483647,
+              // Enable touch interactions within modal
+              touchAction: 'auto',
+              overflow: 'visible', // Allow modal content to be visible
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.9)', // Stronger shadow
+              border: '2px solid #ffffff', // White border for extra separation
+              borderRadius: '16px',
+              maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
+              width: '100%',
+              backgroundColor: '#ffffff',
+              transform: 'translate3d(0,0,0)',
+              backfaceVisibility: 'hidden'
+            }}
+            onTouchStart={(e) => {
+              // Allow touch events within modal, prevent propagation to backdrop
+              e.stopPropagation();
+            }}
+            onTouchMove={(e) => {
+              // Allow touch movement within modal, prevent propagation to backdrop
+              e.stopPropagation();
+            }}
+            onTouchEnd={(e) => {
+              // Allow touch end within modal, prevent propagation to backdrop
+              e.stopPropagation();
+            }}
+            onClick={(e) => {
+              // Prevent modal from closing when clicking inside
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            {/* Header - Fixed */}
+            <div className="border-b-2 border-indigo-200 bg-gradient-to-r from-indigo-50 to-blue-50 flex-shrink-0" style={{
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px' // Less padding in landscape
+            }}>
+              <div className="flex items-center justify-center space-x-3 mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
+                Authentication Required
+              </h3>
+              <p className="text-indigo-600 text-center" style={{
+                fontSize: window.innerWidth > window.innerHeight ? '12px' : '14px' // Smaller text in landscape
+              }}>
+               Enter your authentication code
+              </p>
+            </div>
+              
+            {/* Scrollable Content */}
+            <div 
+              className="flex-1 overflow-y-auto"
+              style={{
+                // CRITICAL: Enable smooth touch scrolling ONLY within this container
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                WebkitOverflowScrolling: 'touch',
+                touchAction: 'pan-y', // Allow vertical panning (scrolling)
+                overscrollBehavior: 'contain', // Prevent scroll chaining to parent
+                // Ensure this container can scroll independently
+                position: 'relative',
+                maxHeight: window.innerWidth > window.innerHeight ? 'calc(95vh - 120px)' : 'calc(90vh - 200px)', // More height in landscape
+                minHeight: '100px', // Minimum scrollable area
+                padding: window.innerWidth > window.innerHeight ? '12px' : '24px' // Less padding in landscape
+              }}
+            >
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Your Authentication Code
+                </label>
+                <div className="relative">
+                <input
+                  type="text"
+                  value={authCode}
+                  onChange={(e) => setAuthCode(e.target.value.toUpperCase())}
+                  className="w-full px-4 py-4 border-2 border-indigo-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 text-center font-mono text-xl tracking-widest bg-gradient-to-r from-indigo-50 to-blue-50 transition-all duration-200 shadow-inner"
+                  placeholder="Enter your code"
+                  maxLength={4}
+                  autoComplete="off"
+                  style={{
+                    textAlign: 'center',
+                    letterSpacing: '0.2em',
+                    textTransform: 'uppercase'
+                  }}
+                />
+                  <div className="absolute inset-0 pointer-events-none rounded-xl border-2 border-transparent bg-gradient-to-r from-indigo-400 to-blue-500 opacity-0 transition-opacity duration-200 focus-within:opacity-20"></div>
+                </div>
+              </div>
+              
+              {authError && (
+                <div className="mb-4 p-4 bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 rounded-xl shadow-sm">
+                  <div className="flex items-center justify-center space-x-2">
+                    <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    <p className="text-sm text-red-700 font-medium text-center">{authError}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+              
+            {/* Footer - Fixed */}
+            <div className="pt-0 flex-shrink-0 bg-gradient-to-r from-gray-50 to-indigo-50 border-t border-indigo-100" style={{
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px' // Less padding in landscape
+            }}>
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleCancel}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 rounded-xl font-medium transition-all duration-200 border border-gray-300 shadow-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAuthSubmit}
+                  disabled={authCode.length < 4}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-all duration-200 shadow-lg disabled:shadow-none"
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        , document.body
+      )}
+
+      {/* Edit Details Modal */}
+      {showDetailsModal && createPortal(
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 2147483647,
+            // CRITICAL: Prevent all touch interactions with background
+            touchAction: 'none', // Disable all touch actions on backdrop
+            WebkitTouchCallout: 'none',
+            WebkitUserSelect: 'none', 
+            userSelect: 'none',
+            backgroundColor: 'rgba(0, 0, 0, 0.98)',
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'center',
+            padding: window.innerWidth > window.innerHeight ? '8px' : '16px', // Less padding in landscape
+            paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px', // Minimal top padding in landscape
+            overflow: 'auto',
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)'
+          }}
+          onTouchStart={(e) => {
+            // Prevent touch events from reaching background
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.target === e.currentTarget) {
+              setShowDetailsModal(false);
+            }
+          }}
+          onTouchMove={(e) => {
+            // Prevent any touch movement on backdrop
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onTouchEnd={(e) => {
+            // Prevent touch end events
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.target === e.currentTarget) {
+              setShowDetailsModal(false);
+            }
+          }}
+        >
+          <div 
+            style={{ 
+              userSelect: 'none', 
+              WebkitUserSelect: 'none',
+              maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh', // Use more height in landscape
+              display: 'flex',
+              flexDirection: 'column',
+              // Enable touch interactions within modal
+              touchAction: 'auto',
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem', // Use more width in landscape
+              width: '100%',
+              margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0', // Less margin in landscape
+              zIndex: 2147483647,
+              backgroundColor: '#ffffff'
+            }}
+            onTouchStart={(e) => {
+              // Allow touch events within modal, prevent propagation to backdrop
+              e.stopPropagation();
+            }}
+            onTouchMove={(e) => {
+              // Allow touch movement within modal, prevent propagation to backdrop
+              e.stopPropagation();
+            }}
+            onTouchEnd={(e) => {
+              // Allow touch end within modal, prevent propagation to backdrop
+              e.stopPropagation();
+            }}
+            onClick={(e) => {
+              // Prevent modal from closing when clicking inside
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            <div className="relative pb-4 border-b border-gray-200" style={{
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px' // Less padding in landscape
+            }}>
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <div className="flex items-center justify-center space-x-3 mb-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Edit className="w-6 h-6 text-blue-600" />
+                </div>
+              </div>
+
+              <h3 className="text-xl font-bold text-gray-900 mb-2 text-center">
+                Edit Details
+              </h3>
+              
+              <div className="flex items-center justify-center space-x-2 text-gray-600">
+                <Calendar className="w-4 h-4" />
+                <span className="text-sm">{entry.date}</span>
+              </div>
+            </div>
+
+            <div 
+              style={{
+                // CRITICAL: Enable smooth touch scrolling
+                WebkitOverflowScrolling: 'touch',
+                touchAction: 'pan-y', // Allow vertical panning (scrolling)
+                overscrollBehavior: 'contain', // Prevent scroll chaining to parent
+                overflowY: 'auto',
+                flex: 1,
+                padding: window.innerWidth > window.innerHeight ? '12px' : '24px' // Less padding in landscape
+              }}
+            >
+              <div className="space-y-4">
+                {/* Shift Type */}
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <div className="text-sm font-medium text-gray-700 mb-1">Shift Type</div>
+                  <div className="text-gray-900 font-semibold">{entry.shift_type}</div>
+                </div>
+
+                {/* Current Assignment */}
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <div className="text-sm font-medium text-gray-700 mb-1">Current Assignment</div>
+                  <div className="text-gray-900 font-semibold">{entry.assigned_name}</div>
+                </div>
+
+                {/* Name Change Details */}
+                {(() => {
+                  const nameInfo = parseNameChange(entry.change_description || '', entry.assigned_name);
+                  if (nameInfo.isNameChange) {
+                    return (
+                      <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div className="text-sm font-medium text-yellow-800 mb-2">Name Change</div>
+                        <div className="flex items-center space-x-2">
+                         <User className="w-4 h-4 text-red-600" />
+                          <span className="text-red-600 font-medium line-through">{nameInfo.oldName}</span>
+                          <span className="text-gray-500">→</span>
+                         <User className="w-4 h-4 text-green-600" />
+                          <span className="text-green-600 font-medium">{nameInfo.newName}</span>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+
+                {/* Change Description */}
+                {entry.change_description && (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="text-sm font-medium text-blue-800 mb-1">Change Description</div>
+                    <div className="text-blue-700 text-sm">{entry.change_description}</div>
+                  </div>
+                )}
+
+                {/* Edit Information */}
+                {entry.last_edited_by && (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="text-sm font-medium text-green-800 mb-2">Last Modified</div>
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <User className="w-4 h-4 text-green-600" />
+                        <span className="text-green-700 font-medium">{entry.last_edited_by}</span>
+                      </div>
+                      {entry.last_edited_at && (
+                        <div className="flex items-center space-x-2">
+                          <Clock className="w-4 h-4 text-green-600" />
+                          <span className="text-green-700 text-sm">{formatTimestamp(entry.last_edited_at)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Add extra padding at bottom to ensure all content is accessible */}
+              <div className="h-8" />
+            </div>
+            
+            {/* Fixed footer */}
+            <div className="flex-shrink-0 pt-0" style={{
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px' // Less padding in landscape
+            }}>
+              <div className="mt-6">
+                <button
+                  onClick={() => setShowDetailsModal(false)}
+                  className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        , document.body
+      )}
+    </>
+  );
 };
