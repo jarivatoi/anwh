@@ -129,6 +129,12 @@ const handleRemovalSync = (
 ): boolean => {
   const { schedule, specialDates, setSchedule, setSpecialDates } = options;
   
+  console.log('🗑️ rosterCalendarSync.ts: Processing removal for:', {
+    date,
+    shiftType,
+    assignedName
+  });
+  
   // Map roster shift type to calendar shift ID
   const shiftMapping: Record<string, string> = {
     'Morning Shift (9-4)': '9-4',
@@ -140,18 +146,22 @@ const handleRemovalSync = (
   
   const calendarShiftId = shiftMapping[shiftType];
   if (!calendarShiftId) {
+    console.log(`❌ rosterCalendarSync.ts: Cannot map shift type for removal: ${shiftType}`);
     return false;
   }
   
   // Get current shifts for this date
   const currentShifts = schedule[date] || [];
+  console.log(`🔍 rosterCalendarSync.ts: Current shifts for ${date}:`, currentShifts);
   
   // Check if the shift exists in calendar
   if (!currentShifts.includes(calendarShiftId)) {
+    console.log(`ℹ️ rosterCalendarSync.ts: Shift ${calendarShiftId} not found in calendar for ${date}`);
     return false;
   }
   
   // Remove the shift from calendar
+  console.log(`🗑️ rosterCalendarSync.ts: Removing shift ${calendarShiftId} from calendar on ${date}`);
   setSchedule(prev => {
     const newSchedule = { ...prev };
     const updatedShifts = currentShifts.filter(shift => shift !== calendarShiftId);
@@ -176,6 +186,7 @@ const handleRemovalSync = (
   });
   
   if (!stillNeedsSpecial && specialDates[date]) {
+    console.log(`🗑️ rosterCalendarSync.ts: Removing special date marking for ${date}`);
     setSpecialDates(prev => {
       const newSpecialDates = { ...prev };
       delete newSpecialDates[date];
@@ -183,6 +194,44 @@ const handleRemovalSync = (
     });
   }
   
+  // Show removal notification
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    background: #ef4444;
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 999999;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    animation: slideInRight 0.3s ease-out;
+  `;
+  
+  notification.innerHTML = `
+    📅 Calendar updated: ${shiftType} removed from ${date}
+    ${!stillNeedsSpecial ? '<br>📌 Special date marking removed' : ''}
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Auto-remove after 3 seconds
+  setTimeout(() => {
+    if (document.body.contains(notification)) {
+      notification.style.animation = 'slideInRight 0.3s ease-out reverse';
+      setTimeout(() => {
+        if (document.body.contains(notification)) {
+          document.body.removeChild(notification);
+        }
+      }, 300);
+    }
+  }, 3000);
+  
+  console.log(`✅ rosterCalendarSync.ts: Calendar removal completed for ${date}`);
   return true;
 };
 
@@ -251,7 +300,6 @@ export const syncRosterToCalendar = (
   // Check for conflicts
   if (checkShiftConflicts(date, shiftType, currentShifts)) {
     console.log(`❌ rosterCalendarSync.ts: Shift conflict detected for ${calendarShiftId} on ${date} with existing shifts:`, currentShifts);
-    return false;
   }
   
   // Apply changes to calendar
@@ -279,16 +327,42 @@ export const syncRosterToCalendar = (
   }
   
   if (calendarUpdated) {
-    console.log('✅ rosterCalendarSync.ts: Calendar updated successfully');
-    
     // Show success notification
     const notification = document.createElement('div');
     notification.style.cssText = `
       position: fixed;
       top: 80px;
+      right: 20px;
       background: #10b981;
       color: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      z-index: 999999;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      animation: slideInRight 0.3s ease-out;
     `;
+    
+    notification.innerHTML = `
+      📅 Calendar updated: ${shiftType} added to ${date}
+      ${needsSpecial ? '<br>📌 Date marked as special' : ''}
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+      if (document.body.contains(notification)) {
+        notification.style.animation = 'slideInRight 0.3s ease-out reverse';
+        setTimeout(() => {
+          if (document.body.contains(notification)) {
+            document.body.removeChild(notification);
+          }
+        }, 300);
+      }
+    }, 3000);
   }
   
   return calendarUpdated;
