@@ -865,7 +865,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   value={authCode}
                   onChange={(e) => setAuthCode(e.target.value.toUpperCase())}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center font-mono text-lg"
-                  placeholder="Enter your code"
+                  placeholder="Enter admin code"
                   maxLength={4}
                   autoComplete="off"
                   autoFocus
