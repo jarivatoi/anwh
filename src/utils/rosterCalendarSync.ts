@@ -135,22 +135,22 @@ export const syncRosterToCalendar = (
     editorName,
     action,
     calendarLabel,
-    editorBaseName: editorName.replace(/\(R\)$/, '').trim().toUpperCase(),
+    assignedBaseName: assignedName.replace(/\(R\)$/, '').trim().toUpperCase(),
     calendarBaseName: calendarLabel.replace(/\(R\)$/, '').trim().toUpperCase(),
     currentScheduleKeys: Object.keys(schedule).length,
     currentSpecialDates: Object.keys(specialDates).length
   });
   
-  // Check if the editor name matches the calendar label (case-insensitive)
-  const editorBaseName = editorName.replace(/\(R\)$/, '').trim().toUpperCase();
+  // Check if the ASSIGNED name matches the calendar label (case-insensitive)
+  const assignedBaseName = assignedName.replace(/\(R\)$/, '').trim().toUpperCase();
   const calendarBaseName = calendarLabel.replace(/\(R\)$/, '').trim().toUpperCase();
   
-  if (editorBaseName !== calendarBaseName) {
-    console.log(`❌ rosterCalendarSync.ts: Name mismatch - Editor "${editorBaseName}" ≠ Calendar "${calendarBaseName}"`);
+  if (assignedBaseName !== calendarBaseName) {
+    console.log(`❌ rosterCalendarSync.ts: Name mismatch - Assigned "${assignedBaseName}" ≠ Calendar "${calendarBaseName}"`);
     return false;
   }
   
-  console.log(`✅ rosterCalendarSync.ts: Name match confirmed - Editor "${editorBaseName}" = Calendar "${calendarBaseName}"`);
+  console.log(`✅ rosterCalendarSync.ts: Name match confirmed - Assigned "${assignedBaseName}" = Calendar "${calendarBaseName}"`);
   
   // Only process additions and updates (not removals for now)
   if (action === 'removed') {
