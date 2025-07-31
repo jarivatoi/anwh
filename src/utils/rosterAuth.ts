@@ -27,6 +27,7 @@ export const authCodes: AuthCode[] = [
   { code: 'D07R', name: 'DOMUN(R)' },
   { code: 'H30R', name: 'FOKEERCHAND(R)' },
   { code: 'H13R', name: 'HOSENBUX(R)' },
+  { code: 'S06R', name: 'GHOORAN(R)' },
   { code: 'J14R', name: 'JUMMUN(R)' },
   { code: 'M17R', name: 'MAUDHOO(R)' },
   { code: 'N28R', name: 'NARAYYA(R)' },
