@@ -1,414 +1,739 @@
-import { DaySchedule, SpecialDates } from '../types';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { Server, CheckCircle, Table, Grid, FileText, Upload, Trash2, AlertTriangle } from 'lucide-react';
+import { ViewType, ShiftFilterType } from '../types/roster';
+import { useRosterData } from '../hooks/useRosterData';
+import { RosterTableView } from './RosterTableView';
+import { RosterCardView } from './RosterCardView';
+import { RosterLogView } from './RosterLogView';
+import { PDFImportModal } from './PDFImportModal';
+import { addRosterEntry, clearAllRosterEntries } from '../utils/rosterApi';
+import { clearMonthRosterEntries } from '../utils/rosterApi';
+import { RosterFormData } from '../types/roster';
+import { validateAuthCode, isAdminCode } from '../utils/rosterAuth';
+import { useLongPress } from '../hooks/useLongPress';
 
-export interface RosterCalendarSyncOptions {
-  calendarLabel: string;
-  schedule: DaySchedule;
-  specialDates: SpecialDates;
-  setSchedule: (schedule: DaySchedule | ((prev: DaySchedule) => DaySchedule)) => void;
-  setSpecialDates: (specialDates: SpecialDates | ((prev: SpecialDates) => SpecialDates)) => void;
+interface RosterPanelProps {
+  setActiveTab: (tab: 'calendar' | 'settings' | 'data' | 'roster') => void;
 }
 
-export interface RosterChangeEvent {
-  date: string;
-  shiftType: string;
-  assignedName: string;
-  editorName: string;
-  action: 'added' | 'updated' | 'removed';
-}
-
-/**
- * Validates if a shift is allowed on a specific date
- */
-export const validateShiftForDate = (date: string, shiftType: string, isSpecialDate: boolean): boolean => {
-  const dateObj = new Date(date);
-  const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 6 = Saturday
-  
-  console.log(`🔍 Validating shift: ${shiftType} on ${date} (day ${dayOfWeek}, special: ${isSpecialDate})`);
-  
-  // Map roster shift types to calendar shift IDs
-  const shiftMapping: Record<string, string> = {
-    'Morning Shift (9-4)': '9-4',
-    'Evening Shift (4-10)': '4-10',
-    'Saturday Regular (12-10)': '12-10',
-    'Night Duty': 'N',
-    'Sunday/Public Holiday/Special': '9-4' // Special Sunday shift maps to 9-4
-  };
-  
-  const calendarShiftId = shiftMapping[shiftType];
-  if (!calendarShiftId) {
-    console.log(`❌ Unknown shift type: ${shiftType}`);
-    return false;
-  }
-  
-  // Validation rules based on day and special status
-  if (isSpecialDate) {
-    // Special dates allow: 9-4, 4-10, N (but not 12-10)
-    const allowedOnSpecial = ['9-4', '4-10', 'N'];
-    const isValid = allowedOnSpecial.includes(calendarShiftId);
-    console.log(`🔍 Special date validation: ${calendarShiftId} ${isValid ? 'allowed' : 'not allowed'}`);
-    return isValid;
-  } else {
-    // Regular day validation
-    if (dayOfWeek === 6) { // Saturday
-      const allowedOnSaturday = ['12-10', 'N'];
-      const isValid = allowedOnSaturday.includes(calendarShiftId);
-      console.log(`🔍 Saturday validation: ${calendarShiftId} ${isValid ? 'allowed' : 'not allowed'}`);
-      return isValid;
-    } else if (dayOfWeek === 0) { // Sunday
-      const allowedOnSunday = ['9-4', '4-10', 'N'];
-      const isValid = allowedOnSunday.includes(calendarShiftId);
-      console.log(`🔍 Sunday validation: ${calendarShiftId} ${isValid ? 'allowed' : 'not allowed'}`);
-      return isValid;
-    } else { // Weekdays (Monday-Friday)
-      const allowedOnWeekday = ['4-10', 'N'];
-      const isValid = allowedOnWeekday.includes(calendarShiftId);
-      console.log(`🔍 Weekday validation: ${calendarShiftId} ${isValid ? 'allowed' : 'not allowed'}`);
-      return isValid;
+export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab }) => {
+  const [activeView, setActiveView] = useState<ViewType>('table');
+  const [selectedShiftFilter, setSelectedShiftFilter] = useState<ShiftFilterType>('all');
+  const [selectedDate, setSelectedDate] = useState(() => {
+    // Try to restore from sessionStorage first
+    const savedDate = sessionStorage.getItem('rosterSelectedDate');
+    if (savedDate) {
+      return new Date(savedDate);
     }
-  }
-};
-
-/**
- * Checks if shift conflicts with existing shifts in calendar
- */
-export const checkShiftConflicts = (date: string, newShiftType: string, currentShifts: string[]): boolean => {
-  const shiftMapping: Record<string, string> = {
-    'Morning Shift (9-4)': '9-4',
-    'Evening Shift (4-10)': '4-10',
-    'Saturday Regular (12-10)': '12-10',
-    'Night Duty': 'N',
-    'Sunday/Public Holiday/Special': '9-4'
-  };
-  
-  const newShiftId = shiftMapping[newShiftType];
-  if (!newShiftId) return true; // Unknown shift = conflict
-  
-  // Check for conflicts
-  // 9-4 and 12-10 cannot overlap
-  if (newShiftId === '9-4' && currentShifts.includes('12-10')) return true;
-  if (newShiftId === '12-10' && currentShifts.includes('9-4')) return true;
-  
-  // 12-10 and 4-10 cannot overlap
-  if (newShiftId === '12-10' && currentShifts.includes('4-10')) return true;
-  if (newShiftId === '4-10' && currentShifts.includes('12-10')) return true;
-  
-  // Check if shift already exists
-  if (currentShifts.includes(newShiftId)) return true;
-  
-  return false; // No conflicts
-};
-
-/**
- * Determines if a date needs to be marked as special for the shift to be valid
- */
-export const requiresSpecialDate = (date: string, shiftType: string): boolean => {
-  const dateObj = new Date(date);
-  const dayOfWeek = dateObj.getDay();
-  
-  // Saturday with Morning Shift (9-4) requires special marking
-  if (dayOfWeek === 6 && shiftType === 'Morning Shift (9-4)') {
-    return true;
-  }
-  
-  // Weekday with Morning Shift (9-4) requires special marking
-  if (dayOfWeek >= 1 && dayOfWeek <= 5 && shiftType === 'Morning Shift (9-4)') {
-    return true;
-  }
-  
-  return false;
-};
-
-/**
- * Handle removal synchronization - remove shift from calendar
- */
-const handleRemovalSync = (
-  date: string,
-  shiftType: string,
-  assignedName: string,
-  options: Pick<RosterCalendarSyncOptions, 'calendarLabel' | 'schedule' | 'specialDates' | 'setSchedule' | 'setSpecialDates'>
-): boolean => {
-  const { calendarLabel, schedule, specialDates, setSchedule, setSpecialDates } = options;
-  
-  console.log('🗑️ rosterCalendarSync.ts: Processing removal for:', {
-    date,
-    shiftType,
-    assignedName,
-    calendarLabel
+    // Otherwise use current date
+    return new Date();
   });
-  
-  // CRITICAL: Only sync removal if the assigned name matches the calendar label
-  const assignedBaseName = assignedName.replace(/\(R\)$/, '').trim().toUpperCase();
-  const calendarBaseName = calendarLabel.replace(/\(R\)$/, '').trim().toUpperCase();
-  
-  console.log('🔍 rosterCalendarSync.ts: Removal name matching check:', {
-    assignedName,
-    calendarLabel,
-    assignedBaseName,
-    calendarBaseName,
-    namesMatch: assignedBaseName === calendarBaseName
-  });
-  
-  // If names don't match, don't sync removal to calendar
-  if (assignedBaseName !== calendarBaseName) {
-    console.log(`❌ rosterCalendarSync.ts: Names don't match for removal - skipping sync. Assigned: "${assignedBaseName}", Calendar: "${calendarBaseName}"`);
-    return false;
-  }
-  
-  console.log(`✅ rosterCalendarSync.ts: Names match for removal - proceeding with sync`);
-  
-  // Map roster shift type to calendar shift ID
-  const shiftMapping: Record<string, string> = {
-    'Morning Shift (9-4)': '9-4',
-    'Evening Shift (4-10)': '4-10',
-    'Saturday Regular (12-10)': '12-10',
-    'Night Duty': 'N',
-    'Sunday/Public Holiday/Special': '9-4'
-  };
-  
-  const calendarShiftId = shiftMapping[shiftType];
-  if (!calendarShiftId) {
-    console.log(`❌ rosterCalendarSync.ts: Cannot map shift type for removal: ${shiftType}`);
-    return false;
-  }
-  
-  // Get current shifts for this date
-  const currentShifts = schedule[date] || [];
-  console.log(`🔍 rosterCalendarSync.ts: Current shifts for ${date}:`, currentShifts);
-  
-  // Check if the shift exists in calendar
-  if (!currentShifts.includes(calendarShiftId)) {
-    console.log(`ℹ️ rosterCalendarSync.ts: Shift ${calendarShiftId} not found in calendar for ${date}`);
-    return false;
-  }
-  
-  // Remove the shift from calendar
-  console.log(`🗑️ rosterCalendarSync.ts: Removing shift ${calendarShiftId} from calendar on ${date}`);
-  setSchedule(prev => {
-    const newSchedule = { ...prev };
-    const updatedShifts = currentShifts.filter(shift => shift !== calendarShiftId);
-    
-    if (updatedShifts.length === 0) {
-      // If no shifts left, remove the date entry completely
-      delete newSchedule[date];
-    } else {
-      // Otherwise, update with remaining shifts
-      newSchedule[date] = updatedShifts;
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [entries, setEntries] = useState<RosterEntry[]>([]);
+  const [showPDFImport, setShowPDFImport] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [clearAuthCode, setClearAuthCode] = useState('');
+  const [clearAuthError, setClearAuthError] = useState('');
+  const [isClearing, setIsClearing] = useState(false);
+  const [clearType, setClearType] = useState<'all' | 'month'>('all');
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [showQuickActions, setShowQuickActions] = useState(false);
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authCode, setAuthCode] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [adminName, setAdminName] = useState<string | null>(null);
+
+  const { entries: fetchedEntries, loading, error, removeEntry, loadEntries, realtimeStatus } = useRosterData();
+
+
+  // Reset all loading states on component mount
+  useEffect(() => {
+    setIsClearing(false);
+    setShowClearConfirm(false);
+    setClearAuthCode('');
+    setClearAuthError('');
+    setShowAuthModal(false);
+    setAuthCode('');
+    setAuthError('');
+    // Force loading to false on mount
+    console.log('🔄 RosterPanel: Forcing loading states to false on mount');
+    console.log('🔄 RosterPanel: Reset all loading states on mount');
+  }, []);
+
+  // Prevent body scroll when auth modal is open
+  useEffect(() => {
+    if (showAuthModal || showClearConfirm || showPDFImport) {
+      // Disable body scroll
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = '0';
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.bottom = '0';
+      
+      // Don't disable any other scrolling - let modals handle their own scroll prevention
     }
-    
-    return newSchedule;
-  });
-  
-  // Check if we should remove special date marking
-  // Only remove special marking if no other shifts require it
-  const remainingShifts = currentShifts.filter(shift => shift !== calendarShiftId);
-  const stillNeedsSpecial = remainingShifts.some(shift => {
-    const remainingShiftType = Object.entries(shiftMapping).find(([_, id]) => id === shift)?.[0];
-    return remainingShiftType ? requiresSpecialDate(date, remainingShiftType) : false;
-  });
-  
-  if (!stillNeedsSpecial && specialDates[date]) {
-    console.log(`🗑️ rosterCalendarSync.ts: Removing special date marking for ${date}`);
-    setSpecialDates(prev => {
-      const newSpecialDates = { ...prev };
-      delete newSpecialDates[date];
-      return newSpecialDates;
-    });
-  }
-  
-  // Show removal notification
-  const notification = document.createElement('div');
-  notification.style.cssText = `
-    position: fixed;
-    top: 80px;
-    right: 20px;
-    background: #ef4444;
-    color: white;
-    padding: 12px 16px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    z-index: 999999;
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    animation: slideInRight 0.3s ease-out;
-  `;
-  
-  notification.innerHTML = `
-    📅 Calendar updated: ${shiftType} removed from ${date}
-    ${!stillNeedsSpecial ? '<br>📌 Special date marking removed' : ''}
-  `;
-  
-  document.body.appendChild(notification);
-  
-  // Auto-remove after 3 seconds
-  setTimeout(() => {
-    if (document.body.contains(notification)) {
-      notification.style.animation = 'slideInRight 0.3s ease-out reverse';
-      setTimeout(() => {
-        if (document.body.contains(notification)) {
-          document.body.removeChild(notification);
-        }
-      }, 300);
-    }
-  }, 3000);
-  
-  console.log(`✅ rosterCalendarSync.ts: Calendar removal completed for ${date}`);
-  return true;
-};
 
-/**
- * Main synchronization function
- */
-export const syncRosterToCalendar = (
-  rosterChange: RosterChangeEvent,
-  options: RosterCalendarSyncOptions
-): boolean => {
-  const { calendarLabel, schedule, specialDates, setSchedule, setSpecialDates } = options;
-  const { date, shiftType, assignedName, editorName, action } = rosterChange;
-  
-  console.log('🔄 rosterCalendarSync.ts: Sync triggered with data:', {
-    date,
-    shiftType,
-    assignedName,
-    editorName,
-    action,
-    calendarLabel,
-    assignedName,
-    calendarLabel,
-    currentScheduleKeys: Object.keys(schedule).length,
-    currentSpecialDates: Object.keys(specialDates).length
-  });
-  
-  // CRITICAL: Only sync if the assigned name matches the calendar label
-  // This prevents other people's roster changes from affecting your personal calendar
-  const assignedBaseName = assignedName.replace(/\(R\)$/, '').trim().toUpperCase();
-  const calendarBaseName = calendarLabel.replace(/\(R\)$/, '').trim().toUpperCase();
-  
-  console.log('🔍 rosterCalendarSync.ts: Name matching check:', {
-    assignedName,
-    calendarLabel,
-    assignedBaseName,
-    calendarBaseName,
-    namesMatch: assignedBaseName === calendarBaseName
-  });
-  
-  // If names don't match, don't sync to calendar
-  if (assignedBaseName !== calendarBaseName) {
-    console.log(`❌ rosterCalendarSync.ts: Names don't match - skipping sync. Assigned: "${assignedBaseName}", Calendar: "${calendarBaseName}"`);
-    return false;
-  }
-  
-  console.log(`✅ rosterCalendarSync.ts: Names match - proceeding with sync`);
-  
-  // Handle removal action
-  if (action === 'removed') {
-    console.log('🗑️ rosterCalendarSync.ts: Processing removal action');
-    return handleRemovalSync(date, shiftType, assignedName, { calendarLabel, schedule, specialDates, setSchedule, setSpecialDates });
-  }
-  
-  // Check if this date needs special marking for the shift to be valid
-  const needsSpecial = requiresSpecialDate(date, shiftType);
-  const currentIsSpecial = specialDates[date] === true;
-  
-  console.log('🔍 rosterCalendarSync.ts: Special date analysis:', {
-    date,
-    shiftType,
-    needsSpecial,
-    dayOfWeek: new Date(date).getDay()
-  });
-  
-  // Determine final special date status
-  const finalSpecialStatus = needsSpecial || currentIsSpecial;
-  
-  // Validate the shift for this date
-  const shiftMapping: Record<string, string> = {
-    'Morning Shift (9-4)': '9-4',
-    'Evening Shift (4-10)': '4-10',
-    'Saturday Regular (12-10)': '12-10',
-    'Night Duty': 'N',
-    'Sunday/Public Holiday/Special': '9-4'
+    return () => {
+      // Re-enable body scroll
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.bottom = '';
+    };
+  }, [showAuthModal, showClearConfirm, showPDFImport]);
+
+  // Update local entries when fetched entries change
+  useEffect(() => {
+    if (fetchedEntries) {
+      setEntries(fetchedEntries);
+    }
+  }, [fetchedEntries]);
+
+  // Admin validation - only N002 (NARAYYA) can clear database
+  // Import admin validation from rosterAuth
+  const showSuccess = (message: string) => {
+    setSuccessMessage(message);
+    setShowSuccessMessage(true);
+    setTimeout(() => setShowSuccessMessage(false), 3000);
   };
-  
-  const calendarShiftId = shiftMapping[shiftType];
-  if (!calendarShiftId) {
-    console.log(`❌ rosterCalendarSync.ts: Cannot map shift type: ${shiftType}`);
-    return false;
-  }
-  
-  // Get current shifts for this date
-  const currentShifts = schedule[date] || [];
-  console.log(`🔍 rosterCalendarSync.ts: Current shifts for ${date}:`, currentShifts);
-  
-  // Check for conflicts
-  if (checkShiftConflicts(date, shiftType, currentShifts)) {
-    console.log(`❌ rosterCalendarSync.ts: Shift conflict detected for ${calendarShiftId} on ${date} with existing shifts:`, currentShifts);
-    return false; // Don't sync if there are conflicts
-    return false; // Don't sync if there are conflicts
-    return false; // Don't sync if there are conflicts
-  }
-  
-  // Apply changes to calendar
-  let calendarUpdated = false;
-  
-  if (needsSpecial && !currentIsSpecial) {
-    console.log(`✅ rosterCalendarSync.ts: Marking ${date} as special date`);
-    setSpecialDates(prev => ({
-      ...prev,
-      [date]: true
-    }));
-    calendarUpdated = true;
-  }
-  
-  // Add shift to calendar if not already present
-  if (!currentShifts.includes(calendarShiftId)) {
-    console.log(`✅ rosterCalendarSync.ts: Adding shift ${calendarShiftId} to calendar on ${date}`);
-    setSchedule(prev => ({
-      ...prev,
-      [date]: [...currentShifts, calendarShiftId]
-    }));
-    calendarUpdated = true;
-  } else {
-    console.log(`ℹ️ rosterCalendarSync.ts: Shift ${calendarShiftId} already exists in calendar on ${date}`);
-  }
-  
-  if (calendarUpdated) {
-    // Show success notification
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-      position: fixed;
-      top: 80px;
-      right: 20px;
-      background: #10b981;
-      color: white;
-      padding: 12px 16px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      z-index: 999999;
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 14px;
-      font-weight: 500;
-      animation: slideInRight 0.3s ease-out;
-    `;
-    
-    notification.innerHTML = `
-      📅 Calendar updated: ${shiftType} added to ${date}
-      ${needsSpecial ? '<br>📌 Date marked as special' : ''}
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Auto-remove after 3 seconds
-    setTimeout(() => {
-      if (document.body.contains(notification)) {
-        notification.style.animation = 'slideInRight 0.3s ease-out reverse';
-        setTimeout(() => {
-          if (document.body.contains(notification)) {
-            document.body.removeChild(notification);
+
+  const handleDeleteEntry = (id: string) => {
+    setShowDeleteConfirm(id);
+  };
+
+  const handleConfirmDelete = async (id: string) => {
+    try {
+      await removeEntry(id);
+      setShowDeleteConfirm(null);
+      showSuccess('Roster entry deleted successfully!');
+    } catch (err) {
+      console.error('Error deleting entry:', err);
+      alert('Failed to delete entry. Please try again.');
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(null);
+  };
+
+  const handlePDFImport = async (pdfEntries: RosterFormData[], editorName: string) => {
+    try {
+      console.log('📄 Starting PDF import of', pdfEntries.length, 'entries');
+      
+      let successCount = 0;
+      let errorCount = 0;
+      let importedMonth: number | null = null;
+      let importedYear: number | null = null;
+      
+      for (const entry of pdfEntries) {
+        try {
+          await addRosterEntry(entry, editorName);
+          successCount++;
+          
+          // Track the month/year of imported entries
+          if (importedMonth === null) {
+            const entryDate = new Date(entry.date);
+            importedMonth = entryDate.getMonth();
+            importedYear = entryDate.getFullYear();
           }
-        }, 300);
+        } catch (error) {
+          console.error('❌ Failed to import entry:', entry, error);
+          errorCount++;
+        }
       }
-    }, 3000);
-  }
-  
-  return calendarUpdated;
+      
+      // Refresh data
+      await loadEntries();
+      setRefreshKey(prev => prev + 1);
+      
+      // Navigate to imported month
+      if (importedMonth !== null && importedYear !== null) {
+        // Switch to calendar tab and navigate to imported month
+        setActiveTab('calendar');
+        
+        // Dispatch event to navigate calendar to imported month
+        window.dispatchEvent(new CustomEvent('navigateToMonth', {
+          detail: { month: importedMonth, year: importedYear }
+        }));
+      }
+      
+      showSuccess(`PDF import completed: ${successCount} entries added${errorCount > 0 ? `, ${errorCount} failed` : ''}`);
+    } catch (error) {
+      console.error('❌ PDF import failed:', error);
+      alert('PDF import failed. Please try again.');
+    }
+  };
+
+  const handleClearDatabase = async () => {
+    console.log('🗑️ Starting clear database operation...');
+    setIsClearing(true);
+    setClearAuthError('');
+    
+    try {
+      console.log(`🗑️ Starting ${clearType} database clear operation...`);
+      
+      if (clearType === 'all') {
+        console.log('🗑️ Clearing ALL roster entries...');
+        await clearAllRosterEntries();
+        console.log('✅ All entries cleared successfully');
+      } else {
+        console.log(`🗑️ Clearing ${selectedMonth + 1}/${selectedYear} entries...`);
+        await clearMonthRosterEntries(selectedYear, selectedMonth);
+        console.log(`✅ Month ${selectedMonth + 1}/${selectedYear} cleared successfully`);
+      }
+      
+      console.log('🔄 Refreshing data after clear...');
+      // Wait for the operation to complete
+      await loadEntries();
+      setRefreshKey(prev => prev + 1);
+      console.log('✅ Data refresh completed');
+      
+      // CRITICAL: Reset loading state IMMEDIATELY after success
+      setIsClearing(false);
+      console.log('✅ Loading state reset to false');
+      
+      const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      const message = clearType === 'all' 
+        ? 'Database cleared successfully!' 
+        : `${monthNames[selectedMonth]} ${selectedYear} data cleared successfully!`;
+      showSuccess(message);
+      
+      // Reset states and close modal after success
+      setTimeout(() => {
+        setShowClearConfirm(false);
+        setClearAuthCode('');
+        setClearType('all');
+        // Double-check loading state is false
+        setIsClearing(false);
+        console.log('✅ Modal closed and all states reset');
+      }, 100);
+      
+    } catch (error) {
+      console.error('❌ Failed to clear database:', error);
+      // CRITICAL: Reset loading state IMMEDIATELY on error
+      setIsClearing(false);
+      console.log('❌ Loading state reset to false after error');
+      setClearAuthError('Failed to clear database. Please try again.');
+    }
+  };
+
+  const handleCancelClear = () => {
+    console.log('❌ Clear operation cancelled by user');
+    // CRITICAL: Reset loading state when cancelling
+    setIsClearing(false);
+    setShowClearConfirm(false);
+    setClearType('all');
+    setClearAuthCode('');
+    setClearAuthError('');
+    console.log('✅ All clear states reset after cancel');
+  };
+
+  // Handle authentication for long press
+  const handleAuthSubmit = () => {
+    const editorName = validateAuthCode(authCode);
+    if (!editorName || !isAdminCode(authCode)) {
+      setAuthError(!editorName ? 'Invalid authentication code' : 'Admin access required');
+      return;
+    }
+    
+    setIsAdminAuthenticated(true);
+    setAdminName(editorName);
+    setShowAuthModal(false);
+    setAuthError('');
+    setAuthCode('');
+    setShowQuickActions(true);
+  };
+
+  const handleCancelAuth = () => {
+    setShowAuthModal(false);
+    setAuthCode('');
+    setAuthError('');
+  };
+
+  return (
+    <div className="bg-white" style={{
+      width: '100vw',
+      marginLeft: 'calc(-50vw + 50%)',
+      marginRight: 'calc(-50vw + 50%)',
+      paddingTop: '0px'
+    }}>
+      {/* Header */}
+      <div className="p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          <div className="flex-1 flex justify-center">
+            <h2 className="text-2xl font-bold text-gray-900">Roster Management</h2>
+          </div>
+          <button
+            onClick={() => setShowPDFImport(true)}
+            {...useLongPress({
+              onLongPress: () => setShowAuthModal(true),
+              delay: 800
+            })}
+            className="p-3 rounded-full bg-indigo-100 hover:bg-indigo-200 text-indigo-600 transition-colors duration-200 relative z-50"
+            style={{
+              touchAction: 'manipulation',
+              WebkitTapHighlightColor: 'transparent',
+              position: 'relative',
+              zIndex: 50,
+              // Force proper rendering after orientation change
+              transform: 'translate3d(0,0,0)',
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+              WebkitTransform: 'translate3d(0,0,0)',
+              // iPhone specific fixes
+              WebkitTouchCallout: 'none',
+              WebkitUserSelect: 'none',
+              userSelect: 'none'
+            }}
+            title={isAdminAuthenticated ? "Import from PDF (authenticated)" : "Import from PDF (long press for more options)"}
+          >
+            <Server className="w-6 h-6" />
+          </button>
+        </div>
+      </div>
+        
+      {/* Success Message */}
+      {showSuccessMessage && (
+        <div className="mx-6 mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-center space-x-2">
+            <CheckCircle className="w-5 h-5 text-green-600" />
+            <span className="text-green-800 font-medium">{successMessage}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Error Message */}
+      {error && (
+        <div className="mx-6 mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-800">{error}</p>
+        </div>
+      )}
+
+      {/* View Tabs */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="flex">
+          <button
+            onClick={() => setActiveView('table')}
+            className={`flex-1 px-6 py-4 font-medium transition-colors duration-200 flex items-center justify-center space-x-2 ${
+              activeView === 'table'
+                ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50'
+                : 'text-gray-600'
+            }`}
+          >
+            <Table className="w-4 h-4" />
+            <span>Table View</span>
+          </button>
+          <button
+            onClick={() => setActiveView('card')}
+            className={`flex-1 px-6 py-4 font-medium transition-colors duration-200 flex items-center justify-center space-x-2 ${
+              activeView === 'card'
+                ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50'
+                : 'text-gray-600'
+            }`}
+          >
+            <Grid className="w-4 h-4" />
+            <span>Card View</span>
+          </button>
+          <button
+            onClick={() => setActiveView('log')}
+            className={`flex-1 px-6 py-4 font-medium transition-colors duration-200 flex items-center justify-center space-x-2 ${
+              activeView === 'log'
+                ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50'
+                : 'text-gray-600'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            <span>Log View</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="p-6">
+        {activeView === 'table' ? (
+          <RosterTableView
+            entries={entries}
+            loading={loading && entries.length === 0}
+            realtimeStatus={realtimeStatus}
+            onRefresh={loadEntries}
+            selectedDate={selectedDate}
+            onDateChange={setSelectedDate}
+            key={refreshKey}
+          />
+        ) : activeView === 'card' ? (
+          <RosterCardView
+            entries={entries}
+            loading={loading}
+            realtimeStatus={realtimeStatus}
+            onRefresh={loadEntries}
+            selectedDate={selectedDate}
+            onDateChange={setSelectedDate}
+          />
+        ) : activeView === 'log' ? (
+          <RosterLogView
+            entries={entries}
+            loading={loading && entries.length === 0}
+            selectedDate={selectedDate}
+          />
+        ) : null}
+      </div>
+      
+      {/* PDF Import Modal */}
+      <PDFImportModal
+        isOpen={showPDFImport}
+        onClose={() => setShowPDFImport(false)}
+        onImport={handlePDFImport}
+        isAdminAuthenticated={isAdminAuthenticated}
+        adminName={adminName}
+      />
+      
+      {/* Clear Database Confirmation Modal */}
+      {showClearConfirm && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-[9999]" style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'center',
+          padding: window.innerWidth > window.innerHeight ? '4px' : '16px',
+          paddingTop: window.innerWidth > window.innerHeight ? '2px' : '16px',
+          overflow: 'auto',
+          overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          touchAction: 'pan-y'
+        }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full" style={{
+            maxWidth: window.innerWidth > window.innerHeight ? '98vw' : '28rem',
+            maxHeight: window.innerWidth > window.innerHeight ? '98vh' : 'none',
+            margin: window.innerWidth > window.innerHeight ? '2px 0' : '16px 0'
+          }}>
+            <div style={{
+              padding: window.innerWidth > window.innerHeight ? '8px' : '24px'
+            }}>
+              <div className="flex items-center justify-center space-x-3 mb-4">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <Trash2 className="w-6 h-6 text-red-600" />
+                </div>
+              </div>
+              
+              <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
+                {clearType === 'all' ? 'Clear Entire Database' : 'Clear Month Data'}
+              </h3>
+              
+              {/* Clear Type Selection */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Clear Type
+                </label>
+                <div className="flex space-x-3">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="all"
+                      checked={clearType === 'all'}
+                      onChange={(e) => setClearType(e.target.value as 'all' | 'month')}
+                      className="mr-2"
+                    />
+                    <span className="text-sm">All Data</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="month"
+                      checked={clearType === 'month'}
+                      onChange={(e) => setClearType(e.target.value as 'all' | 'month')}
+                      className="mr-2"
+                    />
+                    <span className="text-sm">Specific Month</span>
+                  </label>
+                </div>
+              </div>
+              
+              {/* Month/Year Selection - Only show when clearType is 'month' */}
+              {clearType === 'month' && (
+                <div className="mb-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Month
+                      </label>
+                      <select
+                        value={selectedMonth}
+                        onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                      >
+                        {[
+                          'January', 'February', 'March', 'April', 'May', 'June',
+                          'July', 'August', 'September', 'October', 'November', 'December'
+                        ].map((month, index) => (
+                          <option key={index} value={index}>{month}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Year
+                      </label>
+                      <select
+                        value={selectedYear}
+                        onChange={(e) => setSelectedYear(Number(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                      >
+                        {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map(year => (
+                          <option key={year} value={year}>{year}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-start space-x-3">
+                  <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm text-red-800 font-medium mb-2">
+                      ⚠️ DANGER: This will permanently delete {clearType === 'all' ? 'ALL roster entries' : `all entries for ${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][selectedMonth]} ${selectedYear}`}!
+                    </p>
+                    <ul className="text-sm text-red-700 space-y-1">
+                      {clearType === 'all' ? (
+                        <>
+                          <li>• All dates and shift assignments</li>
+                          <li>• All edit history and logs</li>
+                          <li>• All imported data</li>
+                        </>
+                      ) : (
+                        <>
+                          <li>• All shifts for {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][selectedMonth]} {selectedYear}</li>
+                          <li>• All edit history for that month</li>
+                          <li>• All staff assignments for that month</li>
+                        </>
+                      )}
+                      <li>• This action CANNOT be undone!</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleCancelClear}
+                  disabled={isClearing}
+                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleClearDatabase}
+                  disabled={isClearing}
+                  className={`flex-1 px-4 py-3 ${clearType === 'all' ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-600 hover:bg-orange-700'} disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2`}
+                >
+                  {isClearing ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>{clearType === 'all' ? 'Clearing all data...' : 'Clearing month...'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4" />
+                      <span>{clearType === 'all' ? 'Clear Database' : 'Clear Month'}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+              
+              {/* Show auth error in the modal */}
+              {clearAuthError && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-700 text-center">{clearAuthError}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        , document.body
+      )}
+      
+      {/* Authentication Modal for Long Press */}
+      {showAuthModal && createPortal(
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-[9999]"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 2147483647, // Maximum z-index
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            display: 'flex',
+            alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
+            justifyContent: 'center',
+            padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
+            paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
+            // CRITICAL: Prevent all scrolling
+            overflow: 'auto',
+            overflowY: 'auto',
+            touchAction: 'pan-y',
+            WebkitOverflowScrolling: 'touch'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              handleCancelAuth();
+            }
+          }}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl w-full"
+            style={{
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
+              maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
+              display: 'flex',
+              flexDirection: 'column',
+              backgroundColor: '#ffffff',
+              zIndex: 2147483647,
+              // Enable touch interactions within modal
+              touchAction: 'auto',
+              overflow: 'hidden',
+              margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0'
+            }}
+            onClick={(e) => {
+              // Prevent modal from closing when clicking inside
+              e.stopPropagation();
+            }}
+          >
+            <div style={{
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
+            }}>
+              <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
+                Admin Authentication Required
+              </h3>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Authentication Code
+                </label>
+                <input
+                  type="text"
+                  value={authCode}
+                  onChange={(e) => setAuthCode(e.target.value.toUpperCase())}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center font-mono text-lg"
+                  placeholder="Enter admin code"
+                  maxLength={4}
+                  autoComplete="off"
+                  autoFocus
+                />
+              </div>
+              
+              {authError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-700 text-center">{authError}</p>
+                </div>
+              )}
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleCancelAuth}
+                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAuthSubmit}
+                  disabled={authCode.length < 4 || !isAdminCode(authCode)}
+                  className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200"
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        , document.body
+      )}
+      
+      {/* Quick Actions Modal (Long-press triggered) */}
+      {showQuickActions && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-[9999]" style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'center',
+          padding: window.innerWidth > window.innerHeight ? '4px' : '16px',
+          paddingTop: window.innerWidth > window.innerHeight ? '2px' : '16px',
+          overflow: 'auto',
+          overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          touchAction: 'pan-y'
+        }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full" style={{
+            maxHeight: window.innerWidth > window.innerHeight ? '98vh' : '90vh',
+            maxWidth: window.innerWidth > window.innerHeight ? '98vw' : '28rem',
+            margin: window.innerWidth > window.innerHeight ? '2px 0' : '16px 0'
+          }}>
+            <div style={{
+              padding: window.innerWidth > window.innerHeight ? '8px' : '24px'
+            }}>
+              <div className="flex items-center justify-center space-x-3 mb-4">
+                <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
+                  <Server className="w-6 h-6 text-indigo-600" />
+                </div>
+              </div>
+              
+              <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
+                Quick Actions
+              </h3>
+              
+              <div className="space-y-3">
+                <button
+                  onClick={() => {
+                    setShowQuickActions(false);
+                    setShowPDFImport(true);
+                  }}
+                  className="w-full flex items-center space-x-3 px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg font-medium transition-colors duration-200"
+                >
+                  <Upload className="w-5 h-5" />
+                  <span>Import from PDF</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setShowQuickActions(false);
+                    setClearType('all');
+                    setShowClearConfirm(true);
+                  }}
+                  className="w-full flex items-center space-x-3 px-4 py-3 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg font-medium transition-colors duration-200"
+                >
+                  <Trash2 className="w-5 h-5" />
+                  <span>Clear Database</span>
+                </button>
+              </div>
+              
+              <div className="mt-6">
+                <button
+                  onClick={() => setShowQuickActions(false)}
+                  className="w-full px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        , document.body
+      )}
+    </div>
+  );
 };
