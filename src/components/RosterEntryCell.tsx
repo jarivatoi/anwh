@@ -453,7 +453,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
               <p className="text-indigo-600 text-center" style={{
                 fontSize: window.innerWidth > window.innerHeight ? '12px' : '14px' // Smaller text in landscape
               }}>
-               Enter your code
+               Enter your authentication code
               </p>
             </div>
               
@@ -476,7 +476,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
             >
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Authentication Code
+                  Your Authentication Code
                 </label>
                 <div className="relative">
                 <input
@@ -484,7 +484,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
                   value={authCode}
                   onChange={(e) => setAuthCode(e.target.value.toUpperCase())}
                   className="w-full px-4 py-4 border-2 border-indigo-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 text-center font-mono text-xl tracking-widest bg-gradient-to-r from-indigo-50 to-blue-50 transition-all duration-200 shadow-inner"
-                  placeholder="Enter admin code"
+                  placeholder="Enter your code"
                   maxLength={4}
                   autoComplete="off"
                   style={{
