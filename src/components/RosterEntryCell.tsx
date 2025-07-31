@@ -8,6 +8,7 @@ import { updateRosterEntry } from '../utils/rosterApi';
 import { parseNameChange, isPastDate } from '../utils/rosterHelpers';
 import { ScrollingText } from './ScrollingText';
 import { StaffSelectionModal } from './StaffSelectionModal';
+import { gsap } from 'gsap';
 
 interface RosterEntryCellProps {
   entry: RosterEntry;
@@ -31,6 +32,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
   const [showStaffModal, setShowStaffModal] = useState(false);
   const selectRef = useRef<HTMLSelectElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  const cellRef = useRef<HTMLDivElement>(null);
 
   // Get available staff (excluding others already working this shift, including same base names)
   const getAvailableStaff = () => {
@@ -216,6 +218,33 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
       entry.last_edited_at = updatedEntry.last_edited_at;
       entry.change_description = updatedEntry.change_description;
       
+      // Add bounce animation to highlight the change
+      if (cellRef.current) {
+        gsap.fromTo(cellRef.current,
+          {
+            scale: 1,
+            backgroundColor: '#fef2f2', // Light red background
+            force3D: true
+          },
+          {
+            scale: 1.05,
+            duration: 0.2,
+            ease: "back.out(1.7)",
+            yoyo: true,
+            repeat: 1,
+            force3D: true,
+            onComplete: () => {
+              // Fade background back to normal
+              gsap.to(cellRef.current, {
+                backgroundColor: 'transparent',
+                duration: 0.5,
+                ease: "power2.out"
+              });
+            }
+          }
+        );
+      }
+      
       // Call parent update callback with updated entry
       onUpdate?.(updatedEntry);
       
@@ -280,6 +309,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
   return (
     <>
       <div 
+        ref={cellRef}
         className={`text-center rounded p-1 sm:p-2 transition-colors w-full flex items-center justify-center ${
           'cursor-pointer'
         }`}

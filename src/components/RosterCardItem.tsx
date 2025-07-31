@@ -9,6 +9,7 @@ import { ScrollingText } from './ScrollingText';
 import { isPastDate } from '../utils/rosterHelpers';
 import { updateRosterEntry } from '../utils/rosterApi';
 import { StaffSelectionModal } from './StaffSelectionModal';
+import { gsap } from 'gsap';
 
 interface RosterCardItemProps {
   entry: RosterEntry;
@@ -31,6 +32,7 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
   const selectRef = useRef<HTMLSelectElement>(null);
   const [showStaffModal, setShowStaffModal] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   // Get available staff (excluding others already working this shift, including same base names)
   const getAvailableStaff = () => {
@@ -189,6 +191,33 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
       entry.last_edited_at = updatedEntry.last_edited_at;
       entry.change_description = updatedEntry.change_description;
       
+      // Add bounce animation to highlight the change
+      if (cardRef.current) {
+        gsap.fromTo(cardRef.current,
+          {
+            scale: 1,
+            backgroundColor: '#fef2f2', // Light red background
+            force3D: true
+          },
+          {
+            scale: 1.08,
+            duration: 0.25,
+            ease: "back.out(1.7)",
+            yoyo: true,
+            repeat: 1,
+            force3D: true,
+            onComplete: () => {
+              // Fade background back to normal
+              gsap.to(cardRef.current, {
+                backgroundColor: 'transparent',
+                duration: 0.6,
+                ease: "power2.out"
+              });
+            }
+          }
+        );
+      }
+      
       // Call parent update callback with updated entry
       onUpdate?.(updatedEntry);
       
@@ -237,6 +266,7 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
   return (
     <>
       <div 
+        ref={cardRef}
         className={`text-center rounded p-1 sm:p-2 transition-colors w-full flex items-center justify-center min-h-[28px] ${
           'cursor-pointer'
         }`}
