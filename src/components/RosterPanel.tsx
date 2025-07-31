@@ -343,8 +343,6 @@ export const syncRosterToCalendar = (
   if (checkShiftConflicts(date, shiftType, currentShifts)) {
     console.log(`❌ rosterCalendarSync.ts: Shift conflict detected for ${calendarShiftId} on ${date} with existing shifts:`, currentShifts);
     return false; // Don't sync if there are conflicts
-    return false; // Don't sync if there are conflicts
-    return false; // Don't sync if there are conflicts
   }
   
   // Apply changes to calendar
