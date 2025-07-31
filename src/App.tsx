@@ -14,6 +14,7 @@ import { AddToHomescreen } from './utils/addToHomescreen';
 import { DaySchedule, SpecialDates, Settings, ExportData } from './types';
 import { gsap } from 'gsap';
 import { RosterPanel } from './components/RosterPanel';
+import { syncRosterToCalendar } from './utils/rosterCalendarSync';
 
 function App() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -236,6 +237,39 @@ function App() {
     // FIXED: Force refresh calculations when shifts change
     setRefreshKey(prev => prev + 1);
   };
+
+  // Handle roster to calendar synchronization
+  const handleRosterCalendarSync = useCallback((event: CustomEvent) => {
+    const rosterChange = event.detail;
+    
+    // Only sync if we're currently on the calendar tab
+    if (activeTab !== 'calendar') {
+      console.log('⏭️ Not on calendar tab, skipping sync');
+      return;
+    }
+    
+    console.log('🔄 Processing roster change for calendar sync:', rosterChange);
+    
+    const syncResult = syncRosterToCalendar(rosterChange, {
+      calendarLabel: scheduleTitle, // Use the calendar title as the label
+      schedule,
+      specialDates,
+      setSchedule,
+      setSpecialDates
+    });
+    
+    if (syncResult) {
+      // Force refresh calculations after sync
+      setRefreshKey(prev => prev + 1);
+      console.log('✅ Calendar synchronized with roster change');
+    }
+  }, [activeTab, scheduleTitle, schedule, specialDates, setSchedule, setSpecialDates]);
+
+  // Listen for roster changes
+  useEffect(() => {
+    window.addEventListener('rosterCalendarSync', handleRosterCalendarSync as EventListener);
+    return () => window.removeEventListener('rosterCalendarSync', handleRosterCalendarSync as EventListener);
+  }, [handleRosterCalendarSync]);
 
   // Handle showing clear date modal
   const toggleSpecialDate = useCallback((dateKey: string, isSpecial: boolean) => {

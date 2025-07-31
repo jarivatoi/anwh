@@ -103,6 +103,18 @@ export const updateRosterEntry = async (id: string, formData: RosterFormData, ed
     }
 
     console.log('✅ Successfully updated roster entry:', data);
+    
+    // Dispatch event for calendar synchronization
+    window.dispatchEvent(new CustomEvent('rosterCalendarSync', {
+      detail: {
+        date: formData.date,
+        shiftType: formData.shiftType,
+        assignedName: formData.assignedName,
+        editorName: editorName,
+        action: 'updated'
+      }
+    }));
+    
     return data;
   } catch (error) {
     console.error('❌ Network error updating roster entry:', error);
