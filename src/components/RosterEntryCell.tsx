@@ -453,7 +453,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
               <p className="text-indigo-600 text-center" style={{
                 fontSize: window.innerWidth > window.innerHeight ? '12px' : '14px' // Smaller text in landscape
               }}>
-                Enter your authentication code to edit this entry
+               Enter your code
               </p>
             </div>
               
