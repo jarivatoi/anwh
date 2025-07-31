@@ -52,7 +52,7 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
         setNeedsScrolling(true);
         
         // Calculate scroll distance (how much text extends beyond container)
-        const scrollDistance = textWidth - containerWidth + 20; // Add 20px padding
+        const scrollDistance = textWidth - containerWidth + 2; // Add 2px end padding
         
         // Create GSAP timeline with your specified timing
         const timeline = gsap.timeline({ 
