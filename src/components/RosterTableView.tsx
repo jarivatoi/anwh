@@ -1,1039 +1,414 @@
-import React from 'react';
-import { createPortal } from 'react-dom';
-import { Calendar, User, ChevronLeft, ChevronRight, Edit, RotateCcw } from 'lucide-react';
-import { RosterEntry, ShiftFilterType } from '../types/roster';
-import { formatDisplayDate } from '../utils/rosterFilters';
-import { RosterEntryCell } from './RosterEntryCell';
-import { useState, useEffect, useRef } from 'react';
-import { useRosterData } from '../hooks/useRosterData';
-import { availableNames, validateAuthCode, shiftTypes } from '../utils/rosterAuth';
-import { isAdminCode } from '../utils/rosterAuth';
-import { addRosterEntry, deleteRosterEntry } from '../utils/rosterApi';
-import { RosterDateCell } from './RosterDateCell';
-import { EditDetailsModal } from './EditDetailsModal';
+import { DaySchedule, SpecialDates } from '../types';
 
-interface RosterTableViewProps {
-  entries: RosterEntry[];
-  loading: boolean;
-  realtimeStatus: 'connecting' | 'connected' | 'error' | 'disconnected';
-  onRefresh?: () => Promise<void>;
+export interface RosterCalendarSyncOptions {
+  calendarLabel: string;
+  schedule: DaySchedule;
+  specialDates: SpecialDates;
+  setSchedule: (schedule: DaySchedule | ((prev: DaySchedule) => DaySchedule)) => void;
+  setSpecialDates: (specialDates: SpecialDates | ((prev: SpecialDates) => SpecialDates)) => void;
 }
 
-export const RosterTableView: React.FC<RosterTableViewProps> = ({
-  entries,
-  loading,
-  realtimeStatus,
-  onRefresh,
-  selectedDate,
-  onDateChange
-}) => {
-  // All hooks must be declared at the top level before any conditional returns
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [hasAutoScrolled, setHasAutoScrolled] = useState(false);
-  const [editingDate, setEditingDate] = useState<string | null>(null);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authCode, setAuthCode] = useState('');
-  const [authError, setAuthError] = useState('');
-  const [selectedShift, setSelectedShift] = useState<string>('');
-  const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedEntry, setSelectedEntry] = useState<RosterEntry | null>(null);
-  const [hasInitialLoad, setHasInitialLoad] = useState(false);
-  const [isReloading, setIsReloading] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [lastUpdateTime, setLastUpdateTime] = useState<string>('');
+export interface RosterChangeEvent {
+  date: string;
+  shiftType: string;
+  assignedName: string;
+  editorName: string;
+  action: 'added' | 'updated' | 'removed';
+}
+
+/**
+ * Validates if a shift is allowed on a specific date
+ */
+export const validateShiftForDate = (date: string, shiftType: string, isSpecialDate: boolean): boolean => {
+  const dateObj = new Date(date);
+  const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 6 = Saturday
   
-  const tableRef = useRef<HTMLDivElement>(null);
-  const isMountedRef = useRef(false);
-
-  // Track mounted status
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
+  console.log(`🔍 Validating shift: ${shiftType} on ${date} (day ${dayOfWeek}, special: ${isSpecialDate})`);
   
-  // iPhone orientation change handler
-  useEffect(() => {
-    const handleOrientationChange = () => {
-      console.log('📱 Orientation change detected, fixing roster table...');
-      
-      // Fix UI issues without database calls
-      setTimeout(() => {
-        // Only fix UI elements, no database operations
-        document.body.style.overflow = '';
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.left = '';
-        document.body.style.right = '';
-        document.body.style.bottom = '';
-        
-        // Ensure table container maintains proper scrolling
-        if (tableRef.current) {
-          const container = tableRef.current;
-          // Force reset scrolling properties
-          container.style.overflow = 'auto';
-          container.style.overflowX = 'auto';
-          container.style.overflowY = 'auto';
-          container.style.WebkitOverflowScrolling = 'touch';
-          container.style.touchAction = 'auto';
-          container.style.pointerEvents = 'auto';
-          
-          // Force reflow
-          container.offsetHeight;
-          console.log('📱 Table container scrolling restored');
-        }
-        
-        // Ensure all roster containers can scroll
-        const rosterContainers = document.querySelectorAll('[style*="height: 70vh"], [style*="height: 60vh"]');
-        rosterContainers.forEach(container => {
-          const el = container as HTMLElement;
-          el.style.overflow = 'auto';
-          el.style.overflowY = 'auto';
-          el.style.WebkitOverflowScrolling = 'touch';
-          el.style.touchAction = 'auto';
-          el.style.pointerEvents = 'auto';
-        });
-        
-        // Force repaint of all interactive elements
-        const interactiveElements = document.querySelectorAll('button, [role="button"], input, select');
-        interactiveElements.forEach(element => {
-          const el = element as HTMLElement;
-          // Reset any disabled touch actions
-          el.style.touchAction = 'manipulation';
-          el.style.pointerEvents = 'auto';
-          el.style.transform = 'translateZ(0)';
-          el.style.backfaceVisibility = 'hidden';
-          el.style.WebkitBackfaceVisibility = 'hidden';
-          el.style.WebkitTransform = 'translateZ(0)';
-        });
-        
-        // Force repaint of sticky headers
-        const stickyHeaders = document.querySelectorAll('[style*="position: sticky"]');
-        stickyHeaders.forEach(header => {
-          const el = header as HTMLElement;
-          el.style.pointerEvents = 'auto';
-          el.style.transform = 'translateZ(0)';
-          el.style.backfaceVisibility = 'hidden';
-          el.style.WebkitBackfaceVisibility = 'hidden';
-          el.style.WebkitTransform = 'translateZ(0)';
-        });
-        
-        console.log('📱 All interactive elements restored');
-        
-      }, 100);
-    };
-
-    // Listen for orientation changes
-    window.addEventListener('orientationchange', handleOrientationChange);
-    window.addEventListener('resize', handleOrientationChange);
-    
-    return () => {
-      window.removeEventListener('orientationchange', handleOrientationChange);
-      window.removeEventListener('resize', handleOrientationChange);
-    };
-  }, []);
-
-
-
-  // Auto-scroll to today's date ONLY on initial component mount
-  useEffect(() => {
-    if (!loading && !hasAutoScrolled && entries.length > 0 && selectedDate.getMonth() === new Date().getMonth() && selectedDate.getFullYear() === new Date().getFullYear()) {
-      const today = new Date();
-      const todayString = today.toISOString().split('T')[0]; // YYYY-MM-DD format
-      
-      // Check if today's date exists in the entries
-      const todayEntry = entries.find(entry => entry.date === todayString);
-      
-      // Only auto-scroll if today's date actually exists in the roster
-      if (todayEntry && tableRef.current) {
-        // Scroll to today's row after a brief delay to ensure DOM is ready
-        setTimeout(() => {
-          const todayRow = document.querySelector(`[data-date="${todayString}"]`);
-          if (todayRow) {
-            todayRow.scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'center' 
-            });
-            console.log(`📍 Auto-scrolled to today's date: ${todayString}`);
-          }
-        }, 100);
-      } else {
-        console.log(`📍 Today's date (${todayString}) not found in roster entries - no auto-scroll`);
-      }
-      
-      setHasAutoScrolled(true);
+  // Map roster shift types to calendar shift IDs
+  const shiftMapping: Record<string, string> = {
+    'Morning Shift (9-4)': '9-4',
+    'Evening Shift (4-10)': '4-10',
+    'Saturday Regular (12-10)': '12-10',
+    'Night Duty': 'N',
+    'Sunday/Public Holiday/Special': '9-4' // Special Sunday shift maps to 9-4
+  };
+  
+  const calendarShiftId = shiftMapping[shiftType];
+  if (!calendarShiftId) {
+    console.log(`❌ Unknown shift type: ${shiftType}`);
+    return false;
+  }
+  
+  // Validation rules based on day and special status
+  if (isSpecialDate) {
+    // Special dates allow: 9-4, 4-10, N (but not 12-10)
+    const allowedOnSpecial = ['9-4', '4-10', 'N'];
+    const isValid = allowedOnSpecial.includes(calendarShiftId);
+    console.log(`🔍 Special date validation: ${calendarShiftId} ${isValid ? 'allowed' : 'not allowed'}`);
+    return isValid;
+  } else {
+    // Regular day validation
+    if (dayOfWeek === 6) { // Saturday
+      const allowedOnSaturday = ['12-10', 'N'];
+      const isValid = allowedOnSaturday.includes(calendarShiftId);
+      console.log(`🔍 Saturday validation: ${calendarShiftId} ${isValid ? 'allowed' : 'not allowed'}`);
+      return isValid;
+    } else if (dayOfWeek === 0) { // Sunday
+      const allowedOnSunday = ['9-4', '4-10', 'N'];
+      const isValid = allowedOnSunday.includes(calendarShiftId);
+      console.log(`🔍 Sunday validation: ${calendarShiftId} ${isValid ? 'allowed' : 'not allowed'}`);
+      return isValid;
+    } else { // Weekdays (Monday-Friday)
+      const allowedOnWeekday = ['4-10', 'N'];
+      const isValid = allowedOnWeekday.includes(calendarShiftId);
+      console.log(`🔍 Weekday validation: ${calendarShiftId} ${isValid ? 'allowed' : 'not allowed'}`);
+      return isValid;
     }
-  }, [loading, entries, hasAutoScrolled, selectedDate]);
+  }
+};
 
-  // Filter entries based on selected date (show entries for the selected month)
-  const filteredEntries = entries.filter(entry => {
-    const entryDate = new Date(entry.date);
-    return entryDate.getMonth() === selectedDate.getMonth() && 
-           entryDate.getFullYear() === selectedDate.getFullYear();
+/**
+ * Checks if shift conflicts with existing shifts in calendar
+ */
+export const checkShiftConflicts = (date: string, newShiftType: string, currentShifts: string[]): boolean => {
+  const shiftMapping: Record<string, string> = {
+    'Morning Shift (9-4)': '9-4',
+    'Evening Shift (4-10)': '4-10',
+    'Saturday Regular (12-10)': '12-10',
+    'Night Duty': 'N',
+    'Sunday/Public Holiday/Special': '9-4'
+  };
+  
+  const newShiftId = shiftMapping[newShiftType];
+  if (!newShiftId) return true; // Unknown shift = conflict
+  
+  // Check for conflicts
+  // 9-4 and 12-10 cannot overlap
+  if (newShiftId === '9-4' && currentShifts.includes('12-10')) return true;
+  if (newShiftId === '12-10' && currentShifts.includes('9-4')) return true;
+  
+  // 12-10 and 4-10 cannot overlap
+  if (newShiftId === '12-10' && currentShifts.includes('4-10')) return true;
+  if (newShiftId === '4-10' && currentShifts.includes('12-10')) return true;
+  
+  // Check if shift already exists
+  if (currentShifts.includes(newShiftId)) return true;
+  
+  return false; // No conflicts
+};
+
+/**
+ * Determines if a date needs to be marked as special for the shift to be valid
+ */
+export const requiresSpecialDate = (date: string, shiftType: string): boolean => {
+  const dateObj = new Date(date);
+  const dayOfWeek = dateObj.getDay();
+  
+  // Saturday with Morning Shift (9-4) requires special marking
+  if (dayOfWeek === 6 && shiftType === 'Morning Shift (9-4)') {
+    return true;
+  }
+  
+  // Weekday with Morning Shift (9-4) requires special marking
+  if (dayOfWeek >= 1 && dayOfWeek <= 5 && shiftType === 'Morning Shift (9-4)') {
+    return true;
+  }
+  
+  return false;
+};
+
+/**
+ * Handle removal synchronization - remove shift from calendar
+ */
+const handleRemovalSync = (
+  date: string,
+  shiftType: string,
+  assignedName: string,
+  options: Pick<RosterCalendarSyncOptions, 'calendarLabel' | 'schedule' | 'specialDates' | 'setSchedule' | 'setSpecialDates'>
+): boolean => {
+  const { calendarLabel, schedule, specialDates, setSchedule, setSpecialDates } = options;
+  
+  console.log('🗑️ rosterCalendarSync.ts: Processing removal for:', {
+    date,
+    shiftType,
+    assignedName,
+    calendarLabel
   });
-
-  // Group entries by date
-  const groupedByDate = filteredEntries.reduce((groups, entry) => {
-    const date = entry.date;
-    if (!groups[date]) {
-      groups[date] = [];
-    }
-    groups[date].push(entry);
-    return groups;
-  }, {} as Record<string, RosterEntry[]>);
-
-  // Format date for display in table (Tue 01-03-25)
-  const formatTableDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const dayName = dayNames[date.getDay()];
-    const day = date.getDate();
-    const monthName = monthNames[date.getMonth()];
-    return { dayName, dateString: `${day} ${monthName}` };
-  };
-
-  // Navigate months
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    const newDate = new Date(selectedDate);
-    newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
-    onDateChange(newDate);
-  };
-
-  // Format month/year for display
-  const formatMonthYear = (date: Date) => {
-    const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
-  };
-
-  const handleEntryUpdate = (updatedEntry: RosterEntry) => {
-    // Check if component is still mounted before calling loadEntries
-    if (!isMountedRef.current) {
-      console.warn('Component unmounted, skipping loadEntries call');
-      return;
-    }
-    
-    // Force component re-render
-    setRefreshKey(prev => prev + 1);
-    
-    // Also trigger a data refresh
-    if (onRefresh && isMountedRef.current) {
-      onRefresh();
-    }
-  };
-
-  // Handle edit button click
-  const handleEditClick = (date: string) => {
-    setEditingDate(date);
-    setShowAuthModal(true);
-  };
-
-  // Handle authentication
-  const handleAuthSubmit = () => {
-    const editorName = validateAuthCode(authCode);
-    if (!editorName || !isAdminCode(authCode)) {
-      setAuthError(!editorName ? 'Invalid authentication code' : 'Admin access required for date editing');
-      return;
-    }
-    
-    setShowAuthModal(false);
-    setAuthError('');
-    
-    // Get current staff for the selected date and shift
-    if (editingDate && selectedShift) {
-      const currentEntries = getEntriesForDateAndShift(editingDate, selectedShift);
-      const currentStaff = currentEntries.map(entry => entry.assigned_name);
-      setSelectedStaff(currentStaff);
-    }
-  };
-
-  // Handle staff selection change
-  const handleStaffToggle = (staffName: string) => {
-    setSelectedStaff(prev => 
-      prev.includes(staffName) 
-        ? prev.filter(name => name !== staffName)
-        : [...prev, staffName]
-    );
-  };
-
-  // Handle save changes
-  const handleSaveChanges = async () => {
-    if (!editingDate || !selectedShift || !authCode) return;
-    
-    setIsUpdating(true);
-    
-    try {
-      console.log('🔄 Manual refresh triggered in table view');
-      const editorName = validateAuthCode(authCode);
-      if (!editorName) return;
-
-      const currentEntries = getEntriesForDateAndShift(editingDate, selectedShift);
-      const currentStaff = currentEntries.map(entry => entry.assigned_name);
-      
-      // Find staff to add and remove
-      const staffToAdd = selectedStaff.filter(name => !currentStaff.includes(name));
-      const staffToRemove = currentStaff.filter(name => !selectedStaff.includes(name));
-      
-      // Remove staff
-      for (const entry of currentEntries) {
-        if (staffToRemove.includes(entry.assigned_name)) {
-          await deleteRosterEntry(entry.id);
-        }
-      }
-      
-      // Add new staff
-      for (const staffName of staffToAdd) {
-        await addRosterEntry({
-          date: editingDate,
-          shiftType: selectedShift,
-          assignedName: staffName,
-          changeDescription: `Added by ${editorName}`
-        }, editorName);
-      }
-      
-      // Don't auto-refresh from server to prevent position jumping
-      setRefreshKey(prev => prev + 1);
-      console.log('✅ Manual refresh completed');
-      
-      // Dispatch custom event to notify other components
-      window.dispatchEvent(new CustomEvent('rosterUpdated', { 
-        detail: { 
-          type: 'bulk_edit',
-          date: editingDate,
-          shift: selectedShift,
-          staffAdded: staffToAdd,
-          staffRemoved: staffToRemove
-        }
-      }));
-      
-      handleCancelEdit();
-      
-    } catch (error) {
-      console.error('Failed to update roster:', error);
-      alert('Failed to update roster. Please try again.');
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  // Handle cancel edit
-  const handleCancelEdit = () => {
-    setEditingDate(null);
-    setSelectedShift('');
-    setSelectedStaff([]);
-    setAuthCode('');
-    setAuthError('');
-    setShowAuthModal(false);
+  
+  // CRITICAL: Only sync removal if the assigned name matches the calendar label
+  const assignedBaseName = assignedName.replace(/\(R\)$/, '').trim().toUpperCase();
+  const calendarBaseName = calendarLabel.replace(/\(R\)$/, '').trim().toUpperCase();
+  
+  console.log('🔍 rosterCalendarSync.ts: Removal name matching check:', {
+    assignedName,
+    calendarLabel,
+    assignedBaseName,
+    calendarBaseName,
+    namesMatch: assignedBaseName === calendarBaseName
+  });
+  
+  // If names don't match, don't sync removal to calendar
+  if (assignedBaseName !== calendarBaseName) {
+    console.log(`❌ rosterCalendarSync.ts: Names don't match for removal - skipping sync. Assigned: "${assignedBaseName}", Calendar: "${calendarBaseName}"`);
+    return false;
+  }
+  
+  console.log(`✅ rosterCalendarSync.ts: Names match for removal - proceeding with sync`);
+  
+  // Map roster shift type to calendar shift ID
+  const shiftMapping: Record<string, string> = {
+    'Morning Shift (9-4)': '9-4',
+    'Evening Shift (4-10)': '4-10',
+    'Saturday Regular (12-10)': '12-10',
+    'Night Duty': 'N',
+    'Sunday/Public Holiday/Special': '9-4'
   };
   
-  // Handle showing details modal
-  const handleShowDetails = (entry: RosterEntry) => {
-    console.log('🔍 RosterTableView: handleShowDetails called with entry:', entry.id);
-    setSelectedEntry(entry);
-    setShowDetailsModal(true);
-  };
+  const calendarShiftId = shiftMapping[shiftType];
+  if (!calendarShiftId) {
+    console.log(`❌ rosterCalendarSync.ts: Cannot map shift type for removal: ${shiftType}`);
+    return false;
+  }
   
-  const getEntriesForDateAndShift = (date: string, shiftType: string) => {
-    const dateEntries = groupedByDate[date] || [];
-    return dateEntries.filter(entry => entry.shift_type === shiftType);
-  };
-
-  // Check if date is today
-  const isToday = (dateString: string) => {
-    const now = new Date();
-    // Force local timezone calculation
-    const todayString = now.getFullYear() + '-' + 
-                       String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                       String(now.getDate()).padStart(2, '0');
-    return dateString === todayString;
-  };
+  // Get current shifts for this date
+  const currentShifts = schedule[date] || [];
+  console.log(`🔍 rosterCalendarSync.ts: Current shifts for ${date}:`, currentShifts);
   
-  // Check if date is in the past
-  const isPastDate = (dateString: string) => {
-    const now = new Date();
-    // Force local timezone calculation
-    const todayString = now.getFullYear() + '-' + 
-                       String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                       String(now.getDate()).padStart(2, '0');
-    return dateString < todayString;
-  };
-
-  // Check if date is in the future
-  const isFutureDate = (dateString: string) => {
-    const now = new Date();
-    // Force local timezone calculation
-    const todayString = now.getFullYear() + '-' + 
-                       String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                       String(now.getDate()).padStart(2, '0');
-    return dateString > todayString;
-  };
+  // Check if the shift exists in calendar
+  if (!currentShifts.includes(calendarShiftId)) {
+    console.log(`ℹ️ rosterCalendarSync.ts: Shift ${calendarShiftId} not found in calendar for ${date}`);
+    return false;
+  }
   
-  // Sort dates in ascending order (oldest first)
-  const sortedDates = Object.keys(groupedByDate).sort((a, b) => 
-    new Date(a).getTime() - new Date(b).getTime()
-  );
-
-  // Custom sorting function to prioritize (R) names first
-  const sortStaffNames = (entries: RosterEntry[]): RosterEntry[] => {
-    return [...entries].sort((a, b) => {
-      const aHasR = a.assigned_name.includes('(R)');
-      const bHasR = b.assigned_name.includes('(R)');
-      
-      // If one has (R) and other doesn't, (R) comes first
-      if (aHasR && !bHasR) return -1;
-      if (!aHasR && bHasR) return 1;
-      
-      // If both have (R) or both don't have (R), sort alphabetically
-      return a.assigned_name.localeCompare(b.assigned_name);
+  // Remove the shift from calendar
+  console.log(`🗑️ rosterCalendarSync.ts: Removing shift ${calendarShiftId} from calendar on ${date}`);
+  setSchedule(prev => {
+    const newSchedule = { ...prev };
+    const updatedShifts = currentShifts.filter(shift => shift !== calendarShiftId);
+    
+    if (updatedShifts.length === 0) {
+      // If no shifts left, remove the date entry completely
+      delete newSchedule[date];
+    } else {
+      // Otherwise, update with remaining shifts
+      newSchedule[date] = updatedShifts;
+    }
+    
+    return newSchedule;
+  });
+  
+  // Check if we should remove special date marking
+  // Only remove special marking if no other shifts require it
+  const remainingShifts = currentShifts.filter(shift => shift !== calendarShiftId);
+  const stillNeedsSpecial = remainingShifts.some(shift => {
+    const remainingShiftType = Object.entries(shiftMapping).find(([_, id]) => id === shift)?.[0];
+    return remainingShiftType ? requiresSpecialDate(date, remainingShiftType) : false;
+  });
+  
+  if (!stillNeedsSpecial && specialDates[date]) {
+    console.log(`🗑️ rosterCalendarSync.ts: Removing special date marking for ${date}`);
+    setSpecialDates(prev => {
+      const newSpecialDates = { ...prev };
+      delete newSpecialDates[date];
+      return newSpecialDates;
     });
-  };
+  }
+  
+  // Show removal notification
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    background: #ef4444;
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 999999;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    animation: slideInRight 0.3s ease-out;
+  `;
+  
+  notification.innerHTML = `
+    📅 Calendar updated: ${shiftType} removed from ${date}
+    ${!stillNeedsSpecial ? '<br>📌 Special date marking removed' : ''}
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Auto-remove after 3 seconds
+  setTimeout(() => {
+    if (document.body.contains(notification)) {
+      notification.style.animation = 'slideInRight 0.3s ease-out reverse';
+      setTimeout(() => {
+        if (document.body.contains(notification)) {
+          document.body.removeChild(notification);
+        }
+      }, 300);
+    }
+  }, 3000);
+  
+  console.log(`✅ rosterCalendarSync.ts: Calendar removal completed for ${date}`);
+  return true;
+};
 
-  // Calculate max staff count for each date to align columns
-  const getMaxStaffCountForDate = (date: string) => {
-    const dateEntries = groupedByDate[date] || [];
-    const shiftGroups = shiftTypes.reduce((groups, shiftType) => {
-      const shiftEntries = dateEntries.filter(entry => entry.shift_type === shiftType);
-      groups[shiftType] = sortStaffNames(shiftEntries);
-      return groups;
-    }, {} as Record<string, RosterEntry[]>);
+/**
+ * Main synchronization function
+ */
+export const syncRosterToCalendar = (
+  rosterChange: RosterChangeEvent,
+  options: RosterCalendarSyncOptions
+): boolean => {
+  const { calendarLabel, schedule, specialDates, setSchedule, setSpecialDates } = options;
+  const { date, shiftType, assignedName, editorName, action } = rosterChange;
+  
+  console.log('🔄 rosterCalendarSync.ts: Sync triggered with data:', {
+    date,
+    shiftType,
+    assignedName,
+    editorName,
+    action,
+    calendarLabel,
+    assignedName,
+    calendarLabel,
+    currentScheduleKeys: Object.keys(schedule).length,
+    currentSpecialDates: Object.keys(specialDates).length
+  });
+  
+  // CRITICAL: Only sync if the assigned name matches the calendar label
+  // This prevents other people's roster changes from affecting your personal calendar
+  const assignedBaseName = assignedName.replace(/\(R\)$/, '').trim().toUpperCase();
+  const calendarBaseName = calendarLabel.replace(/\(R\)$/, '').trim().toUpperCase();
+  
+  console.log('🔍 rosterCalendarSync.ts: Name matching check:', {
+    assignedName,
+    calendarLabel,
+    assignedBaseName,
+    calendarBaseName,
+    namesMatch: assignedBaseName === calendarBaseName
+  });
+  
+  // If names don't match, don't sync to calendar
+  if (assignedBaseName !== calendarBaseName) {
+    console.log(`❌ rosterCalendarSync.ts: Names don't match - skipping sync. Assigned: "${assignedBaseName}", Calendar: "${calendarBaseName}"`);
+    return false;
+  }
+  
+  console.log(`✅ rosterCalendarSync.ts: Names match - proceeding with sync`);
+  
+  // Handle removal action
+  if (action === 'removed') {
+    console.log('🗑️ rosterCalendarSync.ts: Processing removal action');
+    return handleRemovalSync(date, shiftType, assignedName, { calendarLabel, schedule, specialDates, setSchedule, setSpecialDates });
+  }
+  
+  // Check if this date needs special marking for the shift to be valid
+  const needsSpecial = requiresSpecialDate(date, shiftType);
+  const currentIsSpecial = specialDates[date] === true;
+  
+  console.log('🔍 rosterCalendarSync.ts: Special date analysis:', {
+    date,
+    shiftType,
+    needsSpecial,
+    dayOfWeek: new Date(date).getDay()
+  });
+  
+  // Determine final special date status
+  const finalSpecialStatus = needsSpecial || currentIsSpecial;
+  
+  // Validate the shift for this date
+  const shiftMapping: Record<string, string> = {
+    'Morning Shift (9-4)': '9-4',
+    'Evening Shift (4-10)': '4-10',
+    'Saturday Regular (12-10)': '12-10',
+    'Night Duty': 'N',
+    'Sunday/Public Holiday/Special': '9-4'
+  };
+  
+  const calendarShiftId = shiftMapping[shiftType];
+  if (!calendarShiftId) {
+    console.log(`❌ rosterCalendarSync.ts: Cannot map shift type: ${shiftType}`);
+    return false;
+  }
+  
+  // Get current shifts for this date
+  const currentShifts = schedule[date] || [];
+  console.log(`🔍 rosterCalendarSync.ts: Current shifts for ${date}:`, currentShifts);
+  
+  // Check for conflicts
+  if (checkShiftConflicts(date, shiftType, currentShifts)) {
+    console.log(`❌ rosterCalendarSync.ts: Shift conflict detected for ${calendarShiftId} on ${date} with existing shifts:`, currentShifts);
+    return false; // Don't sync if there are conflicts
+    return false; // Don't sync if there are conflicts
+    return false; // Don't sync if there are conflicts
+  }
+  
+  // Apply changes to calendar
+  let calendarUpdated = false;
+  
+  if (needsSpecial && !currentIsSpecial) {
+    console.log(`✅ rosterCalendarSync.ts: Marking ${date} as special date`);
+    setSpecialDates(prev => ({
+      ...prev,
+      [date]: true
+    }));
+    calendarUpdated = true;
+  }
+  
+  // Add shift to calendar if not already present
+  if (!currentShifts.includes(calendarShiftId)) {
+    console.log(`✅ rosterCalendarSync.ts: Adding shift ${calendarShiftId} to calendar on ${date}`);
+    setSchedule(prev => ({
+      ...prev,
+      [date]: [...currentShifts, calendarShiftId]
+    }));
+    calendarUpdated = true;
+  } else {
+    console.log(`ℹ️ rosterCalendarSync.ts: Shift ${calendarShiftId} already exists in calendar on ${date}`);
+  }
+  
+  if (calendarUpdated) {
+    // Show success notification
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      background: #10b981;
+      color: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      z-index: 999999;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      animation: slideInRight 0.3s ease-out;
+    `;
     
-    return Math.max(...Object.values(shiftGroups).map(entries => entries.length), 1);
-  };
-  // Shift types in order
-  const shiftTypes = [
-    'Morning Shift (9-4)',
-    'Saturday Regular (12-10)', 
-    'Evening Shift (4-10)',
-    'Night Duty'
-  ];
-  return (
-    <div>
-      {/* Date Picker */}
-      <div className="mb-6 bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex items-center justify-center">
-          <div className="flex items-center justify-between w-full max-w-md mx-auto">
-          <button
-            onClick={() => navigateMonth('prev')}
-            className="p-2 rounded-lg hover:bg-gray-100 hover:bg-opacity-50 text-gray-600 transition-colors duration-200 z-50 relative bg-transparent"
-            style={{
-              touchAction: 'manipulation',
-              WebkitTapHighlightColor: 'transparent',
-              position: 'relative',
-              zIndex: 50,
-              backgroundColor: 'transparent',
-              // iPhone specific fixes
-              transform: 'translate3d(0,0,0)',
-              backfaceVisibility: 'hidden',
-              WebkitBackfaceVisibility: 'hidden',
-              WebkitTransform: 'translate3d(0,0,0)',
-              WebkitTouchCallout: 'none'
-            }}
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          
-          <div className="flex items-center space-x-3 justify-center flex-1">
-            <Calendar className="w-5 h-5 text-indigo-600" />
-            <div className="flex items-center space-x-2">
-              <select
-                value={selectedDate.getMonth()}
-                onChange={(e) => {
-                  const newDate = new Date(selectedDate);
-                  newDate.setMonth(Number(e.target.value));
-                  onDateChange(newDate);
-                }}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-semibold text-gray-900 bg-white"
-                style={{
-                  touchAction: 'manipulation',
-                  WebkitTapHighlightColor: 'transparent'
-                }}
-              >
-                {[
-                  'January', 'February', 'March', 'April', 'May', 'June',
-                  'July', 'August', 'September', 'October', 'November', 'December'
-                ].map((month, index) => (
-                  <option key={index} value={index}>{month}</option>
-                ))}
-              </select>
-              
-              <select
-                value={selectedDate.getFullYear()}
-                onChange={(e) => {
-                  const newDate = new Date(selectedDate);
-                  newDate.setFullYear(Number(e.target.value));
-                  onDateChange(newDate);
-                }}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-semibold text-gray-900 bg-white"
-                style={{
-                  touchAction: 'manipulation',
-                  WebkitTapHighlightColor: 'transparent'
-                }}
-              >
-                {Array.from({ length: 10 }, (_, i) => selectedDate.getFullYear() - 5 + i).map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          
-          <button
-            onClick={() => navigateMonth('next')}
-            className="p-2 rounded-lg hover:bg-gray-100 hover:bg-opacity-50 text-gray-600 transition-colors duration-200 z-50 relative bg-transparent"
-            style={{
-              touchAction: 'manipulation',
-              WebkitTapHighlightColor: 'transparent',
-              position: 'relative',
-              zIndex: 50,
-              backgroundColor: 'transparent',
-              // iPhone specific fixes
-              transform: 'translate3d(0,0,0)',
-              backfaceVisibility: 'hidden',
-              WebkitBackfaceVisibility: 'hidden',
-              WebkitTransform: 'translate3d(0,0,0)',
-              WebkitTouchCallout: 'none'
-            }}
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white overflow-hidden w-full" style={{ 
-        height: window.innerWidth > window.innerHeight ? '60vh' : '70vh', // Shorter in landscape
-        minHeight: '400px',
-        maxHeight: '80vh',
-        width: '100vw',
-        marginLeft: 'calc(-50vw + 50%)',
-        marginRight: 'calc(-50vw + 50%)'
-      }}>
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-          </div>
-        ) : sortedDates.length === 0 ? (
-          <div className="text-center py-12">
-            <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg font-medium">
-              No roster entries found
-            </p>
-            <p className="text-gray-400 text-sm mt-2">
-              No entries available for {formatMonthYear(selectedDate)}
-            </p>
-          </div>
-        ) : (
-          <div ref={tableRef} style={{ 
-            height: '100%', 
-            overflow: 'auto',
-            overflowX: 'auto',
-            overflowY: 'auto',
-            position: 'relative', 
-            width: '100%',
-            // Better mobile landscape handling
-            WebkitOverflowScrolling: 'touch',
-            // Force proper scrolling after orientation change
-            transform: 'translate3d(0,0,0)',
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden',
-            WebkitTransform: 'translate3d(0,0,0)',
-            // iPhone specific fixes
-            WebkitTouchCallout: 'none',
-            WebkitUserSelect: 'none',
-            userSelect: 'none'
-          }}>
-            {/* Separate Sticky Header for Roster Title */}
-            <div 
-              style={{ 
-                position: 'sticky',
-                top: 0,
-                zIndex: 95,
-                width: '100vw',
-                padding: '12px 16px',
-                fontSize: '18px',
-                fontWeight: 'bold',
-                color: 'white',
-                border: 'none',
-                margin: 0,
-                marginBottom: 0,
-                height: window.innerWidth > window.innerHeight ? '40px' : '56px', // Shorter header in landscape
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: '#4b5563',
-                background: '#4b5563',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-                opacity: 1,
-                // Force proper rendering after orientation change
-                transform: 'translate3d(0,0,0)',
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden',
-                WebkitTransform: 'translate3d(0,0,0)',
-                // iPhone specific
-                WebkitTouchCallout: 'none'
-              }}
-            >
-              {/* Centered title with reload button */}
-              <div style={{ 
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: window.innerWidth > window.innerHeight ? '16px' : '18px',
-                gap: '8px'
-              }}>
-                <span>Roster for {formatMonthYear(selectedDate)}</span>
-                {/* Manual refresh button with real-time status */}
-                <button
-                  onClick={async () => {
-                    setIsReloading(true);
-                    try {
-                      console.log('🔄 Manual refresh triggered in table view');
-                      if (onRefresh) {
-                        await onRefresh();
-                      }
-                      setRefreshKey(prev => prev + 1);
-                      setLastUpdateTime(new Date().toLocaleTimeString());
-                      
-                      // Stay in current position after manual refresh
-                      
-                      console.log('✅ Manual refresh completed in table view');
-                    } catch (error) {
-                      console.error('Manual refresh failed in table view:', error);
-                    } finally {
-                      setIsReloading(false);
-                    }
-                  }}
-                  disabled={isReloading}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    padding: '4px',
-                    color: 'white',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    opacity: isReloading ? 0.7 : 1,
-                    touchAction: 'manipulation',
-                    WebkitTapHighlightColor: 'transparent'
-                  }}
-                  title={
-                    realtimeStatus === 'connected' ? 'Manual refresh (Real-time active)' :
-                    realtimeStatus === 'connecting' ? 'Manual refresh (Connecting...)' :
-                    realtimeStatus === 'error' ? 'Manual refresh (Real-time failed)' :
-                    'Manual refresh (Real-time disconnected)'
-                  }
-                >
-                  {/* Refresh icon with rotation animation when loading */}
-                  <svg 
-                    style={{
-                      width: '20px',
-                      height: '20px',
-                      animation: isReloading ? 'spin 1s linear infinite' : 'none'
-                    }}
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
-                    />
-                  </svg>
-                  
-                  {/* Real-time status indicator inside the button */}
-                  <div style={{
-                    width: '12px',
-                    height: '12px',
-                    borderRadius: '50%',
-                    backgroundColor: realtimeStatus === 'connected' ? '#10b981' : 
-                                    realtimeStatus === 'connecting' ? '#f59e0b' :
-                                    realtimeStatus === 'error' ? '#ef4444' : '#6b7280',
-                    animation: realtimeStatus === 'connecting' ? 'pulse 1.5s ease-in-out infinite' : 'none',
-                    boxShadow: realtimeStatus === 'connected' ? '0 0 8px rgba(16, 185, 129, 0.8)' : 'none'
-                  }} />
-                </button>
-              </div>
-            </div>
-            
-            <table className="border-collapse table-fixed" style={{ width: '100vw', minWidth: '100vw' }}>
-              <thead>
-                <tr>
-                  <th 
-                    style={{ 
-                      position: 'sticky',
-                      top: window.innerWidth > window.innerHeight ? 40 : 56, // Adjust for shorter header
-                      zIndex: 85,
-                      padding: window.innerWidth > window.innerHeight ? '4px' : '8px', // Less padding in landscape
-                      fontWeight: '600',
-                      textAlign: 'center',
-                      fontSize: window.innerWidth > window.innerHeight ? '10px' : (window.innerWidth >= 640 ? '14px' : '12px'),
-                      color: 'white',
-                      border: 'none',
-                      backgroundColor: '#6b7280',
-                      background: '#6b7280',
-                      margin: 0,
-                      marginTop: 0,
-                      width: '80px',
-                      minWidth: '80px',
-                      maxWidth: '80px',
-                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-                      opacity: 1,
-                      // Force proper rendering after orientation change
-                      transform: 'translateZ(0)',
-                      backfaceVisibility: 'hidden'
-                    }}
-                  >
-                    Date
-                  </th>
-                  {shiftTypes.map((shiftType) => (
-                    <th 
-                      key={shiftType}
-                      style={{ 
-                        position: 'sticky',
-                        top: window.innerWidth > window.innerHeight ? 40 : 56, // Adjust for shorter header
-                        zIndex: 80,
-                        padding: window.innerWidth > window.innerHeight ? '4px' : '8px', // Less padding in landscape
-                        fontWeight: '600',
-                        textAlign: 'center',
-                        fontSize: window.innerWidth > window.innerHeight ? '10px' : (window.innerWidth >= 640 ? '14px' : '12px'),
-                        color: 'white',
-                        border: 'none',
-                        backgroundColor: '#6b7280',
-                        background: '#6b7280',
-                        margin: 0,
-                        opacity: 1,
-                        width: 'calc((100vw - 80px) / 4)',
-                        minWidth: 'calc((100vw - 80px) / 4)',
-                        // Force proper rendering after orientation change
-                        transform: 'translate3d(0,0,0)',
-                        backfaceVisibility: 'hidden',
-                        WebkitBackfaceVisibility: 'hidden',
-                        WebkitTransform: 'translate3d(0,0,0)',
-                        // iPhone specific
-                        WebkitTouchCallout: 'none'
-                      }}
-                    >
-                      {shiftType === 'Morning Shift (9-4)' ? '9-4' :
-                       shiftType === 'Saturday Regular (12-10)' ? '12-10' :
-                       shiftType === 'Evening Shift (4-10)' ? '4-10' :
-                       shiftType === 'Night Duty' ? 'N' : shiftType}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-
-              {/* Table Body */}
-              <tbody className="divide-y divide-gray-200">
-                {sortedDates.map((date) => (
-                  <tr 
-                    key={date} 
-                    data-date={date}
-                    className={`${
-                      isToday(date) ? 'bg-green-200' : 
-                      isPastDate(date) ? 'bg-red-50' :
-                      isFutureDate(date) ? 'bg-green-50' : ''
-                    }`}
-                  >
-                    {/* Date Column */}
-                    <RosterDateCell
-                      date={date}
-                      isToday={isToday(date)}
-                      isPastDate={isPastDate(date)}
-                      isFutureDate={isFutureDate(date)}
-                      onLongPress={() => {
-                        setEditingDate(date);
-                        setShowAuthModal(true);
-                      }}
-                      formatTableDate={formatTableDate}
-                    />
-                    {shiftTypes.map((shiftType) => {
-                      const shiftEntries = sortStaffNames(getEntriesForDateAndShift(date, shiftType));
-                      const maxStaffForThisDate = getMaxStaffCountForDate(date);
-                      
-                      // Create aligned array with consistent row count for this date
-                      const alignedEntries = [];
-                      for (let rowIndex = 0; rowIndex < maxStaffForThisDate; rowIndex++) {
-                        alignedEntries.push(shiftEntries[rowIndex] || null);
-                      }
-                      
-                      return (
-                        <td key={shiftType} className={`text-center overflow-hidden align-top relative ${
-                          isPastDate(date) ? 'bg-red-50' : ''
-                        }`} style={{
-                          padding: window.innerWidth > window.innerHeight ? '2px' : '4px 8px', // Less padding in landscape
-                          minHeight: window.innerWidth > window.innerHeight ? '30px' : '50px' // Shorter cells in landscape
-                        }}>
-                          {/* Big X watermark for past dates - covers entire cell including padding */}
-                          {isPastDate(date) && shiftEntries.length > 0 && (
-                            <div className="absolute pointer-events-none inset-0" style={{ zIndex: 5 }}>
-                              <div className="absolute inset-0 flex items-center justify-center text-red-300 text-6xl sm:text-8xl font-bold opacity-60" style={{ 
-                                opacity: 0.2,
-                                lineHeight: '1'
-                              }}>
-                                ✕
-                              </div>
-                            </div>
-                          )}
-                          <div className="flex flex-col relative" style={{ 
-                            zIndex: 10,
-                            gap: window.innerWidth > window.innerHeight ? '1px' : '2px' // Tighter spacing in landscape
-                          }}>
-                            {alignedEntries.map((entry, rowIndex) => {
-                              return entry ? (
-                                <div key={`${entry.id}-${rowIndex}`} className="flex items-center justify-center relative z-15" style={{
-                                  minHeight: window.innerWidth > window.innerHeight ? '16px' : '24px', // Shorter in landscape
-                                  padding: window.innerWidth > window.innerHeight ? '1px' : '4px'
-                                }}>
-                                  <RosterEntryCell
-                                    entry={entry}
-                                    onUpdate={handleEntryUpdate}
-                                    onShowDetails={handleShowDetails}
-                                    allEntriesForShift={shiftEntries}
-                                  />
-                                </div>
-                              ) : (
-                                <div key={`empty-${date}-${shiftType}-${rowIndex}`} className="flex items-center justify-center text-gray-300 relative z-15" style={{
-                                  fontSize: window.innerWidth > window.innerHeight ? '6px' : '8px', // Smaller text in landscape
-                                  minHeight: window.innerWidth > window.innerHeight ? '16px' : '24px',
-                                  padding: window.innerWidth > window.innerHeight ? '1px' : '4px'
-                                }}>
-                                  -
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-      </div>
-
-      {/* Authentication Modal */}
-      {showAuthModal && createPortal(
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 2147483647, // Maximum z-index value
-           backgroundColor: 'rgba(0, 0, 0, 0.95)',
-           display: 'flex',
-           alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
-           justifyContent: 'center',
-           padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
-           paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
-           overflow: 'auto',
-           overflowY: 'auto',
-           WebkitOverflowScrolling: 'touch',
-           touchAction: 'pan-y'
-          }}
-        >
-          <div className="bg-white rounded-2xl shadow-2xl w-full" style={{
-            maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
-            maxHeight: window.innerWidth > window.innerHeight ? '95vh' : 'none',
-            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0'
-          }}>
-            <div style={{
-              padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
-            }}>
-              <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
-                Authentication Required
-              </h3>
-              
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Authentication Code
-                </label>
-                <input
-                  type="text"
-                  value={authCode}
-                  onChange={(e) => setAuthCode(e.target.value.toUpperCase())}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center font-mono text-lg"
-                  placeholder="Enter admin code"
-                  maxLength={4}
-                  autoComplete="off"
-                  autoFocus
-                />
-              </div>
-              
-              {authError && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-700 text-center">{authError}</p>
-                </div>
-              )}
-              
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Shift Type
-                </label>
-                <select
-                  value={selectedShift}
-                  onChange={(e) => setSelectedShift(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  required
-                >
-                  <option value="">Select shift type</option>
-                  {shiftTypes.map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="flex space-x-3">
-                <button
-                  onClick={handleCancelEdit}
-                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleAuthSubmit}
-                  disabled={authCode.length < 4 || !selectedShift || !isAdminCode(authCode)}
-                  className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200"
-                >
-                  Continue
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        , document.body
-      )}
-
-      {/* Staff Selection Modal */}
-      {editingDate && selectedShift && authCode && !showAuthModal && createPortal(
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 2147483647, // Maximum z-index value
-           backgroundColor: 'rgba(0, 0, 0, 0.95)',
-           display: 'flex',
-           alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
-           justifyContent: 'center',
-           padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
-           paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
-           overflow: 'auto',
-           overflowY: 'auto',
-           WebkitOverflowScrolling: 'touch',
-           touchAction: 'pan-y'
-          }}
-        >
-          <div className="bg-white rounded-2xl shadow-2xl w-full flex flex-col" style={{
-            maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
-            maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
-            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0'
-          }}>
-            <div className="border-b border-gray-200 flex-shrink-0" style={{
-              padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
-            }}>
-              <h3 className="text-xl font-bold text-gray-900 mb-2 text-center">
-                Edit Staff Assignment
-              </h3>
-              <p className="text-sm text-gray-600 text-center">
-                {formatTableDate(editingDate).dayName} {formatTableDate(editingDate).dateString} - {selectedShift}
-              </p>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto" style={{
-              padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
-              WebkitOverflowScrolling: 'touch',
-              touchAction: 'pan-y'
-            }}>
-              <div className="space-y-3">
-                {availableNames.map(name => (
-                  <label key={name} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedStaff.includes(name)}
-                      onChange={() => handleStaffToggle(name)}
-                      className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                    />
-                    <span className="text-sm font-medium text-gray-900">{name}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            
-            <div className="border-t border-gray-200 flex-shrink-0" style={{
-              padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
-            }}>
-              <div className="flex space-x-3">
-                <button
-                  onClick={handleCancelEdit}
-                  disabled={isUpdating}
-                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSaveChanges}
-                  disabled={isUpdating}
-                  className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center justify-center space-x-2"
-                >
-                  {isUpdating ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <span>Save Changes</span>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        , document.body
-      )}
-      
-      {/* Edit Details Modal */}
-      <EditDetailsModal
-        isOpen={showDetailsModal}
-        entry={selectedEntry}
-        onClose={() => {
-          setShowDetailsModal(false);
-          setSelectedEntry(null);
-        }}
-      />
-      
-      {/* Add CSS for reload animation */}
-      <style jsx>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes pulse {
-          0%, 100% {
-            opacity: 0.8;
-            transform: scale(1);
+    notification.innerHTML = `
+      📅 Calendar updated: ${shiftType} added to ${date}
+      ${needsSpecial ? '<br>📌 Date marked as special' : ''}
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+      if (document.body.contains(notification)) {
+        notification.style.animation = 'slideInRight 0.3s ease-out reverse';
+        setTimeout(() => {
+          if (document.body.contains(notification)) {
+            document.body.removeChild(notification);
           }
-          50% {
-            opacity: 1;
-            transform: scale(1.1);
-          }
-        }
-      `}</style>
-    </div>
-  );
+        }, 300);
+      }
+    }, 3000);
+  }
+  
+  return calendarUpdated;
 };
