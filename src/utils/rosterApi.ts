@@ -146,6 +146,18 @@ export const deleteRosterEntry = async (id: string): Promise<void> => {
   try {
     console.log('🗑️ Deleting roster entry from Supabase:', id);
     
+    // Get the entry details before deletion for sync
+    const { data: entryToDelete, error: fetchError } = await supabase
+      .from('roster_entries')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (fetchError) {
+      console.error('❌ Error fetching entry before deletion:', fetchError);
+      throw new Error(`Failed to fetch entry before deletion: ${fetchError.message}`);
+    }
+
     const { error } = await supabase
       .from('roster_entries')
       .delete()
@@ -157,6 +169,21 @@ export const deleteRosterEntry = async (id: string): Promise<void> => {
     }
 
     console.log('✅ Successfully deleted roster entry:', id);
+    
+    // Dispatch event for calendar synchronization with removal action
+    if (entryToDelete) {
+      const syncEvent = {
+        date: entryToDelete.date,
+        shiftType: entryToDelete.shift_type,
+        assignedName: entryToDelete.assigned_name,
+        editorName: entryToDelete.last_edited_by || 'Unknown',
+        action: 'removed'
+      };
+      console.log('🔄 Dispatching rosterCalendarSync event for removal:', syncEvent);
+      window.dispatchEvent(new CustomEvent('rosterCalendarSync', {
+        detail: syncEvent
+      }));
+    }
   } catch (error) {
     console.error('❌ Network error deleting roster entry:', error);
     throw error;
