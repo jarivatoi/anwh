@@ -1219,6 +1219,14 @@ export const Calendar: React.FC<CalendarProps> = ({
             <p className="text-xs sm:text-sm text-indigo-600 mt-2 text-center select-none">
               Total amount for all scheduled shifts in {monthNames[currentMonth]} {currentYear}
             </p>
+            
+            <button
+              onClick={() => setShowImportAllModal(true)}
+              className="p-2 rounded-lg hover:bg-gray-100 text-blue-600 hover:text-blue-700 transition-colors duration-200"
+              title="Import all your shifts from roster"
+            >
+              <Upload className="w-5 h-5" />
+            </button>
           </div>
         </div>
       </div>
