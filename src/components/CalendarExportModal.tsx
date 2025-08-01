@@ -144,26 +144,47 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
           
           if (staffEntries.length > 0) {
             console.log(`🔍 CALENDAR EXPORT: Staff entries to sync:`, staffEntries.map(e => `${e.date} - ${e.shift_type} - ${e.assigned_name}`));
+            
+            // Convert roster entries to calendar format and sync
+            staffEntries.forEach(entry => {
+              const dateKey = entry.date; // Already in YYYY-MM-DD format
+              
+              // Map roster shift types to calendar shift IDs
+              const shiftMapping: Record<string, string> = {
+                'Morning Shift (9-4)': '9-4',
+                'Evening Shift (4-10)': '4-10', 
+                'Saturday Regular (12-10)': '12-10',
+                'Night Duty': 'N',
+                'Sunday/Public Holiday/Special': '9-4'
+              };
+              
+              const calendarShiftId = shiftMapping[entry.shift_type];
+              if (!calendarShiftId) {
+                console.log(`❌ CALENDAR EXPORT: Unknown shift type: ${entry.shift_type}`);
+                return;
+              }
+              
+              console.log(`🔄 CALENDAR EXPORT: Converting ${entry.shift_type} to calendar shift ${calendarShiftId} for ${dateKey}`);
+              
+              // Dispatch calendar sync event with the converted data
+              const syncEvent = {
+                date: dateKey,
+                shiftType: entry.shift_type,
+                assignedName: entry.assigned_name,
+                editorName: staffName,
+                action: 'added' as const,
+                calendarShiftId: calendarShiftId // Add the calendar shift ID
+              };
+              
+              console.log('📅 CALENDAR EXPORT: Dispatching sync event:', syncEvent);
+              window.dispatchEvent(new CustomEvent('rosterCalendarSync', {
+                detail: syncEvent
+              }));
+            });
           } else {
             console.log(`❌ CALENDAR EXPORT: No entries found for ${staffName} in ${formatMonthYear()}`);
             console.log(`🔍 CALENDAR EXPORT: Available entries in database:`, allEntries.slice(0, 5).map(e => `${e.date} - ${e.shift_type} - ${e.assigned_name}`));
           }
-          
-          // Sync each entry to calendar
-          staffEntries.forEach(entry => {
-            const syncEvent = {
-              date: entry.date,
-              shiftType: entry.shift_type,
-              assignedName: entry.assigned_name,
-              editorName: staffName,
-              action: 'added' as const
-            };
-            
-            console.log('📅 CALENDAR EXPORT: Dispatching sync event:', syncEvent);
-            window.dispatchEvent(new CustomEvent('rosterCalendarSync', {
-              detail: syncEvent
-            }));
-          });
           
           console.log(`✅ CALENDAR EXPORT: Dispatched ${staffEntries.length} sync events to calendar`);
           
