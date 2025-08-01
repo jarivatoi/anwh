@@ -1082,6 +1082,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   <div className="flex space-x-3">
                     <button
                       onClick={() => {
+                        onExportToCalendar(); // Close the export modal
                         setShowExportModal(false);
                         setExportAuthCode('');
                         setExportAuthError('');
