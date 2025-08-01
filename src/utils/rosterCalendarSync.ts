@@ -252,7 +252,7 @@ const handleRemovalSync = (
     }
   }, 3000);
   
-  console.log(`✅ rosterCalendarSync.ts: Calendar removal completed for ${date}`);
+  console.log(`✅ ROSTER SYNC: Calendar updated successfully for ${date}`);
   return true;
 };
 
@@ -266,14 +266,12 @@ export const syncRosterToCalendar = (
   const { calendarLabel, schedule, specialDates, setSchedule, setSpecialDates } = options;
   const { date, shiftType, assignedName, editorName, action } = rosterChange;
   
-  console.log('🔄 rosterCalendarSync.ts: Sync triggered with data:', {
+  console.log('🔄 ROSTER SYNC: Sync triggered with data:', {
     date,
     shiftType,
     assignedName,
     editorName,
     action,
-    calendarLabel,
-    assignedName,
     calendarLabel,
     currentScheduleKeys: Object.keys(schedule).length,
     currentSpecialDates: Object.keys(specialDates).length
@@ -284,7 +282,7 @@ export const syncRosterToCalendar = (
   const assignedBaseName = assignedName.replace(/\(R\)$/, '').trim().toUpperCase();
   const calendarBaseName = calendarLabel.replace(/\(R\)$/, '').trim().toUpperCase();
   
-  console.log('🔍 rosterCalendarSync.ts: Name matching check:', {
+  console.log('🔍 ROSTER SYNC: Name matching check:', {
     assignedName,
     calendarLabel,
     assignedBaseName,
@@ -294,15 +292,15 @@ export const syncRosterToCalendar = (
   
   // If names don't match, don't sync to calendar
   if (assignedBaseName !== calendarBaseName) {
-    console.log(`❌ rosterCalendarSync.ts: Names don't match - skipping sync. Assigned: "${assignedBaseName}", Calendar: "${calendarBaseName}"`);
+    console.log(`❌ ROSTER SYNC: Names don't match - skipping sync. Assigned: "${assignedBaseName}", Calendar: "${calendarBaseName}"`);
     return false;
   }
   
-  console.log(`✅ rosterCalendarSync.ts: Names match - proceeding with sync`);
+  console.log(`✅ ROSTER SYNC: Names match - proceeding with sync`);
   
   // Handle removal action
   if (action === 'removed') {
-    console.log('🗑️ rosterCalendarSync.ts: Processing removal action');
+    console.log('🗑️ ROSTER SYNC: Processing removal action');
     return handleRemovalSync(date, shiftType, assignedName, { calendarLabel, schedule, specialDates, setSchedule, setSpecialDates });
   }
   
@@ -310,10 +308,11 @@ export const syncRosterToCalendar = (
   const needsSpecial = requiresSpecialDate(date, shiftType);
   const currentIsSpecial = specialDates[date] === true;
   
-  console.log('🔍 rosterCalendarSync.ts: Special date analysis:', {
+  console.log('🔍 ROSTER SYNC: Special date analysis:', {
     date,
     shiftType,
     needsSpecial,
+    currentIsSpecial,
     dayOfWeek: new Date(date).getDay()
   });
   
@@ -331,18 +330,19 @@ export const syncRosterToCalendar = (
   
   const calendarShiftId = shiftMapping[shiftType];
   if (!calendarShiftId) {
-    console.log(`❌ rosterCalendarSync.ts: Cannot map shift type: ${shiftType}`);
+    console.log(`❌ ROSTER SYNC: Cannot map shift type: ${shiftType}`);
     return false;
   }
   
+  console.log(`🔍 ROSTER SYNC: Mapped shift "${shiftType}" to calendar ID "${calendarShiftId}"`);
+  
   // Get current shifts for this date
   const currentShifts = schedule[date] || [];
-  console.log(`🔍 rosterCalendarSync.ts: Current shifts for ${date}:`, currentShifts);
+  console.log(`🔍 ROSTER SYNC: Current shifts for ${date}:`, currentShifts);
   
   // Check for conflicts
   if (checkShiftConflicts(date, shiftType, currentShifts)) {
-    console.log(`❌ rosterCalendarSync.ts: Shift conflict detected for ${calendarShiftId} on ${date} with existing shifts:`, currentShifts);
-    return false; // Don't sync if there are conflicts
+    console.log(`❌ ROSTER SYNC: Shift conflict detected for ${calendarShiftId} on ${date} with existing shifts:`, currentShifts);
     return false; // Don't sync if there are conflicts
   }
   
@@ -350,7 +350,7 @@ export const syncRosterToCalendar = (
   let calendarUpdated = false;
   
   if (needsSpecial && !currentIsSpecial) {
-    console.log(`✅ rosterCalendarSync.ts: Marking ${date} as special date`);
+    console.log(`✅ ROSTER SYNC: Marking ${date} as special date`);
     setSpecialDates(prev => ({
       ...prev,
       [date]: true
@@ -360,15 +360,17 @@ export const syncRosterToCalendar = (
   
   // Add shift to calendar if not already present
   if (!currentShifts.includes(calendarShiftId)) {
-    console.log(`✅ rosterCalendarSync.ts: Adding shift ${calendarShiftId} to calendar on ${date}`);
+    console.log(`✅ ROSTER SYNC: Adding shift ${calendarShiftId} to calendar on ${date}`);
     setSchedule(prev => ({
       ...prev,
       [date]: [...currentShifts, calendarShiftId]
     }));
     calendarUpdated = true;
   } else {
-    console.log(`ℹ️ rosterCalendarSync.ts: Shift ${calendarShiftId} already exists in calendar on ${date}`);
+    console.log(`ℹ️ ROSTER SYNC: Shift ${calendarShiftId} already exists in calendar on ${date}`);
   }
+  
+  console.log(`🔍 ROSTER SYNC: Calendar updated: ${calendarUpdated}, Final schedule keys: ${Object.keys(schedule).length}`);
   
   if (calendarUpdated) {
     // Show success notification

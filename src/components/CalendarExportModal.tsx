@@ -117,11 +117,13 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
       
       // Sync roster data to calendar after successful export
       if (result.success) {
-        console.log('🔄 Syncing roster data to calendar...');
+        console.log('🔄 CALENDAR EXPORT: Starting roster-to-calendar sync...');
         
         // Get the staff name from auth code
         const staffName = validateAuthCode(authCode);
         if (staffName) {
+          console.log(`🔍 CALENDAR EXPORT: Syncing for staff: ${staffName}`);
+          
           // Filter entries for this staff member and month
           const staffEntries = allEntries.filter(entry => {
             const entryBaseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
@@ -133,6 +135,8 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
             return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
           });
           
+          console.log(`🔍 CALENDAR EXPORT: Found ${staffEntries.length} entries for ${staffName} in ${formatMonthYear()}`);
+          
           // Sync each entry to calendar
           staffEntries.forEach(entry => {
             const syncEvent = {
@@ -143,13 +147,20 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
               action: 'added' as const
             };
             
-            console.log('📅 Syncing entry to calendar:', syncEvent);
+            console.log('📅 CALENDAR EXPORT: Dispatching sync event:', syncEvent);
             window.dispatchEvent(new CustomEvent('rosterCalendarSync', {
               detail: syncEvent
             }));
           });
           
-          console.log(`✅ Synced ${staffEntries.length} entries to calendar`);
+          console.log(`✅ CALENDAR EXPORT: Dispatched ${staffEntries.length} sync events to calendar`);
+          
+          // Force a small delay to ensure all events are processed
+          setTimeout(() => {
+            console.log('🔄 CALENDAR EXPORT: Triggering calendar refresh...');
+            // Dispatch additional refresh event
+            window.dispatchEvent(new CustomEvent('forceCalendarRefresh'));
+          }, 100);
         }
       }
       

@@ -264,6 +264,8 @@ function App() {
   const handleRosterCalendarSync = useCallback((event: CustomEvent) => {
     const rosterChange = event.detail;
     
+    console.log('🔄 APP: Received roster calendar sync event:', rosterChange);
+    
     const syncResult = syncRosterToCalendar(rosterChange, {
       calendarLabel: scheduleTitle, // Use the calendar title as the label
       schedule,
@@ -272,19 +274,30 @@ function App() {
       setSpecialDates
     });
     
+    console.log('🔄 APP: Sync result:', syncResult);
+    
     if (syncResult) {
       // Force refresh calculations after sync
       setRefreshKey(prev => prev + 1);
+      console.log('🔄 APP: Forced refresh key update after sync');
     }
   }, [scheduleTitle, schedule, specialDates, setSchedule, setSpecialDates]);
+
+  // Handle force calendar refresh
+  const handleForceCalendarRefresh = useCallback(() => {
+    console.log('🔄 APP: Force calendar refresh triggered');
+    setRefreshKey(prev => prev + 1);
+  }, []);
 
   // Listen for roster changes
   useEffect(() => {
     window.addEventListener('rosterCalendarSync', handleRosterCalendarSync as EventListener);
+    window.addEventListener('forceCalendarRefresh', handleForceCalendarRefresh as EventListener);
     return () => {
       window.removeEventListener('rosterCalendarSync', handleRosterCalendarSync as EventListener);
+      window.removeEventListener('forceCalendarRefresh', handleForceCalendarRefresh as EventListener);
     };
-  }, [handleRosterCalendarSync]);
+  }, [handleRosterCalendarSync, handleForceCalendarRefresh]);
 
   // Handle showing clear date modal
   const toggleSpecialDate = useCallback((dateKey: string, isSpecial: boolean) => {
