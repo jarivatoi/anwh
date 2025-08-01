@@ -178,13 +178,7 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
             onClose();
           }, 100);
         } else {
-          console.log(`🔍 CALENDAR EXPORT: Available entries in database (first 10):`, allEntries.slice(0, 10).map(e => `${e.date} - ${e.shift_type} - ${e.assigned_name}`));
-          console.log(`🔍 CALENDAR EXPORT: Total entries in database: ${allEntries.length}`);
-          console.log(`🔍 CALENDAR EXPORT: Current month/year filter: ${currentMonth}/${currentYear}`);
-          console.log(`🔍 CALENDAR EXPORT: Sample entry dates:`, allEntries.slice(0, 5).map(e => {
-            const entryDate = new Date(e.date);
-            return `${e.date} (month: ${entryDate.getMonth()}, year: ${entryDate.getFullYear()})`;
-          }));
+          console.log(`❌ CALENDAR EXPORT: Could not validate staff name from auth code: "${authCode}"`);
         }
       }
       
