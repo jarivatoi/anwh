@@ -1,6 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { Calendar, User, ChevronLeft, ChevronRight, Edit, RotateCcw } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { RosterEntry, ShiftFilterType } from '../types/roster';
 import { formatDisplayDate } from '../utils/rosterFilters';
 import { RosterEntryCell } from './RosterEntryCell';
@@ -12,12 +13,15 @@ import { sortByGroup } from '../utils/rosterAuth';
 import { addRosterEntry, deleteRosterEntry } from '../utils/rosterApi';
 import { RosterDateCell } from './RosterDateCell';
 import { EditDetailsModal } from './EditDetailsModal';
+import { fetchRosterEntries } from '../utils/rosterApi';
 
 interface RosterTableViewProps {
   entries: RosterEntry[];
   loading: boolean;
   realtimeStatus: 'connecting' | 'connected' | 'error' | 'disconnected';
   onRefresh?: () => Promise<void>;
+  selectedDate: Date;
+  onDateChange: (date: Date) => void;
 }
 
 export const RosterTableView: React.FC<RosterTableViewProps> = ({
@@ -43,6 +47,11 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const [isReloading, setIsReloading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState<string>('');
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportAuthCode, setExportAuthCode] = useState('');
+  const [exportAuthError, setExportAuthError] = useState('');
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportResult, setExportResult] = useState<{success: boolean, message: string} | null>(null);
   
   const tableRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef(false);
