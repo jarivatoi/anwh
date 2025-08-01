@@ -375,6 +375,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                 className={`
                   h-24 border border-gray-200 rounded-lg p-1 cursor-pointer transition-all duration-200 hover:shadow-md
                   ${todayClass ? 'bg-blue-100 border-blue-300 ring-2 ring-blue-200' : ''}
+                  ${todayClass ? 'animate-pulse' : ''}
                   ${pastClass ? 'bg-gray-50 text-gray-400' : ''}
                   ${futureClass ? 'bg-green-50' : ''}
                   ${isSpecial ? 'bg-yellow-50 border-yellow-300' : ''}
