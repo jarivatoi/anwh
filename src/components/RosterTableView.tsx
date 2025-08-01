@@ -499,6 +499,27 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 ))}
               </select>
             </div>
+            
+            {/* Export to Calendar Button */}
+            <button
+              onClick={() => setShowExportModal(true)}
+              className="p-2 rounded-lg hover:bg-green-100 text-green-600 transition-colors duration-200 z-50 relative bg-transparent"
+              style={{
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
+                position: 'relative',
+                zIndex: 50,
+                backgroundColor: 'transparent',
+                transform: 'translate3d(0,0,0)',
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
+                WebkitTransform: 'translate3d(0,0,0)',
+                WebkitTouchCallout: 'none'
+              }}
+              title="Export your shifts to calendar"
+            >
+              <Download className="w-5 h-5" />
+            </button>
           </div>
           
           <button
@@ -937,6 +958,170 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       )}
 
       {/* Staff Selection Modal */}
+      {showExportModal && createPortal(
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 2147483647,
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            display: 'flex',
+            alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
+            justifyContent: 'center',
+            padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
+            paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
+            overflow: 'auto',
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isExporting) {
+              setShowExportModal(false);
+              setExportAuthCode('');
+              setExportAuthError('');
+              setExportResult(null);
+            }
+          }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full" style={{
+            maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
+            maxHeight: window.innerWidth > window.innerHeight ? '95vh' : 'none',
+            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0'
+          }}>
+            <div style={{
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
+            }}>
+              <div className="flex items-center justify-center space-x-3 mb-4">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <Download className="w-6 h-6 text-green-600" />
+                </div>
+              </div>
+              
+              <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
+                Export to Calendar
+              </h3>
+              
+              {!exportResult ? (
+                <>
+                  <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-start space-x-3">
+                      <Calendar className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-medium text-blue-800 mb-2">Export Your Shifts</h4>
+                        <ul className="text-sm text-blue-700 space-y-1">
+                          <li>• Exports only YOUR shifts for {formatMonthYear(selectedDate)}</li>
+                          <li>• Adds shifts to your personal calendar tab</li>
+                          <li>• Skips dates that already have shifts</li>
+                          <li>• Automatically marks special dates when needed</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Your Authentication Code
+                    </label>
+                    <input
+                      type="text"
+                      value={exportAuthCode}
+                      onChange={(e) => setExportAuthCode(e.target.value.toUpperCase())}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-center font-mono text-lg"
+                      placeholder="Enter your code"
+                      maxLength={4}
+                      autoComplete="off"
+                      autoFocus
+                      disabled={isExporting}
+                    />
+                  </div>
+                  
+                  {exportAuthError && (
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-sm text-red-700 text-center">{exportAuthError}</p>
+                    </div>
+                  )}
+                  
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={() => {
+                        setShowExportModal(false);
+                        setExportAuthCode('');
+                        setExportAuthError('');
+                      }}
+                      disabled={isExporting}
+                      className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleExportToCalendar}
+                      disabled={isExporting || exportAuthCode.length < 4}
+                      className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
+                    >
+                      {isExporting ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Exporting...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-4 h-4" />
+                          <span>Export to Calendar</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-center mb-6">
+                    <div className={`w-16 h-16 ${exportResult.success ? 'bg-green-100' : 'bg-red-100'} rounded-full flex items-center justify-center mx-auto mb-4`}>
+                      {exportResult.success ? (
+                        <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      ) : (
+                        <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      )}
+                    </div>
+                    <h4 className="text-lg font-medium text-gray-900 mb-2">
+                      {exportResult.success ? 'Export Successful!' : 'Export Failed'}
+                    </h4>
+                    <p className="text-gray-600">
+                      {exportResult.message}
+                    </p>
+                  </div>
+                  
+                  <button
+                    onClick={() => {
+                      setShowExportModal(false);
+                      setExportAuthCode('');
+                      setExportAuthError('');
+                      setExportResult(null);
+                      if (exportResult.success) {
+                        // Switch to calendar tab to show the exported data
+                        window.dispatchEvent(new CustomEvent('switchToCalendarTab'));
+                      }
+                    }}
+                    className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200"
+                  >
+                    {exportResult.success ? 'View in Calendar' : 'Close'}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+        , document.body
+      )}
+      
       {editingDate && selectedShift && authCode && !showAuthModal && createPortal(
         <div 
           className="fixed inset-0 bg-black bg-opacity-50"
