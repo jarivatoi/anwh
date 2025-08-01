@@ -1,8 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { Calendar, User, ChevronLeft, ChevronRight, Edit, RotateCcw } from 'lucide-react';
-import { createPortal } from 'react-dom';
-import { Calendar, Edit, FileText, X, CheckCircle, AlertTriangle, Download } from 'lucide-react';
+import { Calendar, User, ChevronLeft, ChevronRight, Edit, RotateCcw, FileText, X, CheckCircle, AlertTriangle, Download } from 'lucide-react';
 import { RosterEntry, ShiftFilterType } from '../types/roster';
 import { formatDisplayDate } from '../utils/rosterFilters';
 import { RosterEntryCell } from './RosterEntryCell';
