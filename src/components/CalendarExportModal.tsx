@@ -124,88 +124,51 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
         if (staffName) {
           console.log(`🔍 CALENDAR EXPORT: Syncing for staff: "${staffName}"`);
           console.log(`🔍 CALENDAR EXPORT: Total entries to check: ${allEntries.length}`);
-          console.log(`🔍 CALENDAR EXPORT: Current calendar schedule keys:`, Object.keys(schedule));
-          console.log(`🔍 CALENDAR EXPORT: Current calendar schedule:`, schedule);
           
           // Filter entries for this staff member and month
           const staffEntries = allEntries.filter(entry => {
             const entryBaseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
             const staffBaseName = staffName.replace(/\(R\)$/, '').trim().toUpperCase();
             
-            console.log(`🔍 CALENDAR EXPORT: Entry "${entry.assigned_name}" -> base: "${entryBaseName}", Staff "${staffName}" -> base: "${staffBaseName}", Match: ${entryBaseName === staffBaseName}`);
-            
             if (entryBaseName !== staffBaseName) return false;
             
             const entryDate = new Date(entry.date);
             const isInMonth = entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
-            console.log(`🔍 CALENDAR EXPORT: Entry date ${entry.date} -> month: ${entryDate.getMonth()}, year: ${entryDate.getFullYear()}, target: ${currentMonth}/${currentYear}, isInMonth: ${isInMonth}`);
             return isInMonth;
           });
           
           console.log(`🔍 CALENDAR EXPORT: Found ${staffEntries.length} entries for ${staffName} in ${formatMonthYear()}`);
-          console.log(`🔍 CALENDAR EXPORT: Staff entries:`, staffEntries.map(e => `${e.date}: ${e.shift_type} - ${e.assigned_name}`));
-          
-          // Debug: Check what's currently in the calendar before sync
-          console.log(`🔍 CALENDAR EXPORT: Current calendar state before sync:`, {
-            scheduleKeys: Object.keys(schedule || {}),
-            scheduleEntries: Object.entries(schedule || {}).slice(0, 5),
-            specialDatesKeys: Object.keys(specialDates || {}),
-            currentMonth: currentMonth,
-            currentYear: currentYear
-          });
           
           if (staffEntries.length > 0) {
-            // Convert roster entries to calendar format and sync
+            // Use the existing sync mechanism that's already working
             staffEntries.forEach(entry => {
-              const dateKey = entry.date; // Already in YYYY-MM-DD format
-              
-              // Map roster shift types to calendar shift IDs
-              const shiftMapping: Record<string, string> = {
-                'Morning Shift (9-4)': '9-4',
-                'Evening Shift (4-10)': '4-10', 
-                'Saturday Regular (12-10)': '12-10',
-                'Night Duty': 'N',
-                'Sunday/Public Holiday/Special': '9-4'
-              };
-              
-              const calendarShiftId = shiftMapping[entry.shift_type];
-              if (!calendarShiftId) {
-                console.log(`❌ CALENDAR EXPORT: Unknown shift type: ${entry.shift_type}`);
-                return;
-              }
-              
-              console.log(`🔄 CALENDAR EXPORT: Converting "${entry.shift_type}" -> "${calendarShiftId}" for ${dateKey}`);
-              console.log(`🔄 CALENDAR EXPORT: Current shifts for ${dateKey}:`, schedule[dateKey] || []);
-              
-              // Dispatch calendar sync event with the converted data
+              // Create the same sync event format that's already working
               const syncEvent = {
-                date: dateKey,
+                date: entry.date,
                 shiftType: entry.shift_type,
                 assignedName: entry.assigned_name,
                 editorName: staffName,
                 action: 'added' as const
               };
               
-              console.log('📅 CALENDAR EXPORT: Dispatching sync event:', syncEvent);
+              console.log('🔄 CALENDAR EXPORT: Using existing sync mechanism for:', syncEvent);
+              
+              // Use the same event that works for table editing
               window.dispatchEvent(new CustomEvent('rosterCalendarSync', {
                 detail: syncEvent
               }));
             });
           } else {
             console.log(`❌ CALENDAR EXPORT: No entries found for ${staffName} in ${formatMonthYear()}`);
-            console.log(`🔍 CALENDAR EXPORT: Sample entries in database:`, allEntries.slice(0, 5).map(e => `${e.date}: ${e.shift_type} - ${e.assigned_name}`));
-            console.log(`🔍 CALENDAR EXPORT: All staff names in database:`, [...new Set(allEntries.map(e => e.assigned_name))]);
           }
           
           console.log(`✅ CALENDAR EXPORT: Dispatched ${staffEntries.length} sync events to calendar`);
           
-          // Force a small delay to ensure all events are processed
+          // Small delay to ensure all sync events are processed
           setTimeout(() => {
             console.log('🔄 CALENDAR EXPORT: Triggering calendar refresh and closing modal...');
-            // Dispatch additional refresh event
+            // Force calendar refresh using existing mechanism
             window.dispatchEvent(new CustomEvent('forceCalendarRefresh'));
-            
-            // Also close the modal after sync
             onClose();
           }, 100);
         } else {
