@@ -22,6 +22,7 @@ interface RosterTableViewProps {
   selectedDate: Date;
   onDateChange: (date: Date) => void;
   onExportToCalendar: () => void;
+  setActiveTab: (tab: 'calendar' | 'settings' | 'data' | 'roster') => void;
   setActiveTab?: (tab: 'calendar' | 'settings' | 'data' | 'roster') => void;
 }
 
@@ -33,6 +34,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   selectedDate,
   onDateChange,
   onExportToCalendar
+  setActiveTab
 }) => {
   // All hooks must be declared at the top level before any conditional returns
   const [refreshKey, setRefreshKey] = useState(0);
