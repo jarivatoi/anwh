@@ -1136,8 +1136,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   <button
                     onClick={() => {
                       setShowExportModal(false);
-                      onExportToCalendar(); // Close the modal first
                       setActiveTab('calendar');
+                      onExportToCalendar();
                       
                       // Dispatch event to navigate calendar to imported month
                       window.dispatchEvent(new CustomEvent('navigateToMonth', {
