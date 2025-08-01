@@ -175,7 +175,20 @@ export const deleteRosterEntry = async (id: string): Promise<void> => {
         shiftType: entryToDelete.shift_type,
         assignedName: entryToDelete.assigned_name,
         editorName: entryToDelete.last_edited_by || 'Unknown',
-        action: 'removed'
+        change_description: (() => {
+          // If entry has been edited before, preserve the original assignment in the description
+          if (currentEntry.last_edited_by && currentEntry.change_description) {
+            // Extract the very first "from" name from existing description
+            const firstFromMatch = currentEntry.change_description.match(/Name changed from "([^"]+)"/);
+            const originalName = firstFromMatch ? firstFromMatch[1] : currentEntry.assigned_name;
+            
+            // Always use the original name as the "from" in new changes
+            return `Name changed from "${originalName}" to "${formData.assignedName}"`;
+          } else {
+            // First edit - use current assigned name as the original
+            return formData.changeDescription || null;
+          }
+        })()
       };
       window.dispatchEvent(new CustomEvent('rosterCalendarSync', {
         detail: syncEvent
