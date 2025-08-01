@@ -106,30 +106,19 @@ export const updateRosterEntry = async (id: string, formData: RosterFormData, ed
     const now = new Date();
     const timestamp = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
     
-    // Determine the original PDF assignment
-    let originalPdfAssignment = currentEntry.original_assigned_name || currentEntry.assigned_name;
-    
-    // Create the new change description that preserves the original PDF assignment
+    // Handle change description with original PDF tracking
     let newChangeDescription = formData.changeDescription;
     
+    // If this is the first edit from a PDF import, preserve the original assignment
     if (currentEntry.change_description === 'Imported from PDF') {
-      // Only add original PDF info if this is the first edit from PDF
-      if (currentEntry.change_description === 'Imported from PDF') {
-        newChangeDescription = `${formData.changeDescription} (Original PDF: ${originalPdfAssignment})`;
-      } else {
-        // For subsequent edits, preserve existing original PDF info but keep description clean
-        const existingOriginal = currentEntry.change_description?.match(/\(Original PDF: ([^)]+)\)/);
-        if (existingOriginal) {
-          newChangeDescription = `${formData.changeDescription} (Original PDF: ${existingOriginal[1]})`;
-        } else {
-          // Just use the clean change description
-          newChangeDescription = formData.changeDescription;
-        }
+      newChangeDescription = `${formData.changeDescription} (Original PDF: ${currentEntry.assigned_name})`;
+    } else if (currentEntry.change_description && currentEntry.change_description.includes('(Original PDF:')) {
+      // For subsequent edits, preserve the existing original PDF info
+      const existingOriginal = currentEntry.change_description.match(/\(Original PDF: ([^)]+)\)/);
+      if (existingOriginal) {
+        newChangeDescription = `${formData.changeDescription} (Original PDF: ${existingOriginal[1]})`;
       }
     }
-    
-    // Store original PDF assignment in a separate field for tracking
-    let originalPdfField = originalPdfAssignment;
     
     const updateData = {
       date: formData.date,
@@ -137,8 +126,7 @@ export const updateRosterEntry = async (id: string, formData: RosterFormData, ed
       assigned_name: formData.assignedName,
       last_edited_by: editorName,
       last_edited_at: timestamp,
-      change_description: newChangeDescription || null,
-      original_assigned_name: originalPdfField
+      change_description: newChangeDescription || null
     };
 
     const { data, error } = await supabase
