@@ -3,7 +3,13 @@ export const parseNameChange = (description: string, assignedName: string) => {
   const originalPdfMatch = description.match(/\(Original PDF: ([^)]+)\)/);
   
   if (originalPdfMatch) {
-    const originalPdfAssignment = originalPdfMatch[1].trim();
+    let originalPdfAssignment = originalPdfMatch[1].trim();
+    
+    // Fix missing closing parenthesis if it exists
+    if (originalPdfAssignment.includes('(R') && !originalPdfAssignment.includes('(R)')) {
+      originalPdfAssignment = originalPdfAssignment.replace('(R', '(R)');
+    }
+    
     console.log('🔍 Found original PDF assignment in description:', originalPdfAssignment);
     
     // If we have the original PDF assignment stored, use it directly
@@ -30,7 +36,12 @@ export const parseNameChange = (description: string, assignedName: string) => {
     
     if (changes.length > 0) {
       // Use the first "from" as the original assignment (this is the original PDF assignment)
-      const originalAssignment = changes[0].from;
+      let originalAssignment = changes[0].from;
+      
+      // Fix missing closing parenthesis if it exists
+      if (originalAssignment.includes('(R') && !originalAssignment.includes('(R)')) {
+        originalAssignment = originalAssignment.replace('(R', '(R)');
+      }
       
       // The CURRENT assignment should be the assignedName parameter
       console.log('🔍 Original assignment:', originalAssignment);
@@ -48,7 +59,12 @@ export const parseNameChange = (description: string, assignedName: string) => {
   const singleMatch = description.match(/Name changed from "([^"]+)" to "([^"]+)"/);
   if (singleMatch) {
     // Use the match as the original assignment
-    const originalAssignment = singleMatch[1];
+    let originalAssignment = singleMatch[1];
+    
+    // Fix missing closing parenthesis if it exists
+    if (originalAssignment.includes('(R') && !originalAssignment.includes('(R)')) {
+      originalAssignment = originalAssignment.replace('(R', '(R)');
+    }
     
     return {
       oldName: originalAssignment, // Original PDF assignment
