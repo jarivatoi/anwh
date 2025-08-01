@@ -1170,14 +1170,9 @@ export const Calendar: React.FC<CalendarProps> = ({
                       {/* Special date indicator */}
                       {hasSpecialDate && (
                         <div 
-                          className="special-text text-[9px] sm:text-[10px] text-red-600 font-bold leading-none mt-0.5 flex justify-center select-none"
-                          style={{
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                            borderRadius: '3px',
-                            padding: '1px 3px'
-                          }}
+                          className="special-text text-[8px] sm:text-[9px] text-red-500 font-bold leading-none mt-0.5 flex justify-center select-none"
                         >
-                          <span className="text-center select-none font-semibold">SPECIAL</span>
+                          <div className="text-center select-none">SPECIAL</div>
                         </div>
                       )}
                       
@@ -1186,33 +1181,24 @@ export const Calendar: React.FC<CalendarProps> = ({
                         console.log(`🎨 RENDERING DEBUG: Day ${day} - dayShifts:`, dayShifts);
                         return dayShifts.map((shiftId, idx) => {
                         const shift = getShiftDisplay(shiftId);
-                        console.log(`🎨 RENDERING SHIFT: Day ${day}, Shift ${shiftId}, Found shift object:`, shift);
                         console.log(`🎨 RENDERING DEBUG: Day ${day} - shiftId: ${shiftId}, shift found:`, shift);
                         return shift ? (
                           <div
                             key={`${shiftId}-${idx}`}
-                            className={`shift-text text-[10px] sm:text-[12px] font-bold leading-tight text-gray-900 flex-shrink-0 w-full select-none ${pastDate ? 'opacity-60' : ''}`}
+                            className={`shift-text text-[8px] sm:text-[11px] font-bold leading-tight text-black flex-shrink-0 w-full select-none whitespace-nowrap overflow-hidden ${pastDate ? 'opacity-60' : ''}`}
                             style={{
-                              minHeight: '14px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                              borderRadius: '4px',
-                              margin: '1px 0',
-                              padding: '1px 2px'
+                              backgroundColor: 'rgba(255, 0, 0, 0.1)', // Temporary red background to see if element exists
+                              border: '1px solid red', // Temporary red border
+                              minHeight: '12px' // Ensure minimum height
                             }}
                           >
-                            <span className="text-center select-none font-semibold" style={{
-                              fontSize: window.innerWidth >= 640 ? '11px' : '9px',
-                              lineHeight: '1.2',
-                              color: '#1f2937',
-                              fontWeight: '600'
-                            }}>
+                            <div className="text-center select-none truncate px-0.5" style={{ backgroundColor: 'rgba(0, 255, 0, 0.1)' }}>
                               {shift.time}
-                            </span>
+                            </div>
                           </div>
-                        ) : null;
+                        ) : (
+                          console.log(`❌ RENDERING DEBUG: Day ${day} - No shift found for shiftId: ${shiftId}`) || null
+                        );
                         });
                       })()}
                     </div>
