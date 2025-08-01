@@ -936,21 +936,27 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
            overflow: 'auto',
            overflowY: 'auto',
            WebkitOverflowScrolling: 'touch',
-           touchAction: 'pan-y'
+           touchAction: 'pan-y',
+           userSelect: 'none',
+           WebkitUserSelect: 'none'
           }}
         >
           <div className="bg-white rounded-2xl shadow-2xl w-full flex flex-col" style={{
             maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
             maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
-            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0'
+            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
+            userSelect: 'none',
+            WebkitUserSelect: 'none'
           }}>
             <div className="border-b border-gray-200 flex-shrink-0" style={{
-              padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
+              userSelect: 'none',
+              WebkitUserSelect: 'none'
             }}>
-              <h3 className="text-xl font-bold text-gray-900 mb-2 text-center">
+              <h3 className="text-xl font-bold text-gray-900 mb-2 text-center select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
                 Edit Staff Assignment
               </h3>
-              <p className="text-sm text-gray-600 text-center">
+              <p className="text-sm text-gray-600 text-center select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
                 {formatTableDate(editingDate).dayName} {formatTableDate(editingDate).dateString} - {selectedShift}
               </p>
             </div>
@@ -958,46 +964,52 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             <div className="flex-1 overflow-y-auto" style={{
               padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
               WebkitOverflowScrolling: 'touch',
-              touchAction: 'pan-y'
+              touchAction: 'pan-y',
+              userSelect: 'none',
+              WebkitUserSelect: 'none'
             }}>
               <div className="space-y-3">
                 {availableNames.map(name => (
-                  <label key={name} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer">
+                  <label key={name} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
                     <input
                       type="checkbox"
                       checked={selectedStaff.includes(name)}
                       onChange={() => handleStaffToggle(name)}
                       className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                     />
-                    <span className="text-sm font-medium text-gray-900">{name}</span>
+                    <span className="text-sm font-medium text-gray-900 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{name}</span>
                   </label>
                 ))}
               </div>
             </div>
             
             <div className="border-t border-gray-200 flex-shrink-0" style={{
-              padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
+              userSelect: 'none',
+              WebkitUserSelect: 'none'
             }}>
               <div className="flex space-x-3">
                 <button
                   onClick={handleCancelEdit}
                   disabled={isUpdating}
-                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
+                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 select-none"
+                  style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveChanges}
                   disabled={isUpdating}
-                  className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center justify-center space-x-2"
+                  className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center justify-center space-x-2 select-none"
+                  style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
                 >
                   {isUpdating ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Saving...</span>
+                      <span className="select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>Saving...</span>
                     </>
                   ) : (
-                    <span>Save Changes</span>
+                    <span className="select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>Save Changes</span>
                   )}
                 </button>
               </div>
