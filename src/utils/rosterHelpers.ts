@@ -1,4 +1,13 @@
 export const parseNameChange = (description: string, assignedName: string) => {
+  // First, check if we have the original PDF assignment stored in the description
+  const originalPdfMatch = description.match(/\(Original PDF: ([^)]+)\)/);
+  let originalPdfAssignment = null;
+  
+  if (originalPdfMatch) {
+    originalPdfAssignment = originalPdfMatch[1];
+    console.log('🔍 Found original PDF assignment in description:', originalPdfAssignment);
+  }
+  
   // Look for ALL "Name changed from" patterns to trace back to the original
   const allMatches = description.match(/Name changed from "([^"]+)" to "([^"]+)"/g);
   
@@ -14,8 +23,8 @@ export const parseNameChange = (description: string, assignedName: string) => {
     console.log('🔍 Parsed changes:', changes);
     
     if (changes.length > 0) {
-      // The ORIGINAL assignment is the "from" of the FIRST change
-      const originalAssignment = changes[0].from;
+      // Use the stored original PDF assignment if available, otherwise use the first "from"
+      const originalAssignment = originalPdfAssignment || changes[0].from;
       
       // The CURRENT assignment should be the assignedName parameter
       console.log('🔍 Original assignment:', originalAssignment);
@@ -32,8 +41,11 @@ export const parseNameChange = (description: string, assignedName: string) => {
   // Fallback: look for single match (for backward compatibility)
   const singleMatch = description.match(/Name changed from "([^"]+)" to "([^"]+)"/);
   if (singleMatch) {
+    // Use the stored original PDF assignment if available, otherwise use the match
+    const originalAssignment = originalPdfAssignment || singleMatch[1];
+    
     return {
-      oldName: singleMatch[1], // Original assignment
+      oldName: originalAssignment, // Original PDF assignment
       newName: assignedName, // Current assignment (not from description)
       isNameChange: true
     };
