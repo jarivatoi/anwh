@@ -9,6 +9,7 @@ import { useLongPress } from '../hooks/useLongPress';
 import { validateAuthCode, availableNames } from '../utils/rosterAuth';
 import { fetchRosterEntries } from '../utils/rosterApi';
 import { syncRosterToCalendar } from '../utils/rosterCalendarSync';
+import { formatMauritianRupees } from '../utils/currency';
 
 interface CalendarProps {
   currentDate: Date;
