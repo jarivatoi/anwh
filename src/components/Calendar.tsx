@@ -635,6 +635,23 @@ export const Calendar: React.FC<CalendarProps> = ({
     setImportResults(null);
   };
 
+  // Debug function to log current calendar state
+  useEffect(() => {
+    console.log('📅 CALENDAR DEBUG: Current calendar state:', {
+      currentMonth: currentMonth + 1,
+      currentYear,
+      scheduleKeys: Object.keys(schedule),
+      scheduleEntries: Object.entries(schedule).slice(0, 5),
+      specialDatesKeys: Object.keys(specialDates),
+      totalScheduleEntries: Object.keys(schedule).length,
+      totalSpecialDates: Object.keys(specialDates).length,
+      sampleScheduleData: Object.entries(schedule).slice(0, 3).map(([date, shifts]) => ({
+        date,
+        shifts,
+        dayOfWeek: new Date(date).getDay()
+      }))
+    });
+  }, [schedule, specialDates, currentMonth, currentYear]);
   const handleMonthNavigation = (direction: 'prev' | 'next') => {
     onNavigateMonth(direction);
   };
