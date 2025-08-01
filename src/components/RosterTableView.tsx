@@ -428,7 +428,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   };
 
   const handleExportToCalendar = () => {
-    onExportToCalendar();
+    setShowExportModal(true);
   };
 
   // Shift types in order
