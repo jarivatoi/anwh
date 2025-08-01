@@ -3,7 +3,7 @@ export const parseNameChange = (description: string, assignedName: string) => {
   const originalPdfMatch = description.match(/\(Original PDF: ([^)]+)\)/);
   
   if (originalPdfMatch) {
-    const originalPdfAssignment = originalPdfMatch[1];
+    const originalPdfAssignment = originalPdfMatch[1].trim();
     console.log('🔍 Found original PDF assignment in description:', originalPdfAssignment);
     
     // If we have the original PDF assignment stored, use it directly
