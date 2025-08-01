@@ -1,4 +1,5 @@
 import { DEFAULT_SHIFT_COMBINATIONS } from '../constants';
+import { RosterEntry } from '../types/roster';
 
 interface DBSchema {
   schedule: {
