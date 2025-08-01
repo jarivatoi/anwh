@@ -1211,6 +1211,9 @@ export const Calendar: React.FC<CalendarProps> = ({
                             }}>
                               {shift.time}
                             </span>
+                          </div>
+                        ) : null;
+                        });
                       })()}
                     </div>
                   </div>
