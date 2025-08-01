@@ -8,8 +8,8 @@ export const parseNameChange = (description: string, assignedName: string) => {
     const firstMatch = allMatches[0].match(/Name changed from "([^"]+)" to "([^"]+)"/);
     if (firstMatch) {
       return {
-        oldName: firstMatch[1], // This is the original PDF assignment
-        newName: assignedName, // Current assignment
+        oldName: firstMatch[1], // Original PDF assignment (the "from" name)
+        newName: firstMatch[2], // What it was changed to (the "to" name)
         isNameChange: true
       };
     }
@@ -20,14 +20,14 @@ export const parseNameChange = (description: string, assignedName: string) => {
   if (singleMatch) {
     return {
       oldName: singleMatch[1],
-      newName: assignedName, // Use current assignment, not the "to" value from description
+      newName: singleMatch[2], // Use the "to" value from description
       isNameChange: true
     };
   }
   
   return {
     oldName: null,
-    newName: assignedName,
+    newName: null,
     isNameChange: false
   };
 };
