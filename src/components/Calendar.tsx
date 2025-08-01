@@ -1219,6 +1219,18 @@ export const Calendar: React.FC<CalendarProps> = ({
         </div>
       </div>
 
+      {/* Bulk Roster Import Modal */}
+      <BulkRosterImport
+        isOpen={showBulkImport}
+        onClose={() => setShowBulkImport(false)}
+        scheduleTitle={scheduleTitle}
+        schedule={schedule}
+        specialDates={specialDates}
+        setSchedule={setSchedule}
+        setSpecialDates={setSpecialDates}
+        currentDate={currentDate}
+      />
+
       {/* Clear Date Modal */}
       <ClearDateModal
         isOpen={showClearDateModal}
