@@ -119,16 +119,16 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
       if (result.success) {
         console.log('🔄 CALENDAR EXPORT: Starting roster-to-calendar sync...');
         
-        // Get the staff name from auth code
-        const staffName = validateAuthCode(authCode);
-        if (staffName) {
-          console.log(`🔍 CALENDAR EXPORT: Syncing for staff: "${staffName}"`);
+        // Get the staff name from auth code for calendar label
+        const authenticatedStaffName = validateAuthCode(authCode);
+        if (authenticatedStaffName) {
+          console.log(`🔍 CALENDAR EXPORT: Syncing for staff: "${authenticatedStaffName}"`);
           console.log(`🔍 CALENDAR EXPORT: Total entries to check: ${allEntries.length}`);
           
           // Filter entries for this staff member and month
           const staffEntries = allEntries.filter(entry => {
             const entryBaseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
-            const staffBaseName = staffName.replace(/\(R\)$/, '').trim().toUpperCase();
+            const staffBaseName = authenticatedStaffName.replace(/\(R\)$/, '').trim().toUpperCase();
             
             if (entryBaseName !== staffBaseName) return false;
             
@@ -137,7 +137,7 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
             return isInMonth;
           });
           
-          console.log(`🔍 CALENDAR EXPORT: Found ${staffEntries.length} entries for ${staffName} in ${formatMonthYear()}`);
+          console.log(`🔍 CALENDAR EXPORT: Found ${staffEntries.length} entries for ${authenticatedStaffName} in ${formatMonthYear()}`);
           
           if (staffEntries.length > 0) {
             // Use the existing sync mechanism that's already working
@@ -147,7 +147,7 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
                 date: entry.date,
                 shiftType: entry.shift_type,
                 assignedName: entry.assigned_name,
-                editorName: staffName,
+                editorName: authenticatedStaffName,
                 action: 'added' as const
               };
               
@@ -159,7 +159,7 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
               }));
             });
           } else {
-            console.log(`❌ CALENDAR EXPORT: No entries found for ${staffName} in ${formatMonthYear()}`);
+            console.log(`❌ CALENDAR EXPORT: No entries found for ${authenticatedStaffName} in ${formatMonthYear()}`);
           }
           
           console.log(`✅ CALENDAR EXPORT: Dispatched ${staffEntries.length} sync events to calendar`);
