@@ -9,6 +9,7 @@ import { useLongPress } from '../hooks/useLongPress';
 import { fetchRosterEntries } from '../utils/rosterApi';
 import { syncRosterToCalendar } from '../utils/rosterCalendarSync';
 import { MonthClearModal } from './MonthClearModal';
+import { MonthClearModal } from './MonthClearModal';
 
 interface CalendarProps {
   currentDate: Date;
