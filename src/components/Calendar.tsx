@@ -303,6 +303,13 @@ export const Calendar: React.FC<CalendarProps> = ({
     const dateKey = formatDateKey(day);
     const shifts = schedule[dateKey] || [];
     
+    // Debug logging for specific dates that should have data
+    if (day === 1 || day === 2 || day === 21) {
+      console.log(`📅 CALENDAR DEBUG: Day ${day} (${dateKey}) has shifts:`, shifts);
+      console.log(`📅 CALENDAR DEBUG: Current month/year: ${currentMonth + 1}/${currentYear}`);
+      console.log(`📅 CALENDAR DEBUG: Schedule keys:`, Object.keys(schedule));
+    }
+    
     // Sort shifts in the desired display order: 9-4, 4-10, 12-10, N
     const shiftOrder = ['9-4', '4-10', '12-10', 'N'];
     return shifts.sort((a, b) => {
