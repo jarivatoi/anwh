@@ -92,6 +92,11 @@ class WorkScheduleDB {
           console.log('📝 Creating metadata store');
           db.createObjectStore('metadata', { keyPath: 'key' });
         }
+
+        if (!db.objectStoreNames.contains('roster')) {
+          console.log('👥 Creating roster store');
+          db.createObjectStore('roster', { keyPath: 'id' });
+        }
         console.log('✅ IndexedDB schema upgrade completed');
       };
       

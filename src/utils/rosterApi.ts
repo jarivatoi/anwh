@@ -1,5 +1,29 @@
 import { supabase } from '../lib/supabase';
 import { RosterEntry, RosterFormData } from '../types/roster';
+import { workScheduleDB } from './indexedDB';
+
+// IndexedDB fallback functions
+export const getStoredRosterEntries = async (): Promise<RosterEntry[]> => {
+  try {
+    console.log('📦 Getting roster entries from IndexedDB fallback...');
+    const entries = await workScheduleDB.getRosterEntries();
+    console.log(`✅ Retrieved ${entries.length} entries from IndexedDB`);
+    return entries;
+  } catch (error) {
+    console.error('❌ Failed to get roster entries from IndexedDB:', error);
+    return [];
+  }
+};
+
+export const storeRosterEntries = async (entries: RosterEntry[]): Promise<void> => {
+  try {
+    console.log(`💾 Storing ${entries.length} roster entries to IndexedDB...`);
+    await workScheduleDB.setRosterEntries(entries);
+    console.log('✅ Roster entries stored to IndexedDB successfully');
+  } catch (error) {
+    console.error('❌ Failed to store roster entries to IndexedDB:', error);
+  }
+};
 
 export const fetchRosterEntries = async (): Promise<RosterEntry[]> => {
   if (!supabase) {
