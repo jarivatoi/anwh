@@ -92,23 +92,29 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
 
   // Get display styling for the name
   const getNameStyling = (entry: RosterEntry) => {
-    if (!hasBeenEdited(entry)) {
-      // Never edited - normal black text
+    // NEW LOGIC: If no last_edited_by AND no initial assignment (change description) = black text
+    if (!entry.last_edited_by && !entry.change_description) {
+      console.log('🎨 No edits and no initial assignment - black text');
       return { className: '', showAsterisk: false };
     }
     
-    // Only check for original assignment if we have change description
+    if (!hasBeenEdited(entry)) {
+      // Has change description but never manually edited - normal black text
+      return { className: '', showAsterisk: false };
+    }
+    
+    // Check for original assignment if we have change description
     if (!entry.change_description || !entry.change_description.includes('Name changed from')) {
-      // Edited but no change description - treat as normal edit (red)
+      // Manually edited but no change description - red text
       return { className: 'text-red-600 animate-pulse', showAsterisk: false };
     }
     
     if (isBackToOriginal(entry)) {
-      // Edited but back to original - black text with asterisk
+      // Manually edited but back to original - black text with asterisk
       return { className: 'text-black', showAsterisk: true };
     }
     
-    // Edited and different from original - red pulsating text
+    // Manually edited and different from original - red pulsating text
     return { className: 'text-red-600 animate-pulse', showAsterisk: false };
   };
 

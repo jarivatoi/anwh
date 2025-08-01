@@ -101,27 +101,33 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
       isBackToOriginal: isBackToOriginal(entry)
     });
     
-    if (!hasBeenEdited(entry)) {
-      // Never edited - normal black text
-      console.log('🎨 Never edited - black text');
+    // NEW LOGIC: If no last_edited_by AND no initial assignment (change description) = black text
+    if (!entry.last_edited_by && !entry.change_description) {
+      console.log('🎨 No edits and no initial assignment - black text');
       return { className: '', showAsterisk: false };
     }
     
-    // Only check for original assignment if we have change description
+    if (!hasBeenEdited(entry)) {
+      // Has change description but never manually edited - normal black text
+      console.log('🎨 Has change description but never manually edited - black text');
+      return { className: '', showAsterisk: false };
+    }
+    
+    // Check for original assignment if we have change description
     if (!entry.change_description || !entry.change_description.includes('Name changed from')) {
-      // Edited but no change description - treat as normal edit (red)
-      console.log('🎨 Edited but no name change - red text');
+      // Manually edited but no change description - red text
+      console.log('🎨 Manually edited but no name change - red text');
       return { className: 'text-red-600 animate-pulse', showAsterisk: false };
     }
     
     if (isBackToOriginal(entry)) {
-      // Edited but back to original - black text with asterisk
-      console.log('🎨 Back to original - black text with asterisk');
+      // Manually edited but back to original - black text with asterisk
+      console.log('🎨 Manually edited but back to original - black text with asterisk');
       return { className: 'text-black', showAsterisk: true };
     }
     
-    // Edited and different from original - red pulsating text
-    console.log('🎨 Edited and different - red text');
+    // Manually edited and different from original - red pulsating text
+    console.log('🎨 Manually edited and different - red text');
     return { className: 'text-red-600 animate-pulse', showAsterisk: false };
   };
 
