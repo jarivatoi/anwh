@@ -426,6 +426,11 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     
     return Math.max(...Object.values(shiftGroups).map(entries => entries.length), 1);
   };
+
+  const handleExportToCalendar = () => {
+    onExportToCalendar();
+  };
+
   // Shift types in order
   const shiftTypes = [
     'Morning Shift (9-4)',
