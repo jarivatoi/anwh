@@ -68,6 +68,12 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
 
   // Check if entry has been edited
   const hasBeenEdited = (entry: RosterEntry) => {
+    // If we have original_assigned_name, use that for comparison
+    if (entry.original_assigned_name) {
+      return entry.assigned_name !== entry.original_assigned_name;
+    }
+    
+    // Fallback to old logic for entries without original_assigned_name
     return entry.change_description && 
            entry.change_description.includes('Name changed from') &&
            entry.last_edited_by;

@@ -3,6 +3,7 @@ export interface RosterEntry {
   date: string;
   shift_type: string;
   assigned_name: string;
+  original_assigned_name?: string; // Store the original PDF assignment
   last_edited_by: string;
   last_edited_at: string;
   created_at: string;

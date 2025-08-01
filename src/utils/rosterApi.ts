@@ -46,6 +46,7 @@ export const addRosterEntry = async (formData: RosterFormData, editorName: strin
       date: formData.date,
       shift_type: formData.shiftType,
       assigned_name: formData.assignedName,
+      original_assigned_name: formData.changeDescription === 'Imported from PDF' ? formData.assignedName : undefined,
       last_edited_by: editorName,
       last_edited_at: timestamp,
       change_description: formData.changeDescription || null
