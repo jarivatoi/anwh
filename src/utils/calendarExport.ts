@@ -10,7 +10,7 @@ export interface CalendarExportOptions {
 
 export interface ExportResult {
   success: boolean;
-  filename: string;
+  message: string;
   entriesExported: number;
   errors: string[];
 }
@@ -39,36 +39,26 @@ export class CalendarExportManager {
     if (staffEntries.length === 0) {
       return {
         success: false,
-        filename: '',
+        message: 'No shifts found for export',
         entriesExported: 0,
         errors: ['No shifts found for this staff member in the selected month']
       };
     }
     
-    // Generate iCal content
-    const icalContent = this.generateICalContent(staffEntries, staffName, month, year);
-    
-    // Create filename
-    const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    const filename = `${staffName}_${monthNames[month]}_${year}_Shifts.ics`;
-    
-    // Download the file
+    // Export directly to calendar
     try {
-      await this.downloadICalFile(icalContent, filename);
+      await this.exportDirectlyToCalendar(staffEntries, staffName, month, year);
       
       return {
         success: true,
-        filename,
+        message: 'Successfully exported to your calendar',
         entriesExported: staffEntries.length,
         errors: []
       };
     } catch (error) {
       return {
         success: false,
-        filename,
+        message: 'Failed to export to calendar',
         entriesExported: 0,
         errors: [error instanceof Error ? error.message : 'Failed to download calendar file']
       };
@@ -217,37 +207,255 @@ export class CalendarExportManager {
   }
   
   /**
-   * Download iCal file
+   * Export directly to calendar applications
    */
-  private async downloadICalFile(content: string, filename: string): Promise<void> {
-    const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
+  private async exportDirectlyToCalendar(
+    entries: RosterEntry[], 
+    staffName: string, 
+    month: number, 
+    year: number
+  ): Promise<void> {
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
     
-    // Try Web Share API first (works well on mobile)
-    if (navigator.share && navigator.canShare) {
-      try {
-        const file = new File([blob], filename, { type: 'text/calendar' });
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: 'Work Schedule Export',
-            text: 'Your work schedule calendar file'
-          });
-          return;
-        }
-      } catch (error) {
-        console.log('Web Share API failed, using fallback');
-      }
+    // Try multiple direct calendar integration methods
+    
+    // Method 1: Try Calendar API (if available)
+    if (await this.tryCalendarAPI(entries, staffName, month, year)) {
+      return;
     }
     
-    // Fallback: Create download link
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    // Method 2: Try native calendar integration
+    if (await this.tryNativeCalendarIntegration(entries, staffName, month, year)) {
+      return;
+    }
+    
+    // Method 3: Try Web Share API with calendar intent
+    if (await this.tryWebShareCalendar(entries, staffName, month, year)) {
+      return;
+    }
+    
+    // Method 4: Try direct calendar URL schemes
+    if (await this.tryCalendarURLSchemes(entries, staffName, month, year)) {
+      return;
+    }
+    
+    // Fallback: Show instructions for manual import
+    throw new Error('Direct calendar integration not available. Please use your calendar app\'s import feature.');
+  }
+  
+  /**
+   * Try Calendar API integration (Google Calendar, Outlook, etc.)
+   */
+  private async tryCalendarAPI(entries: RosterEntry[], staffName: string, month: number, year: number): Promise<boolean> {
+    try {
+      // Check if Google Calendar API is available
+      if ((window as any).gapi && (window as any).gapi.client && (window as any).gapi.client.calendar) {
+        console.log('📅 Using Google Calendar API');
+        
+        for (const entry of entries) {
+          const shiftTimes = this.getShiftTimes(entry.shift_type);
+          const date = new Date(entry.date);
+          
+          const startDateTime = new Date(date);
+          startDateTime.setHours(shiftTimes.startHour, shiftTimes.startMinute);
+          
+          const endDateTime = new Date(date);
+          if (shiftTimes.endHour < shiftTimes.startHour) {
+            endDateTime.setDate(endDateTime.getDate() + 1);
+          }
+          endDateTime.setHours(shiftTimes.endHour, shiftTimes.endMinute);
+          
+          const event = {
+            summary: `${entry.shift_type} - X-ray Department`,
+            description: `Work shift: ${entry.shift_type}\nAssigned to: ${entry.assigned_name}\nLocation: X-ray Department`,
+            start: {
+              dateTime: startDateTime.toISOString(),
+              timeZone: 'Indian/Mauritius'
+            },
+            end: {
+              dateTime: endDateTime.toISOString(),
+              timeZone: 'Indian/Mauritius'
+            },
+            location: 'X-ray Department'
+          };
+          
+          await (window as any).gapi.client.calendar.events.insert({
+            calendarId: 'primary',
+            resource: event
+          });
+        }
+        
+        return true;
+      }
+    } catch (error) {
+      console.log('❌ Google Calendar API failed:', error);
+    }
+    
+    return false;
+  }
+  
+  /**
+   * Try native calendar integration (iOS/Android)
+   */
+  private async tryNativeCalendarIntegration(entries: RosterEntry[], staffName: string, month: number, year: number): Promise<boolean> {
+    try {
+      // Check if we're in a mobile app with calendar access
+      if ((window as any).DeviceCalendarPlugin || (navigator as any).calendar) {
+        console.log('📅 Using native calendar integration');
+        
+        const calendarPlugin = (window as any).DeviceCalendarPlugin || (navigator as any).calendar;
+        
+        for (const entry of entries) {
+          const shiftTimes = this.getShiftTimes(entry.shift_type);
+          const date = new Date(entry.date);
+          
+          const startDateTime = new Date(date);
+          startDateTime.setHours(shiftTimes.startHour, shiftTimes.startMinute);
+          
+          const endDateTime = new Date(date);
+          if (shiftTimes.endHour < shiftTimes.startHour) {
+            endDateTime.setDate(endDateTime.getDate() + 1);
+          }
+          endDateTime.setHours(shiftTimes.endHour, shiftTimes.endMinute);
+          
+          await calendarPlugin.createEvent({
+            title: `${entry.shift_type} - X-ray Department`,
+            notes: `Work shift: ${entry.shift_type}\nAssigned to: ${entry.assigned_name}`,
+            startDate: startDateTime,
+            endDate: endDateTime,
+            location: 'X-ray Department'
+          });
+        }
+        
+        return true;
+      }
+    } catch (error) {
+      console.log('❌ Native calendar integration failed:', error);
+    }
+    
+    return false;
+  }
+  
+  /**
+   * Try Web Share API with calendar intent
+   */
+  private async tryWebShareCalendar(entries: RosterEntry[], staffName: string, month: number, year: number): Promise<boolean> {
+    try {
+      if (navigator.share) {
+        console.log('📅 Using Web Share API for calendar');
+        
+        // Create calendar events as text that can be shared to calendar apps
+        const eventsText = entries.map(entry => {
+          const shiftTimes = this.getShiftTimes(entry.shift_type);
+          const date = new Date(entry.date);
+          
+          const startTime = `${shiftTimes.startHour.toString().padStart(2, '0')}:${shiftTimes.startMinute.toString().padStart(2, '0')}`;
+          const endTime = `${shiftTimes.endHour.toString().padStart(2, '0')}:${shiftTimes.endMinute.toString().padStart(2, '0')}`;
+          
+          return `${date.toLocaleDateString()} ${startTime}-${endTime}: ${entry.shift_type}`;
+        }).join('\n');
+        
+        await navigator.share({
+          title: `${staffName} Work Schedule`,
+          text: `Work Schedule for ${staffName}:\n\n${eventsText}`,
+        });
+        
+        return true;
+      }
+    } catch (error) {
+      console.log('❌ Web Share API failed:', error);
+    }
+    
+    return false;
+  }
+  
+  /**
+   * Try calendar URL schemes (iOS/Android deep links)
+   */
+  private async tryCalendarURLSchemes(entries: RosterEntry[], staffName: string, month: number, year: number): Promise<boolean> {
+    try {
+      // For single events, we can use calendar URL schemes
+      if (entries.length === 1) {
+        const entry = entries[0];
+        const shiftTimes = this.getShiftTimes(entry.shift_type);
+        const date = new Date(entry.date);
+        
+        const startDateTime = new Date(date);
+        startDateTime.setHours(shiftTimes.startHour, shiftTimes.startMinute);
+        
+        const endDateTime = new Date(date);
+        if (shiftTimes.endHour < shiftTimes.startHour) {
+          endDateTime.setDate(endDateTime.getDate() + 1);
+        }
+        endDateTime.setHours(shiftTimes.endHour, shiftTimes.endMinute);
+        
+        // Create calendar URL for iOS/Android
+        const title = encodeURIComponent(`${entry.shift_type} - X-ray Department`);
+        const details = encodeURIComponent(`Work shift: ${entry.shift_type}\nAssigned to: ${entry.assigned_name}`);
+        const location = encodeURIComponent('X-ray Department');
+        
+        // Format dates for URL scheme
+        const startDate = startDateTime.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        const endDate = endDateTime.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        
+        // Try iOS Calendar URL scheme
+        const iosUrl = `calshow:${startDate}`;
+        
+        // Try Google Calendar URL scheme
+        const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDate}/${endDate}&details=${details}&location=${location}`;
+        
+        // Try opening the URL
+        window.open(googleUrl, '_blank');
+        
+        return true;
+      }
+    } catch (error) {
+      console.log('❌ Calendar URL schemes failed:', error);
+    }
+    
+    return false;
+  }
+  
+  /**
+   * Generate iCal content (fallback method)
+   */
+  private generateICalContent(
+    entries: RosterEntry[], 
+    staffName: string, 
+    month: number, 
+    year: number
+  ): string {
+    
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    
+    // iCal header
+    let ical = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//X-ray ANWH//Roster Export//EN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      `X-WR-CALNAME:${staffName} - ${monthNames[month]} ${year} Shifts`,
+      `X-WR-CALDESC:Work shifts for ${staffName} in ${monthNames[month]} ${year}`,
+      'X-WR-TIMEZONE:Indian/Mauritius'
+    ].join('\r\n');
+    
+    // Add each shift as an event
+    entries.forEach(entry => {
+      const event = this.createICalEvent(entry);
+      ical += '\r\n' + event;
+    });
+    
+    // iCal footer
+    ical += '\r\nEND:VCALENDAR';
+    
+    return ical;
   }
 }
 
