@@ -142,33 +142,74 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
         console.log(`🔍 CALENDAR EXPORT: Entry ${index + 1}: ${entry.date} - ${entry.shift_type} - ${entry.assigned_name}`);
       });
       
-      // Use the same sync mechanism that works for table editing
-      console.log('🔄 CALENDAR EXPORT: Starting roster-to-calendar sync using existing mechanism...');
+      // DIRECT CALENDAR UPDATE - Skip the sync mechanism and update calendar directly
+      console.log('🔄 CALENDAR EXPORT: Updating calendar directly...');
       
       let syncedCount = 0;
+      const calendarUpdates: Record<string, string[]> = {};
+      const specialDateUpdates: Record<string, boolean> = {};
+      
       staffEntries.forEach(entry => {
         console.log(`🔄 CALENDAR EXPORT: Processing entry: ${entry.date} - ${entry.shift_type}`);
         
-        const syncEvent = {
-          date: entry.date,
-          shiftType: entry.shift_type,
-          assignedName: entry.assigned_name,
-          editorName: authenticatedStaffName,
-          action: 'added' as const
+        // Map roster shift types to calendar shift IDs
+        const shiftMapping: Record<string, string> = {
+          'Morning Shift (9-4)': '9-4',
+          'Evening Shift (4-10)': '4-10',
+          'Saturday Regular (12-10)': '12-10',
+          'Night Duty': 'N',
+          'Sunday/Public Holiday/Special': '9-4'
         };
         
-        console.log('🔄 CALENDAR EXPORT: Dispatching sync event:', syncEvent);
+        const calendarShiftId = shiftMapping[entry.shift_type];
+        if (!calendarShiftId) {
+          console.log(`❌ CALENDAR EXPORT: Cannot map shift type: ${entry.shift_type}`);
+          return;
+        }
         
-        // Dispatch the same sync event that works for table editing
-        window.dispatchEvent(new CustomEvent('rosterCalendarSync', {
-          detail: syncEvent
-        }));
+        // Add to calendar updates
+        if (!calendarUpdates[entry.date]) {
+          calendarUpdates[entry.date] = [];
+        }
         
-        syncedCount++;
-        console.log('✅ CALENDAR EXPORT: Sync event dispatched successfully');
+        // Only add if not already present
+        if (!calendarUpdates[entry.date].includes(calendarShiftId)) {
+          calendarUpdates[entry.date].push(calendarShiftId);
+          syncedCount++;
+          console.log(`✅ CALENDAR EXPORT: Added ${calendarShiftId} to ${entry.date}`);
+        } else {
+          console.log(`ℹ️ CALENDAR EXPORT: ${calendarShiftId} already exists for ${entry.date}`);
+        }
+        
+        // Check if date needs special marking
+        const dateObj = new Date(entry.date);
+        const dayOfWeek = dateObj.getDay();
+        
+        // Mark as special if it's a weekday with 9-4 shift or Saturday with 9-4 shift
+        if (entry.shift_type === 'Morning Shift (9-4)' && (dayOfWeek >= 1 && dayOfWeek <= 6)) {
+          specialDateUpdates[entry.date] = true;
+          console.log(`📌 CALENDAR EXPORT: Marking ${entry.date} as special date`);
+        }
       });
       
-      console.log(`✅ CALENDAR EXPORT: Dispatched ${syncedCount} sync events`);
+      // Apply all updates at once using the existing state setters
+      console.log('🔄 CALENDAR EXPORT: Applying calendar updates...');
+      
+      // Get current calendar state and merge with updates
+      const currentCalendarState = window.getCurrentCalendarState?.() || {};
+      const currentSpecialDates = window.getCurrentSpecialDates?.() || {};
+      
+      // Trigger the same event that App.tsx listens to, but with bulk data
+      window.dispatchEvent(new CustomEvent('bulkCalendarUpdate', {
+        detail: {
+          calendarUpdates,
+          specialDateUpdates,
+          editorName: authenticatedStaffName,
+          source: 'calendar_export'
+        }
+      }));
+      
+      console.log(`✅ CALENDAR EXPORT: Triggered bulk update with ${syncedCount} changes`);
       
       // Set success result
       setExportResult({

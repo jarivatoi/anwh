@@ -168,6 +168,56 @@ function App() {
     return () => window.removeEventListener('navigateToMonth', handleNavigateToMonth as EventListener);
   }, [schedule, specialDates]);
   
+  // Handle bulk calendar updates from calendar export
+  useEffect(() => {
+    const handleBulkCalendarUpdate = (event: CustomEvent) => {
+      const { calendarUpdates, specialDateUpdates, editorName, source } = event.detail;
+      console.log('🔄 APP: Received bulk calendar update:', {
+        calendarUpdates,
+        specialDateUpdates,
+        editorName,
+        source
+      });
+      
+      // Update schedule with bulk data
+      setSchedule(prev => {
+        const newSchedule = { ...prev };
+        Object.entries(calendarUpdates).forEach(([date, shifts]) => {
+          // Merge with existing shifts for this date
+          const existingShifts = newSchedule[date] || [];
+          const allShifts = [...existingShifts];
+          
+          shifts.forEach(shift => {
+            if (!allShifts.includes(shift)) {
+              allShifts.push(shift);
+            }
+          });
+          
+          newSchedule[date] = allShifts;
+          console.log(`📅 APP: Updated ${date} with shifts:`, allShifts);
+        });
+        return newSchedule;
+      });
+      
+      // Update special dates
+      setSpecialDates(prev => {
+        const newSpecialDates = { ...prev };
+        Object.entries(specialDateUpdates).forEach(([date, isSpecial]) => {
+          newSpecialDates[date] = isSpecial;
+          console.log(`📌 APP: Updated ${date} special status:`, isSpecial);
+        });
+        return newSpecialDates;
+      });
+      
+      // Force refresh calculations
+      setRefreshKey(prev => prev + 1);
+      console.log('🔄 APP: Forced refresh after bulk update');
+    };
+
+    window.addEventListener('bulkCalendarUpdate', handleBulkCalendarUpdate as EventListener);
+    return () => window.removeEventListener('bulkCalendarUpdate', handleBulkCalendarUpdate as EventListener);
+  }, [setSchedule, setSpecialDates]);
+  
   // Listen for tab switch requests
   useEffect(() => {
     const handleSwitchToCalendar = () => {
