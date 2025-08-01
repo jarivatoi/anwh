@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Calculator, Edit3, TrendingUp, Trash2, AlertTriangle, X } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { gsap } from 'gsap';
 import { SHIFTS } from '../constants';
 import { DaySchedule, SpecialDates } from '../types';
@@ -9,6 +10,9 @@ import { ClearMonthModal } from './ClearMonthModal';
 import { MonthClearModal } from './MonthClearModal';
 import { formatMauritianRupees } from '../utils/currency';
 import { useLongPress } from '../hooks/useLongPress';
+import { validateAuthCode, availableNames } from '../utils/rosterAuth';
+import { fetchRosterEntries } from '../utils/rosterApi';
+import { syncRosterToCalendar } from '../utils/rosterCalendarSync';
 
 interface CalendarProps {
   currentDate: Date;
@@ -49,6 +53,11 @@ export const Calendar: React.FC<CalendarProps> = ({
   const [dateToDelete, setDateToDelete] = useState<string | null>(null);
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [isLongPressActive, setIsLongPressActive] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importAuthCode, setImportAuthCode] = useState('');
+  const [importAuthError, setImportAuthError] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResults, setImportResults] = useState<{added: number, skipped: number, errors: number} | null>(null);
   const calendarGridRef = useRef<HTMLDivElement>(null);
   const animatedElementsRef = useRef<Set<HTMLElement>>(new Set());
   
@@ -69,7 +78,7 @@ export const Calendar: React.FC<CalendarProps> = ({
 
   // Prevent body scroll when date picker modal is open - EXACTLY LIKE OTHER MODALS
   useEffect(() => {
-    if (showDatePicker) {
+    if (showDatePicker || showImportModal) {
       // Disable body scroll
       document.body.style.overflow = 'hidden';
       document.body.style.position = 'fixed';
@@ -88,7 +97,7 @@ export const Calendar: React.FC<CalendarProps> = ({
       document.body.style.right = '';
       document.body.style.bottom = '';
     };
-  }, [showDatePicker]);
+  }, [showDatePicker, showImportModal]);
 
   // Enhanced TweenMax animations with smooth easing
   useEffect(() => {
@@ -235,14 +244,15 @@ export const Calendar: React.FC<CalendarProps> = ({
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setShowDatePicker(false);
+        setShowImportModal(false);
       }
     };
 
-    if (showDatePicker) {
+    if (showDatePicker || showImportModal) {
       document.addEventListener('keydown', handleEscape);
       return () => document.removeEventListener('keydown', handleEscape);
     }
-  }, [showDatePicker]);
+  }, [showDatePicker, showImportModal]);
 
   // Close date picker when clicking outside - EXACTLY LIKE OTHER MODALS
   const handleDatePickerBackdropClick = (e: React.MouseEvent) => {
@@ -530,6 +540,97 @@ export const Calendar: React.FC<CalendarProps> = ({
         reject(error);
       }
     });
+  };
+
+  // Handle roster import
+  const handleImportFromRoster = async () => {
+    if (!importAuthCode || importAuthCode.length < 4) {
+      setImportAuthError('Please enter your authentication code');
+      return;
+    }
+
+    const userName = validateAuthCode(importAuthCode);
+    if (!userName) {
+      setImportAuthError('Invalid authentication code');
+      return;
+    }
+
+    setIsImporting(true);
+    setImportAuthError('');
+    
+    try {
+      console.log(`📥 Importing roster entries for ${userName}...`);
+      
+      // Fetch all roster entries
+      const allRosterEntries = await fetchRosterEntries();
+      
+      // Filter entries for this user (match base name)
+      const userBaseName = userName.replace(/\(R\)$/, '').trim().toUpperCase();
+      const userEntries = allRosterEntries.filter(entry => {
+        const entryBaseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
+        return entryBaseName === userBaseName;
+      });
+      
+      console.log(`📊 Found ${userEntries.length} roster entries for ${userName}`);
+      
+      let addedCount = 0;
+      let skippedCount = 0;
+      let errorCount = 0;
+      
+      // Process each entry
+      for (const entry of userEntries) {
+        try {
+          // Create roster change event for sync
+          const rosterChange = {
+            date: entry.date,
+            shiftType: entry.shift_type,
+            assignedName: entry.assigned_name,
+            editorName: userName,
+            action: 'added' as const
+          };
+          
+          // Use the sync function to add to calendar
+          const syncResult = syncRosterToCalendar(rosterChange, {
+            calendarLabel: userName, // Use the authenticated user's name as calendar label
+            schedule,
+            specialDates,
+            setSchedule,
+            setSpecialDates
+          });
+          
+          if (syncResult) {
+            addedCount++;
+            console.log(`✅ Added ${entry.shift_type} on ${entry.date}`);
+          } else {
+            skippedCount++;
+            console.log(`⏭️ Skipped ${entry.shift_type} on ${entry.date} (conflict or already exists)`);
+          }
+        } catch (error) {
+          errorCount++;
+          console.error(`❌ Error processing entry for ${entry.date}:`, error);
+        }
+      }
+      
+      setImportResults({ added: addedCount, skipped: skippedCount, errors: errorCount });
+      
+      // Show success message
+      if (addedCount > 0) {
+        console.log(`✅ Import completed: ${addedCount} added, ${skippedCount} skipped, ${errorCount} errors`);
+      }
+      
+    } catch (error) {
+      console.error('❌ Import failed:', error);
+      setImportAuthError('Failed to import roster data. Please try again.');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handleCloseImportModal = () => {
+    setShowImportModal(false);
+    setImportAuthCode('');
+    setImportAuthError('');
+    setImportResults(null);
   };
 
   const handleMonthNavigation = (direction: 'prev' | 'next') => {
