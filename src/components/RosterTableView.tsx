@@ -8,6 +8,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRosterData } from '../hooks/useRosterData';
 import { availableNames, validateAuthCode, shiftTypes } from '../utils/rosterAuth';
 import { isAdminCode } from '../utils/rosterAuth';
+import { sortByGroup } from '../utils/rosterAuth';
 import { addRosterEntry, deleteRosterEntry } from '../utils/rosterApi';
 import { RosterDateCell } from './RosterDateCell';
 import { EditDetailsModal } from './EditDetailsModal';
@@ -380,17 +381,27 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
 
   // Custom sorting function to prioritize (R) names first
   const sortStaffNames = (entries: RosterEntry[]): RosterEntry[] => {
-    return [...entries].sort((a, b) => {
-      const aHasR = a.assigned_name.includes('(R)');
-      const bHasR = b.assigned_name.includes('(R)');
-      
-      // If one has (R) and other doesn't, (R) comes first
-      if (aHasR && !bHasR) return -1;
-      if (!aHasR && bHasR) return 1;
-      
-      // If both have (R) or both don't have (R), sort alphabetically
-      return a.assigned_name.localeCompare(b.assigned_name);
+    // Extract names, sort them using group sorting, then reorder entries
+    const names = entries.map(entry => entry.assigned_name);
+    const sortedNames = sortByGroup(names);
+    
+    // Create a map for quick lookup of original entries
+    const entryMap = new Map<string, RosterEntry[]>();
+    entries.forEach(entry => {
+      if (!entryMap.has(entry.assigned_name)) {
+        entryMap.set(entry.assigned_name, []);
+      }
+      entryMap.get(entry.assigned_name)!.push(entry);
     });
+    
+    // Rebuild entries array in sorted order
+    const sortedEntries: RosterEntry[] = [];
+    sortedNames.forEach(name => {
+      const nameEntries = entryMap.get(name) || [];
+      sortedEntries.push(...nameEntries);
+    });
+    
+    return sortedEntries;
   };
 
   // Calculate max staff count for each date to align columns
@@ -969,7 +980,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               WebkitUserSelect: 'none'
             }}>
               <div className="space-y-3">
-                {availableNames.map(name => (
+                {sortByGroup(availableNames).map(name => (
                   <label key={name} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
                     <input
                       type="checkbox"
