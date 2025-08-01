@@ -107,30 +107,26 @@ export const updateRosterEntry = async (id: string, formData: RosterFormData, ed
     const timestamp = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
     
     // Determine the original PDF assignment
-    let originalPdfAssignment = currentEntry.assigned_name; // Default to current name
-    
-    if (currentEntry.change_description) {
+      // Only add original PDF info if this is the first edit from PDF
       if (currentEntry.change_description === 'Imported from PDF') {
-        // This is still the original PDF assignment
-        originalPdfAssignment = currentEntry.assigned_name;
-      } else if (currentEntry.change_description.includes('(Original PDF: ')) {
-        // Extract the original PDF assignment from existing description
-        const originalMatch = currentEntry.change_description.match(/\(Original PDF: ([^)]+)\)/);
-        if (originalMatch) {
-          originalPdfAssignment = originalMatch[1];
+        newChangeDescription = `${formData.changeDescription} (Original PDF: ${originalPdfAssignment})`;
+      } else {
+        // For subsequent edits, preserve existing original PDF info but keep description clean
+        const existingOriginal = currentEntry.change_description?.match(/\(Original PDF: ([^)]+)\)/);
+        if (existingOriginal) {
+          newChangeDescription = `${formData.changeDescription} (Original PDF: ${existingOriginal[1]})`;
+        } else {
+          // Just use the clean change description
+          newChangeDescription = formData.changeDescription;
         }
-      } else if (currentEntry.change_description.includes('Name changed from')) {
-        // This is the first edit - the current assigned_name is the original
-        originalPdfAssignment = currentEntry.assigned_name;
       }
     }
     
     // Create the new change description that preserves the original PDF assignment
     let newChangeDescription = formData.changeDescription;
-    if (formData.changeDescription && formData.changeDescription.includes('Name changed from')) {
-      // Add the original PDF assignment to the description
-      newChangeDescription = `${formData.changeDescription} (Original PDF: ${originalPdfAssignment})`;
-    }
+    
+    // Store original PDF assignment in a separate field for tracking
+    let originalPdfField = originalPdfAssignment;
     
     const updateData = {
       date: formData.date,
@@ -138,7 +134,8 @@ export const updateRosterEntry = async (id: string, formData: RosterFormData, ed
       assigned_name: formData.assignedName,
       last_edited_by: editorName,
       last_edited_at: timestamp,
-      change_description: newChangeDescription || null
+      change_description: newChangeDescription || null,
+      original_assigned_name: originalPdfField
     };
 
     const { data, error } = await supabase

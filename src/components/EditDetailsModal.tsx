@@ -100,7 +100,10 @@ export const EditDetailsModal: React.FC<EditDetailsModalProps> = ({ isOpen, entr
             {entry.change_description && (
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
                 <div className="text-sm font-medium text-blue-800 mb-1 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>Change Description</div>
-                <div className="text-blue-700 text-sm break-words whitespace-pre-wrap select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{entry.change_description}</div>
+                <div className="text-blue-700 text-sm">
+                  {/* Remove the (Original PDF: ...) part from display */}
+                  {entry.change_description.replace(/\s*\(Original PDF: [^)]+\)/, '')}
+                </div>
               </div>
             )}
 
