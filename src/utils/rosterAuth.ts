@@ -38,6 +38,10 @@ export const authCodes: AuthCode[] = [
   
   // Admin Code
   { code: '5274', name: 'ADMIN' },
+  
+  // Additional codes for group sorting
+  { code: 'SMIT', name: 'SMIT' },
+  { code: 'MIT', name: 'MIT' },
 ];
 
 // Available staff names for dropdowns and validation
