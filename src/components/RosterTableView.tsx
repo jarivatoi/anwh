@@ -22,6 +22,7 @@ interface RosterTableViewProps {
   selectedDate: Date;
   onDateChange: (date: Date) => void;
   onExportToCalendar: () => void;
+  setActiveTab?: (tab: 'calendar' | 'settings' | 'data' | 'roster') => void;
 }
 
 export const RosterTableView: React.FC<RosterTableViewProps> = ({
@@ -1132,8 +1133,10 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   <button
                     onClick={() => {
                       setShowExportModal(false);
-                      setExportAuthCode('');
-                      setExportAuthError('');
+                     // Switch to calendar tab using the passed function
+                     if (setActiveTab) {
+                       setActiveTab('calendar');
+                     }
                       setExportResult(null);
                       if (exportResult.success) {
                         // Switch to calendar tab to show the exported data

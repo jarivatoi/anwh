@@ -373,6 +373,7 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
             selectedDate={selectedDate}
             onDateChange={setSelectedDate}
             onExportToCalendar={onOpenCalendarExportModal}
+            setActiveTab={setActiveTab}
             key={refreshKey}
           />
         ) : activeView === 'card' ? (
