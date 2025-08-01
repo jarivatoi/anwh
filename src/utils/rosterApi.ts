@@ -94,7 +94,7 @@ export const updateRosterEntry = async (id: string, formData: RosterFormData, ed
     // First, get the current entry to check if it has been edited before
     const { data: currentEntry, error: fetchError } = await supabase
       .from('roster_entries')
-      .select('original_assigned_name, last_edited_by')
+      .select('last_edited_by')
       .eq('id', id)
       .single();
 
@@ -106,23 +106,10 @@ export const updateRosterEntry = async (id: string, formData: RosterFormData, ed
     const now = new Date();
     const timestamp = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
     
-    // Preserve original_assigned_name if entry has already been edited
-    let originalAssignedName = currentEntry.original_assigned_name;
-    
-    // Only set original_assigned_name if it doesn't exist AND this is the first edit
-    if (!originalAssignedName && !currentEntry.last_edited_by) {
-      // This is the first edit of a fresh entry, so current assigned_name becomes the original
-      originalAssignedName = formData.assignedName;
-      console.log('🔒 Setting original assignment for first edit:', originalAssignedName);
-    } else if (originalAssignedName) {
-      console.log('🔒 Preserving existing original assignment:', originalAssignedName);
-    }
-    
     const updateData = {
       date: formData.date,
       shift_type: formData.shiftType,
       assigned_name: formData.assignedName,
-      original_assigned_name: originalAssignedName,
       last_edited_by: editorName,
       last_edited_at: timestamp,
       change_description: formData.changeDescription || null
