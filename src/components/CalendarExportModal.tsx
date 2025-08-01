@@ -76,17 +76,26 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
   };
 
   const handleExport = async () => {
+    console.log('🚀 EXPORT FUNCTION CALLED - Starting export process...');
+    console.log('🚀 Auth code entered:', authCode);
+    console.log('🚀 Auth code length:', authCode.length);
+    
     if (!authCode || authCode.length < 4) {
+      console.log('❌ EXPORT: Auth code validation failed - too short');
       setAuthError('Please enter your authentication code');
       return;
     }
 
     const authenticatedStaffName = validateAuthCode(authCode);
+    console.log('🚀 EXPORT: Auth validation result:', authenticatedStaffName);
+    
     if (!authenticatedStaffName) {
+      console.log('❌ EXPORT: Auth code validation failed - invalid code');
       setAuthError('Invalid authentication code');
       return;
     }
 
+    console.log('✅ EXPORT: Auth successful, proceeding with export...');
     setIsExporting(true);
     setStep('exporting');
     setAuthError('');
