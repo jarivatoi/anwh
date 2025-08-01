@@ -68,13 +68,13 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
 
   // Check if entry has been edited
   const hasBeenEdited = (entry: RosterEntry) => {
-    return !!entry.last_edited_by;
+    return !!(entry.last_edited_by && entry.last_edited_by.trim() !== '');
   };
 
   // Check if current assignment matches original assignment (show black with asterisk)
   const isBackToOriginal = (entry: RosterEntry) => {
-    // Only check for name changes if the entry has actually been edited
-    if (!hasBeenEdited(entry) || !entry.change_description) return false;
+    // Only check for name changes if the entry has actually been edited AND has change description
+    if (!hasBeenEdited(entry) || !entry.change_description || !entry.change_description.includes('Name changed from')) return false;
     
     const nameInfo = parseNameChange(entry.change_description || '', entry.assigned_name);
     return nameInfo.isNameChange && nameInfo.oldName && entry.assigned_name === nameInfo.oldName;
@@ -82,23 +82,36 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
 
   // Get display styling for the name
   const getNameStyling = (entry: RosterEntry) => {
+    console.log('🎨 Styling debug for entry:', {
+      id: entry.id,
+      name: entry.assigned_name,
+      lastEditedBy: entry.last_edited_by,
+      changeDescription: entry.change_description,
+      hasBeenEdited: hasBeenEdited(entry),
+      isBackToOriginal: isBackToOriginal(entry)
+    });
+    
     if (!hasBeenEdited(entry)) {
       // Never edited - normal black text
+      console.log('🎨 Never edited - black text');
       return { className: '', showAsterisk: false };
     }
     
     // Only check for original assignment if we have change description
-    if (!entry.change_description) {
+    if (!entry.change_description || !entry.change_description.includes('Name changed from')) {
       // Edited but no change description - treat as normal edit (red)
+      console.log('🎨 Edited but no name change - red text');
       return { className: 'text-red-600 animate-pulse', showAsterisk: false };
     }
     
     if (isBackToOriginal(entry)) {
       // Edited but back to original - black text with asterisk
+      console.log('🎨 Back to original - black text with asterisk');
       return { className: 'text-black', showAsterisk: true };
     }
     
     // Edited and different from original - red pulsating text
+    console.log('🎨 Edited and different - red text');
     return { className: 'text-red-600 animate-pulse', showAsterisk: false };
   };
 

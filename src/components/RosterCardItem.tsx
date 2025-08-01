@@ -68,13 +68,13 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
 
   // Check if entry has been edited
   const hasBeenEdited = (entry: RosterEntry) => {
-    return !!entry.last_edited_by;
+    return !!(entry.last_edited_by && entry.last_edited_by.trim() !== '');
   };
 
   // Check if current assignment matches original assignment (show black with asterisk)
   const isBackToOriginal = (entry: RosterEntry) => {
-    // Only check for name changes if the entry has actually been edited
-    if (!hasBeenEdited(entry) || !entry.change_description) return false;
+    // Only check for name changes if the entry has actually been edited AND has change description
+    if (!hasBeenEdited(entry) || !entry.change_description || !entry.change_description.includes('Name changed from')) return false;
     
     const nameInfo = parseNameChange(entry.change_description || '', entry.assigned_name);
     return nameInfo.isNameChange && nameInfo.oldName && entry.assigned_name === nameInfo.oldName;
@@ -88,7 +88,7 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
     }
     
     // Only check for original assignment if we have change description
-    if (!entry.change_description) {
+    if (!entry.change_description || !entry.change_description.includes('Name changed from')) {
       // Edited but no change description - treat as normal edit (red)
       return { className: 'text-red-600 animate-pulse', showAsterisk: false };
     }
