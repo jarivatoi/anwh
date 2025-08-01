@@ -409,6 +409,84 @@ class WorkScheduleDB {
     });
   }
 
+  async getRosterEntries(): Promise<RosterEntry[]> {
+    const db = await this.ensureDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['roster'], 'readonly');
+      const store = transaction.objectStore('roster');
+      const request = store.getAll();
+
+      request.onsuccess = () => {
+        resolve(request.result || []);
+      };
+
+      request.onerror = () => {
+        reject(new Error('Failed to get roster entries'));
+      };
+    });
+  }
+
+  async setRosterEntries(entries: RosterEntry[]): Promise<void> {
+    const db = await this.ensureDB();
+    console.log('💾 Saving roster entries to IndexedDB:', entries.length, 'entries');
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['roster'], 'readwrite');
+      const store = transaction.objectStore('roster');
+
+      // Add transaction error handling
+      transaction.onerror = () => {
+        console.error('❌ Roster transaction error:', transaction.error);
+        reject(new Error(`Transaction failed: ${transaction.error}`));
+      };
+      
+      transaction.oncomplete = () => {
+        console.log('✅ Roster entries saved successfully');
+        resolve();
+      };
+
+      // Clear existing data
+      const clearRequest = store.clear();
+      
+      clearRequest.onsuccess = () => {
+        // Add new data
+        let pendingOperations = 0;
+        let completedOperations = 0;
+        let hasError = false;
+        
+        entries.forEach((entry) => {
+          pendingOperations++;
+          const addRequest = store.add(entry);
+          
+          addRequest.onsuccess = () => {
+            completedOperations++;
+            if (completedOperations === pendingOperations && !hasError) {
+              console.log(`✅ All ${completedOperations} roster entries saved`);
+            }
+          };
+          
+          addRequest.onerror = () => {
+            if (!hasError) {
+              hasError = true;
+              console.error(`❌ Failed to add roster entry ${entry.id}:`, addRequest.error);
+              reject(new Error(`Failed to add roster entry ${entry.id}: ${addRequest.error}`));
+            }
+          };
+        });
+        
+        // If no data to save, resolve immediately
+        if (pendingOperations === 0) {
+          console.log('✅ No roster entries to save');
+        }
+      };
+
+      clearRequest.onerror = () => {
+        console.error('❌ Failed to clear roster entries:', clearRequest.error);
+        reject(new Error(`Failed to clear roster entries: ${clearRequest.error}`));
+      };
+    });
+  }
+
   async exportAllData(): Promise<any> {
     console.log('🔄 Exporting all data from IndexedDB...');
     
