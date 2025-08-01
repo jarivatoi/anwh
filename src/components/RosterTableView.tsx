@@ -499,6 +499,27 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 ))}
               </select>
             </div>
+            
+            {/* Export to Calendar Button */}
+            <button
+              onClick={() => setShowExportModal(true)}
+              className="p-2 rounded-lg hover:bg-green-100 text-green-600 transition-colors duration-200 z-50 relative bg-transparent"
+              style={{
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
+                position: 'relative',
+                zIndex: 50,
+                backgroundColor: 'transparent',
+                transform: 'translate3d(0,0,0)',
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
+                WebkitTransform: 'translate3d(0,0,0)',
+                WebkitTouchCallout: 'none'
+              }}
+              title="Export to Calendar"
+            >
+              <Download className="w-5 h-5" />
+            </button>
           </div>
           
           <button
