@@ -1219,14 +1219,6 @@ export const Calendar: React.FC<CalendarProps> = ({
             <p className="text-xs sm:text-sm text-indigo-600 mt-2 text-center select-none">
               Total amount for all scheduled shifts in {monthNames[currentMonth]} {currentYear}
             </p>
-            
-            <button
-              onClick={() => setShowImportAllModal(true)}
-              className="p-2 rounded-lg hover:bg-gray-100 text-blue-600 hover:text-blue-700 transition-colors duration-200"
-              title="Import all your shifts from roster"
-            >
-              <Upload className="w-5 h-5" />
-            </button>
           </div>
         </div>
       </div>
@@ -1260,6 +1252,91 @@ export const Calendar: React.FC<CalendarProps> = ({
         onConfirm={handleClearMonth}
         onCancel={() => setShowMonthClearModal(false)}
       />
+
+      {/* Import All Shifts Modal */}
+      {showImportAllModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center justify-center space-x-3 mb-6">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Upload className="w-6 h-6 text-blue-600" />
+                </div>
+              </div>
+              
+              <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
+                Import All Shifts
+              </h3>
+              
+              <p className="text-sm text-gray-600 mb-6 text-center">
+                Import all your shifts from the roster database to your personal calendar
+              </p>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Your Authentication Code
+                </label>
+                <input
+                  type="text"
+                  value={importAllAuthCode}
+                  onChange={(e) => setImportAllAuthCode(e.target.value.toUpperCase())}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center font-mono text-lg"
+                  placeholder="Enter your code"
+                  maxLength={4}
+                  autoComplete="off"
+                  autoFocus
+                />
+              </div>
+              
+              {importAllAuthError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-700 text-center">{importAllAuthError}</p>
+                </div>
+              )}
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="text-sm text-blue-800">
+                  <p className="font-medium mb-2">This will:</p>
+                  <ul className="space-y-1 text-xs">
+                    <li>• Find all your shifts in the roster database</li>
+                    <li>• Add them to your personal calendar</li>
+                    <li>• Skip dates that already have shifts</li>
+                    <li>• Mark special dates automatically</li>
+                    <li>• Show you a summary of results</li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleImportAllCancel}
+                  disabled={isImportingAll}
+                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleImportAllSubmit}
+                  disabled={isImportingAll || importAllAuthCode.length < 4}
+                  className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
+                >
+                  {isImportingAll ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Importing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      <span>Import All</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Import from Roster Modal */}
       {showImportModal && createPortal(
