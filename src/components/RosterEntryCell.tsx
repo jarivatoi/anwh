@@ -87,7 +87,17 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
     if (!hasBeenEdited(entry) || !entry.change_description || !entry.change_description.includes('Name changed from')) return false;
     
     const nameInfo = parseNameChange(entry.change_description || '', entry.assigned_name);
-    return nameInfo.isNameChange && nameInfo.oldName && entry.assigned_name === nameInfo.oldName;
+    const result = nameInfo.isNameChange && nameInfo.oldName && entry.assigned_name === nameInfo.oldName;
+    
+    console.log('🔍 isBackToOriginal check:', {
+      entryId: entry.id,
+      currentName: entry.assigned_name,
+      originalName: nameInfo.oldName,
+      isBackToOriginal: result,
+      changeDescription: entry.change_description
+    });
+    
+    return result;
   };
 
   // Get display styling for the name
