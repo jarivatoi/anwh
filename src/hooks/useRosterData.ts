@@ -261,56 +261,8 @@ export const useRosterData = () => {
     };
   }, [cleanupRealtime]);
 
+  // Listen for manual refresh requests from other components
   useEffect(() => {
-    const testConnection = async () => {
-      if (!supabase) return;
-      
-      try {
-        console.warn('⚠️ Error loading roster data, trying IndexedDB:', err);
-        try {
-          const fallbackEntries = await getStoredRosterEntries();
-          setRosterEntries(fallbackEntries);
-          setError('Using offline data - Supabase connection failed');
-        } catch (fallbackErr) {
-          console.error('❌ Both Supabase and IndexedDB failed:', fallbackErr);
-          setError('Failed to load roster data from both online and offline sources');
-        }
-        const { error } = await supabase
-          .from('roster_entries')
-          .select('count', { count: 'exact', head: true });
-        
-        if (error) {
-          console.warn('⚠️ Supabase connection test failed:', error.message);
-          console.log('ℹ️ App will work in offline mode using IndexedDB');
-        } else {
-          console.log('✅ Supabase connection test successful');
-        }
-      } catch (err) {
-        console.warn('⚠️ Supabase connection test failed:', err);
-        console.log('ℹ️ App will work in offline mode using IndexedDB');
-      }
-    };
-
-    testConnection();
-  }, []);
-
-  // Original connection test (keeping for compatibility)
-  useEffect(() => {
-    const testConnection = async () => {
-      if (!supabase) return;
-      
-      try {
-        const { error } = await supabase.from('roster_entries').select('count', { count: 'exact', head: true });
-        if (error) {
-          console.warn('⚠️ Connection test error:', error.message);
-        } else {
-          console.log('✅ Connection test passed');
-        }
-      } catch (err) {
-        console.warn('⚠️ Connection test network error:', err);
-      }
-    };
-
     const handleManualRefresh = () => {
       console.log('🔄 Manual refresh requested');
       loadEntries();

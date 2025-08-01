@@ -9,17 +9,6 @@ export const fetchRosterEntries = async (): Promise<RosterEntry[]> => {
 
   try {
     console.log('🔄 Fetching roster entries from Supabase...');
-    
-    // Test connection first
-    const { error: connectionError } = await supabase
-      .from('roster_entries')
-      .select('count', { count: 'exact', head: true });
-    
-    if (connectionError) {
-      console.warn('⚠️ Supabase connection failed, using IndexedDB fallback:', connectionError.message);
-      return await getStoredRosterEntries();
-    }
-
     const { data, error } = await supabase
       .from('roster_entries')
       .select('*')
@@ -28,21 +17,17 @@ export const fetchRosterEntries = async (): Promise<RosterEntry[]> => {
 
     if (error) {
       console.error('❌ Error fetching roster entries:', error);
-      console.warn('⚠️ Using IndexedDB fallback due to Supabase error');
-      return await getStoredRosterEntries();
+      throw new Error(`Database error: ${error.message}`);
     }
 
     console.log('✅ Successfully fetched roster entries:', data?.length || 0);
-    
-    // Store in IndexedDB as backup
-    if (data && data.length > 0) {
-      await storeRosterEntries(data);
-    }
-    
     return data || [];
   } catch (error) {
-    console.warn('⚠️ Network error, using IndexedDB fallback:', error);
-    return await getStoredRosterEntries();
+    console.error('❌ Network error fetching roster entries:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Network error: Unable to connect to database. Please check your internet connection and Supabase configuration.');
   }
 };
 

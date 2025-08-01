@@ -12,16 +12,7 @@ if (supabaseUrl &&
     supabaseUrl.includes('supabase.co') && 
     supabaseAnonKey.length > 50) {
   try {
-    supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: false
-      },
-      global: {
-        headers: {
-          'Access-Control-Allow-Origin': '*'
-        }
-      }
-    });
+    supabase = createClient(supabaseUrl, supabaseAnonKey);
     console.log('✅ Supabase client initialized');
   } catch (error) {
     console.error('⚠️ Supabase initialization failed:', error);
