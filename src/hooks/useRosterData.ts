@@ -261,6 +261,11 @@ export const useRosterData = () => {
     };
   }, [cleanupRealtime]);
 
+  useEffect(() => {
+    const testConnection = async () => {
+      if (!supabase) return;
+      
+      try {
         console.warn('⚠️ Error loading roster data, trying IndexedDB:', err);
         try {
           const fallbackEntries = await getStoredRosterEntries();
@@ -270,9 +275,6 @@ export const useRosterData = () => {
           console.error('❌ Both Supabase and IndexedDB failed:', fallbackErr);
           setError('Failed to load roster data from both online and offline sources');
         }
-    const handleManualRefresh = () => {
-      console.log('🔄 Manual refresh requested');
-      loadEntries();
         const { error } = await supabase
           .from('roster_entries')
           .select('count', { count: 'exact', head: true });
@@ -306,6 +308,15 @@ export const useRosterData = () => {
         }
       } catch (err) {
         console.warn('⚠️ Connection test network error:', err);
+      }
+    };
+
+    const handleManualRefresh = () => {
+      console.log('🔄 Manual refresh requested');
+      loadEntries();
+    };
+
+    window.addEventListener('manualRefreshRequested', handleManualRefresh);
     return () => window.removeEventListener('manualRefreshRequested', handleManualRefresh);
   }, [loadEntries]);
 
