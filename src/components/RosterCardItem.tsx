@@ -68,10 +68,31 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
 
   // Check if entry has been edited
   const hasBeenEdited = (entry: RosterEntry) => {
-    // Simple logic: if last_edited_by exists, the entry has been edited
-    return entry.change_description && 
-           entry.change_description.includes('Name changed from') &&
-           entry.last_edited_by;
+    return !!entry.last_edited_by;
+  };
+
+  // Check if current assignment matches original assignment (show black with asterisk)
+  const isBackToOriginal = (entry: RosterEntry) => {
+    if (!hasBeenEdited(entry)) return false;
+    
+    const nameInfo = parseNameChange(entry.change_description || '', entry.assigned_name);
+    return nameInfo.isNameChange && entry.assigned_name === nameInfo.oldName;
+  };
+
+  // Get display styling for the name
+  const getNameStyling = (entry: RosterEntry) => {
+    if (!hasBeenEdited(entry)) {
+      // Never edited - normal black text
+      return { className: '', showAsterisk: false };
+    }
+    
+    if (isBackToOriginal(entry)) {
+      // Edited but back to original - black text with asterisk
+      return { className: 'text-black', showAsterisk: true };
+    }
+    
+    // Edited and different from original - red pulsating text
+    return { className: 'text-red-600 animate-pulse', showAsterisk: false };
   };
 
   // Handle long press for entry details
@@ -280,12 +301,20 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
       >
         <div className="font-medium text-gray-900 text-xs leading-tight w-full flex items-center justify-center">
           <div className="text-[8px] sm:text-[10px] font-medium text-gray-900 leading-tight w-full text-center">
-            {isUpdating ? 'Updating...' : (
-              <ScrollingText 
-                text={entry.assigned_name}
-                className={hasBeenEdited(entry) ? 'text-red-600 animate-pulse' : ''}
-              />
-            )}
+            {isUpdating ? 'Updating...' : (() => {
+              const styling = getNameStyling(entry);
+              return (
+                <div className="flex items-center justify-center space-x-1">
+                  <ScrollingText 
+                    text={entry.assigned_name}
+                    className={styling.className}
+                  />
+                  {styling.showAsterisk && (
+                    <span className="text-black font-bold text-[10px] sm:text-[12px]">*</span>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
