@@ -47,6 +47,7 @@ export const Calendar: React.FC<CalendarProps> = ({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [tempTitle, setTempTitle] = useState(scheduleTitle);
   const [showClearDateModal, setShowClearDateModal] = useState(false);
+  const [showBulkImport, setShowBulkImport] = useState(false);
   const [showClearMonthModal, setShowClearMonthModal] = useState(false);
   const [showMonthClearModal, setShowMonthClearModal] = useState(false);
   const [dateToDelete, setDateToDelete] = useState<string | null>(null);
@@ -1253,6 +1254,17 @@ export const Calendar: React.FC<CalendarProps> = ({
 
       {/* Month Clear Modal (Long-press triggered) */}
       <MonthClearModal
+
+      <BulkRosterImport
+        isOpen={showBulkImport}
+        onClose={() => setShowBulkImport(false)}
+        scheduleTitle={scheduleTitle}
+        schedule={schedule}
+        specialDates={specialDates}
+        setSchedule={setSchedule}
+        setSpecialDates={setSpecialDates}
+        currentDate={currentDate}
+      />
         isOpen={showMonthClearModal}
         monthData={getMonthStatistics()}
         onConfirm={handleClearMonth}
