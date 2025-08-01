@@ -166,8 +166,17 @@ function App() {
       setActiveTab('calendar');
     };
 
+    const handleCloseCalendarExportModal = () => {
+      console.log('📅 Closing calendar export modal');
+      setShowCalendarExportModal(false);
+    };
+
     window.addEventListener('switchToCalendarTab', handleSwitchToCalendar);
-    return () => window.removeEventListener('switchToCalendarTab', handleSwitchToCalendar);
+    window.addEventListener('closeCalendarExportModal', handleCloseCalendarExportModal);
+    return () => {
+      window.removeEventListener('switchToCalendarTab', handleSwitchToCalendar);
+      window.removeEventListener('closeCalendarExportModal', handleCloseCalendarExportModal);
+    };
   }, []);
   // Initialize content animation when component mounts
   useEffect(() => {
