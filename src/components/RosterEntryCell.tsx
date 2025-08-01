@@ -101,6 +101,12 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
       isBackToOriginal: isBackToOriginal(entry)
     });
     
+    // PRIORITY 1: If change description is "Imported from PDF" = black text (original PDF entry)
+    if (entry.change_description === 'Imported from PDF') {
+      console.log('🎨 PDF imported entry - black text');
+      return { className: '', showAsterisk: false };
+    }
+    
     // NEW LOGIC: If no last_edited_by AND no initial assignment (change description) = black text
     if (!entry.last_edited_by && !entry.change_description) {
       console.log('🎨 No edits and no initial assignment - black text');
