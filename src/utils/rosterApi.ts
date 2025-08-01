@@ -4,7 +4,7 @@ import { RosterEntry, RosterFormData } from '../types/roster';
 export const fetchRosterEntries = async (): Promise<RosterEntry[]> => {
   if (!supabase) {
     console.error('⚠️ Supabase not available - check your configuration');
-    throw new Error('Supabase not configured. Please check your Supabase project settings and ensure CORS is configured for localhost:5173');
+    throw new Error('Supabase not configured. Please set up your Supabase credentials in the .env file.');
   }
 
   try {
@@ -17,7 +17,7 @@ export const fetchRosterEntries = async (): Promise<RosterEntry[]> => {
 
     if (error) {
       console.error('❌ Error fetching roster entries:', error);
-      throw new Error(`Database error: ${error.message}. Please check your Supabase project is active and CORS is configured.`);
+      throw new Error(`Database error: ${error.message}`);
     }
 
     console.log('✅ Successfully fetched roster entries:', data?.length || 0);
@@ -27,7 +27,7 @@ export const fetchRosterEntries = async (): Promise<RosterEntry[]> => {
     if (error instanceof Error) {
       throw error;
     }
-    throw new Error('Network error: Unable to connect to Supabase. Please ensure your Supabase project is active and CORS allows localhost:5173');
+    throw new Error('Network error: Unable to connect to database. Please check your internet connection and Supabase configuration.');
   }
 };
 
