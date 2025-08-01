@@ -61,6 +61,60 @@ export const availableNames = authCodes
     return a.localeCompare(b);
   });
 
+// Group sorting function: SMIT first, then names without (R), then names with (R)
+export const sortByGroup = (names: string[]): string[] => {
+  return [...names].sort((a, b) => {
+    // Get auth entries for both names
+    const authA = authCodes.find(auth => auth.name === a);
+    const authB = authCodes.find(auth => auth.name === b);
+    
+    // Get titles (default to 'MIT' if not found)
+    const titleA = authA?.title || 'MIT';
+    const titleB = authB?.title || 'MIT';
+    
+    // Priority 1: SMIT comes first
+    if (titleA === 'SMIT' && titleB !== 'SMIT') return -1;
+    if (titleA !== 'SMIT' && titleB === 'SMIT') return 1;
+    
+    // Priority 2: Within same title group, names without (R) come before names with (R)
+    if (titleA === titleB) {
+      const aHasR = a.includes('(R)');
+      const bHasR = b.includes('(R)');
+      
+      // Names without (R) come first
+      if (!aHasR && bHasR) return -1;
+      if (aHasR && !bHasR) return 1;
+      
+      // If both have same (R) status, sort alphabetically
+      return a.localeCompare(b);
+    }
+    
+    // Priority 3: If different titles (and neither is SMIT), sort by title then name
+    const titleComparison = titleA.localeCompare(titleB);
+    if (titleComparison !== 0) return titleComparison;
+    
+    // Same title, sort by name
+    return a.localeCompare(b);
+  });
+};
+
+// Get names sorted by group
+export const getNamesSortedByGroup = (): string[] => {
+  const names = authCodes
+    .filter(auth => auth.name !== 'ADMIN') // Exclude ADMIN
+    .map(auth => auth.name);
+  
+  return sortByGroup(names);
+};
+
+// Get names by specific title/group
+export const getNamesByTitle = (title: string): string[] => {
+  const names = authCodes
+    .filter(auth => auth.title === title && auth.name !== 'ADMIN')
+    .map(auth => auth.name);
+  
+  return sortByGroup(names);
+};
 // Shift types for the roster system
 export const shiftTypes = [
   'Morning Shift (9-4)',
