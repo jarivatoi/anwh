@@ -126,7 +126,6 @@ export const EditDetailsModal: React.FC<EditDetailsModalProps> = ({ isOpen, entr
                   <div className="flex items-center space-x-2 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
                     <User className="w-4 h-4 text-green-600" />
                     <span className="text-green-700 font-medium select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{entry.last_edited_by}</span>
-                    <span className="text-amber-700 font-medium select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{nameInfo.oldName} (Imported from PDF)</span>
                   </div>
                   {entry.last_edited_at && (
                     <div className="flex items-center space-x-2 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
