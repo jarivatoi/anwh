@@ -5,6 +5,7 @@ import { SHIFTS } from '../constants';
 import { DaySchedule, SpecialDates } from '../types';
 import { ClearDateModal } from './ClearDateModal';
 import { ClearMonthModal } from './ClearMonthModal';
+import { MonthClearModal } from './MonthClearModal';
 import { useLongPress } from '../hooks/useLongPress';
 import { validateAuthCode, availableNames } from '../utils/rosterAuth';
 import { fetchRosterEntries } from '../utils/rosterApi';
