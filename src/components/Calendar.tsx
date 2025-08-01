@@ -6,7 +6,6 @@ import { DaySchedule, SpecialDates } from '../types';
 import { ClearDateModal } from './ClearDateModal';
 import { ClearMonthModal } from './ClearMonthModal';
 import { BulkRosterImport } from './BulkRosterImport';
-import { BulkRosterImport } from './BulkRosterImport';
 import { MonthClearModal } from './MonthClearModal';
 import { formatMauritianRupees } from '../utils/currency';
 import { useLongPress } from '../hooks/useLongPress';
