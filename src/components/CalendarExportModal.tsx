@@ -115,6 +115,44 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
         console.error('❌ Calendar export failed:', result.errors);
       }
       
+      // Sync roster data to calendar after successful export
+      if (result.success) {
+        console.log('🔄 Syncing roster data to calendar...');
+        
+        // Get the staff name from auth code
+        const staffName = validateAuthCode(authCode);
+        if (staffName) {
+          // Filter entries for this staff member and month
+          const staffEntries = allEntries.filter(entry => {
+            const entryBaseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
+            const staffBaseName = staffName.replace(/\(R\)$/, '').trim().toUpperCase();
+            
+            if (entryBaseName !== staffBaseName) return false;
+            
+            const entryDate = new Date(entry.date);
+            return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
+          });
+          
+          // Sync each entry to calendar
+          staffEntries.forEach(entry => {
+            const syncEvent = {
+              date: entry.date,
+              shiftType: entry.shift_type,
+              assignedName: entry.assigned_name,
+              editorName: staffName,
+              action: 'added' as const
+            };
+            
+            console.log('📅 Syncing entry to calendar:', syncEvent);
+            window.dispatchEvent(new CustomEvent('rosterCalendarSync', {
+              detail: syncEvent
+            }));
+          });
+          
+          console.log(`✅ Synced ${staffEntries.length} entries to calendar`);
+        }
+      }
+      
     } catch (error) {
       console.error('❌ Calendar export error:', error);
       setExportResult({
