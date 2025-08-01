@@ -1177,17 +1177,30 @@ export const Calendar: React.FC<CalendarProps> = ({
                       )}
                       
                       {/* All shifts displayed */}
-                      {dayShifts.map((shiftId, idx) => {
+                      {(() => {
+                        console.log(`🎨 RENDERING DEBUG: Day ${day} - dayShifts:`, dayShifts);
+                        return dayShifts.map((shiftId, idx) => {
                         const shift = getShiftDisplay(shiftId);
+                        console.log(`🎨 RENDERING DEBUG: Day ${day} - shiftId: ${shiftId}, shift found:`, shift);
                         return shift ? (
                           <div
                             key={`${shiftId}-${idx}`}
                             className={`shift-text text-[8px] sm:text-[11px] font-bold leading-tight text-black flex-shrink-0 w-full select-none whitespace-nowrap overflow-hidden ${pastDate ? 'opacity-60' : ''}`}
+                            style={{
+                              backgroundColor: 'rgba(255, 0, 0, 0.1)', // Temporary red background to see if element exists
+                              border: '1px solid red', // Temporary red border
+                              minHeight: '12px' // Ensure minimum height
+                            }}
                           >
-                            <div className="text-center select-none truncate px-0.5">{shift.time}</div>
+                            <div className="text-center select-none truncate px-0.5" style={{ backgroundColor: 'rgba(0, 255, 0, 0.1)' }}>
+                              {shift.time}
+                            </div>
                           </div>
-                        ) : null;
-                      })}
+                        ) : (
+                          console.log(`❌ RENDERING DEBUG: Day ${day} - No shift found for shiftId: ${shiftId}`) || null
+                        );
+                        });
+                      })()}
                     </div>
                   </div>
                 )}
