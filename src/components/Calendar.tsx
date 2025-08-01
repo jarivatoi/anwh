@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Calculator, Edit3, TrendingUp, Trash2, AlertTriangle, X } from 'lucide-react';
-import { Download } from 'lucide-react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Settings, Trash2, RotateCcw, Download } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Calculator, Edit3, TrendingUp, Trash2, AlertTriangle, X, Download, Settings, RotateCcw } from 'lucide-react';
 import { SHIFTS } from '../constants';
 import { DaySchedule, SpecialDates } from '../types';
 import { ClearDateModal } from './ClearDateModal';
