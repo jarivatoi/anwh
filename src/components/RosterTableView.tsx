@@ -14,8 +14,6 @@ import { addRosterEntry, deleteRosterEntry } from '../utils/rosterApi';
 import { EditDetailsModal } from './EditDetailsModal';
 import { fetchRosterEntries } from '../utils/rosterApi';
 
-import { availableNames, validateAuthCode, shiftTypes, isAdminCode, sortByGroup } from '../utils/rosterAuth';
-
 interface RosterTableViewProps {
   entries: RosterEntry[];
   loading: boolean;
