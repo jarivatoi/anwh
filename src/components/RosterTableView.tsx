@@ -1,7 +1,8 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { Calendar, User, ChevronLeft, ChevronRight, Edit, RotateCcw } from 'lucide-react';
-import { Download } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Calendar, Edit, FileText, X, CheckCircle, AlertTriangle } from 'lucide-react';
 import { RosterEntry, ShiftFilterType } from '../types/roster';
 import { formatDisplayDate } from '../utils/rosterFilters';
 import { RosterEntryCell } from './RosterEntryCell';
@@ -11,11 +12,10 @@ import { availableNames, validateAuthCode, shiftTypes } from '../utils/rosterAut
 import { isAdminCode } from '../utils/rosterAuth';
 import { sortByGroup } from '../utils/rosterAuth';
 import { addRosterEntry, deleteRosterEntry } from '../utils/rosterApi';
-import { RosterDateCell } from './RosterDateCell';
 import { EditDetailsModal } from './EditDetailsModal';
 import { fetchRosterEntries } from '../utils/rosterApi';
 
-interface RosterTableViewProps {
+import { availableNames, validateAuthCode, shiftTypes, isAdminCode, sortByGroup } from '../utils/rosterAuth';
   entries: RosterEntry[];
   loading: boolean;
   realtimeStatus: 'connecting' | 'connected' | 'error' | 'disconnected';
