@@ -225,12 +225,12 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
                 <div className="flex items-start space-x-3">
                   <Calendar className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                   <div>
-                    <h4 className="font-medium text-blue-800 mb-2">Direct Calendar Integration</h4>
+                    <h4 className="font-medium text-blue-800 mb-2">Calendar Export</h4>
                     <ul className="text-sm text-blue-700 space-y-1">
-                      <li>• Directly adds your shifts to your calendar app</li>
-                      <li>• Works with Google Calendar, Outlook, Apple Calendar</li>
+                      <li>• Downloads your shifts as an .ics calendar file</li>
+                      <li>• Import into Google Calendar, Outlook, Apple Calendar</li>
                       <li>• Only exports YOUR shifts for {formatMonthYear()}</li>
-                      <li>• Includes shift times, locations, and notifications</li>
+                      <li>• Includes shift times and locations</li>
                     </ul>
                   </div>
                 </div>
@@ -264,13 +264,13 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
 
               {/* Instructions */}
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <h4 className="font-medium text-gray-800 mb-2">How direct export works:</h4>
+                <h4 className="font-medium text-gray-800 mb-2">How to use the exported file:</h4>
                 <ol className="text-sm text-gray-700 space-y-1 list-decimal list-inside">
-                  <li>Click "Export Calendar" below</li>
-                  <li>System will try to add events directly to your calendar</li>
-                  <li>You may see calendar permission requests</li>
-                  <li>Accept the requests to allow event creation</li>
-                  <li>Your shifts will appear immediately in your calendar</li>
+                  <li>Download the .ics file to your device</li>
+                  <li>Open your calendar app (Google, Outlook, Apple)</li>
+                  <li>Look for "Import" or "Add Calendar" option</li>
+                  <li>Select the downloaded .ics file</li>
+                  <li>Your shifts will appear in your calendar</li>
                 </ol>
               </div>
             </div>
@@ -312,8 +312,8 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-green-700">Status:</span>
-                        <span className="text-green-800 font-medium">{exportResult.message}</span>
+                        <span className="text-green-700">File:</span>
+                        <span className="text-green-800 font-medium">{exportResult.filename}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-green-700">Shifts exported:</span>
@@ -357,17 +357,16 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
                 <ul className="text-sm text-blue-700 space-y-1">
                   {exportResult.success ? (
                     <>
-                      <li>• Your shifts have been added to your calendar</li>
-                      <li>• Check your calendar app to see the new events</li>
-                      <li>• Events include shift times and location details</li>
-                      <li>• You may receive calendar notifications</li>
+                      <li>• Check your Downloads folder for the .ics file</li>
+                      <li>• Open your calendar app (Google, Outlook, Apple)</li>
+                      <li>• Import the downloaded file</li>
+                      <li>• Your shifts will appear in your calendar</li>
                     </>
                   ) : (
                     <>
                       <li>• Check your authentication code</li>
                       <li>• Ensure you have shifts in {formatMonthYear()}</li>
-                      <li>• Make sure your calendar app allows external events</li>
-                      <li>• Try again or use manual calendar entry</li>
+                      <li>• Try again or contact support</li>
                     </>
                   )}
                 </ul>
