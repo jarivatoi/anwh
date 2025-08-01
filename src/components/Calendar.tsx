@@ -1254,6 +1254,11 @@ export const Calendar: React.FC<CalendarProps> = ({
 
       {/* Month Clear Modal (Long-press triggered) */}
       <MonthClearModal
+        isOpen={false}
+        monthData={null}
+        onConfirm={async () => {}}
+        onCancel={() => {}}
+      />
 
       <BulkRosterImport
         isOpen={showBulkImport}
