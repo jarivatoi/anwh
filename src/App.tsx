@@ -153,11 +153,20 @@ function App() {
       const { month, year } = event.detail;
       console.log(`📅 Navigating to month: ${month + 1}/${year}`);
       setCurrentDate(new Date(year, month, 1));
+      
+      // Debug: Log current schedule state when navigating
+      console.log('📅 Current schedule state when navigating:', {
+        scheduleKeys: Object.keys(schedule),
+        scheduleEntries: Object.entries(schedule).slice(0, 5),
+        specialDatesKeys: Object.keys(specialDates),
+        targetMonth: month + 1,
+        targetYear: year
+      });
     };
 
     window.addEventListener('navigateToMonth', handleNavigateToMonth as EventListener);
     return () => window.removeEventListener('navigateToMonth', handleNavigateToMonth as EventListener);
-  }, []);
+  }, [schedule, specialDates]);
   
   // Listen for tab switch requests
   useEffect(() => {

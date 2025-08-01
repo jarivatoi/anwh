@@ -145,6 +145,15 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
           console.log(`🔍 CALENDAR EXPORT: Found ${staffEntries.length} entries for ${staffName} in ${formatMonthYear()}`);
           console.log(`🔍 CALENDAR EXPORT: Staff entries:`, staffEntries.map(e => `${e.date}: ${e.shift_type} - ${e.assigned_name}`));
           
+          // Debug: Check what's currently in the calendar before sync
+          console.log(`🔍 CALENDAR EXPORT: Current calendar state before sync:`, {
+            scheduleKeys: Object.keys(schedule || {}),
+            scheduleEntries: Object.entries(schedule || {}).slice(0, 5),
+            specialDatesKeys: Object.keys(specialDates || {}),
+            currentMonth: currentMonth,
+            currentYear: currentYear
+          });
+          
           if (staffEntries.length > 0) {
             // Convert roster entries to calendar format and sync
             staffEntries.forEach(entry => {
