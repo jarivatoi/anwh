@@ -389,6 +389,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   };
   // Check if entry has been edited
   const hasBeenEdited = (entry: RosterEntry) => {
+    // Simple logic: if last_edited_by exists, the entry has been edited
     return entry.change_description && 
            entry.change_description.includes('Name changed from') &&
            entry.last_edited_by;
@@ -414,20 +415,6 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
     return dateString < today;
   };
 
-  // Get original name from change description
-  const getOriginalName = (entry: RosterEntry): string => {
-    if (entry.change_description === 'Imported from PDF') {
-      return entry.assigned_name; // Show the original imported name
-    }
-    
-    // Check for name change pattern
-    const match = entry.change_description?.match(/Name changed from "([^"]+)" to "([^"]+)"/);
-    if (match) {
-      return match[1]; // Return the original name before change
-    }
-    
-    return entry.assigned_name; // Fallback to current name
-  };
   return (
     <div className="bg-white rounded-lg overflow-hidden" style={{ 
       height: window.innerWidth > window.innerHeight ? '60vh' : '70vh', // Shorter in landscape

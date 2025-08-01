@@ -91,18 +91,6 @@ export const updateRosterEntry = async (id: string, formData: RosterFormData, ed
   try {
     console.log('🔄 Updating roster entry in Supabase:', { id, formData });
     
-    // First, get the current entry to check if it has been edited before
-    const { data: currentEntry, error: fetchError } = await supabase
-      .from('roster_entries')
-      .select('last_edited_by')
-      .eq('id', id)
-      .single();
-
-    if (fetchError) {
-      console.error('❌ Error fetching current entry:', fetchError);
-      throw new Error(`Failed to fetch current entry: ${fetchError.message}`);
-    }
-
     const now = new Date();
     const timestamp = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
     
