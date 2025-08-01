@@ -223,6 +223,9 @@ function App() {
     const handleSwitchToCalendar = () => {
       console.log('📅 Switching to calendar tab');
       setActiveTab('calendar');
+      // Force refresh when switching to calendar after export
+      setRefreshKey(prev => prev + 1);
+      console.log('🔄 Forced refresh when switching to calendar');
     };
 
     const handleCloseCalendarExportModal = () => {
@@ -247,7 +250,7 @@ function App() {
       window.removeEventListener('closeCalendarExportModal', handleCloseCalendarExportModal);
       window.removeEventListener('debugCalendarState', handleDebugCalendarState);
     };
-  }, []);
+  }, [schedule, specialDates, currentDate]);
   // Initialize content animation when component mounts
   useEffect(() => {
     if (contentRef.current && showMainApp) {

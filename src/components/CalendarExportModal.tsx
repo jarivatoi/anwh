@@ -460,7 +460,13 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
                       onClick={() => {
                         // Close this modal and switch to calendar tab
                         onClose();
-                        window.dispatchEvent(new CustomEvent('switchToCalendarTab'));
+                        // Add small delay to ensure modal closes first
+                        setTimeout(() => {
+                          console.log('🔄 CALENDAR EXPORT: Switching to calendar tab after export');
+                          window.dispatchEvent(new CustomEvent('switchToCalendarTab'));
+                          // Also force a calendar refresh
+                          window.dispatchEvent(new CustomEvent('forceCalendarRefresh'));
+                        }, 100);
                       }}
                       className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
                     >
