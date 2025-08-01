@@ -73,10 +73,11 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
 
   // Check if current assignment matches original assignment (show black with asterisk)
   const isBackToOriginal = (entry: RosterEntry) => {
-    if (!hasBeenEdited(entry)) return false;
+    // Only check for name changes if the entry has actually been edited
+    if (!hasBeenEdited(entry) || !entry.change_description) return false;
     
     const nameInfo = parseNameChange(entry.change_description || '', entry.assigned_name);
-    return nameInfo.isNameChange && entry.assigned_name === nameInfo.oldName;
+    return nameInfo.isNameChange && nameInfo.oldName && entry.assigned_name === nameInfo.oldName;
   };
 
   // Get display styling for the name
@@ -84,6 +85,12 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
     if (!hasBeenEdited(entry)) {
       // Never edited - normal black text
       return { className: '', showAsterisk: false };
+    }
+    
+    // Only check for original assignment if we have change description
+    if (!entry.change_description) {
+      // Edited but no change description - treat as normal edit (red)
+      return { className: 'text-red-600 animate-pulse', showAsterisk: false };
     }
     
     if (isBackToOriginal(entry)) {
