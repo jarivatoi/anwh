@@ -1248,6 +1248,327 @@ export const Calendar: React.FC<CalendarProps> = ({
         onCancel={() => setShowMonthClearModal(false)}
       />
 
+      {/* Import from Roster Modal */}
+      {showImportModal && createPortal(
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 99999,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
+            justifyContent: 'center',
+            padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
+            paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
+            overflow: 'auto',
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              handleCloseImportModal();
+            }
+          }}
+        >
+          <div 
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '400px',
+              width: '100%',
+              maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
+              display: 'flex',
+              flexDirection: 'column',
+              margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div style={{ 
+              position: 'relative', 
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
+              paddingBottom: window.innerWidth > window.innerHeight ? '8px' : '16px',
+              borderBottom: '1px solid #e5e7eb',
+              flexShrink: 0
+            }}>
+              <button
+                onClick={handleCloseImportModal}
+                disabled={isImporting}
+                style={{
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  padding: '8px',
+                  borderRadius: '8px',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  color: '#6b7280',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  touchAction: 'manipulation',
+                  WebkitTapHighlightColor: 'transparent'
+                }}
+              >
+                <X style={{ width: '20px', height: '20px' }} />
+              </button>
+              
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ 
+                  width: '48px', 
+                  height: '48px', 
+                  backgroundColor: '#dbeafe', 
+                  borderRadius: '50%', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  margin: '0 auto 16px auto'
+                }}>
+                  <Download style={{ width: '24px', height: '24px', color: '#2563eb' }} />
+                </div>
+                <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#111827', marginBottom: '8px', margin: 0 }}>
+                  Import Your Roster
+                </h3>
+                <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>
+                  Import your assigned shifts from the roster database
+                </p>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div style={{ 
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
+              flex: 1,
+              overflowY: 'auto',
+              WebkitOverflowScrolling: 'touch',
+              touchAction: 'pan-y'
+            }}>
+              {!importResults ? (
+                <>
+                  <div style={{ marginBottom: '24px' }}>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>
+                      Your Authentication Code
+                    </label>
+                    <input
+                      type="text"
+                      value={importAuthCode}
+                      onChange={(e) => setImportAuthCode(e.target.value.toUpperCase())}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        border: '2px solid #d1d5db',
+                        borderRadius: '8px',
+                        textAlign: 'center',
+                        fontFamily: 'monospace',
+                        fontSize: '18px',
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                        touchAction: 'manipulation'
+                      }}
+                      placeholder="Enter your code"
+                      maxLength={4}
+                      autoComplete="off"
+                      autoFocus
+                    />
+                  </div>
+                  
+                  {importAuthError && (
+                    <div style={{ 
+                      marginBottom: '16px', 
+                      padding: '12px', 
+                      backgroundColor: '#fef2f2', 
+                      border: '1px solid #fecaca', 
+                      borderRadius: '8px' 
+                    }}>
+                      <p style={{ fontSize: '14px', color: '#dc2626', textAlign: 'center', margin: 0 }}>
+                        {importAuthError}
+                      </p>
+                    </div>
+                  )}
+                  
+                  <div style={{ 
+                    padding: '16px', 
+                    backgroundColor: '#f0f9ff', 
+                    border: '1px solid #bae6fd', 
+                    borderRadius: '8px',
+                    marginBottom: '24px'
+                  }}>
+                    <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#0369a1', marginBottom: '8px', margin: '0 0 8px 0' }}>
+                      How it works:
+                    </h4>
+                    <ul style={{ fontSize: '12px', color: '#0c4a6e', margin: 0, paddingLeft: '16px' }}>
+                      <li>Enter your authentication code</li>
+                      <li>System finds all your roster assignments</li>
+                      <li>Adds them to your personal calendar</li>
+                      <li>Skips dates that already have shifts</li>
+                      <li>Marks special dates automatically</li>
+                    </ul>
+                  </div>
+                </>
+              ) : (
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ 
+                    width: '48px', 
+                    height: '48px', 
+                    backgroundColor: '#dcfce7', 
+                    borderRadius: '50%', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    margin: '0 auto 16px auto'
+                  }}>
+                    <svg style={{ width: '24px', height: '24px', color: '#16a34a' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  
+                  <h4 style={{ fontSize: '18px', fontWeight: 'bold', color: '#111827', marginBottom: '16px', margin: '0 0 16px 0' }}>
+                    Import Complete!
+                  </h4>
+                  
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(3, 1fr)', 
+                    gap: '16px', 
+                    marginBottom: '24px' 
+                  }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#16a34a' }}>
+                        {importResults.added}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>Added</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#f59e0b' }}>
+                        {importResults.skipped}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>Skipped</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ef4444' }}>
+                        {importResults.errors}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>Errors</div>
+                    </div>
+                  </div>
+                  
+                  {importResults.added > 0 && (
+                    <p style={{ fontSize: '14px', color: '#16a34a', marginBottom: '16px', margin: '0 0 16px 0' }}>
+                      ✅ {importResults.added} shifts added to your calendar!
+                    </p>
+                  )}
+                  
+                  {importResults.skipped > 0 && (
+                    <p style={{ fontSize: '12px', color: '#f59e0b', marginBottom: '16px', margin: '0 0 16px 0' }}>
+                      ⏭️ {importResults.skipped} shifts skipped (conflicts or already exist)
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            {/* Footer */}
+            <div style={{ 
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
+              paddingTop: 0,
+              flexShrink: 0
+            }}>
+              {!importResults ? (
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    onClick={handleCloseImportModal}
+                    disabled={isImporting}
+                    style={{
+                      flex: 1,
+                      padding: '12px',
+                      backgroundColor: '#f3f4f6',
+                      color: '#374151',
+                      fontWeight: '600',
+                      borderRadius: '8px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '16px',
+                      touchAction: 'manipulation',
+                      WebkitTapHighlightColor: 'transparent',
+                      opacity: isImporting ? 0.5 : 1
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleImportFromRoster}
+                    disabled={isImporting || importAuthCode.length < 4}
+                    style={{
+                      flex: 1,
+                      padding: '12px',
+                      backgroundColor: isImporting || importAuthCode.length < 4 ? '#d1d5db' : '#2563eb',
+                      color: 'white',
+                      fontWeight: '600',
+                      borderRadius: '8px',
+                      border: 'none',
+                      cursor: isImporting || importAuthCode.length < 4 ? 'not-allowed' : 'pointer',
+                      fontSize: '16px',
+                      touchAction: 'manipulation',
+                      WebkitTapHighlightColor: 'transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    {isImporting ? (
+                      <>
+                        <div style={{
+                          width: '16px',
+                          height: '16px',
+                          border: '2px solid white',
+                          borderTop: '2px solid transparent',
+                          borderRadius: '50%',
+                          animation: 'spin 1s linear infinite'
+                        }} />
+                        <span>Importing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download style={{ width: '16px', height: '16px' }} />
+                        <span>Import</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleCloseImportModal}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    backgroundColor: '#2563eb',
+                    color: 'white',
+                    fontWeight: '600',
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    touchAction: 'manipulation',
+                    WebkitTapHighlightColor: 'transparent'
+                  }}
+                >
+                  Close
+                </button>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {/* Custom CSS for today's circle animation */}
       <style jsx>{`
         @keyframes todayPulse {
@@ -1259,6 +1580,10 @@ export const Calendar: React.FC<CalendarProps> = ({
             transform: scale(1.1);
             opacity: 0.8;
           }
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
       `}</style>
     </div>
