@@ -8,6 +8,7 @@ import { DaySchedule, SpecialDates } from '../types';
 import { ClearDateModal } from './ClearDateModal';
 import { ClearMonthModal } from './ClearMonthModal';
 import { MonthClearModal } from './MonthClearModal';
+import { CalendarExportModal } from './CalendarExportModal';
 import { formatMauritianRupees } from '../utils/currency';
 import { useLongPress } from '../hooks/useLongPress';
 import { validateAuthCode, availableNames } from '../utils/rosterAuth';
@@ -50,6 +51,7 @@ export const Calendar: React.FC<CalendarProps> = ({
   const [showClearDateModal, setShowClearDateModal] = useState(false);
   const [showClearMonthModal, setShowClearMonthModal] = useState(false);
   const [showMonthClearModal, setShowMonthClearModal] = useState(false);
+  const [showCalendarExportModal, setShowCalendarExportModal] = useState(false);
   const [dateToDelete, setDateToDelete] = useState<string | null>(null);
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [isLongPressActive, setIsLongPressActive] = useState(false);
@@ -918,6 +920,19 @@ export const Calendar: React.FC<CalendarProps> = ({
                   <X style={{ width: '20px', height: '20px' }} />
                 </button>
                 
+                {/* Export to Calendar Button */}
+                <button
+                  onClick={() => setShowCalendarExportModal(true)}
+                  className="p-2 rounded-lg hover:bg-green-100 text-green-600 hover:text-green-700 transition-colors duration-200"
+                  title="Export shifts to external calendar"
+                  style={{
+                    touchAction: 'manipulation',
+                    WebkitTapHighlightColor: 'transparent'
+                  }}
+                >
+                  <Download className="w-5 h-5" />
+                </button>
+                
                 <div style={{ textAlign: 'center' }}>
                   <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#111827', marginBottom: '4px', margin: 0 }}>
                     Select Month & Year
@@ -1246,6 +1261,14 @@ export const Calendar: React.FC<CalendarProps> = ({
         monthData={getMonthStatistics()}
         onConfirm={handleClearMonth}
         onCancel={() => setShowMonthClearModal(false)}
+      />
+
+      {/* Calendar Export Modal */}
+      <CalendarExportModal
+        isOpen={showCalendarExportModal}
+        onClose={() => setShowCalendarExportModal(false)}
+        currentMonth={currentDate.getMonth()}
+        currentYear={currentDate.getFullYear()}
       />
 
       {/* Import from Roster Modal */}
