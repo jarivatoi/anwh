@@ -262,36 +262,20 @@ export const useRosterData = () => {
   }, [cleanupRealtime]);
 
   useEffect(() => {
-    const testConnection = async () => {
-      if (!supabase) return;
-      
+    const loadRosterData = async () => {
       try {
-        console.warn('⚠️ Error loading roster data, trying IndexedDB:', err);
-        try {
-          const fallbackEntries = await getStoredRosterEntries();
-          setRosterEntries(fallbackEntries);
-          setError('Using offline data - Supabase connection failed');
-        } catch (fallbackErr) {
-          console.error('❌ Both Supabase and IndexedDB failed:', fallbackErr);
-          setError('Failed to load roster data from both online and offline sources');
-        }
-        const { error } = await supabase
-          .from('roster_entries')
-          .select('count', { count: 'exact', head: true });
-        
-        if (error) {
-          console.warn('⚠️ Supabase connection test failed:', error.message);
-          console.log('ℹ️ App will work in offline mode using IndexedDB');
-        } else {
-          console.log('✅ Supabase connection test successful');
-        }
-      } catch (err) {
-        console.warn('⚠️ Supabase connection test failed:', err);
-        console.log('ℹ️ App will work in offline mode using IndexedDB');
+        const entries = await fetchRosterEntries();
+        setRosterEntries(entries);
+        setError(null);
+      } catch (error) {
+        console.warn('⚠️ Using offline mode - roster data from IndexedDB only');
+        setError(null); // Don't show error, just work offline
+      } finally {
+        setLoading(false);
       }
     };
 
-    testConnection();
+    loadRosterData();
   }, []);
 
   // Original connection test (keeping for compatibility)
