@@ -110,7 +110,7 @@ export const EditDetailsModal: React.FC<EditDetailsModalProps> = ({ isOpen, entr
                 <div className="text-sm font-medium text-amber-800 mb-2 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>Initial Assignment</div>
                 <div className="flex items-center space-x-2 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
                   <User className="w-4 h-4 text-amber-600" />
-                  <span className="text-amber-700 font-medium select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{nameInfo.oldName}</span>
+                  <span className="text-amber-700 font-medium select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{nameInfo.oldName} (Imported from PDF)</span>
                 </div>
               </div>
             )}
