@@ -325,6 +325,20 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
                       </div>
                     </div>
                   </div>
+                  
+                  {/* View in Calendar Button */}
+                  <div className="mt-4">
+                    <button
+                      onClick={() => {
+                        // Close this modal and switch to calendar tab
+                        onClose();
+                        window.dispatchEvent(new CustomEvent('switchToCalendarTab'));
+                      }}
+                      className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
+                    >
+                      <span>View in Calendar</span>
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="text-center">
@@ -403,16 +417,30 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
           </div>
         )}
 
-        {step === 'result' && (
+        {step === 'result' && exportResult && (
           <div className="flex-shrink-0 pt-0" style={{
             padding: window.innerWidth > window.innerHeight ? '8px' : '24px'
           }}>
-            <button
-              onClick={handleClose}
-              className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200"
-            >
-              Close
-            </button>
+            <div className="flex space-x-3">
+              <button
+                onClick={handleClose}
+                className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200"
+              >
+                Close
+              </button>
+              {exportResult.success && (
+                <button
+                  onClick={() => {
+                    // Close this modal and switch to calendar tab
+                    onClose();
+                    window.dispatchEvent(new CustomEvent('switchToCalendarTab'));
+                  }}
+                  className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
+                >
+                  <span>View in Calendar</span>
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
