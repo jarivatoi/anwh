@@ -108,6 +108,12 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
       return { className: '', showAsterisk: false };
     }
     
+    // PRIORITY 2: If change description contains "Added by" = black text (admin added entry)
+    if (entry.change_description && entry.change_description.includes('Added by')) {
+      console.log('🎨 Admin added entry - black text');
+      return { className: '', showAsterisk: false };
+    }
+    
     // NEW LOGIC: If no last_edited_by AND no initial assignment (change description) = black text
     if (!entry.last_edited_by && !entry.change_description) {
       console.log('🎨 No edits and no initial assignment - black text');
