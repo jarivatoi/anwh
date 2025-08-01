@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { createPortal } from 'react-dom';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Edit2, Trash2, RotateCcw, Download, Upload } from 'lucide-react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Calculator, Edit3, TrendingUp, Trash2, AlertTriangle, X } from 'lucide-react';
 import { Download } from 'lucide-react';
 import { gsap } from 'gsap';
@@ -7,8 +7,7 @@ import { SHIFTS } from '../constants';
 import { DaySchedule, SpecialDates } from '../types';
 import { ClearDateModal } from './ClearDateModal';
 import { ClearMonthModal } from './ClearMonthModal';
-import { MonthClearModal } from './MonthClearModal';
-import { formatMauritianRupees } from '../utils/currency';
+import { validateAuthCode } from '../utils/rosterAuth';
 import { useLongPress } from '../hooks/useLongPress';
 import { validateAuthCode, availableNames } from '../utils/rosterAuth';
 import { fetchRosterEntries } from '../utils/rosterApi';
@@ -28,6 +27,7 @@ interface CalendarProps {
   onResetMonth?: (year: number, month: number) => void;
   setSchedule: React.Dispatch<React.SetStateAction<DaySchedule>>;
   setSpecialDates: React.Dispatch<React.SetStateAction<SpecialDates>>;
+  onImportAllShifts: (authCode: string) => Promise<void>;
 }
 
 export const Calendar: React.FC<CalendarProps> = ({
@@ -42,7 +42,8 @@ export const Calendar: React.FC<CalendarProps> = ({
   scheduleTitle,
   onTitleUpdate,
   setSchedule,
-  setSpecialDates
+  setSpecialDates,
+  onImportAllShifts
 }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -57,6 +58,10 @@ export const Calendar: React.FC<CalendarProps> = ({
   const [importAuthCode, setImportAuthCode] = useState('');
   const [importAuthError, setImportAuthError] = useState('');
   const [isImporting, setIsImporting] = useState(false);
+  const [showImportAllModal, setShowImportAllModal] = useState(false);
+  const [importAllAuthCode, setImportAllAuthCode] = useState('');
+  const [importAllAuthError, setImportAllAuthError] = useState('');
+  const [isImportingAll, setIsImportingAll] = useState(false);
   const [importResults, setImportResults] = useState<{added: number, skipped: number, errors: number} | null>(null);
   const calendarGridRef = useRef<HTMLDivElement>(null);
   const animatedElementsRef = useRef<Set<HTMLElement>>(new Set());

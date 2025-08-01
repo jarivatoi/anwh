@@ -55,6 +55,87 @@ function App() {
   // Pass specialDates to the calculation hook with refreshKey dependency
   const { totalAmount, monthToDateAmount } = useScheduleCalculations(schedule, settings, specialDates, currentDate, refreshKey);
 
+  // Import all shifts from roster to calendar
+  const handleImportAllShifts = useCallback(async (authCode: string) => {
+    try {
+      console.log('🔄 Starting import all shifts process...');
+      
+      // Validate auth code
+      const { validateAuthCode } = await import('./utils/rosterAuth');
+      const userName = validateAuthCode(authCode);
+      if (!userName) {
+        throw new Error('Invalid authentication code');
+      }
+      
+      console.log(`✅ Authenticated as: ${userName}`);
+      
+      // Fetch roster entries for this user
+      const { fetchRosterEntries } = await import('./utils/rosterApi');
+      const allEntries = await fetchRosterEntries();
+      
+      // Filter entries for this user (match base names)
+      const userBaseName = userName.replace(/\(R\)$/, '').trim().toUpperCase();
+      const userEntries = allEntries.filter(entry => {
+        const entryBaseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
+        return entryBaseName === userBaseName;
+      });
+      
+      console.log(`📊 Found ${userEntries.length} roster entries for ${userName}`);
+      
+      let addedCount = 0;
+      let skippedCount = 0;
+      let errorCount = 0;
+      
+      // Process each entry
+      for (const entry of userEntries) {
+        try {
+          // Create sync event for each entry
+          const syncEvent = {
+            date: entry.date,
+            shiftType: entry.shift_type,
+            assignedName: entry.assigned_name,
+            editorName: userName,
+            action: 'added' as const
+          };
+          
+          // Use the existing sync function
+          const { syncRosterToCalendar } = await import('./utils/rosterCalendarSync');
+          const wasAdded = syncRosterToCalendar(syncEvent, {
+            calendarLabel: userName,
+            schedule,
+            specialDates,
+            setSchedule,
+            setSpecialDates
+          });
+          
+          if (wasAdded) {
+            addedCount++;
+            console.log(`✅ Added: ${entry.shift_type} on ${entry.date}`);
+          } else {
+            skippedCount++;
+            console.log(`⏭️ Skipped: ${entry.shift_type} on ${entry.date} (conflict or already exists)`);
+          }
+        } catch (error) {
+          errorCount++;
+          console.error(`❌ Error processing entry for ${entry.date}:`, error);
+        }
+      }
+      
+      // Force refresh calculations
+      setRefreshKey(prev => prev + 1);
+      
+      // Show results
+      const message = `Import completed!\n\n✅ Added: ${addedCount} shifts\n⏭️ Skipped: ${skippedCount} shifts\n❌ Errors: ${errorCount} shifts`;
+      alert(message);
+      
+      console.log('✅ Import all shifts completed:', { addedCount, skippedCount, errorCount });
+      
+    } catch (error) {
+      console.error('❌ Import all shifts failed:', error);
+      alert(`Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }, [schedule, specialDates, setSchedule, setSpecialDates]);
+
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
 
@@ -586,6 +667,7 @@ function App() {
               onTitleUpdate={handleTitleUpdate}
               setSchedule={setSchedule}
               setSpecialDates={setSpecialDates}
+              onImportAllShifts={handleImportAllShifts}
             />
           ) : activeTab === 'settings' ? (
             <SettingsPanel
