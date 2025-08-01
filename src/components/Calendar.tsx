@@ -8,6 +8,7 @@ import { DaySchedule, SpecialDates } from '../types';
 import { ClearDateModal } from './ClearDateModal';
 import { ClearMonthModal } from './ClearMonthModal';
 import { BulkRosterImport } from './BulkRosterImport';
+import { BulkRosterImport } from './BulkRosterImport';
 import { MonthClearModal } from './MonthClearModal';
 import { formatMauritianRupees } from '../utils/currency';
 import { useLongPress } from '../hooks/useLongPress';
@@ -1599,6 +1600,18 @@ export const Calendar: React.FC<CalendarProps> = ({
           to { transform: rotate(360deg); }
         }
       `}</style>
+
+      {/* Import Buttons */}
+      <div className="flex items-center space-x-2">
+        <button
+          onClick={() => setShowBulkImport(true)}
+          className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-600 transition-colors duration-200 flex items-center space-x-1"
+          title="Import all your roster shifts for selected month"
+        >
+          <Download className="w-4 h-4" />
+          <span className="text-xs font-medium hidden sm:inline">Import All</span>
+        </button>
+      </div>
     </div>
   );
 };
