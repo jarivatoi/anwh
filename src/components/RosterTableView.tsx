@@ -2,10 +2,11 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { Calendar, User, ChevronLeft, ChevronRight, Edit, RotateCcw } from 'lucide-react';
 import { createPortal } from 'react-dom';
-import { Calendar, Edit, FileText, X, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Calendar, Edit, FileText, X, CheckCircle, AlertTriangle, Download } from 'lucide-react';
 import { RosterEntry, ShiftFilterType } from '../types/roster';
 import { formatDisplayDate } from '../utils/rosterFilters';
 import { RosterEntryCell } from './RosterEntryCell';
+import { RosterDateCell } from './RosterDateCell';
 import { useState, useEffect, useRef } from 'react';
 import { useRosterData } from '../hooks/useRosterData';
 import { availableNames, validateAuthCode, shiftTypes } from '../utils/rosterAuth';
@@ -16,6 +17,8 @@ import { EditDetailsModal } from './EditDetailsModal';
 import { fetchRosterEntries } from '../utils/rosterApi';
 
 import { availableNames, validateAuthCode, shiftTypes, isAdminCode, sortByGroup } from '../utils/rosterAuth';
+
+interface RosterTableViewProps {
   entries: RosterEntry[];
   loading: boolean;
   realtimeStatus: 'connecting' | 'connected' | 'error' | 'disconnected';
@@ -427,8 +430,32 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     return Math.max(...Object.values(shiftGroups).map(entries => entries.length), 1);
   };
 
-  const handleExportToCalendar = () => {
-    setShowExportModal(true);
+  const handleExportToCalendar = async () => {
+    const editorName = validateAuthCode(exportAuthCode);
+    if (!editorName) {
+      setExportAuthError('Invalid authentication code');
+      return;
+    }
+    
+    setIsExporting(true);
+    setExportAuthError('');
+    
+    try {
+      // Call the parent's export function
+      await onExportToCalendar();
+      setExportResult({
+        success: true,
+        message: `Successfully exported your shifts for ${formatMonthYear(selectedDate)} to your personal calendar.`
+      });
+    } catch (error) {
+      console.error('Export failed:', error);
+      setExportResult({
+        success: false,
+        message: 'Failed to export shifts. Please try again.'
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   // Shift types in order
