@@ -1,47 +1,48 @@
 export interface AuthCode {
   code: string;
   name: string;
+  title?: string;
 }
 
 export const authCodes: AuthCode[] = [
   // Regular Staff - ID-based codes
-  { code: 'B165', name: 'BHEKUR' },
-  { code: 'B196', name: 'BHOLLOORAM' },
-  { code: 'D28B', name: 'DHUNNY' },
-  { code: 'D07D', name: 'DOMUN' },
-  { code: 'H301', name: 'FOKEERCHAND' },
-  { code: 'S069', name: 'GHOORAN' },
-  { code: 'H13D', name: 'HOSENBUX' },
-  { code: 'J149', name: 'JUMMUN' },
-  { code: 'M17G', name: 'MAUDHOO' },
-  { code: 'N28C', name: 'NARAYYA' },
-  { code: 'P09A', name: 'PITTEA' },
-  { code: 'R16G', name: 'RUNGADOO' },
-  { code: 'T16G', name: 'TEELUCK' },
-  { code: 'V160', name: 'VEERASAWMY' },
+  { code: 'B165', name: 'BHEKUR', title: 'MIT' },
+  { code: 'B196', name: 'BHOLLOORAM', title: 'MIT' },
+  { code: 'D28B', name: 'DHUNNY', title: 'MIT' },
+  { code: 'D07D', name: 'DOMUN', title: 'MIT' },
+  { code: 'H301', name: 'FOKEERCHAND', title: 'MIT' },
+  { code: 'S069', name: 'GHOORAN', title: 'MIT' },
+  { code: 'H13D', name: 'HOSENBUX', title: 'MIT' },
+  { code: 'J149', name: 'JUMMUN', title: 'MIT' },
+  { code: 'M17G', name: 'MAUDHOO', title: 'MIT' },
+  { code: 'N28C', name: 'NARAYYA', title: 'MIT' },
+  { code: 'P09A', name: 'PITTEA', title: 'MIT' },
+  { code: 'R16G', name: 'RUNGADOO', title: 'MIT' },
+  { code: 'T16G', name: 'TEELUCK', title: 'MIT' },
+  { code: 'V160', name: 'VEERASAWMY', title: 'MIT' },
   
   // Radiographers (R) - 99 suffix
-  { code: 'B16R', name: 'BHEKUR(R)' },
-  { code: 'B19R', name: 'BHOLLOORAM(R)' },
-  { code: 'D28R', name: 'DHUNNY(R)' },
-  { code: 'D07R', name: 'DOMUN(R)' },
-  { code: 'H30R', name: 'FOKEERCHAND(R)' },
-  { code: 'H13R', name: 'HOSENBUX(R)' },
-  { code: 'S06R', name: 'GHOORAN(R)' },
-  { code: 'J14R', name: 'JUMMUN(R)' },
-  { code: 'M17R', name: 'MAUDHOO(R)' },
-  { code: 'N28R', name: 'NARAYYA(R)' },
-  { code: 'P09R', name: 'PITTEA(R)' },
-  { code: 'R16R', name: 'RUNGADOO(R)' },
-  { code: 'T16R', name: 'TEELUCK(R)' },
-  { code: 'V16R', name: 'VEERASAWMY(R)' },
+  { code: 'B16R', name: 'BHEKUR(R)', title: 'MIT' },
+  { code: 'B19R', name: 'BHOLLOORAM(R)', title: 'MIT' },
+  { code: 'D28R', name: 'DHUNNY(R)', title: 'MIT' },
+  { code: 'D07R', name: 'DOMUN(R)', title: 'MIT' },
+  { code: 'H30R', name: 'FOKEERCHAND(R)', title: 'MIT' },
+  { code: 'H13R', name: 'HOSENBUX(R)', title: 'MIT' },
+  { code: 'S06R', name: 'GHOORAN(R)', title: 'MIT' },
+  { code: 'J14R', name: 'JUMMUN(R)', title: 'MIT' },
+  { code: 'M17R', name: 'MAUDHOO(R)', title: 'MIT' },
+  { code: 'N28R', name: 'NARAYYA(R)', title: 'MIT' },
+  { code: 'P09R', name: 'PITTEA(R)', title: 'MIT' },
+  { code: 'R16R', name: 'RUNGADOO(R)', title: 'MIT' },
+  { code: 'T16R', name: 'TEELUCK(R)', title: 'MIT' },
+  { code: 'V16R', name: 'VEERASAWMY(R)', title: 'MIT' },
   
   // Admin Code
-  { code: '5274', name: 'ADMIN' },
+  { code: '5274', name: 'ADMIN', title: 'ADMIN' },
   
   // Additional codes for group sorting
-  { code: 'SMIT', name: 'SMIT' },
-  { code: 'MIT', name: 'MIT' },
+  { code: 'SMIT', name: 'SMIT', title: 'SMIT' },
+  { code: 'MIT', name: 'MIT', title: 'MIT' },
 ];
 
 // Available staff names for dropdowns and validation
