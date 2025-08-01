@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Edit2, Trash2, RotateCcw, Download, Upload } from 'lucide-react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Calculator, Edit3, TrendingUp, Trash2, AlertTriangle, X } from 'lucide-react';
-import { Download } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Edit2, Trash2, RotateCcw, Download, Upload, Calculator, Edit3, TrendingUp, AlertTriangle, X } from 'lucide-react';
 import { gsap } from 'gsap';
 import { SHIFTS } from '../constants';
 import { DaySchedule, SpecialDates } from '../types';
