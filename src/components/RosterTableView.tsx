@@ -22,6 +22,7 @@ interface RosterTableViewProps {
   onRefresh?: () => Promise<void>;
   selectedDate: Date;
   onDateChange: (date: Date) => void;
+  onExportToCalendar: () => void;
 }
 
 export const RosterTableView: React.FC<RosterTableViewProps> = ({
@@ -30,7 +31,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   realtimeStatus,
   onRefresh,
   selectedDate,
-  onDateChange
+  onDateChange,
+  onExportToCalendar
 }) => {
   // All hooks must be declared at the top level before any conditional returns
   const [refreshKey, setRefreshKey] = useState(0);

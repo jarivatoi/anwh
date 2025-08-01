@@ -15,9 +15,10 @@ import { useLongPress } from '../hooks/useLongPress';
 
 interface RosterPanelProps {
   setActiveTab: (tab: 'calendar' | 'settings' | 'data' | 'roster') => void;
+  onOpenCalendarExportModal: () => void;
 }
 
-export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab }) => {
+export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCalendarExportModal }) => {
   const [activeView, setActiveView] = useState<ViewType>('table');
   const [selectedShiftFilter, setSelectedShiftFilter] = useState<ShiftFilterType>('all');
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -371,6 +372,7 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab }) => {
             onRefresh={loadEntries}
             selectedDate={selectedDate}
             onDateChange={setSelectedDate}
+            onExportToCalendar={onOpenCalendarExportModal}
             key={refreshKey}
           />
         ) : activeView === 'card' ? (

@@ -5,6 +5,7 @@ import { SettingsPanel } from './components/SettingsPanel';
 import { MenuPanel } from './components/MenuPanel';
 import { ClearDateModal } from './components/ClearDateModal';
 import { DeleteMonthModal } from './components/DeleteMonthModal';
+import { CalendarExportModal } from './components/CalendarExportModal';
 import TabNavigation from './components/TabNavigation';
 import { useScheduleCalculations } from './hooks/useScheduleCalculations';
 import { useIndexedDB, useScheduleData } from './hooks/useIndexedDB';
@@ -21,6 +22,7 @@ function App() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'calendar' | 'settings' | 'data' | 'roster'>('calendar');
+  const [showCalendarExportModal, setShowCalendarExportModal] = useState(false);
   
   // Add artificial loading delay for better UX
   const [artificialLoading, setArtificialLoading] = useState(true);
@@ -478,6 +480,14 @@ function App() {
     setScheduleTitle(newTitle);
   };
 
+  const handleOpenCalendarExportModal = () => {
+    setShowCalendarExportModal(true);
+  };
+
+  const handleCloseCalendarExportModal = () => {
+    setShowCalendarExportModal(false);
+  };
+
   // Show error if data loading failed
   if (dataError && showMainApp) {
     console.log('❌ Showing error screen:', dataError);
@@ -610,7 +620,7 @@ function App() {
               onExportData={handleExportData}
             />
           ) : (
-            <RosterPanel key={refreshKey} setActiveTab={setActiveTab} />
+            <RosterPanel key={refreshKey} setActiveTab={setActiveTab} onOpenCalendarExportModal={handleOpenCalendarExportModal} />
           )}
         </div>
 
@@ -625,6 +635,14 @@ function App() {
             onClose={closeModal}
           />
         )}
+
+        {/* Calendar Export Modal */}
+        <CalendarExportModal
+          isOpen={showCalendarExportModal}
+          onClose={handleCloseCalendarExportModal}
+          currentMonth={currentMonth}
+          currentYear={currentYear}
+        />
 
       </div>
     </>
