@@ -156,6 +156,17 @@ function App() {
     window.addEventListener('navigateToMonth', handleNavigateToMonth as EventListener);
     return () => window.removeEventListener('navigateToMonth', handleNavigateToMonth as EventListener);
   }, []);
+  
+  // Listen for tab switch requests
+  useEffect(() => {
+    const handleSwitchToCalendar = () => {
+      console.log('📅 Switching to calendar tab');
+      setActiveTab('calendar');
+    };
+
+    window.addEventListener('switchToCalendarTab', handleSwitchToCalendar);
+    return () => window.removeEventListener('switchToCalendarTab', handleSwitchToCalendar);
+  }, []);
   // Initialize content animation when component mounts
   useEffect(() => {
     if (contentRef.current && showMainApp) {
