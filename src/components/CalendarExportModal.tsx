@@ -139,10 +139,24 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
           
           console.log(`🔍 CALENDAR EXPORT: Found ${staffEntries.length} entries for ${authenticatedStaffName} in ${formatMonthYear()}`);
           
+          // Debug: Show the entries we found
+          staffEntries.forEach((entry, index) => {
+            console.log(`🔍 CALENDAR EXPORT: Entry ${index + 1}: ${entry.date} - ${entry.shift_type} - ${entry.assigned_name}`);
+          });
+          
+          // Debug: Show current calendar state before sync
+          console.log('🔍 CALENDAR EXPORT: Current calendar state before sync:', {
+            scheduleKeys: Object.keys(schedule || {}),
+            scheduleEntries: Object.entries(schedule || {}).slice(0, 5),
+            specialDatesKeys: Object.keys(specialDates || {})
+          });
+          
           if (staffEntries.length > 0) {
-            // Use the existing sync mechanism that's already working
+            console.log('🔄 CALENDAR EXPORT: Starting to dispatch sync events...');
+            
             staffEntries.forEach(entry => {
-              // Create the same sync event format that's already working
+              console.log(`🔄 CALENDAR EXPORT: Processing entry: ${entry.date} - ${entry.shift_type}`);
+              
               const syncEvent = {
                 date: entry.date,
                 shiftType: entry.shift_type,
@@ -151,29 +165,44 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
                 action: 'added' as const
               };
               
-              console.log('🔄 CALENDAR EXPORT: Using existing sync mechanism for:', syncEvent);
+              console.log('🔄 CALENDAR EXPORT: Dispatching sync event:', syncEvent);
               
-              // Use the same event that works for table editing
+              // Dispatch the sync event
               window.dispatchEvent(new CustomEvent('rosterCalendarSync', {
                 detail: syncEvent
               }));
+              
+              console.log('✅ CALENDAR EXPORT: Sync event dispatched successfully');
             });
+            
+            console.log(`✅ CALENDAR EXPORT: Dispatched ${staffEntries.length} sync events`);
           } else {
             console.log(`❌ CALENDAR EXPORT: No entries found for ${authenticatedStaffName} in ${formatMonthYear()}`);
+            
+            // Debug: Show what entries we have vs what we're looking for
+            console.log('🔍 CALENDAR EXPORT: Debug - All entries for this month:');
+            const monthEntries = allEntries.filter(entry => {
+              const entryDate = new Date(entry.date);
+              return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
+            });
+            
+            monthEntries.forEach(entry => {
+              const entryBaseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
+              const staffBaseName = authenticatedStaffName.replace(/\(R\)$/, '').trim().toUpperCase();
+              console.log(`🔍 Entry: ${entry.date} - ${entry.assigned_name} (base: ${entryBaseName}) - Looking for: ${staffBaseName} - Match: ${entryBaseName === staffBaseName}`);
+            });
           }
-          
-          console.log(`✅ CALENDAR EXPORT: Dispatched ${staffEntries.length} sync events to calendar`);
-          
-          // Small delay to ensure all sync events are processed
-          setTimeout(() => {
-            console.log('🔄 CALENDAR EXPORT: Triggering calendar refresh and closing modal...');
-            // Force calendar refresh using existing mechanism
-            window.dispatchEvent(new CustomEvent('forceCalendarRefresh'));
-            onClose();
-          }, 100);
         } else {
           console.log(`❌ CALENDAR EXPORT: Could not validate staff name from auth code: "${authCode}"`);
         }
+        
+        // Small delay to ensure all sync events are processed
+        setTimeout(() => {
+          console.log('🔄 CALENDAR EXPORT: Triggering calendar refresh and closing modal...');
+          // Force calendar refresh using existing mechanism
+          window.dispatchEvent(new CustomEvent('forceCalendarRefresh'));
+          onClose();
+        }, 500); // Increased delay to ensure all events are processed
       }
       
     } catch (error) {
