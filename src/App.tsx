@@ -230,11 +230,22 @@ function App() {
       setShowCalendarExportModal(false);
     };
 
+    const handleDebugCalendarState = () => {
+      console.log('🔍 APP: Current calendar state debug:', {
+        scheduleKeys: Object.keys(schedule),
+        scheduleEntries: Object.entries(schedule).slice(0, 10),
+        specialDatesKeys: Object.keys(specialDates),
+        currentMonth: currentDate.getMonth(),
+        currentYear: currentDate.getFullYear()
+      });
+    };
     window.addEventListener('switchToCalendarTab', handleSwitchToCalendar);
     window.addEventListener('closeCalendarExportModal', handleCloseCalendarExportModal);
+    window.addEventListener('debugCalendarState', handleDebugCalendarState);
     return () => {
       window.removeEventListener('switchToCalendarTab', handleSwitchToCalendar);
       window.removeEventListener('closeCalendarExportModal', handleCloseCalendarExportModal);
+      window.removeEventListener('debugCalendarState', handleDebugCalendarState);
     };
   }, []);
   // Initialize content animation when component mounts

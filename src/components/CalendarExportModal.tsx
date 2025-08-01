@@ -99,15 +99,21 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
       const allEntries = await fetchRosterEntries();
       console.log(`📊 Fetched ${allEntries.length} total roster entries`);
       
+      // Debug: Show first 5 entries to see the data structure
+      console.log('🔍 CALENDAR EXPORT: First 5 roster entries:', allEntries.slice(0, 5));
+      
       // Filter entries for this staff member and month
       const staffEntries = allEntries.filter(entry => {
         const entryBaseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
         const staffBaseName = authenticatedStaffName.replace(/\(R\)$/, '').trim().toUpperCase();
         
+        console.log(`🔍 CALENDAR EXPORT: Comparing "${entryBaseName}" vs "${staffBaseName}"`);
+        
         if (entryBaseName !== staffBaseName) return false;
         
         const entryDate = new Date(entry.date);
         const isInMonth = entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
+        console.log(`🔍 CALENDAR EXPORT: Date ${entry.date} - Month: ${entryDate.getMonth()} vs ${currentMonth}, Year: ${entryDate.getFullYear()} vs ${currentYear}, InMonth: ${isInMonth}`);
         return isInMonth;
       });
       
@@ -121,11 +127,16 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
           return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
         });
         
+        console.log(`🔍 CALENDAR EXPORT: Found ${monthEntries.length} total entries for ${formatMonthYear()}`);
         monthEntries.forEach(entry => {
           const entryBaseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
           const staffBaseName = authenticatedStaffName.replace(/\(R\)$/, '').trim().toUpperCase();
           console.log(`🔍 Entry: ${entry.date} - ${entry.assigned_name} (base: ${entryBaseName}) - Looking for: ${staffBaseName} - Match: ${entryBaseName === staffBaseName}`);
         });
+        
+        // Also show all available staff names in roster
+        const allStaffNames = [...new Set(allEntries.map(e => e.assigned_name))].sort();
+        console.log('🔍 CALENDAR EXPORT: All staff names in roster:', allStaffNames);
         
         setExportResult({
           success: false,
@@ -194,10 +205,8 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
       
       // Apply all updates at once using the existing state setters
       console.log('🔄 CALENDAR EXPORT: Applying calendar updates...');
-      
-      // Get current calendar state and merge with updates
-      const currentCalendarState = window.getCurrentCalendarState?.() || {};
-      const currentSpecialDates = window.getCurrentSpecialDates?.() || {};
+      console.log('🔄 CALENDAR EXPORT: Calendar updates to apply:', calendarUpdates);
+      console.log('🔄 CALENDAR EXPORT: Special date updates to apply:', specialDateUpdates);
       
       // Trigger the same event that App.tsx listens to, but with bulk data
       window.dispatchEvent(new CustomEvent('bulkCalendarUpdate', {
@@ -210,6 +219,13 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
       }));
       
       console.log(`✅ CALENDAR EXPORT: Triggered bulk update with ${syncedCount} changes`);
+      
+      // Wait a bit to see if the event was received
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Check if calendar state actually changed
+      console.log('🔍 CALENDAR EXPORT: Checking if calendar state changed...');
+      window.dispatchEvent(new CustomEvent('debugCalendarState'));
       
       // Set success result
       setExportResult({
