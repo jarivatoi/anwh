@@ -81,8 +81,8 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
       return;
     }
 
-    const staffName = validateAuthCode(authCode);
-    if (!staffName) {
+    const authenticatedStaffName = validateAuthCode(authCode);
+    if (!authenticatedStaffName) {
       setAuthError('Invalid authentication code');
       return;
     }
@@ -93,117 +93,98 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
 
     try {
       console.log('📅 Starting calendar export process...');
+      console.log(`🔍 CALENDAR EXPORT: Authenticated as: "${authenticatedStaffName}"`);
       
       // Fetch all roster entries
       const allEntries = await fetchRosterEntries();
       console.log(`📊 Fetched ${allEntries.length} total roster entries`);
       
-      // Export to calendar
-      const result = await calendarExportManager.exportToCalendar({
-        staffName,
-        month: currentMonth,
-        year: currentYear,
-        entries: allEntries
+      // Filter entries for this staff member and month
+      const staffEntries = allEntries.filter(entry => {
+        const entryBaseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
+        const staffBaseName = authenticatedStaffName.replace(/\(R\)$/, '').trim().toUpperCase();
+        
+        if (entryBaseName !== staffBaseName) return false;
+        
+        const entryDate = new Date(entry.date);
+        const isInMonth = entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
+        return isInMonth;
       });
       
-      setExportResult(result);
+      console.log(`🔍 CALENDAR EXPORT: Found ${staffEntries.length} entries for ${authenticatedStaffName} in ${formatMonthYear()}`);
+      
+      if (staffEntries.length === 0) {
+        // Show all entries for debugging
+        console.log('🔍 CALENDAR EXPORT: Debug - All entries for this month:');
+        const monthEntries = allEntries.filter(entry => {
+          const entryDate = new Date(entry.date);
+          return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
+        });
+        
+        monthEntries.forEach(entry => {
+          const entryBaseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
+          const staffBaseName = authenticatedStaffName.replace(/\(R\)$/, '').trim().toUpperCase();
+          console.log(`🔍 Entry: ${entry.date} - ${entry.assigned_name} (base: ${entryBaseName}) - Looking for: ${staffBaseName} - Match: ${entryBaseName === staffBaseName}`);
+        });
+        
+        setExportResult({
+          success: false,
+          filename: '',
+          entriesExported: 0,
+          errors: [`No shifts found for ${authenticatedStaffName} in ${formatMonthYear()}`]
+        });
+        setStep('result');
+        return;
+      }
+      
+      // Show the entries we found
+      staffEntries.forEach((entry, index) => {
+        console.log(`🔍 CALENDAR EXPORT: Entry ${index + 1}: ${entry.date} - ${entry.shift_type} - ${entry.assigned_name}`);
+      });
+      
+      // Use the same sync mechanism that works for table editing
+      console.log('🔄 CALENDAR EXPORT: Starting roster-to-calendar sync using existing mechanism...');
+      
+      let syncedCount = 0;
+      staffEntries.forEach(entry => {
+        console.log(`🔄 CALENDAR EXPORT: Processing entry: ${entry.date} - ${entry.shift_type}`);
+        
+        const syncEvent = {
+          date: entry.date,
+          shiftType: entry.shift_type,
+          assignedName: entry.assigned_name,
+          editorName: authenticatedStaffName,
+          action: 'added' as const
+        };
+        
+        console.log('🔄 CALENDAR EXPORT: Dispatching sync event:', syncEvent);
+        
+        // Dispatch the same sync event that works for table editing
+        window.dispatchEvent(new CustomEvent('rosterCalendarSync', {
+          detail: syncEvent
+        }));
+        
+        syncedCount++;
+        console.log('✅ CALENDAR EXPORT: Sync event dispatched successfully');
+      });
+      
+      console.log(`✅ CALENDAR EXPORT: Dispatched ${syncedCount} sync events`);
+      
+      // Set success result
+      setExportResult({
+        success: true,
+        filename: `${authenticatedStaffName}_${formatMonthYear()}_Calendar.ics`,
+        entriesExported: syncedCount,
+        errors: []
+      });
       setStep('result');
       
-      if (result.success) {
-        console.log('✅ Calendar export completed successfully');
-      } else {
-        console.error('❌ Calendar export failed:', result.errors);
-      }
-      
-      // Sync roster data to calendar after successful export
-      if (result.success) {
-        console.log('🔄 CALENDAR EXPORT: Starting roster-to-calendar sync...');
-        
-        // Get the staff name from auth code for calendar label
-        const authenticatedStaffName = validateAuthCode(authCode);
-        if (authenticatedStaffName) {
-          console.log(`🔍 CALENDAR EXPORT: Syncing for staff: "${authenticatedStaffName}"`);
-          console.log(`🔍 CALENDAR EXPORT: Total entries to check: ${allEntries.length}`);
-          
-          // Filter entries for this staff member and month
-          const staffEntries = allEntries.filter(entry => {
-            const entryBaseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
-            const staffBaseName = authenticatedStaffName.replace(/\(R\)$/, '').trim().toUpperCase();
-            
-            if (entryBaseName !== staffBaseName) return false;
-            
-            const entryDate = new Date(entry.date);
-            const isInMonth = entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
-            return isInMonth;
-          });
-          
-          console.log(`🔍 CALENDAR EXPORT: Found ${staffEntries.length} entries for ${authenticatedStaffName} in ${formatMonthYear()}`);
-          
-          // Debug: Show the entries we found
-          staffEntries.forEach((entry, index) => {
-            console.log(`🔍 CALENDAR EXPORT: Entry ${index + 1}: ${entry.date} - ${entry.shift_type} - ${entry.assigned_name}`);
-          });
-          
-          // Debug: Show current calendar state before sync
-          console.log('🔍 CALENDAR EXPORT: Current calendar state before sync:', {
-            scheduleKeys: Object.keys(schedule || {}),
-            scheduleEntries: Object.entries(schedule || {}).slice(0, 5),
-            specialDatesKeys: Object.keys(specialDates || {})
-          });
-          
-          if (staffEntries.length > 0) {
-            console.log('🔄 CALENDAR EXPORT: Starting to dispatch sync events...');
-            
-            staffEntries.forEach(entry => {
-              console.log(`🔄 CALENDAR EXPORT: Processing entry: ${entry.date} - ${entry.shift_type}`);
-              
-              const syncEvent = {
-                date: entry.date,
-                shiftType: entry.shift_type,
-                assignedName: entry.assigned_name,
-                editorName: authenticatedStaffName,
-                action: 'added' as const
-              };
-              
-              console.log('🔄 CALENDAR EXPORT: Dispatching sync event:', syncEvent);
-              
-              // Dispatch the sync event
-              window.dispatchEvent(new CustomEvent('rosterCalendarSync', {
-                detail: syncEvent
-              }));
-              
-              console.log('✅ CALENDAR EXPORT: Sync event dispatched successfully');
-            });
-            
-            console.log(`✅ CALENDAR EXPORT: Dispatched ${staffEntries.length} sync events`);
-          } else {
-            console.log(`❌ CALENDAR EXPORT: No entries found for ${authenticatedStaffName} in ${formatMonthYear()}`);
-            
-            // Debug: Show what entries we have vs what we're looking for
-            console.log('🔍 CALENDAR EXPORT: Debug - All entries for this month:');
-            const monthEntries = allEntries.filter(entry => {
-              const entryDate = new Date(entry.date);
-              return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
-            });
-            
-            monthEntries.forEach(entry => {
-              const entryBaseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
-              const staffBaseName = authenticatedStaffName.replace(/\(R\)$/, '').trim().toUpperCase();
-              console.log(`🔍 Entry: ${entry.date} - ${entry.assigned_name} (base: ${entryBaseName}) - Looking for: ${staffBaseName} - Match: ${entryBaseName === staffBaseName}`);
-            });
-          }
-        } else {
-          console.log(`❌ CALENDAR EXPORT: Could not validate staff name from auth code: "${authCode}"`);
-        }
-        
-        // Small delay to ensure all sync events are processed
-        setTimeout(() => {
-          console.log('🔄 CALENDAR EXPORT: Triggering calendar refresh and closing modal...');
-          // Force calendar refresh using existing mechanism
-          window.dispatchEvent(new CustomEvent('forceCalendarRefresh'));
-          onClose();
-        }, 500); // Increased delay to ensure all events are processed
-      }
+      // Small delay to ensure all sync events are processed, then close modal
+      setTimeout(() => {
+        console.log('🔄 CALENDAR EXPORT: Triggering calendar refresh and closing modal...');
+        window.dispatchEvent(new CustomEvent('forceCalendarRefresh'));
+        onClose();
+      }, 1000);
       
     } catch (error) {
       console.error('❌ Calendar export error:', error);
