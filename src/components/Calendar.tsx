@@ -1186,25 +1186,12 @@ export const Calendar: React.FC<CalendarProps> = ({
                         console.log(`🎨 RENDERING DEBUG: Day ${day} - dayShifts:`, dayShifts);
                         return dayShifts.map((shiftId, idx) => {
                         const shift = getShiftDisplay(shiftId);
-                        console.log(`🎨 SHIFT DISPLAY DEBUG: Day ${day}, shiftId: ${shiftId}, shift object:`, shift);
-                        console.log(`🎨 SHIFT TEXT DEBUG: shift.time = "${shift?.time}", shift.label = "${shift?.label}"`);
                         console.log(`🎨 RENDERING SHIFT: Day ${day}, Shift ${shiftId}, Found shift object:`, shift);
                         console.log(`🎨 RENDERING DEBUG: Day ${day} - shiftId: ${shiftId}, shift found:`, shift);
                         return shift ? (
                           <div
                             key={`${shiftId}-${idx}`}
-                            className={`shift-text text-[10px] sm:text-[14px] font-bold leading-tight text-gray-900 flex-shrink-0 w-full select-none ${pastDate ? 'opacity-60' : ''}`}
-                            style={{
-                              backgroundColor: '#e0f2fe',
-                              borderRadius: '4px',
-                              padding: '2px 4px',
-                              margin: '1px 0',
-                              border: '1px solid #0284c7',
-                              minHeight: '16px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center'
-                            }}
+                            className={`shift-text text-[10px] sm:text-[12px] font-bold leading-tight text-gray-900 flex-shrink-0 w-full select-none ${pastDate ? 'opacity-60' : ''}`}
                             style={{
                               minHeight: '14px',
                               display: 'flex',
@@ -1216,17 +1203,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                               padding: '1px 2px'
                             }}
                           >
-                            <div 
-                              className="text-center select-none font-bold text-gray-900" 
-                              style={{
-                                fontSize: window.innerWidth >= 640 ? '12px' : '10px',
-                                lineHeight: '1.2',
-                                fontWeight: 'bold',
-                                color: '#1f2937'
-                              }}
-                            >
-                              {shift.time}
-                            </div>
+                            <span className="text-center select-none font-semibold" style={{
                               fontSize: window.innerWidth >= 640 ? '11px' : '9px',
                               lineHeight: '1.2',
                               color: '#1f2937',
