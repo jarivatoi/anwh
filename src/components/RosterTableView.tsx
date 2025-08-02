@@ -182,6 +182,40 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     }
   }, [loading, entries, hasAutoScrolled, selectedDate]);
 
+  // Custom sorting function to prioritize (R) names first
+  const sortStaffNames = (entries: RosterEntry[]): RosterEntry[] => {
+    return [...entries].sort((a, b) => {
+      const aHasR = a.assigned_name.includes('(R)');
+      const bHasR = b.assigned_name.includes('(R)');
+      
+      // If one has (R) and other doesn't, (R) comes first
+      if (aHasR && !bHasR) return -1;
+      if (!aHasR && bHasR) return 1;
+      
+      // If both have (R) or both don't have (R), sort alphabetically
+      return a.assigned_name.localeCompare(b.assigned_name);
+    });
+  };
+
+  // Group entries by shift type for each date
+  const groupEntriesByShift = (dateEntries: RosterEntry[]) => {
+    const shiftGroups: Record<string, RosterEntry[]> = {};
+    
+    dateEntries.forEach(entry => {
+      if (!shiftGroups[entry.shift_type]) {
+        shiftGroups[entry.shift_type] = [];
+      }
+      shiftGroups[entry.shift_type].push(entry);
+    });
+    
+    // Sort each shift group to prioritize (R) names first
+    Object.keys(shiftGroups).forEach(shiftType => {
+      shiftGroups[shiftType] = sortStaffNames(shiftGroups[shiftType]);
+    });
+    
+    return shiftGroups;
+  };
+
   // Filter entries based on selected date (show entries for the selected month)
   const filteredEntries = entries.filter(entry => {
     const entryDate = new Date(entry.date);
