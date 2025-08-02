@@ -1280,6 +1280,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
+      `}</style>
     </div>
   );
 };
