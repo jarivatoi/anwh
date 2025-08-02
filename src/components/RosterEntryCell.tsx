@@ -368,7 +368,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
           minHeight: '20px'
         }}
       >
-        <div className="text-[10px] font-medium text-gray-900 leading-tight w-full flex items-center justify-center">
+        <div className="text-[8px] sm:text-[10px] font-medium text-gray-900 leading-tight w-full flex items-center justify-center">
           {isUpdating ? 'Updating...' : (() => {
             const styling = getNameStyling(entry);
             return (
@@ -378,7 +378,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
                   className={styling.className}
                 />
                 {styling.showAsterisk && (
-                  <span className="text-black font-bold text-[6px]">*</span>
+                  <span className="text-black font-bold text-[10px] sm:text-[12px]">*</span>
                 )}
               </div>
             );

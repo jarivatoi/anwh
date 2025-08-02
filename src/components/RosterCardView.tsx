@@ -461,7 +461,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
                           {/* Shift Header */}
                           <div className={`text-center font-bold ${getShiftColor(shiftType)}`} style={{
                             padding: window.innerWidth > window.innerHeight ? '4px' : '8px', // Less padding in landscape
-                            fontSize: '10px'
+                            fontSize: window.innerWidth > window.innerHeight ? '10px' : '12px' // Smaller text in landscape
                           }}>
                             <ScrollingText 
                               text={shiftType === 'Morning Shift (9-4)' ? 'Shift 9-4' :

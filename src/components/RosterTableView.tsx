@@ -881,7 +881,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                 </div>
                               ) : (
                                 <div key={`empty-${date}-${shiftType}-${rowIndex}`} className="flex items-center justify-center text-gray-300 relative z-15" style={{
-                                  fontSize: '10px',
+                                  fontSize: window.innerWidth > window.innerHeight ? '6px' : '8px', // Smaller text in landscape
                                   minHeight: window.innerWidth > window.innerHeight ? '16px' : '24px',
                                   padding: window.innerWidth > window.innerHeight ? '1px' : '4px'
                                 }}>
