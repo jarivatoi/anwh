@@ -40,6 +40,8 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [lastUpdateTime, setLastUpdateTime] = useState<string>('');
 
   const isMountedRef = useRef(true);
 
@@ -76,8 +78,13 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
     setIsRefreshing(true);
     try {
       console.log('🔄 Manual refresh triggered in card view');
-      // Just show the spinner - data will update through real-time or other means
-      // Don't call onRefresh to prevent any reload effects
+      if (onRefresh) {
+        await onRefresh();
+      }
+      setRefreshKey(prev => prev + 1);
+      setLastUpdateTime(new Date().toLocaleTimeString());
+      
+      // Stay in current position after manual refresh
       
       console.log('✅ Manual refresh completed');
     } catch (error) {
