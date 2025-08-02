@@ -465,7 +465,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     'Night Duty'
   ];
   return (
-    <div>
+    <>
       {/* Date Picker */}
       <div className="mb-6 bg-white rounded-lg border border-gray-200 p-4">
         <div className="flex items-center justify-center w-full">
@@ -1347,6 +1347,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           }
         }
       `}</style>
-    </div>
+    </>
   );
 };
