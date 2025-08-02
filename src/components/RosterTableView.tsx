@@ -199,6 +199,13 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     return groups;
   }, {} as Record<string, RosterEntry[]>);
 
+  // Calculate maximum staff count across all shifts and dates
+  const maxStaffCount = Object.values(groupedEntries).reduce((maxCount, dateEntries) => {
+    const shiftGroups = groupEntriesByShift(dateEntries);
+    const dateMaxCount = Math.max(...Object.values(shiftGroups).map(group => group.length));
+    return Math.max(maxCount, dateMaxCount);
+  }, 0);
+
   // Format date for display in table (Tue 01-03-25)
   const formatTableDate = (dateString: string) => {
     const date = new Date(dateString);
