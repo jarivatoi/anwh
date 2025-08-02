@@ -238,10 +238,9 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
         WebkitOverflowScrolling: 'touch',
         touchAction: 'pan-y',
         display: 'flex',
-        alignItems: 'flex-start',
+        alignItems: 'stretch',
         justifyContent: 'center',
-        padding: window.innerWidth > window.innerHeight ? '4px' : '16px',
-        paddingTop: window.innerWidth > window.innerHeight ? '2px' : '16px'
+        padding: '0'
       }}
     >
       <div 
@@ -249,17 +248,16 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
         style={{ 
           userSelect: 'none', 
           WebkitUserSelect: 'none',
-          marginTop: window.innerWidth > window.innerHeight ? '2px' : '2rem',
-          marginBottom: window.innerWidth > window.innerHeight ? '2px' : '2rem',
-          maxWidth: window.innerWidth > window.innerHeight ? '95vw' : '28rem',
-          maxHeight: window.innerWidth > window.innerHeight ? '98vh' : 'none'
+          height: '100vh',
+          maxWidth: '100vw',
+          borderRadius: '0',
+          display: 'flex',
+          flexDirection: 'column'
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="relative pb-4 border-b border-gray-200 flex-shrink-0" style={{
-          padding: window.innerWidth > window.innerHeight ? '8px' : '24px'
-        }}>
+        <div className="relative pb-4 border-b border-gray-200 flex-shrink-0 p-6">
           {!isExporting && (
             <button
               onClick={handleClose}
@@ -288,13 +286,12 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
 
         {/* Content */}
         <div 
-          className="overflow-y-auto flex-1"
+          className="flex-1 overflow-y-auto"
           style={{
             WebkitOverflowScrolling: 'touch',
             touchAction: 'pan-y',
             overscrollBehavior: 'contain',
-            maxHeight: window.innerWidth > window.innerHeight ? 'calc(98vh - 100px)' : '70vh',
-            padding: window.innerWidth > window.innerHeight ? '8px' : '24px'
+            padding: '24px'
           }}
         >
           {step === 'auth' && (
@@ -471,7 +468,7 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
 
         {/* Footer */}
         {/* Footer - ALWAYS VISIBLE */}
-        <div className="border-t border-gray-200 bg-gray-50 p-4 flex-shrink-0">
+        <div className="border-t border-gray-200 bg-gray-50 p-6 flex-shrink-0">
           <div className="flex space-x-3">
             <button
               onClick={handleClose}
