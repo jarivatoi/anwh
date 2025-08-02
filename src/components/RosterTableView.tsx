@@ -458,6 +458,15 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     }
   };
 
+  // Helper function to get shift display name
+  const getShiftDisplayName = (shiftType: string) => {
+    if (shiftType === 'Morning Shift (9-4)') return '9-4';
+    if (shiftType === 'Saturday Regular (12-10)') return '12-10';
+    if (shiftType === 'Evening Shift (4-10)') return '4-10';
+    if (shiftType === 'Night Duty') return 'N';
+    return shiftType;
+  };
+
   // Shift types in order
   const shiftTypes = [
     'Morning Shift (9-4)',
@@ -771,11 +780,13 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     Date
                   </th>
                   {shiftTypes.map((shiftType) => (
-                    <ScrollingText 
-                      text={getShiftDisplayName(shiftType)}
-                      className="text-white font-bold"
+                    <th
                       key={shiftType}
-                     />
+                      style={{ 
+                        position: 'sticky',
+                        top: window.innerWidth > window.innerHeight ? 40 : 56,
+                        zIndex: 85,
+                        padding: window.innerWidth > window.innerHeight ? '4px' : '8px',
                         fontWeight: '600',
                         textAlign: 'center',
                         fontSize: window.innerWidth > window.innerHeight ? '10px' : (window.innerWidth >= 640 ? '14px' : '12px'),
@@ -796,10 +807,10 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         WebkitTouchCallout: 'none'
                       }}
                     >
-                      {shiftType === 'Morning Shift (9-4)' ? '9-4' :
-                       shiftType === 'Saturday Regular (12-10)' ? '12-10' :
-                       shiftType === 'Evening Shift (4-10)' ? '4-10' :
-                       shiftType === 'Night Duty' ? 'N' : shiftType}
+                      <ScrollingText 
+                        text={getShiftDisplayName(shiftType)}
+                        className="text-white font-bold"
+                      />
                     </th>
                   ))}
                 </tr>
