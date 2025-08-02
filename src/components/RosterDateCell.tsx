@@ -97,16 +97,16 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
       >
         <div className={`font-medium text-[10px] sm:text-[12px] leading-tight relative z-20 ${
           isToday ? 'text-green-900' : 'text-gray-900'
-        }`} style={{
+        }`} className="text-[10px] font-medium leading-tight relative z-20" style={{
           textAlign: 'center',
           width: '100%',
           display: 'block'
         }}>
           {formatTableDate(date).dayName}
         </div>
-        <div className={`font-medium text-[10px] sm:text-[12px] leading-tight relative z-20 ${
+        <div className={`font-medium leading-tight relative z-20 ${
           isToday ? 'text-green-900' : 'text-gray-900'
-        }`} style={{
+        }`} className="text-[10px] font-medium leading-tight relative z-20" style={{
           textAlign: 'center',
           width: '100%',
           display: 'block'
