@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { Download } from 'lucide-react';
 import { Calendar } from './components/Calendar';
 import { ShiftModal } from './components/ShiftModal';
 import { SettingsPanel } from './components/SettingsPanel';
@@ -722,20 +723,33 @@ function App() {
               onExportData={handleExportData}
             />
           ) : (
-            <RosterPanel key={refreshKey} setActiveTab={setActiveTab} onOpenCalendarExportModal={handleOpenCalendarExportModal} />
-          )}
-        </div>
-
-        {/* Modals - Outside of any scrollable content */}
-        {showModal && (
-          <ShiftModal
-            selectedDate={selectedDate}
-            schedule={schedule}
-            specialDates={specialDates}
-            onToggleShift={toggleShift}
-            onToggleSpecialDate={toggleSpecialDate}
-            onClose={closeModal}
-          />
+          <div>
+            {/* Export to Calendar Button */}
+            <div className="mb-4 flex justify-center">
+              <button
+                onClick={handleOpenCalendarExportModal}
+                className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-lg"
+              >
+                <Download className="w-5 h-5" />
+                <span>Export to Calendar</span>
+              </button>
+            </div>
+            
+            <Calendar
+              currentDate={currentDate}
+              schedule={schedule}
+              specialDates={specialDates}
+              onDateClick={handleDateClick}
+              onNavigateMonth={navigateMonth}
+              totalAmount={totalAmount}
+              monthToDateAmount={monthToDateAmount}
+              onDateChange={handleDateChange}
+              scheduleTitle={scheduleTitle}
+              onTitleUpdate={handleTitleUpdate}
+              setSchedule={setSchedule}
+              setSpecialDates={setSpecialDates}
+            />
+          </div>
         )}
 
         {/* Calendar Export Modal */}

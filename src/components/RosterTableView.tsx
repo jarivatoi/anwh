@@ -581,17 +581,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         </div>
       </div>
 
-      <div className="bg-white overflow-hidden w-full" style={{ 
-        height: window.innerWidth > window.innerHeight ? '60vh' : '70vh', // Shorter in landscape
-        minHeight: '400px',
-        maxHeight: '80vh',
-        width: '100vw',
-        marginLeft: 'calc(-50vw + 50%)',
-        marginRight: 'calc(-50vw + 50%)'
-      }}>
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
           </div>
         ) : sortedDates.length === 0 ? (
           <div className="text-center py-12">
