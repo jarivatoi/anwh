@@ -698,6 +698,17 @@ function App() {
         >
           {activeTab === 'calendar' ? (
             <div>
+              {/* Export to Calendar Button - positioned near month selector */}
+              <div className="mb-4 flex justify-end px-4">
+                <button
+                  onClick={handleOpenCalendarExportModal}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-md text-sm"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Export to Calendar</span>
+                </button>
+              </div>
+              
               <Calendar
                 currentDate={currentDate}
                 schedule={schedule}
@@ -711,15 +722,6 @@ function App() {
                 onTitleUpdate={handleTitleUpdate}
                 setSchedule={setSchedule}
                 setSpecialDates={setSpecialDates}
-                exportButton={
-                  <button
-                    onClick={handleOpenCalendarExportModal}
-                    className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-md text-xs"
-                  >
-                    <Download className="w-3 h-3" />
-                    <span>Export</span>
-                  </button>
-                }
               />
             </div>
           ) : activeTab === 'settings' ? (
