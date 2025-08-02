@@ -31,7 +31,6 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   // All hooks must be declared at the top level before any conditional returns
   const [selectedEntry, setSelectedEntry] = useState<RosterEntry | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
   const [hasAutoScrolled, setHasAutoScrolled] = useState(false);
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -241,7 +240,6 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
     if (onRefresh) {
       onRefresh();
     }
-    setRefreshKey(prev => prev + 1);
     
     // Also trigger a data refresh
     if (isMountedRef.current && onRefresh) {
