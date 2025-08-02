@@ -235,17 +235,6 @@ export const Calendar: React.FC<CalendarProps> = ({
         </button>
       </div>
 
-      {/* Export to Calendar Button - Centered */}
-      <div className="flex justify-center mb-6">
-        <button
-          onClick={handleExportToCalendar}
-          className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
-        >
-          <Download className="w-5 h-5" />
-          <span>Export {monthNames[currentMonth]} {currentYear} to Calendar</span>
-        </button>
-      </div>
-
       {/* Amount Display */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
@@ -254,6 +243,14 @@ export const Calendar: React.FC<CalendarProps> = ({
             <div className="text-2xl font-bold text-blue-900">
               {formatMauritianRupees(totalAmount).formatted}
             </div>
+            {/* Export button in the Month Total card */}
+            <button
+              onClick={handleExportToCalendar}
+              className="mt-3 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center space-x-2 w-full"
+            >
+              <Download className="w-4 h-4" />
+              <span>Export to Calendar</span>
+            </button>
           </div>
         </div>
         <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
