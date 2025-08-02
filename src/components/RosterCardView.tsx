@@ -422,8 +422,6 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
                     }}
                     isToday={isToday}
                     realtimeStatus={realtimeStatus}
-                    onManualRefresh={handleManualRefresh}
-                    isRefreshing={isRefreshing}
                   />
                   
                   {/* Shift Tabs for this date */}
