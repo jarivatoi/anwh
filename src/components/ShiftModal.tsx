@@ -336,7 +336,6 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
           {/* Shift options - ONLY VALID SHIFTS */}
           <div className="space-y-3 mb-6">
             {validShifts.map(shift => {
-              const isSelected = (schedule[selectedDate] || []).includes(shift.id);
               const isSelected = (schedule?.[selectedDate] || []).includes(shift.id);
               const canSelect = canSelectShift(shift.id, selectedDate);
               const isDisabled = !isSelected && !canSelect;
