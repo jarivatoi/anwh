@@ -5,7 +5,7 @@
 /* Custom pulse animation with reduced opacity range (75%-100% instead of 50%-100%) */
 @keyframes pulse-subtle {
   0%, 100% {
-    opacity: 0.9;
+    opacity: 0.75;
   }
   50% {
     opacity: 1;
@@ -13,5 +13,5 @@
 }
 
 .animate-pulse-subtle {
-  animation: pulse-subtle 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
