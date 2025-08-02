@@ -19,7 +19,6 @@ interface CalendarProps {
   onTitleUpdate: (title: string) => void;
   setSchedule: (schedule: DaySchedule | ((prev: DaySchedule) => DaySchedule)) => void;
   setSpecialDates: (specialDates: SpecialDates | ((prev: SpecialDates) => SpecialDates)) => void;
-  exportButton?: React.ReactNode;
 }
 
 export const Calendar: React.FC<CalendarProps> = ({
@@ -35,7 +34,6 @@ export const Calendar: React.FC<CalendarProps> = ({
   onTitleUpdate,
   setSchedule,
   setSpecialDates,
-  exportButton
 }) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [tempTitle, setTempTitle] = useState(scheduleTitle);
@@ -258,11 +256,6 @@ export const Calendar: React.FC<CalendarProps> = ({
                 >
                   <Edit2 className="w-4 h-4" />
                 </button>
-                {exportButton && (
-                  <div className="ml-2">
-                    {exportButton}
-                  </div>
-                )}
               </div>
             )}
           </div>
