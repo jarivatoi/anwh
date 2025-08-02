@@ -908,6 +908,27 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                               position: 'relative',
                               overflow: 'hidden'
                             }}>
+                              {/* BIG X WATERMARK for past dates - ON EMPTY SHIFT BOXES */}
+                              {isPastDate(date) && shiftEntries.length === 0 && (
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20" style={{
+                                    // Centered within content area only, avoiding header
+                                    top: window.innerWidth > window.innerHeight ? '24px' : '32px', // Adjust for landscape
+                                    left: '8px',
+                                    right: '8px', 
+                                    bottom: window.innerWidth > window.innerHeight ? '16px' : '24px' // Less padding in landscape
+                                }}>
+                                  <div className="font-bold select-none" style={{
+                                    fontSize: window.innerWidth > window.innerHeight ? 'clamp(2rem, 8vw, 4rem)' : 'clamp(4rem, 12vw, 8rem)', // Smaller in landscape
+                                    lineHeight: '1',
+                                    color: '#fca5a5',
+                                    opacity: 0.2,
+                                    transform: 'scale(1.8)'
+                                  }}>
+                                    ✕
+                                  </div>
+                                </div>
+                              )}
+                              
                               {shiftEntries.length > 0 ? (
                                 <div className="space-y-1 w-full">
                                   {sortStaffNames(shiftEntries).map((entry, index) => (
