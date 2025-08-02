@@ -81,7 +81,6 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
       if (onRefresh) {
         await onRefresh();
       }
-      setRefreshKey(prev => prev + 1);
       
       // Scroll to today's date after refresh
       setTimeout(() => {
