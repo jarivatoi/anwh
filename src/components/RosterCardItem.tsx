@@ -345,7 +345,7 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
                     className={styling.className}
                   />
                   {styling.showAsterisk && (
-                    <span className="text-black font-bold text-[10px] sm:text-[12px]">*</span>
+                    <span className="text-black font-bold text-[10px] sm:text-[12px] animate-pulse-subtle">*</span>
                   )}
                 </div>
               );
