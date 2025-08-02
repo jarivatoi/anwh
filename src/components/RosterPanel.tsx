@@ -274,35 +274,40 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
       {/* Header */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between">
-          <div className="flex-1 flex justify-center">
+          <div className="flex-1 flex items-center justify-center">
             <h2 className="text-2xl font-bold text-gray-900">Roster Management</h2>
           </div>
-          <button
-            onClick={() => setShowPDFImport(true)}
-            {...useLongPress({
-              onLongPress: () => setShowAuthModal(true),
-              delay: 800
-            })}
-            className="p-3 rounded-full bg-indigo-100 hover:bg-indigo-200 text-indigo-600 transition-colors duration-200 relative z-50"
-            style={{
-              touchAction: 'manipulation',
-              WebkitTapHighlightColor: 'transparent',
-              position: 'relative',
-              zIndex: 50,
-              // Force proper rendering after orientation change
-              transform: 'translate3d(0,0,0)',
-              backfaceVisibility: 'hidden',
-              WebkitBackfaceVisibility: 'hidden',
-              WebkitTransform: 'translate3d(0,0,0)',
-              // iPhone specific fixes
-              WebkitTouchCallout: 'none',
-              WebkitUserSelect: 'none',
-              userSelect: 'none'
-            }}
-            title={isAdminAuthenticated ? "Import from PDF (authenticated)" : "Import from PDF (long press for more options)"}
-          >
-            <Server className="w-6 h-6" />
-          </button>
+          <div className="flex items-center justify-center">
+            <button
+              onClick={() => setShowPDFImport(true)}
+              {...useLongPress({
+                onLongPress: () => setShowAuthModal(true),
+                delay: 800
+              })}
+              className="p-3 rounded-full bg-indigo-100 hover:bg-indigo-200 text-indigo-600 transition-colors duration-200 relative z-50 flex items-center justify-center"
+              style={{
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
+                position: 'relative',
+                zIndex: 50,
+                // Force proper rendering after orientation change
+                transform: 'translate3d(0,0,0)',
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
+                WebkitTransform: 'translate3d(0,0,0)',
+                // iPhone specific fixes
+                WebkitTouchCallout: 'none',
+                WebkitUserSelect: 'none',
+                userSelect: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+              title={isAdminAuthenticated ? "Import from PDF (authenticated)" : "Import from PDF (long press for more options)"}
+            >
+              <Server className="w-6 h-6" />
+            </button>
+          </div>
         </div>
       </div>
         
