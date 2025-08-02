@@ -79,6 +79,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
       if (onRefresh) {
         await onRefresh();
       }
+      // Don't call setRefreshKey here - let the data update through props
       
       console.log('✅ Manual refresh completed');
     } catch (error) {
