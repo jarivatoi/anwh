@@ -378,7 +378,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
                   className={styling.className}
                 />
                 {styling.showAsterisk && (
-                  <span className="text-black font-bold text-[6px]">*</span>
+                  <span className="text-black font-bold text-[10px]">*</span>
                 )}
               </div>
             );
