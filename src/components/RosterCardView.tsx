@@ -246,6 +246,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
     // Also trigger a data refresh
     if (isMountedRef.current && onRefresh) {
       onRefresh();
+    }
   };
 
   // Handle edit button click
