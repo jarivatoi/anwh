@@ -235,11 +235,11 @@ export const Calendar: React.FC<CalendarProps> = ({
         </button>
       </div>
 
-      {/* Export Button - Centered */}
+      {/* Export to Calendar Button - Centered */}
       <div className="flex justify-center mb-6">
         <button
           onClick={handleExportToCalendar}
-          className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl"
+          className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
         >
           <Download className="w-5 h-5" />
           <span>Export {monthNames[currentMonth]} {currentYear} to Calendar</span>
