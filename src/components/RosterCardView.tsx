@@ -463,15 +463,14 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
                             padding: window.innerWidth > window.innerHeight ? '4px' : '8px', // Less padding in landscape
                             fontSize: '10px'
                           }}>
-                            <ScrollingText className="font-bold w-full">
-                              <span>
-                                {shiftType === 'Morning Shift (9-4)' ? 'Shift 9-4' :
-                                 shiftType === 'Saturday Regular (12-10)' ? 'Shift 12-10' :
-                                 shiftType === 'Evening Shift (4-10)' ? 'Shift 4-10' :
-                                 shiftType === 'Night Duty' ? 'Night Duty' :
-                                 shiftType === 'Sunday/Public Holiday/Special' ? 'Special 9-4' : shiftType}
-                              </span>
-                            </ScrollingText>
+                            <ScrollingText 
+                              text={shiftType === 'Morning Shift (9-4)' ? 'Shift 9-4' :
+                                   shiftType === 'Saturday Regular (12-10)' ? 'Shift 12-10' :
+                                   shiftType === 'Evening Shift (4-10)' ? 'Shift 4-10' :
+                                   shiftType === 'Night Duty' ? 'Night Duty' :
+                                   shiftType === 'Sunday/Public Holiday/Special' ? 'Special 9-4' : shiftType}
+                              className="font-bold"
+                            />
                           </div>
                           
                           {/* Names List */}

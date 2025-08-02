@@ -102,9 +102,7 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
           width: '100%',
           display: 'block'
         }}>
-          <ScrollingText className="w-full">
-            <span>{formatTableDate(date).dayName}</span>
-          </ScrollingText>
+          {formatTableDate(date).dayName}
         </div>
         <div className={`font-medium leading-tight relative z-20 ${
           isToday ? 'text-green-900' : 'text-gray-900'
@@ -113,9 +111,7 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
           width: '100%',
           display: 'block'
         }}>
-          <ScrollingText className="w-full">
-            <span>{formatTableDate(date).dateString}</span>
-          </ScrollingText>
+          {formatTableDate(date).dateString}
         </div>
       </button>
     </td>

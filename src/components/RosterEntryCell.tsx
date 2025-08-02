@@ -373,9 +373,10 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
             const styling = getNameStyling(entry);
             return (
               <div className="flex items-center justify-center space-x-1">
-                <ScrollingText className={`w-full ${styling.className}`}>
-                  <span>{entry.assigned_name}</span>
-                </ScrollingText>
+                <ScrollingText 
+                  text={entry.assigned_name}
+                  className={styling.className}
+                />
                 {styling.showAsterisk && (
                   <span className="text-black font-bold text-[6px]">*</span>
                 )}
