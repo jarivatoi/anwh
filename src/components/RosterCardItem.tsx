@@ -329,7 +329,7 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
         }}
       >
         <div className="font-medium text-gray-900 text-xs leading-tight w-full flex items-center justify-center">
-          <div className="text-[8px] sm:text-[10px] font-medium text-gray-900 leading-tight w-full text-center">
+          <div className="text-[10px] font-medium text-gray-900 leading-tight w-full text-center">
             {isUpdating ? 'Updating...' : (() => {
               const styling = getNameStyling(entry);
               return (
@@ -339,7 +339,7 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
                     className={styling.className}
                   />
                   {styling.showAsterisk && (
-                    <span className="text-black font-bold text-[10px] sm:text-[12px]">*</span>
+                    <span className="text-black font-bold text-[10px]">*</span>
                   )}
                 </div>
               );
