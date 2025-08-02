@@ -478,51 +478,25 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex-shrink-0 pt-0" style={{
-          padding: window.innerWidth > window.innerHeight ? '8px' : '24px'
-        }}>
-          {step === 'auth' && (
-            <div className="flex space-x-3">
-              <button
-                onClick={handleClose}
-                disabled={isExporting}
-                className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleExport}
-                disabled={isExporting || authCode.length < 4}
-                className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
-              >
-                <Download className="w-4 h-4" />
-                <span>Export Calendar</span>
-              </button>
-            </div>
-          )}
-          
-          {step === 'result' && exportResult && (
-            <div className="flex space-x-3">
-              <button
-                onClick={handleClose}
-                className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200"
-              >
-                Close
-              </button>
-              {exportResult.success && (
-                <button
-                  onClick={() => {
-                    // Close this modal and switch to calendar tab
-                    onClose();
-                    window.dispatchEvent(new CustomEvent('switchToCalendarTab'));
-                  }}
-                  className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
-                >
-                  <span>View in Calendar</span>
-                </button>
-              )}
-            </div>
-          )}
+        {/* Footer - ALWAYS VISIBLE */}
+        <div className="border-t border-gray-200 bg-gray-50 p-4 flex-shrink-0">
+          <div className="flex space-x-3">
+            <button
+              onClick={handleClose}
+              disabled={isExporting}
+              className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleExport}
+              disabled={isExporting || authCode.length < 4}
+              className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
+            >
+              <Download className="w-4 h-4" />
+              <span>Export Calendar</span>
+            </button>
+          </div>
         </div>
 
       </div>
