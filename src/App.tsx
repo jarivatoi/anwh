@@ -697,14 +697,42 @@ function App() {
           }}
         >
           {activeTab === 'calendar' ? (
+            <Calendar
+              currentDate={currentDate}
+              schedule={schedule}
+              specialDates={specialDates}
+              onDateClick={handleDateClick}
+              onNavigateMonth={navigateMonth}
+              totalAmount={totalAmount}
+              monthToDateAmount={monthToDateAmount}
+              onDateChange={handleDateChange}
+              scheduleTitle={scheduleTitle}
+              onTitleUpdate={handleTitleUpdate}
+              setSchedule={setSchedule}
+              setSpecialDates={setSpecialDates}
+            />
+          ) : activeTab === 'settings' ? (
+            <SettingsPanel
+              settings={settings}
+              onUpdateBasicSalary={updateBasicSalary}
+              onUpdateShiftHours={updateShiftHours}
+            />
+          ) : activeTab === 'data' ? (
+            <MenuPanel
+              onImportData={handleImportData}
+              onExportData={handleExportData}
+            />
+          ) : activeTab === 'roster' ? (
+            <RosterPanel />
+          ) : (
             <div>
-              {/* Export to Calendar Button - positioned near month selector */}
-              <div className="mb-4 flex justify-end px-4">
+              {/* Export to Calendar Button */}
+              <div className="mb-4 flex justify-center">
                 <button
                   onClick={handleOpenCalendarExportModal}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-md text-sm"
+                  className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-lg"
                 >
-                  <Download className="w-4 h-4" />
+                  <Download className="w-5 h-5" />
                   <span>Export to Calendar</span>
                 </button>
               </div>
@@ -724,34 +752,6 @@ function App() {
                 setSpecialDates={setSpecialDates}
               />
             </div>
-          ) : activeTab === 'settings' ? (
-            <SettingsPanel
-              settings={settings}
-              onUpdateBasicSalary={updateBasicSalary}
-              onUpdateShiftHours={updateShiftHours}
-            />
-          ) : activeTab === 'data' ? (
-            <MenuPanel
-              onImportData={handleImportData}
-              onExportData={handleExportData}
-            />
-          ) : activeTab === 'roster' ? (
-            <RosterPanel />
-          ) : (
-            <Calendar
-              currentDate={currentDate}
-              schedule={schedule}
-              specialDates={specialDates}
-              onDateClick={handleDateClick}
-              onNavigateMonth={navigateMonth}
-              totalAmount={totalAmount}
-              monthToDateAmount={monthToDateAmount}
-              onDateChange={handleDateChange}
-              scheduleTitle={scheduleTitle}
-              onTitleUpdate={handleTitleUpdate}
-              setSchedule={setSchedule}
-              setSpecialDates={setSpecialDates}
-            />
           )}
         </div>
 
@@ -769,11 +769,11 @@ function App() {
             isOpen={showModal}
             onClose={closeModal}
             selectedDate={selectedDate}
-            schedule={schedule}
-            specialDates={specialDates}
+            currentShifts={schedule[selectedDate] || []}
             onToggleShift={toggleShift}
             canSelectShift={canSelectShift}
             onToggleSpecialDate={toggleSpecialDate}
+            isSpecialDate={specialDates[selectedDate] || false}
             onResetDate={(dateKey) => {
               const [year, month, day] = dateKey.split('-').map(Number);
               handleResetMonth(year, month - 1, day, false);
