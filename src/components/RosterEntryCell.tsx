@@ -117,7 +117,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
     // Check for original assignment if we have change description
     if (!entry.change_description || !entry.change_description.includes('Name changed from')) {
       // Manually edited but no change description - red text
-      return { className: 'text-red-600 animate-pulse', showAsterisk: false };
+      return { className: 'text-red-600 animate-pulse-subtle', showAsterisk: false };
     }
     
     if (isBackToOriginal(entry)) {
