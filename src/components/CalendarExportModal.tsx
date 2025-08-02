@@ -478,10 +478,10 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
         </div>
 
         {/* Footer */}
-        {step === 'auth' && (
-          <div className="flex-shrink-0 pt-0" style={{
-            padding: window.innerWidth > window.innerHeight ? '8px' : '24px'
-          }}>
+        <div className="flex-shrink-0 pt-0" style={{
+          padding: window.innerWidth > window.innerHeight ? '8px' : '24px'
+        }}>
+          {step === 'auth' && (
             <div className="flex space-x-3">
               <button
                 onClick={handleClose}
@@ -494,19 +494,14 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
                 onClick={handleExport}
                 disabled={isExporting || authCode.length < 4}
                 className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
-                onClick={handleExport}
               >
                 <Download className="w-4 h-4" />
                 <span>Export Calendar</span>
               </button>
             </div>
-          </div>
-        )}
-
-        {step === 'result' && exportResult && (
-          <div className="flex-shrink-0 pt-0" style={{
-            padding: window.innerWidth > window.innerHeight ? '8px' : '24px'
-          }}>
+          )}
+          
+          {step === 'result' && exportResult && (
             <div className="flex space-x-3">
               <button
                 onClick={handleClose}
@@ -527,8 +522,9 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
                 </button>
               )}
             </div>
-          </div>
-        )}
+          )}
+        </div>
+
       </div>
     </div>
   );
