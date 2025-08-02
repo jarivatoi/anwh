@@ -736,6 +736,7 @@ function App() {
             onToggleSpecialDate={toggleSpecialDate}
             onClose={closeModal}
           />
+          <RosterPanel setActiveTab={setActiveTab} onOpenCalendarExportModal={handleOpenCalendarExportModal} />
         )}
 
         {/* Calendar Export Modal */}
