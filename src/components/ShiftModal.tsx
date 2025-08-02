@@ -119,7 +119,7 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
   if (!selectedDate) return null;
 
   const canSelectShift = (shiftId: string, dateKey: string) => {
-    const currentShifts = schedule[dateKey] || [];
+    const currentShifts = schedule?.[dateKey] || [];
     
     // 9-4 and 12-10 cannot overlap
     if (shiftId === '9-4' && currentShifts.includes('12-10')) return false;
@@ -337,6 +337,7 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
           <div className="space-y-3 mb-6">
             {validShifts.map(shift => {
               const isSelected = (schedule[selectedDate] || []).includes(shift.id);
+              const isSelected = (schedule?.[selectedDate] || []).includes(shift.id);
               const canSelect = canSelectShift(shift.id, selectedDate);
               const isDisabled = !isSelected && !canSelect;
 

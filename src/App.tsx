@@ -769,7 +769,7 @@ function App() {
             isOpen={showModal}
             onClose={closeModal}
             selectedDate={selectedDate}
-            currentShifts={schedule[selectedDate] || []}
+            currentShifts={schedule?.[selectedDate] || []}
             onToggleShift={toggleShift}
             canSelectShift={canSelectShift}
             onToggleSpecialDate={toggleSpecialDate}
