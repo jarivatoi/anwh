@@ -12,6 +12,7 @@ import { isAdminCode } from '../utils/rosterAuth';
 import { sortByGroup } from '../utils/rosterAuth';
 import { addRosterEntry, deleteRosterEntry } from '../utils/rosterApi';
 import { EditDetailsModal } from './EditDetailsModal';
+import { ScrollingText } from './ScrollingText';
 import { fetchRosterEntries } from '../utils/rosterApi';
 
 interface RosterTableViewProps {
@@ -770,7 +771,10 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     Date
                   </th>
                   {shiftTypes.map((shiftType) => (
-                    <th 
+                    <ScrollingText 
+                      text={getShiftDisplayName(shiftType)}
+                      className="text-white font-bold"
+                    />
                       key={shiftType}
                       style={{ 
                         position: 'sticky',

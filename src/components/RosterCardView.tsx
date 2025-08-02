@@ -6,6 +6,7 @@ import { RosterEntry, ShiftFilterType } from '../types/roster';
 import { EditDetailsModal } from './EditDetailsModal';
 import { RosterCardItem } from './RosterCardItem';
 import { RosterDateHeaderButton } from './RosterDateHeaderButton';
+import { ScrollingText } from './ScrollingText';
 import { availableNames, validateAuthCode, shiftTypes, isAdminCode } from '../utils/rosterAuth';
 import { addRosterEntry, deleteRosterEntry } from '../utils/rosterApi';
 
@@ -495,11 +496,14 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
                             padding: window.innerWidth > window.innerHeight ? '4px' : '8px', // Less padding in landscape
                             fontSize: window.innerWidth > window.innerHeight ? '10px' : '12px' // Smaller text in landscape
                           }}>
-                            {shiftType === 'Morning Shift (9-4)' ? 'Shift 9-4' :
-                             shiftType === 'Saturday Regular (12-10)' ? 'Shift 12-10' :
-                             shiftType === 'Evening Shift (4-10)' ? 'Shift 4-10' :
-                             shiftType === 'Night Duty' ? 'Night Duty' :
-                             shiftType === 'Sunday/Public Holiday/Special' ? 'Special 9-4' : shiftType}
+                            <ScrollingText 
+                              text={shiftType === 'Morning Shift (9-4)' ? 'Shift 9-4' :
+                                   shiftType === 'Saturday Regular (12-10)' ? 'Shift 12-10' :
+                                   shiftType === 'Evening Shift (4-10)' ? 'Shift 4-10' :
+                                   shiftType === 'Night Duty' ? 'Night Duty' :
+                                   shiftType === 'Sunday/Public Holiday/Special' ? 'Special 9-4' : shiftType}
+                              className="font-bold"
+                            />
                           </div>
                           
                           {/* Names List */}
