@@ -93,8 +93,8 @@ export const RosterDateHeaderButton: React.FC<RosterDateHeaderButtonProps> = ({
             color: 'white'
           }} />
         </div>
-        
-        {/* Date text - centered in remaining space */}
+              width: '16px',
+              height: '16px',
         <div style={{
           flex: 1,
           textAlign: 'center',
@@ -180,8 +180,8 @@ export const RosterDateHeaderButton: React.FC<RosterDateHeaderButtonProps> = ({
                 animation: realtimeStatus === 'connecting' ? 'pulse 1.5s ease-in-out infinite' : 'none',
                 boxShadow: realtimeStatus === 'connected' ? '0 0 8px rgba(16, 185, 129, 0.8)' : 'none',
                 // Prevent dot from causing shifts
-                flexShrink: 0,
-                transform: 'translate3d(0,0,0)',
+            width: '8px',
+            height: '8px',
                 backfaceVisibility: 'hidden'
               }} />
             </button>
