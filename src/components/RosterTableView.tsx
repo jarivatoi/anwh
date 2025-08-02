@@ -810,96 +810,125 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
 
               {/* Table Body */}
               <tbody className="divide-y divide-gray-200">
-                {sortedDates.map((date) => (
-                  <tr 
-                    key={date} 
-                    data-date={date}
-                    className={`${
-                      isToday(date) ? 'bg-green-200' : 
-                      isPastDate(date) ? 'bg-red-50' :
-                      isFutureDate(date) ? 'bg-green-50' : ''
-                    }`}
-                  >
-                    {/* Date Column */}
-                    <RosterDateCell
-                      date={date}
-                      isToday={isToday(date)}
-                      isPastDate={isPastDate(date)}
-                      isFutureDate={isFutureDate(date)}
-                      onLongPress={() => {
-                        setEditingDate(date);
-                        setShowAuthModal(true);
-                      }}
-                      formatTableDate={formatTableDate}
-                    />
-                    {shiftTypes.map((shiftType) => {
-                      const shiftEntries = sortStaffNames(getEntriesForDateAndShift(date, shiftType));
-                      const maxStaffForThisDate = getMaxStaffCountForDate(date);
-                      
-                      // Create aligned array with consistent row count for this date
-                      const alignedEntries = [];
-                      for (let rowIndex = 0; rowIndex < maxStaffForThisDate; rowIndex++) {
-                        alignedEntries.push(shiftEntries[rowIndex] || null);
-                      }
-                      
-                      return (
-                        <td key={shiftType} className={`text-center overflow-hidden align-top relative ${
-                          isPastDate(date) ? 'bg-red-50' : ''
-                        }`} style={{
-                          padding: window.innerWidth > window.innerHeight ? '2px' : '4px 8px', // Less padding in landscape
-                          minHeight: window.innerWidth > window.innerHeight ? '30px' : '50px', // Shorter cells in landscape
-                          border: '2px solid #374151',
-                          backgroundColor: 'white'
-                        }}>
-                          {/* Big X watermark for past dates - covers entire cell including padding */}
-                          {isPastDate(date) && shiftEntries.length > 0 && (
-                            <div className="absolute pointer-events-none inset-0" style={{ zIndex: 5 }}>
-                              <div className="absolute inset-0 flex items-center justify-center text-red-300 text-6xl sm:text-8xl font-bold opacity-60" style={{ 
-                                opacity: 0.2,
-                                lineHeight: '1'
-                              }}>
-                                ✕
-                              </div>
-                            </div>
-                          )}
-                          <div className="flex flex-col relative" style={{ 
-                            zIndex: 10,
-                            gap: window.innerWidth > window.innerHeight ? '1px' : '2px', // Tighter spacing in landscape
+                {sortedDates.map((date) => {
+                  const dateEntries = groupedByDate[date] || [];
+                  
+                  // Calculate the maximum number of staff in any shift for this date
+                  const maxStaffCount = Math.max(...shiftTypes.map(shiftType => 
+                    (dateEntries.filter(entry => entry.shift_type === shiftType) || []).length
+                  ));
+                  
+                  // Calculate dynamic height based on max staff count (minimum 60px, 40px per staff member)
+                  const dynamicHeight = Math.max(60, maxStaffCount * 40);
+
+                  return (
+                    <tr 
+                      key={date} 
+                      data-date={date}
+                      className={`${
+                        isToday(date) ? 'bg-green-200' : 
+                        isPastDate(date) ? 'bg-red-50' :
+                        isFutureDate(date) ? 'bg-green-50' : ''
+                      }`}
+                    >
+                      {/* Date Column */}
+                      <RosterDateCell
+                        date={date}
+                        isToday={isToday(date)}
+                        isPastDate={isPastDate(date)}
+                        isFutureDate={isFutureDate(date)}
+                        onLongPress={() => {
+                          setEditingDate(date);
+                          setShowAuthModal(true);
+                        }}
+                        formatTableDate={formatTableDate}
+                      />
+                      {shiftTypes.map((shiftType) => {
+                        const shiftEntries = sortStaffNames(getEntriesForDateAndShift(date, shiftType));
+                        const maxStaffForThisDate = getMaxStaffCountForDate(date);
+                        
+                        // Create aligned array with consistent row count for this date
+                        const alignedEntries = [];
+                        for (let rowIndex = 0; rowIndex < maxStaffForThisDate; rowIndex++) {
+                          alignedEntries.push(shiftEntries[rowIndex] || null);
+                        }
+                        
+                        return (
+                          <td key={shiftType} className={`text-center overflow-hidden align-top relative ${
+                            isPastDate(date) ? 'bg-red-50' : ''
+                          }`} style={{
+                            padding: window.innerWidth > window.innerHeight ? '2px' : '4px 8px', // Less padding in landscape
+                            minHeight: `${dynamicHeight}px`,
+                            height: `${dynamicHeight}px`,
                             border: '2px solid #374151',
-                            backgroundColor: '#f9fafb',
-                            borderRadius: '4px',
-                            padding: '4px',
-                            margin: '2px'
+                            backgroundColor: 'white'
                           }}>
-                            {alignedEntries.map((entry, rowIndex) => {
-                              return entry ? (
-                                <div key={`${entry.id}-${rowIndex}`} className="flex items-center justify-center relative z-15" style={{
-                                  minHeight: window.innerWidth > window.innerHeight ? '16px' : '24px', // Shorter in landscape
-                                  padding: window.innerWidth > window.innerHeight ? '1px' : '4px'
+                            {/* Big X watermark for past dates - covers entire cell including padding */}
+                            {isPastDate(date) && shiftEntries.length > 0 && (
+                              <div className="absolute pointer-events-none inset-0" style={{ zIndex: 5 }}>
+                                <div className="absolute inset-0 flex items-center justify-center text-red-300 text-6xl sm:text-8xl font-bold opacity-60" style={{ 
+                                  opacity: 0.2,
+                                  lineHeight: '1'
                                 }}>
-                                  <RosterEntryCell
-                                    entry={entry}
-                                    onUpdate={handleEntryUpdate}
-                                    onShowDetails={handleShowDetails}
-                                    allEntriesForShift={shiftEntries}
-                                  />
+                                  ✕
+                                </div>
+                              </div>
+                            )}
+                            <div className="flex flex-col relative" style={{ 
+                              zIndex: 10,
+                              gap: window.innerWidth > window.innerHeight ? '1px' : '2px', // Tighter spacing in landscape
+                              border: '2px solid #374151',
+                              backgroundColor: '#f9fafb',
+                              borderRadius: '4px',
+                              padding: '4px',
+                              margin: '2px',
+                              minHeight: `${dynamicHeight - 16}px`,
+                              height: `${dynamicHeight - 16}px`,
+                              display: 'flex',
+                              flexDirection: 'column',
+                              justifyContent: shiftEntries.length > 0 ? 'flex-start' : 'center',
+                              alignItems: 'center',
+                              position: 'relative',
+                              overflow: 'hidden'
+                            }}>
+                              {shiftEntries.length > 0 ? (
+                                <div className="space-y-1 w-full">
+                                  {sortStaffNames(shiftEntries).map((entry, index) => (
+                                    <div key={entry.id} className="relative" style={{ zIndex: 30 }}>
+                                      <RosterEntryCell
+                                        entry={entry}
+                                        onUpdate={handleEntryUpdate}
+                                        onShowDetails={handleShowDetails}
+                                        allEntriesForShift={shiftEntries}
+                                      />
+                                    </div>
+                                  ))}
                                 </div>
                               ) : (
-                                <div key={`empty-${date}-${shiftType}-${rowIndex}`} className="flex items-center justify-center text-gray-300 relative z-15" style={{
-                                  fontSize: window.innerWidth > window.innerHeight ? '6px' : '8px', // Smaller text in landscape
-                                  minHeight: window.innerWidth > window.innerHeight ? '16px' : '24px',
-                                  padding: window.innerWidth > window.innerHeight ? '1px' : '4px'
+                                <div style={{
+                                  position: 'absolute',
+                                  top: '50%',
+                                  left: '50%',
+                                  transform: 'translate(-50%, -50%)',
+                                  fontSize: 'clamp(1.5rem, 4vw, 3rem)',
+                                  fontWeight: 'bold',
+                                  color: '#d1d5db',
+                                  opacity: 0.3,
+                                  userSelect: 'none',
+                                  WebkitUserSelect: 'none',
+                                  pointerEvents: 'none',
+                                  zIndex: 10
                                 }}>
-                                  -
+                                  No Staff
                                 </div>
-                              );
-                            })}
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
+                              )}
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
