@@ -375,9 +375,8 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
           WebkitUserSelect: 'none',
           zIndex: 10, // Lower z-index so sticky headers appear above
           minHeight: '20px',
-          border: '2px solid #374151',
-          backgroundColor: 'white',
-          margin: '1px'
+          border: 'none',
+          backgroundColor: 'transparent'
         }}
       >
         <div className="text-[8px] sm:text-[10px] font-medium text-gray-900 leading-tight w-full flex items-center justify-center">
