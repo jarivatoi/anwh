@@ -723,34 +723,35 @@ function App() {
               onExportData={handleExportData}
             />
           ) : (
-          <div>
-            {/* Export to Calendar Button */}
-            <div className="mb-4 flex justify-center">
-              <button
-                onClick={handleOpenCalendarExportModal}
-                className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-lg"
-              >
-                <Download className="w-5 h-5" />
-                <span>Export to Calendar</span>
-              </button>
+            <div>
+              {/* Export to Calendar Button */}
+              <div className="mb-4 flex justify-center">
+                <button
+                  onClick={handleOpenCalendarExportModal}
+                  className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-lg"
+                >
+                  <Download className="w-5 h-5" />
+                  <span>Export to Calendar</span>
+                </button>
+              </div>
+              
+              <Calendar
+                currentDate={currentDate}
+                schedule={schedule}
+                specialDates={specialDates}
+                onDateClick={handleDateClick}
+                onNavigateMonth={navigateMonth}
+                totalAmount={totalAmount}
+                monthToDateAmount={monthToDateAmount}
+                onDateChange={handleDateChange}
+                scheduleTitle={scheduleTitle}
+                onTitleUpdate={handleTitleUpdate}
+                setSchedule={setSchedule}
+                setSpecialDates={setSpecialDates}
+              />
             </div>
-            
-            <Calendar
-              currentDate={currentDate}
-              schedule={schedule}
-              specialDates={specialDates}
-              onDateClick={handleDateClick}
-              onNavigateMonth={navigateMonth}
-              totalAmount={totalAmount}
-              monthToDateAmount={monthToDateAmount}
-              onDateChange={handleDateChange}
-              scheduleTitle={scheduleTitle}
-              onTitleUpdate={handleTitleUpdate}
-              setSchedule={setSchedule}
-              setSpecialDates={setSpecialDates}
-            />
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Calendar Export Modal */}
         <CalendarExportModal
