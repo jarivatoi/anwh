@@ -14,6 +14,7 @@ import { useLongPress } from '../hooks/useLongPress';
 import { validateAuthCode, availableNames } from '../utils/rosterAuth';
 import { fetchRosterEntries } from '../utils/rosterApi';
 import { syncRosterToCalendar } from '../utils/rosterCalendarSync';
+import { parseNameChange } from '../utils/rosterHelpers';
 
 interface CalendarProps {
   currentDate: Date;
