@@ -121,32 +121,17 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
       
       // Filter entries for this staff member and month
       const staffEntries = allEntries.filter(entry => {
-        // Check if this entry belongs to the authenticated staff member
-        // Method 1: Current assignment matches
+        // CORRECT LOGIC: Only include entries that are CURRENTLY assigned to you
+        // Do NOT include entries that were originally yours but you gave to someone else
         const currentBaseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
         const authBaseName = authenticatedStaffName.replace(/\(R\)$/, '').trim().toUpperCase();
         const currentMatch = currentBaseName === authBaseName;
         
-        // Method 2: Original PDF assignment matches (check change description)
-        let originalMatch = false;
-        if (entry.change_description && entry.change_description.includes('(Original PDF:')) {
-          const originalPdfMatch = entry.change_description.match(/\(Original PDF: ([^)]+)\)/);
-          if (originalPdfMatch) {
-            const originalBaseName = originalPdfMatch[1].replace(/\(R\)$/, '').trim().toUpperCase();
-            originalMatch = originalBaseName === authBaseName;
-          }
-        }
-        
-        // Method 3: Check if this entry was edited BY the authenticated user
-        const editedByMatch = entry.last_edited_by && 
-                             entry.last_edited_by.replace(/\(R\)$/, '').trim().toUpperCase() === authBaseName;
-        
         console.log(`🔍 CALENDAR EXPORT: Entry ${entry.date} - ${entry.shift_type}:`);
         console.log(`   Current: ${entry.assigned_name} (${currentBaseName}) vs Auth: ${authBaseName} = ${currentMatch}`);
-        console.log(`   Original PDF: ${originalMatch ? 'MATCH' : 'NO MATCH'}`);
-        console.log(`   Edited by: ${entry.last_edited_by} = ${editedByMatch ? 'MATCH' : 'NO MATCH'}`);
         
-        const shouldInclude = currentMatch || originalMatch || editedByMatch;
+        // ONLY include if currently assigned to you
+        const shouldInclude = currentMatch;
         console.log(`   RESULT: ${shouldInclude ? 'INCLUDE' : 'EXCLUDE'}`);
         
         if (!shouldInclude) return false;
