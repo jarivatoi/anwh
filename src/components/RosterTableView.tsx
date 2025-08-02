@@ -582,51 +582,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           </button>
         </div>
       </div>
-            <button
-              onClick={() => {
-                console.log('🔄 ROSTER TABLE: Export to Calendar button clicked');
-                onExportToCalendar();
-              }}
-              className="p-2 rounded-lg hover:bg-green-100 text-green-600 transition-colors duration-200 z-50 relative bg-transparent"
-              style={{
-                touchAction: 'manipulation',
-                WebkitTapHighlightColor: 'transparent',
-                position: 'relative',
-                zIndex: 50,
-                backgroundColor: 'transparent',
-                transform: 'translate3d(0,0,0)',
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden',
-                WebkitTransform: 'translate3d(0,0,0)',
-                WebkitTouchCallout: 'none'
-              }}
-              title="Export your shifts to calendar"
-            >
-              <Download className="w-5 h-5" />
-            </button>
-          </div>
-          
-          <button
-            onClick={() => navigateMonth('next')}
-            className="p-2 rounded-lg hover:bg-gray-100 hover:bg-opacity-50 text-gray-600 transition-colors duration-200 z-50 relative bg-transparent"
-            style={{
-              touchAction: 'manipulation',
-              WebkitTapHighlightColor: 'transparent',
-              position: 'relative',
-              zIndex: 50,
-              backgroundColor: 'transparent',
-              // iPhone specific fixes
-              transform: 'translate3d(0,0,0)',
-              backfaceVisibility: 'hidden',
-              WebkitBackfaceVisibility: 'hidden',
-              WebkitTransform: 'translate3d(0,0,0)',
-              WebkitTouchCallout: 'none'
-            }}
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
 
       <div className="bg-white overflow-hidden w-full" style={{ 
         height: window.innerWidth > window.innerHeight ? '60vh' : '70vh', // Shorter in landscape
