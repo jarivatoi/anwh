@@ -535,7 +535,10 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             
             {/* Export to Calendar Button */}
             <button
-              onClick={() => setShowExportModal(true)}
+              onClick={() => {
+                console.log('🔄 ROSTER TABLE: Export to Calendar button clicked');
+                onExportToCalendar();
+              }}
               className="p-2 rounded-lg hover:bg-green-100 text-green-600 transition-colors duration-200 z-50 relative bg-transparent"
               style={{
                 touchAction: 'manipulation',

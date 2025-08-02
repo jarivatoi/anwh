@@ -248,6 +248,17 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
         >
           {step === 'auth' && (
             <div className="space-y-6">
+              {/* Test button to verify function works */}
+              <button
+                onClick={() => {
+                  console.log('🧪 TEST BUTTON CLICKED - Function works!');
+                  alert('Test button works! Now try the real export.');
+                }}
+                className="w-full px-4 py-3 bg-purple-600 text-white rounded-lg font-bold"
+              >
+                🧪 TEST BUTTON (Click to verify)
+              </button>
+              
               {/* Debug button to test function */}
               <button
                 onClick={() => {
