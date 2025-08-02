@@ -7,7 +7,6 @@ import { X, Edit, Calendar, User, Clock } from 'lucide-react';
 import { availableNames, validateAuthCode } from '../utils/rosterAuth';
 import { ScrollingText } from './ScrollingText';
 import { isPastDate } from '../utils/rosterHelpers';
-import { parseNameChange } from '../utils/rosterHelpers';
 import { updateRosterEntry } from '../utils/rosterApi';
 import { StaffSelectionModal } from './StaffSelectionModal';
 import { gsap } from 'gsap';

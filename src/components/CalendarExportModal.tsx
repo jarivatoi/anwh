@@ -299,10 +299,26 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
         >
           {step === 'auth' && (
             <div className="space-y-6">
+              {/* Info Section */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start space-x-3">
+                  <Calendar className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-medium text-blue-800 mb-2">Calendar Export</h4>
+                    <ul className="text-sm text-blue-700 space-y-1">
+                      <li>• Downloads your shifts as an .ics calendar file</li>
+                      <li>• Import into Google Calendar, Outlook, Apple Calendar</li>
+                      <li>• Only exports YOUR shifts for {formatMonthYear()}</li>
+                      <li>• Includes shift times and locations</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
               {/* Authentication */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Authentication Code
+                  Your Authentication Code
                 </label>
                 <input
                   type="text"
@@ -324,6 +340,18 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
                   </div>
                 </div>
               )}
+
+              {/* Instructions */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <h4 className="font-medium text-gray-800 mb-2">How to use the exported file:</h4>
+                <ol className="text-sm text-gray-700 space-y-1 list-decimal list-inside">
+                  <li>Download the .ics file to your device</li>
+                  <li>Open your calendar app (Google, Outlook, Apple)</li>
+                  <li>Look for "Import" or "Add Calendar" option</li>
+                  <li>Select the downloaded .ics file</li>
+                  <li>Your shifts will appear in your calendar</li>
+                </ol>
+              </div>
             </div>
           )}
 
