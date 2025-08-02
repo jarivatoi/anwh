@@ -693,16 +693,14 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     color: 'white',
                     cursor: 'pointer',
                     display: 'flex',
-                  {title} ({titleEntries.length} staff)
+                    alignItems: 'center',
+                    gap: '4px',
                     opacity: isReloading ? 0.7 : 1,
                     border: '2px solid #374151',
                     borderRight: '3px solid #374151',
                     WebkitTapHighlightColor: 'transparent'
                   }}
                   title={
-                >
-                  {title} ({titleEntries.length} staff)
-                </th>
                     realtimeStatus === 'connected' ? 'Manual refresh (Real-time active)' :
                     realtimeStatus === 'connecting' ? 'Manual refresh (Connecting...)' :
                     realtimeStatus === 'error' ? 'Manual refresh (Real-time failed)' :
@@ -798,12 +796,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         WebkitBackfaceVisibility: 'hidden',
                         WebkitTransform: 'translate3d(0,0,0)',
                         // iPhone specific
-                        backgroundColor: group === 'SMIT' ? '#dc2626' : '#1f2937',
-                        padding: '8px',
-                        fontSize: '14px',
-                        border: '2px solid #374151',
-                        borderCollapse: 'separate',
-                        borderSpacing: '0'
+                        WebkitTouchCallout: 'none'
                       }}
                     >
                       <ScrollingText 
