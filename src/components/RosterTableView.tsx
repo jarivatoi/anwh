@@ -581,161 +581,195 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         </div>
       </div>
 
-          </div>
-        ) : sortedDates.length === 0 ? (
-          <div className="text-center py-12">
-            <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg font-medium">
-              No roster entries found
-            </p>
-            <p className="text-gray-400 text-sm mt-2">
-              No entries available for {formatMonthYear(selectedDate)}
-            </p>
-          </div>
-        ) : (
-          <div ref={tableRef} style={{ 
-            height: '100%', 
-            overflow: 'auto',
-            overflowX: 'auto',
-            overflowY: 'auto',
-            position: 'relative', 
-            width: '100%',
-            // Better mobile landscape handling
-            WebkitOverflowScrolling: 'touch',
-            // Force proper scrolling after orientation change
-            transform: 'translate3d(0,0,0)',
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden',
-            WebkitTransform: 'translate3d(0,0,0)',
-            // iPhone specific fixes
-            WebkitTouchCallout: 'none',
-            WebkitUserSelect: 'none',
-            userSelect: 'none'
-          }}>
-            {/* Separate Sticky Header for Roster Title */}
-            <div 
-              style={{ 
-                position: 'sticky',
-                top: 0,
-                zIndex: 95,
-                width: '100vw',
-                padding: '12px 16px',
-                fontSize: '18px',
-                fontWeight: 'bold',
-                color: 'white',
-                border: 'none',
-                margin: 0,
-                marginBottom: 0,
-                height: window.innerWidth > window.innerHeight ? '40px' : '56px', // Shorter header in landscape
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: '#4b5563',
-                background: '#4b5563',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-                opacity: 1,
-                // Force proper rendering after orientation change
-                transform: 'translate3d(0,0,0)',
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden',
-                WebkitTransform: 'translate3d(0,0,0)',
-                // iPhone specific
-                WebkitTouchCallout: 'none'
-              }}
-            >
-              {/* Centered title with reload button */}
-              <div style={{ 
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: window.innerWidth > window.innerHeight ? '16px' : '18px',
-                gap: '8px'
-              }}>
-                <span>Roster for {formatMonthYear(selectedDate)}</span>
-                {/* Manual refresh button with real-time status */}
-                <button
-                  onClick={async () => {
-                    setIsReloading(true);
-                    try {
-                      console.log('🔄 Manual refresh triggered in table view');
-                      if (onRefresh) {
-                        await onRefresh();
-                      }
-                      setRefreshKey(prev => prev + 1);
-                      setLastUpdateTime(new Date().toLocaleTimeString());
-                      
-                      // Stay in current position after manual refresh
-                      
-                      console.log('✅ Manual refresh completed in table view');
-                    } catch (error) {
-                      console.error('Manual refresh failed in table view:', error);
-                    } finally {
-                      setIsReloading(false);
+      {/* Loading State */}
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-4"></div>
+          <p className="text-gray-500">Loading roster data...</p>
+        </div>
+      ) : sortedDates.length === 0 ? (
+        <div className="text-center py-12">
+          <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-500 text-lg font-medium">
+            No roster entries found
+          </p>
+          <p className="text-gray-400 text-sm mt-2">
+            No entries available for {formatMonthYear(selectedDate)}
+          </p>
+        </div>
+      ) : (
+        <div ref={tableRef} style={{ 
+          height: '100%', 
+          overflow: 'auto',
+          overflowX: 'auto',
+          overflowY: 'auto',
+          position: 'relative', 
+          width: '100%',
+          // Better mobile landscape handling
+          WebkitOverflowScrolling: 'touch',
+          // Force proper scrolling after orientation change
+          transform: 'translate3d(0,0,0)',
+          backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden',
+          WebkitTransform: 'translate3d(0,0,0)',
+          // iPhone specific fixes
+          WebkitTouchCallout: 'none',
+          WebkitUserSelect: 'none',
+          userSelect: 'none'
+        }}>
+          {/* Separate Sticky Header for Roster Title */}
+          <div 
+            style={{ 
+              position: 'sticky',
+              top: 0,
+              zIndex: 95,
+              width: '100vw',
+              padding: '12px 16px',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              color: 'white',
+              border: 'none',
+              margin: 0,
+              marginBottom: 0,
+              height: window.innerWidth > window.innerHeight ? '40px' : '56px', // Shorter header in landscape
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#4b5563',
+              background: '#4b5563',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+              opacity: 1,
+              // Force proper rendering after orientation change
+              transform: 'translate3d(0,0,0)',
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+              WebkitTransform: 'translate3d(0,0,0)',
+              // iPhone specific
+              WebkitTouchCallout: 'none'
+            }}
+          >
+            {/* Centered title with reload button */}
+            <div style={{ 
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: window.innerWidth > window.innerHeight ? '16px' : '18px',
+              gap: '8px'
+            }}>
+              <span>Roster for {formatMonthYear(selectedDate)}</span>
+              {/* Manual refresh button with real-time status */}
+              <button
+                onClick={async () => {
+                  setIsReloading(true);
+                  try {
+                    console.log('🔄 Manual refresh triggered in table view');
+                    if (onRefresh) {
+                      await onRefresh();
                     }
-                  }}
-                  disabled={isReloading}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    padding: '4px',
-                    color: 'white',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    opacity: isReloading ? 0.7 : 1,
-                    touchAction: 'manipulation',
-                    WebkitTapHighlightColor: 'transparent'
-                  }}
-                  title={
-                    realtimeStatus === 'connected' ? 'Manual refresh (Real-time active)' :
-                    realtimeStatus === 'connecting' ? 'Manual refresh (Connecting...)' :
-                    realtimeStatus === 'error' ? 'Manual refresh (Real-time failed)' :
-                    'Manual refresh (Real-time disconnected)'
+                    setRefreshKey(prev => prev + 1);
+                    setLastUpdateTime(new Date().toLocaleTimeString());
+                    
+                    // Stay in current position after manual refresh
+                    
+                    console.log('✅ Manual refresh completed in table view');
+                  } catch (error) {
+                    console.error('Manual refresh failed in table view:', error);
+                  } finally {
+                    setIsReloading(false);
                   }
+                }}
+                disabled={isReloading}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  padding: '4px',
+                  color: 'white',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  opacity: isReloading ? 0.7 : 1,
+                  touchAction: 'manipulation',
+                  WebkitTapHighlightColor: 'transparent'
+                }}
+                title={
+                  realtimeStatus === 'connected' ? 'Manual refresh (Real-time active)' :
+                  realtimeStatus === 'connecting' ? 'Manual refresh (Connecting...)' :
+                  realtimeStatus === 'error' ? 'Manual refresh (Real-time failed)' :
+                  'Manual refresh (Real-time disconnected)'
+                }
+              >
+                {/* Refresh icon with rotation animation when loading */}
+                <svg 
+                  style={{
+                    width: '20px',
+                    height: '20px',
+                    animation: isReloading ? 'spin 1s linear infinite' : 'none'
+                  }}
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
                 >
-                  {/* Refresh icon with rotation animation when loading */}
-                  <svg 
-                    style={{
-                      width: '20px',
-                      height: '20px',
-                      animation: isReloading ? 'spin 1s linear infinite' : 'none'
-                    }}
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
-                    />
-                  </svg>
-                  
-                  {/* Real-time status indicator inside the button */}
-                  <div style={{
-                    width: '12px',
-                    height: '12px',
-                    borderRadius: '50%',
-                    backgroundColor: realtimeStatus === 'connected' ? '#10b981' : 
-                                    realtimeStatus === 'connecting' ? '#f59e0b' :
-                                    realtimeStatus === 'error' ? '#ef4444' : '#6b7280',
-                    animation: realtimeStatus === 'connecting' ? 'pulse 1.5s ease-in-out infinite' : 'none',
-                    boxShadow: realtimeStatus === 'connected' ? '0 0 8px rgba(16, 185, 129, 0.8)' : 'none'
-                  }} />
-                </button>
-              </div>
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+                  />
+                </svg>
+                
+                {/* Real-time status indicator inside the button */}
+                <div style={{
+                  width: '12px',
+                  height: '12px',
+                  borderRadius: '50%',
+                  backgroundColor: realtimeStatus === 'connected' ? '#10b981' : 
+                                  realtimeStatus === 'connecting' ? '#f59e0b' :
+                                  realtimeStatus === 'error' ? '#ef4444' : '#6b7280',
+                  animation: realtimeStatus === 'connecting' ? 'pulse 1.5s ease-in-out infinite' : 'none',
+                  boxShadow: realtimeStatus === 'connected' ? '0 0 8px rgba(16, 185, 129, 0.8)' : 'none'
+                }} />
+              </button>
             </div>
-            
-            <table className="border-collapse table-fixed" style={{ width: '100vw', minWidth: '100vw' }}>
-              <thead>
-                <tr>
+          </div>
+          
+          <table className="border-collapse table-fixed" style={{ width: '100vw', minWidth: '100vw' }}>
+            <thead>
+              <tr>
+                <th 
+                  style={{ 
+                    position: 'sticky',
+                    top: window.innerWidth > window.innerHeight ? 40 : 56, // Adjust for shorter header
+                    zIndex: 85,
+                    padding: window.innerWidth > window.innerHeight ? '4px' : '8px', // Less padding in landscape
+                    fontWeight: '600',
+                    textAlign: 'center',
+                    fontSize: window.innerWidth > window.innerHeight ? '10px' : (window.innerWidth >= 640 ? '14px' : '12px'),
+                    color: 'white',
+                    border: 'none',
+                    backgroundColor: '#6b7280',
+                    background: '#6b7280',
+                    margin: 0,
+                    marginTop: 0,
+                    width: '80px',
+                    minWidth: '80px',
+                    maxWidth: '80px',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                    opacity: 1,
+                    // Force proper rendering after orientation change
+                    transform: 'translateZ(0)',
+                    backfaceVisibility: 'hidden'
+                  }}
+                >
+                  Date
+                </th>
+                {shiftTypes.map((shiftType) => (
                   <th 
+                    key={shiftType}
                     style={{ 
                       position: 'sticky',
                       top: window.innerWidth > window.innerHeight ? 40 : 56, // Adjust for shorter header
-                      zIndex: 85,
+                      zIndex: 80,
                       padding: window.innerWidth > window.innerHeight ? '4px' : '8px', // Less padding in landscape
                       fontWeight: '600',
                       textAlign: 'center',
@@ -745,147 +779,116 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       backgroundColor: '#6b7280',
                       background: '#6b7280',
                       margin: 0,
-                      marginTop: 0,
-                      width: '80px',
-                      minWidth: '80px',
-                      maxWidth: '80px',
-                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
                       opacity: 1,
+                      width: 'calc((100vw - 80px) / 4)',
+                      minWidth: 'calc((100vw - 80px) / 4)',
                       // Force proper rendering after orientation change
-                      transform: 'translateZ(0)',
-                      backfaceVisibility: 'hidden'
+                      transform: 'translate3d(0,0,0)',
+                      backfaceVisibility: 'hidden',
+                      WebkitBackfaceVisibility: 'hidden',
+                      WebkitTransform: 'translate3d(0,0,0)',
+                      // iPhone specific
+                      WebkitTouchCallout: 'none'
                     }}
                   >
-                    Date
+                    {shiftType === 'Morning Shift (9-4)' ? '9-4' :
+                     shiftType === 'Saturday Regular (12-10)' ? '12-10' :
+                     shiftType === 'Evening Shift (4-10)' ? '4-10' :
+                     shiftType === 'Night Duty' ? 'N' : shiftType}
                   </th>
-                  {shiftTypes.map((shiftType) => (
-                    <th 
-                      key={shiftType}
-                      style={{ 
-                        position: 'sticky',
-                        top: window.innerWidth > window.innerHeight ? 40 : 56, // Adjust for shorter header
-                        zIndex: 80,
-                        padding: window.innerWidth > window.innerHeight ? '4px' : '8px', // Less padding in landscape
-                        fontWeight: '600',
-                        textAlign: 'center',
-                        fontSize: window.innerWidth > window.innerHeight ? '10px' : (window.innerWidth >= 640 ? '14px' : '12px'),
-                        color: 'white',
-                        border: 'none',
-                        backgroundColor: '#6b7280',
-                        background: '#6b7280',
-                        margin: 0,
-                        opacity: 1,
-                        width: 'calc((100vw - 80px) / 4)',
-                        minWidth: 'calc((100vw - 80px) / 4)',
-                        // Force proper rendering after orientation change
-                        transform: 'translate3d(0,0,0)',
-                        backfaceVisibility: 'hidden',
-                        WebkitBackfaceVisibility: 'hidden',
-                        WebkitTransform: 'translate3d(0,0,0)',
-                        // iPhone specific
-                        WebkitTouchCallout: 'none'
-                      }}
-                    >
-                      {shiftType === 'Morning Shift (9-4)' ? '9-4' :
-                       shiftType === 'Saturday Regular (12-10)' ? '12-10' :
-                       shiftType === 'Evening Shift (4-10)' ? '4-10' :
-                       shiftType === 'Night Duty' ? 'N' : shiftType}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-
-              {/* Table Body */}
-              <tbody className="divide-y divide-gray-200">
-                {sortedDates.map((date) => (
-                  <tr 
-                    key={date} 
-                    data-date={date}
-                    className={`${
-                      isToday(date) ? 'bg-green-200' : 
-                      isPastDate(date) ? 'bg-red-50' :
-                      isFutureDate(date) ? 'bg-green-50' : ''
-                    }`}
-                  >
-                    {/* Date Column */}
-                    <RosterDateCell
-                      date={date}
-                      isToday={isToday(date)}
-                      isPastDate={isPastDate(date)}
-                      isFutureDate={isFutureDate(date)}
-                      onLongPress={() => {
-                        setEditingDate(date);
-                        setShowAuthModal(true);
-                      }}
-                      formatTableDate={formatTableDate}
-                    />
-                    {shiftTypes.map((shiftType) => {
-                      const shiftEntries = sortStaffNames(getEntriesForDateAndShift(date, shiftType));
-                      const maxStaffForThisDate = getMaxStaffCountForDate(date);
-                      
-                      // Create aligned array with consistent row count for this date
-                      const alignedEntries = [];
-                      for (let rowIndex = 0; rowIndex < maxStaffForThisDate; rowIndex++) {
-                        alignedEntries.push(shiftEntries[rowIndex] || null);
-                      }
-                      
-                      return (
-                        <td key={shiftType} className={`text-center overflow-hidden align-top relative ${
-                          isPastDate(date) ? 'bg-red-50' : ''
-                        }`} style={{
-                          padding: window.innerWidth > window.innerHeight ? '2px' : '4px 8px', // Less padding in landscape
-                          minHeight: window.innerWidth > window.innerHeight ? '30px' : '50px' // Shorter cells in landscape
-                        }}>
-                          {/* Big X watermark for past dates - covers entire cell including padding */}
-                          {isPastDate(date) && shiftEntries.length > 0 && (
-                            <div className="absolute pointer-events-none inset-0" style={{ zIndex: 5 }}>
-                              <div className="absolute inset-0 flex items-center justify-center text-red-300 text-6xl sm:text-8xl font-bold opacity-60" style={{ 
-                                opacity: 0.2,
-                                lineHeight: '1'
-                              }}>
-                                ✕
-                              </div>
-                            </div>
-                          )}
-                          <div className="flex flex-col relative" style={{ 
-                            zIndex: 10,
-                            gap: window.innerWidth > window.innerHeight ? '1px' : '2px' // Tighter spacing in landscape
-                          }}>
-                            {alignedEntries.map((entry, rowIndex) => {
-                              return entry ? (
-                                <div key={`${entry.id}-${rowIndex}`} className="flex items-center justify-center relative z-15" style={{
-                                  minHeight: window.innerWidth > window.innerHeight ? '16px' : '24px', // Shorter in landscape
-                                  padding: window.innerWidth > window.innerHeight ? '1px' : '4px'
-                                }}>
-                                  <RosterEntryCell
-                                    entry={entry}
-                                    onUpdate={handleEntryUpdate}
-                                    onShowDetails={handleShowDetails}
-                                    allEntriesForShift={shiftEntries}
-                                  />
-                                </div>
-                              ) : (
-                                <div key={`empty-${date}-${shiftType}-${rowIndex}`} className="flex items-center justify-center text-gray-300 relative z-15" style={{
-                                  fontSize: window.innerWidth > window.innerHeight ? '6px' : '8px', // Smaller text in landscape
-                                  minHeight: window.innerWidth > window.innerHeight ? '16px' : '24px',
-                                  padding: window.innerWidth > window.innerHeight ? '1px' : '4px'
-                                }}>
-                                  -
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              </tr>
+            </thead>
 
-      </div>
+            {/* Table Body */}
+            <tbody className="divide-y divide-gray-200">
+              {sortedDates.map((date) => (
+                <tr 
+                  key={date} 
+                  data-date={date}
+                  className={`${
+                    isToday(date) ? 'bg-green-200' : 
+                    isPastDate(date) ? 'bg-red-50' :
+                    isFutureDate(date) ? 'bg-green-50' : ''
+                  }`}
+                >
+                  {/* Date Column */}
+                  <RosterDateCell
+                    date={date}
+                    isToday={isToday(date)}
+                    isPastDate={isPastDate(date)}
+                    isFutureDate={isFutureDate(date)}
+                    onLongPress={() => {
+                      setEditingDate(date);
+                      setShowAuthModal(true);
+                    }}
+                    formatTableDate={formatTableDate}
+                  />
+                  {shiftTypes.map((shiftType) => {
+                    const shiftEntries = sortStaffNames(getEntriesForDateAndShift(date, shiftType));
+                    const maxStaffForThisDate = getMaxStaffCountForDate(date);
+                    
+                    // Create aligned array with consistent row count for this date
+                    const alignedEntries = [];
+                    for (let rowIndex = 0; rowIndex < maxStaffForThisDate; rowIndex++) {
+                      alignedEntries.push(shiftEntries[rowIndex] || null);
+                    }
+                    
+                    return (
+                      <td key={shiftType} className={`text-center overflow-hidden align-top relative ${
+                        isPastDate(date) ? 'bg-red-50' : ''
+                      }`} style={{
+                        padding: window.innerWidth > window.innerHeight ? '2px' : '4px 8px', // Less padding in landscape
+                        minHeight: window.innerWidth > window.innerHeight ? '30px' : '50px' // Shorter cells in landscape
+                      }}>
+                        {/* Big X watermark for past dates - covers entire cell including padding */}
+                        {isPastDate(date) && shiftEntries.length > 0 && (
+                          <div className="absolute pointer-events-none inset-0" style={{ zIndex: 5 }}>
+                            <div className="absolute inset-0 flex items-center justify-center text-red-300 text-6xl sm:text-8xl font-bold opacity-60" style={{ 
+                              opacity: 0.2,
+                              lineHeight: '1'
+                            }}>
+                              ✕
+                            </div>
+                          </div>
+                        )}
+                        <div className="flex flex-col relative" style={{ 
+                          zIndex: 10,
+                          gap: window.innerWidth > window.innerHeight ? '1px' : '2px' // Tighter spacing in landscape
+                        }}>
+                          {alignedEntries.map((entry, rowIndex) => {
+                            return entry ? (
+                              <div key={`${entry.id}-${rowIndex}`} className="flex items-center justify-center relative z-15" style={{
+                                minHeight: window.innerWidth > window.innerHeight ? '16px' : '24px', // Shorter in landscape
+                                padding: window.innerWidth > window.innerHeight ? '1px' : '4px'
+                              }}>
+                                <RosterEntryCell
+                                  entry={entry}
+                                  onUpdate={handleEntryUpdate}
+                                  onShowDetails={handleShowDetails}
+                                  allEntriesForShift={shiftEntries}
+                                />
+                              </div>
+                            ) : (
+                              <div key={`empty-${date}-${shiftType}-${rowIndex}`} className="flex items-center justify-center text-gray-300 relative z-15" style={{
+                                fontSize: window.innerWidth > window.innerHeight ? '6px' : '8px', // Smaller text in landscape
+                                minHeight: window.innerWidth > window.innerHeight ? '16px' : '24px',
+                                padding: window.innerWidth > window.innerHeight ? '1px' : '4px'
+                              }}>
+                                -
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Authentication Modal */}
       {showAuthModal && createPortal(
