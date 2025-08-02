@@ -840,12 +840,11 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       const alignedEntries = [];
                       for (let rowIndex = 0; rowIndex < maxStaffForThisDate; rowIndex++) {
                         alignedEntries.push(shiftEntries[rowIndex] || null);
+                      }
                       
                       // Don't render container if no staff assigned to this shift
                       if (shiftEntries.length === 0) {
                         return null;
-                      }
-                      
                       }
                       
                       return (
@@ -874,45 +873,45 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             border: '2px solid #374151',
                             backgroundColor: '#f9fafb',
                             borderRadius: '4px',
-                            padding: '4px',
-                                  padding: window.innerWidth > window.innerHeight ? '1px' : '4px'
-                        <div key={shiftType}>
-                          {shiftEntries.length > 0 ? (
-                            <div 
-                              className="bg-gray-50 border-2 border-gray-400 rounded-lg p-2 mb-1"
-                              style={{
-                                minHeight: '40px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '4px'
-                              }}
-                            >
-                              {shiftEntries.map((entry) => (
-                                <RosterEntryCell
-                                  key={entry.id}
-                                  entry={entry}
-                                  onUpdate={handleEntryUpdate}
-                                  onShowDetails={handleShowDetails}
-                                  allEntriesForShift={shiftEntries}
-                                />
-                              ))}
-                            </div>
-                          ) : (
-                            <div 
-                              style={{
-                                minHeight: '40px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: '#9ca3af',
-                                fontSize: '12px',
-                                fontStyle: 'italic'
-                              }}
-                            >
-                              No staff
-                            </div>
-                          )}
-                        </div>
+                            padding: window.innerWidth > window.innerHeight ? '1px' : '4px'
+                          }}>
+                            {shiftEntries.length > 0 ? (
+                              <div 
+                                className="bg-gray-50 border-2 border-gray-400 rounded-lg p-2 mb-1"
+                                style={{
+                                  minHeight: '40px',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: '4px'
+                                }}
+                              >
+                                {shiftEntries.map((entry) => (
+                                  <RosterEntryCell
+                                    key={entry.id}
+                                    entry={entry}
+                                    onUpdate={handleEntryUpdate}
+                                    onShowDetails={handleShowDetails}
+                                    allEntriesForShift={shiftEntries}
+                                  />
+                                ))}
+                              </div>
+                            ) : (
+                              <div 
+                                style={{
+                                  minHeight: '40px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  color: '#9ca3af',
+                                  fontSize: '12px',
+                                  fontStyle: 'italic'
+                                }}
+                              >
+                                No staff
+                              </div>
+                            )}
+                          </div>
+                        </td>
                       );
                     })}
                   </tr>
