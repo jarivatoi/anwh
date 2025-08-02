@@ -693,7 +693,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     color: 'white',
                     cursor: 'pointer',
                     display: 'flex',
-                    alignItems: 'center',
+                  {title} ({titleEntries.length} staff)
                     gap: '4px',
                     opacity: isReloading ? 0.7 : 1,
                     border: '2px solid #374151',
