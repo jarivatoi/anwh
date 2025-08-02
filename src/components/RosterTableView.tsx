@@ -796,9 +796,12 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         WebkitBackfaceVisibility: 'hidden',
                         WebkitTransform: 'translate3d(0,0,0)',
                         // iPhone specific
-                        minHeight: '40px',
+                        backgroundColor: group === 'SMIT' ? '#dc2626' : '#1f2937',
+                        padding: '8px',
+                        fontSize: '14px',
                         border: '2px solid #374151',
-                        backgroundColor: '#ffffff'
+                        borderCollapse: 'separate',
+                        borderSpacing: '0'
                       }}
                     >
                       <ScrollingText 
