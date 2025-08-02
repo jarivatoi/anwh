@@ -15,17 +15,3 @@
 .animate-pulse-subtle {
   animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
-
-/* Aggressive pulse animation for red text (50%-100% opacity, faster) */
-@keyframes pulse-aggressive {
-  0%, 100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-.animate-pulse-aggressive {
-  animation: pulse-aggressive 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
