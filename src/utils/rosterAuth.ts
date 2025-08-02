@@ -38,9 +38,7 @@ export const authCodes: AuthCode[] = [
   { code: 'V16R', name: 'VEERASAWMY(R)', title: 'SMIT' },
   
   // Admin Code
-  { code: '5274', name: 'ADMIN', title: 'ADMIN' },
-  
-
+  { code: '5274', name: 'ADMIN', title: 'ADMIN' }
 ];
 
 // Available staff names for dropdowns and validation
