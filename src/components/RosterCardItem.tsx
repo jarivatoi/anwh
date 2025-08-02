@@ -123,11 +123,11 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
     
     if (isBackToOriginal(entry)) {
       // Manually edited but back to original - black text with asterisk
-      return { className: 'text-black animate-pulse-subtle', showAsterisk: true };
+      return { className: 'text-black', showAsterisk: true };
     }
     
     // Manually edited and different from original - red pulsating text
-    return { className: 'text-red-600 animate-pulse-subtle', showAsterisk: false };
+    return { className: 'text-red-600 animate-pulse-aggressive', showAsterisk: false };
   };
 
   // Handle long press for entry details
