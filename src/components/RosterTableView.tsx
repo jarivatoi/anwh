@@ -180,23 +180,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       
       setHasAutoScrolled(true);
     }
-  }, [loading, entries, hasAutoScrolled, selectedDate]);
-
-  // Custom sorting function to prioritize (R) names first
-  const sortStaffNames = (entries: RosterEntry[]): RosterEntry[] => {
-    return [...entries].sort((a, b) => {
-      const aHasR = a.assigned_name.includes('(R)');
-      const bHasR = b.assigned_name.includes('(R)');
-      
-      // If one has (R) and other doesn't, (R) comes first
-      if (aHasR && !bHasR) return -1;
-      if (!aHasR && bHasR) return 1;
-      
-      // If both have (R) or both don't have (R), sort alphabetically
-      return a.assigned_name.localeCompare(b.assigned_name);
-    });
-  };
-
   // Group entries by shift type for each date
   const groupEntriesByShift = (dateEntries: RosterEntry[]) => {
     const shiftGroups: Record<string, RosterEntry[]> = {};
