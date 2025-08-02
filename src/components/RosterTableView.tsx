@@ -875,33 +875,44 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             backgroundColor: '#f9fafb',
                             borderRadius: '4px',
                             padding: '4px',
-                            margin: '2px'
-                          }}>
-                            {alignedEntries.map((entry, rowIndex) => {
-                              return entry ? (
-                                <div key={`${entry.id}-${rowIndex}`} className="flex items-center justify-center relative z-15" style={{
-                                  minHeight: window.innerWidth > window.innerHeight ? '16px' : '24px', // Shorter in landscape
                                   padding: window.innerWidth > window.innerHeight ? '1px' : '4px'
-                                }}>
-                                  <RosterEntryCell
-                                    entry={entry}
-                                    onUpdate={handleEntryUpdate}
-                                    onShowDetails={handleShowDetails}
-                                    allEntriesForShift={shiftEntries}
-                                  />
-                                </div>
-                              ) : (
-                                <div key={`empty-${date}-${shiftType}-${rowIndex}`} className="flex items-center justify-center text-gray-300 relative z-15" style={{
-                                  fontSize: window.innerWidth > window.innerHeight ? '6px' : '8px', // Smaller text in landscape
-                                  minHeight: window.innerWidth > window.innerHeight ? '16px' : '24px',
-                                  padding: window.innerWidth > window.innerHeight ? '1px' : '4px'
-                                }}>
-                                  -
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </td>
+                        <div key={shiftType}>
+                          {shiftEntries.length > 0 ? (
+                            <div 
+                              className="bg-gray-50 border-2 border-gray-400 rounded-lg p-2 mb-1"
+                              style={{
+                                minHeight: '40px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '4px'
+                              }}
+                            >
+                              {shiftEntries.map((entry) => (
+                                <RosterEntryCell
+                                  key={entry.id}
+                                  entry={entry}
+                                  onUpdate={handleEntryUpdate}
+                                  onShowDetails={handleShowDetails}
+                                  allEntriesForShift={shiftEntries}
+                                />
+                              ))}
+                            </div>
+                          ) : (
+                            <div 
+                              style={{
+                                minHeight: '40px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#9ca3af',
+                                fontSize: '12px',
+                                fontStyle: 'italic'
+                              }}
+                            >
+                              No staff
+                            </div>
+                          )}
+                        </div>
                       );
                     })}
                   </tr>
