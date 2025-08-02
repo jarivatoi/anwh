@@ -36,7 +36,7 @@ function App() {
   const [scheduleTitle, setScheduleTitle, { isLoading: titleLoading, refresh: refreshTitle }] = useIndexedDB<string>('scheduleTitle', 'Work Schedule', 'metadata');
   const [settings, setSettings, { isLoading: settingsLoading, refresh: refreshSettings }] = useIndexedDB<Settings>('workSettings', {
     basicSalary: 35000,
-    hourlyRate: 173.08,
+    hourlyRate: 201.92,
     shiftCombinations: DEFAULT_SHIFT_COMBINATIONS
   });
 
