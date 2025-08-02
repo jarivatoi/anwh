@@ -840,6 +840,12 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       const alignedEntries = [];
                       for (let rowIndex = 0; rowIndex < maxStaffForThisDate; rowIndex++) {
                         alignedEntries.push(shiftEntries[rowIndex] || null);
+                      
+                      // Don't render container if no staff assigned to this shift
+                      if (shiftEntries.length === 0) {
+                        return null;
+                      }
+                      
                       }
                       
                       return (
