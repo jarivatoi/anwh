@@ -218,8 +218,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     return groups;
   }, {} as Record<string, RosterEntry[]>);
 
-  }, 0);
-
   // Format date for display in table (Tue 01-03-25)
   const formatTableDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -401,36 +399,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
 
   // Custom sorting function to prioritize (R) names first
   const sortStaffNames = (entries: RosterEntry[]): RosterEntry[] => {
-    return [...entries].sort((a, b) => {
-      const aHasR = a.assigned_name.includes('(R)');
-      const bHasR = b.assigned_name.includes('(R)');
-      
-      // If one has (R) and other doesn't, (R) comes first
-      if (aHasR && !bHasR) return -1;
-      if (!aHasR && bHasR) return 1;
-      
-      // If both have (R) or both don't have (R), sort alphabetically
-      return a.assigned_name.localeCompare(b.assigned_name);
-    });
-  };
-
-  // Check if date is in the future
-  const isFutureDate = (dateString: string) => {
-    const now = new Date();
-    // Force local timezone calculation
-    const todayString = now.getFullYear() + '-' + 
-                       String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                       String(now.getDate()).padStart(2, '0');
-    return dateString > todayString;
-  };
-  
-  // Sort dates in ascending order (oldest first)
-  const sortedDates = Object.keys(groupedByDate).sort((a, b) => 
-    new Date(a).getTime() - new Date(b).getTime()
-  );
-
-  // Custom sorting function to prioritize (R) names first
-  const sortStaffNames = (entries: RosterEntry[]): RosterEntry[] => {
     // Extract names, sort them using group sorting, then reorder entries
     const names = entries.map(entry => entry.assigned_name);
     const sortedNames = sortByGroup(names);
@@ -453,6 +421,21 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     
     return sortedEntries;
   };
+
+  // Check if date is in the future
+  const isFutureDate = (dateString: string) => {
+    const now = new Date();
+    // Force local timezone calculation
+    const todayString = now.getFullYear() + '-' + 
+                       String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                       String(now.getDate()).padStart(2, '0');
+    return dateString > todayString;
+  };
+  
+  // Sort dates in ascending order (oldest first)
+  const sortedDates = Object.keys(groupedByDate).sort((a, b) => 
+    new Date(a).getTime() - new Date(b).getTime()
+  );
 
   // Calculate max staff count for each date to align columns
   const getMaxStaffCountForDate = (date: string) => {
@@ -830,8 +813,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         transform: 'translate3d(0,0,0)',
                         backfaceVisibility: 'hidden',
                         WebkitBackfaceVisibility: 'hidden',
-                        WebkitTransform: 'translate3d(0,0,0)',
-                        minHeight: `${maxStaffCount * 28}px`
+                        WebkitTransform: 'translate3d(0,0,0)'
                       }}
                     >
                       <ScrollingText 
