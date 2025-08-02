@@ -679,11 +679,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       setRefreshKey(prev => prev + 1);
                       setLastUpdateTime(new Date().toLocaleTimeString());
               border: '2px solid #374151',
-              borderCollapse: 'separate',
-              borderSpacing: '0'
-                      // Stay in current position after manual refresh
-                      
-                      console.log('✅ Manual refresh completed in table view');
                     } catch (error) {
                       console.error('Manual refresh failed in table view:', error);
                     } finally {
