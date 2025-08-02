@@ -39,9 +39,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   const [selectedShift, setSelectedShift] = useState<string>('');
   const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [lastUpdateTime, setLastUpdateTime] = useState<string>('');
 
   const isMountedRef = useRef(true);
 
@@ -83,11 +81,6 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
       setLastUpdateTime(new Date().toLocaleTimeString());
       console.log('✅ Manual refresh completed');
     } catch (error) {
-      console.error('Manual refresh failed:', error);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
 
   // Add orientation change handler for card view
   useEffect(() => {
@@ -422,8 +415,6 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
                     }}
                     isToday={isToday}
                     realtimeStatus={realtimeStatus}
-                    onManualRefresh={handleManualRefresh}
-                    isRefreshing={isRefreshing}
                   />
                   
                   {/* Shift Tabs for this date */}
