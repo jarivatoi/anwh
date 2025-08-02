@@ -468,8 +468,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     <div>
       {/* Date Picker */}
       <div className="mb-6 bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex items-center justify-center">
-          <div className="flex items-center justify-between w-full max-w-md mx-auto">
+        <div className="flex items-center justify-center w-full">
+          <div className="flex items-center space-x-4">
+            {/* Previous Month Button */}
           <button
             onClick={() => navigateMonth('prev')}
             className="p-2 rounded-lg hover:bg-gray-100 hover:bg-opacity-50 text-gray-600 transition-colors duration-200 z-50 relative bg-transparent"
@@ -490,7 +491,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             <ChevronLeft className="w-5 h-5" />
           </button>
           
-          <div className="flex items-center space-x-3 justify-center flex-1">
+          {/* Month/Year Selectors */}
+          <div className="flex items-center space-x-3">
             <Calendar className="w-5 h-5 text-indigo-600" />
             <div className="flex items-center space-x-2">
               <select
@@ -532,8 +534,54 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 ))}
               </select>
             </div>
-            
-            {/* Export to Calendar Button */}
+          </div>
+          
+          {/* Export to Calendar Button */}
+          <button
+            onClick={() => {
+              console.log('🔄 ROSTER TABLE: Export to Calendar button clicked');
+              onExportToCalendar();
+            }}
+            className="p-2 rounded-lg hover:bg-green-100 text-green-600 transition-colors duration-200 z-50 relative bg-transparent"
+            style={{
+              touchAction: 'manipulation',
+              WebkitTapHighlightColor: 'transparent',
+              position: 'relative',
+              zIndex: 50,
+              backgroundColor: 'transparent',
+              transform: 'translate3d(0,0,0)',
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+              WebkitTransform: 'translate3d(0,0,0)',
+              WebkitTouchCallout: 'none'
+            }}
+            title="Export your shifts to calendar"
+          >
+            <Download className="w-5 h-5" />
+          </button>
+          
+          {/* Next Month Button */}
+          <button
+            onClick={() => navigateMonth('next')}
+            className="p-2 rounded-lg hover:bg-gray-100 hover:bg-opacity-50 text-gray-600 transition-colors duration-200 z-50 relative bg-transparent"
+            style={{
+              touchAction: 'manipulation',
+              WebkitTapHighlightColor: 'transparent',
+              position: 'relative',
+              zIndex: 50,
+              backgroundColor: 'transparent',
+              // iPhone specific fixes
+              transform: 'translate3d(0,0,0)',
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+              WebkitTransform: 'translate3d(0,0,0)',
+              WebkitTouchCallout: 'none'
+            }}
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
             <button
               onClick={() => {
                 console.log('🔄 ROSTER TABLE: Export to Calendar button clicked');
