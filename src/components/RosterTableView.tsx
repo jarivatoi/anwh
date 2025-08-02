@@ -777,7 +777,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       key={shiftType}
                       style={{ 
                         position: 'sticky',
-                        top: window.innerWidth > window.innerHeight ? 40 : 56, // Adjust for shorter header
+                     />
+                    </ScrollingText>
                         zIndex: 80,
                         padding: window.innerWidth > window.innerHeight ? '4px' : '8px', // Less padding in landscape
                         fontWeight: '600',
