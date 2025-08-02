@@ -795,10 +795,23 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         backfaceVisibility: 'hidden',
                         WebkitBackfaceVisibility: 'hidden',
                         WebkitTransform: 'translate3d(0,0,0)',
-                        // iPhone specific
-                        WebkitTouchCallout: 'none'
+                        minHeight: `${maxStaffCount * 28}px`
                       }}
                     >
+                      {/* X watermark for past dates */}
+                      {isPastDate(date) && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                          <div className="font-bold select-none" style={{
+                            fontSize: window.innerWidth > window.innerHeight ? 'clamp(2rem, 8vw, 4rem)' : 'clamp(4rem, 12vw, 8rem)',
+                            lineHeight: '1',
+                            color: '#fca5a5',
+                            opacity: 0.3,
+                            transform: 'scale(1.8)'
+                          }}>
+                            ✕
+                          </div>
+                        </div>
+                      )}
                       <ScrollingText 
                         text={getShiftDisplayName(shiftType)}
                         className="text-white font-bold"
