@@ -678,7 +678,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       }
                       setRefreshKey(prev => prev + 1);
                       setLastUpdateTime(new Date().toLocaleTimeString());
-                      
+              border: '2px solid #374151',
+              borderCollapse: 'separate',
+              borderSpacing: '0'
                       // Stay in current position after manual refresh
                       
                       console.log('✅ Manual refresh completed in table view');
@@ -699,7 +701,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     alignItems: 'center',
                     gap: '4px',
                     opacity: isReloading ? 0.7 : 1,
-                    touchAction: 'manipulation',
+                    border: '2px solid #374151',
+                    borderRight: '3px solid #374151',
                     WebkitTapHighlightColor: 'transparent'
                   }}
                   title={
@@ -756,7 +759,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       textAlign: 'center',
                       fontSize: window.innerWidth > window.innerHeight ? '10px' : (window.innerWidth >= 640 ? '14px' : '12px'),
                       color: 'white',
-                      border: 'none',
+                      border: '2px solid #374151',
                       backgroundColor: '#6b7280',
                       background: '#6b7280',
                       margin: 0,
@@ -1042,7 +1045,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 </div>
               </div>
               
-              <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
+                    border: '2px solid #374151',
                 Export to Calendar
               </h3>
               
