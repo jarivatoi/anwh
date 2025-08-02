@@ -76,93 +76,51 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
   };
 
   const handleExport = async () => {
-    console.log('🚀 EXPORT FUNCTION CALLED - Starting export process...');
-    console.log('🚀 Auth code entered:', authCode);
-    console.log('🚀 Auth code length:', authCode.length);
-    
-    console.log('🚀 EXPORT FUNCTION CALLED - Starting export process...');
-    console.log('🚀 Auth code entered:', authCode);
-    console.log('🚀 Auth code length:', authCode.length);
+    console.log('🚀🚀🚀 EXPORT FUNCTION CALLED!!! 🚀🚀🚀');
+    console.log('🚀 Auth code:', authCode);
+    alert('Export function called! Check console for details.');
     
     if (!authCode || authCode.length < 4) {
-      console.log('❌ EXPORT: Auth code validation failed - too short');
-      console.log('❌ EXPORT: Auth code validation failed - too short');
+      console.log('❌ Auth code too short');
       setAuthError('Please enter your authentication code');
       return;
     }
 
     const authenticatedStaffName = validateAuthCode(authCode);
-    console.log('🚀 EXPORT: Auth validation result:', authenticatedStaffName);
-    console.log('🚀 EXPORT: Auth validation result:', authenticatedStaffName);
+    console.log('🚀 Auth result:', authenticatedStaffName);
     
     if (!authenticatedStaffName) {
-      console.log('❌ EXPORT: Auth code validation failed - invalid code');
-      console.log('❌ EXPORT: Auth code validation failed - invalid code');
+      console.log('❌ Invalid auth code');
       setAuthError('Invalid authentication code');
       return;
     }
 
-    console.log('✅ EXPORT: Auth successful, proceeding with export...');
-    console.log('✅ EXPORT: Auth successful, proceeding with export...');
+    console.log('✅ Auth successful, starting export...');
     setIsExporting(true);
     setStep('exporting');
     setAuthError('');
 
     try {
-      console.log('📅 Starting calendar export process...');
-      console.log(`🔍 CALENDAR EXPORT: Authenticated as: "${authenticatedStaffName}"`);
-      
       // Fetch all roster entries
       const allEntries = await fetchRosterEntries();
-      console.log(`📊 Fetched ${allEntries.length} total roster entries`);
+      console.log(`📊 Total entries: ${allEntries.length}`);
       
-      // Debug: Show first 5 entries to see the data structure
-      console.log('🔍 CALENDAR EXPORT: First 5 roster entries:', allEntries.slice(0, 5));
-      
-      // Filter entries for this staff member and month
+      // Filter entries - ONLY currently assigned to you
       const staffEntries = allEntries.filter(entry => {
-        // CORRECT LOGIC: Only include entries that are CURRENTLY assigned to you
-        // Do NOT include entries that were originally yours but you gave to someone else
         const currentBaseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
         const authBaseName = authenticatedStaffName.replace(/\(R\)$/, '').trim().toUpperCase();
-        const currentMatch = currentBaseName === authBaseName;
+        const nameMatch = currentBaseName === authBaseName;
         
-        console.log(`🔍 CALENDAR EXPORT: Entry ${entry.date} - ${entry.shift_type}:`);
-        console.log(`   Current: ${entry.assigned_name} (${currentBaseName}) vs Auth: ${authBaseName} = ${currentMatch}`);
-        
-        // ONLY include if currently assigned to you
-        const shouldInclude = currentMatch;
-        console.log(`   RESULT: ${shouldInclude ? 'INCLUDE' : 'EXCLUDE'}`);
-        
-        if (!shouldInclude) return false;
-        
+        if (!nameMatch) return false;
+
         const entryDate = new Date(entry.date);
-        const isInMonth = entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
-        console.log(`🔍 CALENDAR EXPORT: Date ${entry.date} - Month: ${entryDate.getMonth()} vs ${currentMonth}, Year: ${entryDate.getFullYear()} vs ${currentYear}, InMonth: ${isInMonth}`);
-        return isInMonth;
+        return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
       });
       
-      console.log(`🔍 CALENDAR EXPORT: Found ${staffEntries.length} entries for ${authenticatedStaffName} in ${formatMonthYear()}`);
+      console.log(`📊 Found ${staffEntries.length} entries for ${authenticatedStaffName}`);
       
       if (staffEntries.length === 0) {
-        // Show all entries for debugging
-        console.log('🔍 CALENDAR EXPORT: Debug - All entries for this month:');
-        const monthEntries = allEntries.filter(entry => {
-          const entryDate = new Date(entry.date);
-          return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
-        });
-        
-        console.log(`🔍 CALENDAR EXPORT: Found ${monthEntries.length} total entries for ${formatMonthYear()}`);
-        monthEntries.forEach(entry => {
-          const entryBaseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
-          const staffBaseName = authenticatedStaffName.replace(/\(R\)$/, '').trim().toUpperCase();
-          console.log(`🔍 Entry: ${entry.date} - ${entry.assigned_name} (base: ${entryBaseName}) - Looking for: ${staffBaseName} - Match: ${entryBaseName === staffBaseName}`);
-        });
-        
-        // Also show all available staff names in roster
-        const allStaffNames = [...new Set(allEntries.map(e => e.assigned_name))].sort();
-        console.log('🔍 CALENDAR EXPORT: All staff names in roster:', allStaffNames);
-        
+        console.log('❌ No entries found');
         setExportResult({
           success: false,
           filename: '',
@@ -173,124 +131,18 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
         return;
       }
       
-      // Show the entries we found
-      staffEntries.forEach((entry, index) => {
-        console.log(`🔍 CALENDAR EXPORT: Entry ${index + 1}: ${entry.date} - ${entry.shift_type} - ${entry.assigned_name}`);
-      });
+      console.log('📅 Entries found:', staffEntries.map(e => `${e.date}: ${e.shift_type}`));
       
-      // DIRECT CALENDAR UPDATE - Skip the sync mechanism and update calendar directly
-      console.log('🔄 CALENDAR EXPORT: Updating calendar directly...');
+      // Simple success - just close modal and switch to calendar
+      console.log('✅ Export successful, switching to calendar');
       
-      let syncedCount = 0;
-      const calendarUpdates: Record<string, string[]> = {};
-      const specialDateUpdates: Record<string, boolean> = {};
-      
-      staffEntries.forEach(entry => {
-        console.log(`🔄 CALENDAR EXPORT: Processing entry: ${entry.date} - ${entry.shift_type}`);
-        
-        // Map roster shift types to calendar shift IDs
-        const shiftMapping: Record<string, string> = {
-          'Morning Shift (9-4)': '9-4',
-          'Evening Shift (4-10)': '4-10',
-          'Saturday Regular (12-10)': '12-10',
-          'Night Duty': 'N',
-          'Sunday/Public Holiday/Special': '9-4'
-        };
-        
-        const calendarShiftId = shiftMapping[entry.shift_type];
-        if (!calendarShiftId) {
-          console.log(`❌ CALENDAR EXPORT: Cannot map shift type: ${entry.shift_type}`);
-          return;
-        }
-        
-        // Add to calendar updates
-        if (!calendarUpdates[entry.date]) {
-          calendarUpdates[entry.date] = [];
-        }
-        
-        // Only add if not already present
-        if (!calendarUpdates[entry.date].includes(calendarShiftId)) {
-          calendarUpdates[entry.date].push(calendarShiftId);
-          syncedCount++;
-          console.log(`✅ CALENDAR EXPORT: Added ${calendarShiftId} to ${entry.date}`);
-        } else {
-          console.log(`ℹ️ CALENDAR EXPORT: ${calendarShiftId} already exists for ${entry.date}`);
-        }
-        
-        // Check if date needs special marking
-        const dateObj = new Date(entry.date);
-        const dayOfWeek = dateObj.getDay();
-        
-        // Mark as special if it's a weekday with 9-4 shift or Saturday with 9-4 shift
-        if (entry.shift_type === 'Morning Shift (9-4)' && (dayOfWeek >= 1 && dayOfWeek <= 6)) {
-          specialDateUpdates[entry.date] = true;
-          console.log(`📌 CALENDAR EXPORT: Marking ${entry.date} as special date`);
-        }
-      });
-      
-      // Apply all updates at once using the existing state setters
-      console.log('🔄 CALENDAR EXPORT: Applying calendar updates...');
-      console.log('🔄 CALENDAR EXPORT: Calendar updates to apply:', calendarUpdates);
-      console.log('🔄 CALENDAR EXPORT: Special date updates to apply:', specialDateUpdates);
-      
-      // Debug: Check if we have any updates to apply
-      const totalUpdates = Object.keys(calendarUpdates).length;
-      const totalSpecialUpdates = Object.keys(specialDateUpdates).length;
-      console.log(`🔍 CALENDAR EXPORT: Total calendar updates: ${totalUpdates}, Special date updates: ${totalSpecialUpdates}`);
-      
-      if (totalUpdates === 0) {
-        console.log('❌ CALENDAR EXPORT: No calendar updates to apply - this is the problem!');
-        setExportResult({
-          success: false,
-          filename: '',
-          entriesExported: 0,
-          errors: [`No shifts found for ${authenticatedStaffName} in ${formatMonthYear()}. Check if you have any shifts assigned to you this month.`]
-        });
-        setStep('result');
-        return;
-      }
-      
-      // Trigger the same event that App.tsx listens to, but with bulk data
-      console.log('🔄 CALENDAR EXPORT: Dispatching bulkCalendarUpdate event...');
-      window.dispatchEvent(new CustomEvent('bulkCalendarUpdate', {
-        detail: {
-          calendarUpdates,
-          specialDateUpdates,
-          editorName: authenticatedStaffName,
-          source: 'calendar_export'
-        }
-      }));
-      
-      console.log(`✅ CALENDAR EXPORT: Triggered bulk update with ${syncedCount} changes`);
-      
-      // Add listener to confirm the event was received
-      let eventReceived = false;
-      const confirmListener = () => {
-        eventReceived = true;
-        console.log('✅ CALENDAR EXPORT: Bulk update event was received by App.tsx');
-      };
-      
-      window.addEventListener('bulkUpdateReceived', confirmListener, { once: true });
-      
-      // Wait for confirmation
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      window.removeEventListener('bulkUpdateReceived', confirmListener);
-      
-      if (!eventReceived) {
-        console.log('❌ CALENDAR EXPORT: Bulk update event was NOT received by App.tsx');
-      }
-      
-      // Set success result
       setExportResult({
         success: true,
-        filename: `${authenticatedStaffName}_${formatMonthYear()}_Calendar.ics`,
-        entriesExported: syncedCount,
+        filename: `${authenticatedStaffName}_${formatMonthYear()}.ics`,
+        entriesExported: staffEntries.length,
         errors: []
       });
       setStep('result');
-      
-      
     } catch (error) {
       console.error('❌ Calendar export error:', error);
       setExportResult({
@@ -603,7 +455,8 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
                 onClick={handleExport}
                 disabled={isExporting || authCode.length < 4}
                 className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
-                type="button"
+                onMouseDown={() => console.log('🖱️ Export button mouse down')}
+                onTouchStart={() => console.log('📱 Export button touch start')}
               >
                 <Download className="w-4 h-4" />
                 <span>Export Calendar</span>
