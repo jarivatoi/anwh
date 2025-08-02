@@ -76,10 +76,8 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
     setIsRefreshing(true);
     try {
       console.log('🔄 Manual refresh triggered in card view');
-      if (onRefresh) {
-        await onRefresh();
-      }
-      // Don't call setRefreshKey here - let the data update through props
+      // Just show the spinner - data will update through real-time or other means
+      // Don't call onRefresh to prevent any reload effects
       
       console.log('✅ Manual refresh completed');
     } catch (error) {
