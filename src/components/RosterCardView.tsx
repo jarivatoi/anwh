@@ -32,7 +32,6 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   const [selectedEntry, setSelectedEntry] = useState<RosterEntry | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [localEntries, setLocalEntries] = useState<RosterEntry[]>([]);
   const [hasAutoScrolled, setHasAutoScrolled] = useState(false);
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -83,8 +82,6 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
         await onRefresh();
       }
       setRefreshKey(prev => prev + 1);
-      // Force update of local entries
-      setLocalEntries(filteredEntries);
       
       // Scroll to today's date after refresh
       setTimeout(() => {
@@ -121,10 +118,6 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   }, []);
 
 
-  // Update local entries when prop changes
-  useEffect(() => {
-    setLocalEntries(filteredEntries);
-  }, [filteredEntries]);
 
   // Auto-scroll to today's date when component first loads
   useEffect(() => {
@@ -160,14 +153,6 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
     const handleRosterUpdate = (event: CustomEvent) => {
       console.log('🔄 Card view: Roster updated, refreshing data...');
       
-      // Update the specific entry in local state for immediate UI update
-      if (event.detail) {
-        const updatedEntry = event.detail;
-        setLocalEntries(prev => prev.map(entry => 
-          entry.id === updatedEntry.id ? updatedEntry : entry
-        ));
-      }
-      
       // Also refresh from server
       if (onRefresh) {
         onRefresh();
@@ -180,7 +165,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   }, [onRefresh]);
 
   // Sort entries by date in ascending order (oldest first)
-  const sortedEntries = [...localEntries].sort((a, b) => 
+  const sortedEntries = [...filteredEntries].sort((a, b) => 
     new Date(a.date).getTime() - new Date(b.date).getTime()
   );
 
