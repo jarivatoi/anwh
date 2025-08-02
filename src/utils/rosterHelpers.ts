@@ -18,18 +18,41 @@ export const parseNameChange = (description: string, assignedName: string) => {
     };
   }
   
-  // Look for ALL "Name changed from" patterns to trace back to the original
-  const allMatches = description.match(/Name changed from "([^"]+)" to "([^"]+)"/g);
+  // Look for the MOST RECENT "Name changed from" pattern to get the immediate change
+  const nameChangeMatches = description.match(/Name changed from "([^"]+)" to "([^"]+)"/g);
   
-  if (allMatches && allMatches.length > 0) {
-    // Parse all matches to build the chain
-    const changes = allMatches.map(match => {
+  if (nameChangeMatches && nameChangeMatches.length > 0) {
+    // Get the LAST (most recent) change to show the immediate before/after
+    const lastMatch = nameChangeMatches[nameChangeMatches.length - 1];
+    const parsed = lastMatch.match(/Name changed from "([^"]+)" to "([^"]+)"/);
+    
+    if (parsed) {
+      let fromName = parsed[1].trim();
+      let toName = parsed[2].trim();
+      
+      // Fix missing closing parenthesis if it exists
+      if (fromName.includes('(R') && !fromName.includes('(R)')) {
+        fromName = fromName.replace('(R', '(R)');
+      }
+      if (toName.includes('(R') && !toName.includes('(R)')) {
+        toName = toName.replace('(R', '(R)');
+      }
+      
+      return {
+        oldName: fromName, // The "from" name in the change description
+        newName: toName, // The "to" name in the change description (should match assignedName)
+        isNameChange: true
+      };
+    }
+    
+    // Fallback: Parse all matches to build the chain (for complex cases)
+    const changes = nameChangeMatches.map(match => {
       const parsed = match.match(/Name changed from "([^"]+)" to "([^"]+)"/);
       return parsed ? { from: parsed[1], to: parsed[2] } : null;
     }).filter(Boolean);
     
     if (changes.length > 0) {
-      // Use the first "from" as the original assignment (this is the original PDF assignment)
+      // Use the first "from" as the original assignment (original PDF assignment)
       let originalAssignment = changes[0].from;
       
       // Fix missing closing parenthesis if it exists
@@ -37,7 +60,6 @@ export const parseNameChange = (description: string, assignedName: string) => {
         originalAssignment = originalAssignment.replace('(R', '(R)');
       }
       
-      // The CURRENT assignment should be the assignedName parameter
       return {
         oldName: originalAssignment, // Always the original PDF assignment
         newName: assignedName, // Current assignment
@@ -49,17 +71,20 @@ export const parseNameChange = (description: string, assignedName: string) => {
   // Fallback: look for single match (for backward compatibility)
   const singleMatch = description.match(/Name changed from "([^"]+)" to "([^"]+)"/);
   if (singleMatch) {
-    // Use the match as the original assignment
-    let originalAssignment = singleMatch[1];
+    let fromName = singleMatch[1].trim();
+    let toName = singleMatch[2].trim();
     
     // Fix missing closing parenthesis if it exists
-    if (originalAssignment.includes('(R') && !originalAssignment.includes('(R)')) {
-      originalAssignment = originalAssignment.replace('(R', '(R)');
+    if (fromName.includes('(R') && !fromName.includes('(R)')) {
+      fromName = fromName.replace('(R', '(R)');
+    }
+    if (toName.includes('(R') && !toName.includes('(R)')) {
+      toName = toName.replace('(R', '(R)');
     }
     
     return {
-      oldName: originalAssignment, // Original PDF assignment
-      newName: assignedName, // Current assignment (not from description)
+      oldName: fromName, // The "from" name
+      newName: toName, // The "to" name
       isNameChange: true
     };
   }
