@@ -847,7 +847,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                           isPastDate(date) ? 'bg-red-50' : ''
                         }`} style={{
                           padding: window.innerWidth > window.innerHeight ? '2px' : '4px 8px', // Less padding in landscape
-                          minHeight: window.innerWidth > window.innerHeight ? '30px' : '50px' // Shorter cells in landscape
+                          minHeight: window.innerWidth > window.innerHeight ? '30px' : '50px', // Shorter cells in landscape
+                          border: '2px solid #374151',
+                          backgroundColor: 'white'
                         }}>
                           {/* Big X watermark for past dates - covers entire cell including padding */}
                           {isPastDate(date) && shiftEntries.length > 0 && (
@@ -862,7 +864,12 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                           )}
                           <div className="flex flex-col relative" style={{ 
                             zIndex: 10,
-                            gap: window.innerWidth > window.innerHeight ? '1px' : '2px' // Tighter spacing in landscape
+                            gap: window.innerWidth > window.innerHeight ? '1px' : '2px', // Tighter spacing in landscape
+                            border: '2px solid #374151',
+                            backgroundColor: '#f9fafb',
+                            borderRadius: '4px',
+                            padding: '4px',
+                            margin: '2px'
                           }}>
                             {alignedEntries.map((entry, rowIndex) => {
                               return entry ? (
