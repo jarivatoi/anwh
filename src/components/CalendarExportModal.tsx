@@ -340,7 +340,7 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
               )}
 
           
-          )}
+         
 
           {step === 'exporting' && (
             <div className="text-center py-8">
