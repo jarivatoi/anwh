@@ -769,11 +769,11 @@ function App() {
             isOpen={showModal}
             onClose={closeModal}
             selectedDate={selectedDate}
-            currentShifts={schedule?.[selectedDate] || []}
+            schedule={schedule}
+            specialDates={specialDates}
             onToggleShift={toggleShift}
             canSelectShift={canSelectShift}
             onToggleSpecialDate={toggleSpecialDate}
-            isSpecialDate={specialDates[selectedDate] || false}
             onResetDate={(dateKey) => {
               const [year, month, day] = dateKey.split('-').map(Number);
               handleResetMonth(year, month - 1, day, false);
