@@ -873,7 +873,18 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                           <td key={shiftType} className={`text-center overflow-hidden align-top relative ${
                             isPastDate(date) ? 'bg-red-50' : ''
                           }`} style={{
-                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                            padding: '2px',
+                            border: '2px solid #374151',
+                            backgroundColor: '#f9fafb',
+                            borderRadius: '4px',
+                            margin: '2px',
+                            minHeight: `${dynamicHeight}px`,
+                            height: `${dynamicHeight}px`,
+                            position: 'relative',
+                            overflow: 'hidden',
+                            width: 'calc((100vw - 80px) / 4)',
+                            minWidth: 'calc((100vw - 80px) / 4)'
+                          }}>
                             {/* Big X watermark for past dates - covers entire cell including padding */}
                             {isPastDate(date) && shiftEntries.length > 0 && (
                               <div className="absolute pointer-events-none inset-0" style={{ zIndex: 5 }}>
