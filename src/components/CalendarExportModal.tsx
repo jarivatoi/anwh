@@ -233,7 +233,25 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
       console.log('🔄 CALENDAR EXPORT: Calendar updates to apply:', calendarUpdates);
       console.log('🔄 CALENDAR EXPORT: Special date updates to apply:', specialDateUpdates);
       
+      // Debug: Check if we have any updates to apply
+      const totalUpdates = Object.keys(calendarUpdates).length;
+      const totalSpecialUpdates = Object.keys(specialDateUpdates).length;
+      console.log(`🔍 CALENDAR EXPORT: Total calendar updates: ${totalUpdates}, Special date updates: ${totalSpecialUpdates}`);
+      
+      if (totalUpdates === 0) {
+        console.log('❌ CALENDAR EXPORT: No calendar updates to apply - this is the problem!');
+        setExportResult({
+          success: false,
+          filename: '',
+          entriesExported: 0,
+          errors: [`No shifts found for ${authenticatedStaffName} in ${formatMonthYear()}. Check if you have any shifts assigned to you this month.`]
+        });
+        setStep('result');
+        return;
+      }
+      
       // Trigger the same event that App.tsx listens to, but with bulk data
+      console.log('🔄 CALENDAR EXPORT: Dispatching bulkCalendarUpdate event...');
       window.dispatchEvent(new CustomEvent('bulkCalendarUpdate', {
         detail: {
           calendarUpdates,
@@ -245,12 +263,23 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
       
       console.log(`✅ CALENDAR EXPORT: Triggered bulk update with ${syncedCount} changes`);
       
-      // Wait a bit to see if the event was received
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Add listener to confirm the event was received
+      let eventReceived = false;
+      const confirmListener = () => {
+        eventReceived = true;
+        console.log('✅ CALENDAR EXPORT: Bulk update event was received by App.tsx');
+      };
       
-      // Check if calendar state actually changed
-      console.log('🔍 CALENDAR EXPORT: Checking if calendar state changed...');
-      window.dispatchEvent(new CustomEvent('debugCalendarState'));
+      window.addEventListener('bulkUpdateReceived', confirmListener, { once: true });
+      
+      // Wait for confirmation
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      window.removeEventListener('bulkUpdateReceived', confirmListener);
+      
+      if (!eventReceived) {
+        console.log('❌ CALENDAR EXPORT: Bulk update event was NOT received by App.tsx');
+      }
       
       // Set success result
       setExportResult({
@@ -261,12 +290,6 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
       });
       setStep('result');
       
-      // Small delay to ensure all sync events are processed, then close modal
-      setTimeout(() => {
-        console.log('🔄 CALENDAR EXPORT: Triggering calendar refresh and closing modal...');
-        window.dispatchEvent(new CustomEvent('forceCalendarRefresh'));
-        onClose();
-      }, 1000);
       
     } catch (error) {
       console.error('❌ Calendar export error:', error);

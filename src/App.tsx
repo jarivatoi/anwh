@@ -179,6 +179,9 @@ function App() {
         source
       });
       
+      // Confirm receipt
+      window.dispatchEvent(new CustomEvent('bulkUpdateReceived'));
+      
       // Update schedule with bulk data
       setSchedule(prev => {
         const newSchedule = { ...prev };
@@ -196,6 +199,7 @@ function App() {
           newSchedule[date] = allShifts;
           console.log(`📅 APP: Updated ${date} with shifts:`, allShifts);
         });
+        console.log('📅 APP: Final schedule after bulk update:', Object.keys(newSchedule).length, 'dates');
         return newSchedule;
       });
       
@@ -206,6 +210,7 @@ function App() {
           newSpecialDates[date] = isSpecial;
           console.log(`📌 APP: Updated ${date} special status:`, isSpecial);
         });
+        console.log('📌 APP: Final special dates after bulk update:', Object.keys(newSpecialDates).length, 'dates');
         return newSpecialDates;
       });
       
