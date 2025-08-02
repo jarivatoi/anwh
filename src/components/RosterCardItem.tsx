@@ -324,14 +324,17 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
     <>
       <div 
         ref={cardRef}
-        className={`text-center rounded p-1 sm:p-2 transition-colors w-full flex items-center justify-center min-h-[28px] ${
+        className={`text-center p-1 sm:p-2 transition-colors w-full flex items-center justify-center min-h-[28px] ${
           'cursor-pointer'
         }`}
         {...(!isPastDate(entry.date) ? interactionHandlers : {})}
         style={{ 
           userSelect: 'none', 
          zIndex: 10, // Lower z-index so sticky headers appear above
-          touchAction: 'manipulation'
+          touchAction: 'manipulation',
+          border: '2px solid #374151',
+          backgroundColor: 'white',
+          margin: '1px'
         }}
       >
         <div className="font-medium text-gray-900 text-xs leading-tight w-full flex items-center justify-center">

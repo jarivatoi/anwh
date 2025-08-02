@@ -366,7 +366,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
     <>
       <div 
         ref={cellRef}
-        className={`text-center rounded p-1 sm:p-2 transition-colors w-full flex items-center justify-center ${
+        className={`text-center p-1 sm:p-2 transition-colors w-full flex items-center justify-center ${
           'cursor-pointer'
         }`}
         {...interactionHandlers}
@@ -374,7 +374,10 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
           userSelect: 'none', 
           WebkitUserSelect: 'none',
           zIndex: 10, // Lower z-index so sticky headers appear above
-          minHeight: '20px'
+          minHeight: '20px',
+          border: '2px solid #374151',
+          backgroundColor: 'white',
+          margin: '1px'
         }}
       >
         <div className="text-[8px] sm:text-[10px] font-medium text-gray-900 leading-tight w-full flex items-center justify-center">
