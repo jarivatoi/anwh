@@ -456,9 +456,7 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
                 <ul className="text-sm text-blue-700 space-y-1">
                   {exportResult.success ? (
                     <>
-                      <li>• Check your Downloads folder for the .ics file</li>
-                      <li>• Open your calendar app (Google, Outlook, Apple)</li>
-                      <li>• Import the downloaded file</li>
+                     <li>• Import the downloaded file</li>
                       <li>• Your shifts will appear in your calendar</li>
                     </>
                   ) : (
