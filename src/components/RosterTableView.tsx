@@ -801,10 +801,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         WebkitTouchCallout: 'none'
                       }}
                     >
-                      <ScrollingText 
-                        text={getShiftDisplayName(shiftType)}
-                        className="text-white font-bold"
-                      />
+                      <ScrollingText className="text-white font-bold w-full">
+                        <span>{getShiftDisplayName(shiftType)}</span>
+                      </ScrollingText>
                     </th>
                   ))}
                 </tr>

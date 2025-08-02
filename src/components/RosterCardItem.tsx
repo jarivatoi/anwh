@@ -334,10 +334,9 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
               const styling = getNameStyling(entry);
               return (
                 <div className="flex items-center justify-center space-x-1">
-                  <ScrollingText 
-                    text={entry.assigned_name}
-                    className={styling.className}
-                  />
+                  <ScrollingText className={`w-full ${styling.className}`}>
+                    <span>{entry.assigned_name}</span>
+                  </ScrollingText>
                   {styling.showAsterisk && (
                     <span className="text-black font-bold text-[6px]">*</span>
                   )}
