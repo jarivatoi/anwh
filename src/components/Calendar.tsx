@@ -799,9 +799,12 @@ export const Calendar: React.FC<CalendarProps> = ({
             <button
               {...longPressHandlers}
               onClick={handleMonthYearFallbackClick}
-             className="text-lg sm:text-xl font-bold text-gray-700 text-center px-3 sm:px-4 py-2 rounded-lg select-none"
-              style={{ 
-                userSelect: 'none', 
+            <div className="flex items-center justify-center space-x-2 flex-1">
+              <h1 className="text-xl font-bold text-gray-900 text-center">
+                {scheduleTitle}
+              </h1>
+              <Calendar className="w-5 h-5 text-gray-600" />
+            </div>
                 WebkitUserSelect: 'none',
                 touchAction: 'manipulation',
                 WebkitTapHighlightColor: 'transparent'
