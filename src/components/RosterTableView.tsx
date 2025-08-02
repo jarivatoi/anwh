@@ -779,7 +779,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         top: window.innerWidth > window.innerHeight ? 40 : 56,
                         zIndex: 85,
                         padding: window.innerWidth > window.innerHeight ? '4px' : '8px',
-                        fontWeight: '600',
+                        padding: '4px',
                         textAlign: 'center',
                         fontSize: window.innerWidth > window.innerHeight ? '10px' : (window.innerWidth >= 640 ? '14px' : '12px'),
                         color: 'white',
@@ -796,7 +796,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         WebkitBackfaceVisibility: 'hidden',
                         WebkitTransform: 'translate3d(0,0,0)',
                         // iPhone specific
-                        WebkitTouchCallout: 'none'
+                        minHeight: '40px',
+                        border: '2px solid #374151',
+                        backgroundColor: '#ffffff'
                       }}
                     >
                       <ScrollingText 
