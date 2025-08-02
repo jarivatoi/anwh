@@ -69,15 +69,6 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
   // Check if entry has been edited
   const hasBeenEdited = (entry: RosterEntry) => {
     const result = !!(entry.last_edited_by && entry.last_edited_by.trim() !== '');
-    console.log('🔍 hasBeenEdited check:', {
-      id: entry.id,
-      name: entry.assigned_name,
-      last_edited_by: entry.last_edited_by,
-      last_edited_by_length: entry.last_edited_by?.length,
-      last_edited_by_trimmed: entry.last_edited_by?.trim(),
-      change_description: entry.change_description,
-      hasBeenEdited: result
-    });
     return result;
   };
 
@@ -89,67 +80,43 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
     const nameInfo = parseNameChange(entry.change_description || '', entry.assigned_name);
     const result = nameInfo.isNameChange && nameInfo.oldName && entry.assigned_name === nameInfo.oldName;
     
-    console.log('🔍 isBackToOriginal check:', {
-      entryId: entry.id,
-      currentName: entry.assigned_name,
-      originalName: nameInfo.oldName,
-      isBackToOriginal: result,
-      changeDescription: entry.change_description
-    });
-    
     return result;
   };
 
   // Get display styling for the name
   const getNameStyling = (entry: RosterEntry) => {
-    console.log('🎨 Styling debug for entry:', {
-      id: entry.id,
-      name: entry.assigned_name,
-      lastEditedBy: entry.last_edited_by,
-      changeDescription: entry.change_description,
-      hasBeenEdited: hasBeenEdited(entry),
-      isBackToOriginal: isBackToOriginal(entry)
-    });
-    
     // PRIORITY 1: If change description is "Imported from PDF" = black text (original PDF entry)
     if (entry.change_description === 'Imported from PDF') {
-      console.log('🎨 PDF imported entry - black text');
       return { className: '', showAsterisk: false };
     }
     
     // PRIORITY 2: If change description contains "Added by" = black text (admin added entry)
     if (entry.change_description && entry.change_description.includes('Added by')) {
-      console.log('🎨 Admin added entry - black text');
       return { className: '', showAsterisk: false };
     }
     
     // NEW LOGIC: If no last_edited_by AND no initial assignment (change description) = black text
     if (!entry.last_edited_by && !entry.change_description) {
-      console.log('🎨 No edits and no initial assignment - black text');
       return { className: '', showAsterisk: false };
     }
     
     if (!hasBeenEdited(entry)) {
       // Has change description but never manually edited - normal black text
-      console.log('🎨 Has change description but never manually edited - black text');
       return { className: '', showAsterisk: false };
     }
     
     // Check for original assignment if we have change description
     if (!entry.change_description || !entry.change_description.includes('Name changed from')) {
       // Manually edited but no change description - red text
-      console.log('🎨 Manually edited but no name change - red text');
       return { className: 'text-red-600 animate-pulse', showAsterisk: false };
     }
     
     if (isBackToOriginal(entry)) {
       // Manually edited but back to original - black text with asterisk
-      console.log('🎨 Manually edited but back to original - black text with asterisk');
       return { className: 'text-black', showAsterisk: true };
     }
     
     // Manually edited and different from original - red pulsating text
-    console.log('🎨 Manually edited and different - red text');
     return { className: 'text-red-600 animate-pulse', showAsterisk: false };
   };
 

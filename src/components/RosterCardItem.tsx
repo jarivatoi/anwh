@@ -69,15 +69,6 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
   // Check if entry has been edited
   const hasBeenEdited = (entry: RosterEntry) => {
     const result = !!(entry.last_edited_by && entry.last_edited_by.trim() !== '');
-    console.log('🔍 hasBeenEdited check:', {
-      id: entry.id,
-      name: entry.assigned_name,
-      last_edited_by: entry.last_edited_by,
-      last_edited_by_length: entry.last_edited_by?.length,
-      last_edited_by_trimmed: entry.last_edited_by?.trim(),
-      change_description: entry.change_description,
-      hasBeenEdited: result
-    });
     return result;
   };
 
@@ -88,14 +79,6 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
     
     const nameInfo = parseNameChange(entry.change_description || '', entry.assigned_name);
     const result = nameInfo.isNameChange && nameInfo.oldName && entry.assigned_name === nameInfo.oldName;
-    
-    console.log('🔍 isBackToOriginal check:', {
-      entryId: entry.id,
-      currentName: entry.assigned_name,
-      originalName: nameInfo.oldName,
-      isBackToOriginal: result,
-      changeDescription: entry.change_description
-    });
     
     return result;
   };

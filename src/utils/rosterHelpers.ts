@@ -10,8 +10,6 @@ export const parseNameChange = (description: string, assignedName: string) => {
       originalPdfAssignment = originalPdfAssignment.replace('(R', '(R)');
     }
     
-    console.log('🔍 Found original PDF assignment in description:', originalPdfAssignment);
-    
     // If we have the original PDF assignment stored, use it directly
     return {
       oldName: originalPdfAssignment, // Always the original PDF assignment
@@ -24,15 +22,11 @@ export const parseNameChange = (description: string, assignedName: string) => {
   const allMatches = description.match(/Name changed from "([^"]+)" to "([^"]+)"/g);
   
   if (allMatches && allMatches.length > 0) {
-    console.log('🔍 Found multiple name changes:', allMatches);
-    
     // Parse all matches to build the chain
     const changes = allMatches.map(match => {
       const parsed = match.match(/Name changed from "([^"]+)" to "([^"]+)"/);
       return parsed ? { from: parsed[1], to: parsed[2] } : null;
     }).filter(Boolean);
-    
-    console.log('🔍 Parsed changes:', changes);
     
     if (changes.length > 0) {
       // Use the first "from" as the original assignment (this is the original PDF assignment)
@@ -44,9 +38,6 @@ export const parseNameChange = (description: string, assignedName: string) => {
       }
       
       // The CURRENT assignment should be the assignedName parameter
-      console.log('🔍 Original assignment:', originalAssignment);
-      console.log('🔍 Current assignment:', assignedName);
-      
       return {
         oldName: originalAssignment, // Always the original PDF assignment
         newName: assignedName, // Current assignment
