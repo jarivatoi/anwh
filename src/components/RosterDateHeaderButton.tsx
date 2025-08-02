@@ -93,8 +93,6 @@ export const RosterDateHeaderButton: React.FC<RosterDateHeaderButtonProps> = ({
             color: 'white'
           }} />
         </div>
-              width: '16px',
-              height: '16px',
         <div style={{
           flex: 1,
           textAlign: 'center',
