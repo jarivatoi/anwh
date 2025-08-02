@@ -76,32 +76,29 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
   };
 
   const handleExport = async () => {
-    console.log('🚀🚀🚀 EXPORT FUNCTION CALLED!!! 🚀🚀🚀');
-    console.log('🚀 Auth code:', authCode);
-    alert('Export function called! Check console for details.');
+    console.log('🚀 EXPORT STARTED with auth code:', authCode);
     
     if (!authCode || authCode.length < 4) {
-      console.log('❌ Auth code too short');
       setAuthError('Please enter your authentication code');
       return;
     }
 
     const authenticatedStaffName = validateAuthCode(authCode);
-    console.log('🚀 Auth result:', authenticatedStaffName);
+    console.log('✅ Authenticated as:', authenticatedStaffName);
     
     if (!authenticatedStaffName) {
-      console.log('❌ Invalid auth code');
       setAuthError('Invalid authentication code');
       return;
     }
 
-    console.log('✅ Auth successful, starting export...');
+    console.log('🔄 Starting calendar export process...');
     setIsExporting(true);
     setStep('exporting');
     setAuthError('');
 
     try {
       // Fetch all roster entries
+      console.log('📊 Fetching roster entries...');
       const allEntries = await fetchRosterEntries();
       console.log(`📊 Total entries: ${allEntries.length}`);
       
@@ -119,8 +116,13 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
       
       console.log(`📊 Found ${staffEntries.length} entries for ${authenticatedStaffName}`);
       
+      // Log the actual entries found
+      staffEntries.forEach(entry => {
+        console.log(`📅 Entry: ${entry.date} - ${entry.shift_type} - ${entry.assigned_name}`);
+      });
+      
       if (staffEntries.length === 0) {
-        console.log('❌ No entries found');
+        console.log('❌ No entries found for this staff member and month');
         setExportResult({
           success: false,
           filename: '',
@@ -131,10 +133,57 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
         return;
       }
       
-      console.log('📅 Entries found:', staffEntries.map(e => `${e.date}: ${e.shift_type}`));
+      // Now convert to calendar format and update the calendar
+      console.log('🔄 Converting roster entries to calendar format...');
       
-      // Simple success - just close modal and switch to calendar
-      console.log('✅ Export successful, switching to calendar');
+      const calendarUpdates: Record<string, string[]> = {};
+      const specialDateUpdates: Record<string, boolean> = {};
+      
+      staffEntries.forEach(entry => {
+        const date = entry.date;
+        
+        // Map roster shift types to calendar shift IDs
+        const shiftMapping: Record<string, string> = {
+          'Morning Shift (9-4)': '9-4',
+          'Evening Shift (4-10)': '4-10',
+          'Saturday Regular (12-10)': '12-10',
+          'Night Duty': 'N',
+          'Sunday/Public Holiday/Special': '9-4'
+        };
+        
+        const calendarShiftId = shiftMapping[entry.shift_type];
+        if (calendarShiftId) {
+          if (!calendarUpdates[date]) {
+            calendarUpdates[date] = [];
+          }
+          if (!calendarUpdates[date].includes(calendarShiftId)) {
+            calendarUpdates[date].push(calendarShiftId);
+          }
+          
+          // Check if this shift requires special date marking
+          const dateObj = new Date(date);
+          const dayOfWeek = dateObj.getDay();
+          
+          if ((dayOfWeek === 6 && entry.shift_type === 'Morning Shift (9-4)') || // Saturday with 9-4
+              (dayOfWeek >= 1 && dayOfWeek <= 5 && entry.shift_type === 'Morning Shift (9-4)')) { // Weekday with 9-4
+            specialDateUpdates[date] = true;
+          }
+        }
+      });
+      
+      console.log('📅 Calendar updates to apply:', calendarUpdates);
+      console.log('📌 Special date updates to apply:', specialDateUpdates);
+      
+      // Dispatch bulk update event to App.tsx
+      console.log('🔄 Dispatching bulk calendar update event...');
+      window.dispatchEvent(new CustomEvent('bulkCalendarUpdate', {
+        detail: {
+          calendarUpdates,
+          specialDateUpdates,
+          editorName: authenticatedStaffName,
+          source: 'calendar_export'
+        }
+      }));
       
       setExportResult({
         success: true,
@@ -143,6 +192,8 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
         errors: []
       });
       setStep('result');
+      
+      console.log('✅ Export completed successfully!');
     } catch (error) {
       console.error('❌ Calendar export error:', error);
       setExportResult({
@@ -466,8 +517,12 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
                 onClick={handleExport}
                 disabled={isExporting || authCode.length < 4}
                 className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
-                onMouseDown={() => console.log('🖱️ Export button mouse down')}
-                onTouchStart={() => console.log('📱 Export button touch start')}
+                onClick={(e) => {
+                  console.log('🚀 ACTUAL EXPORT BUTTON CLICKED!');
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleExport();
+                }}
               >
                 <Download className="w-4 h-4" />
                 <span>Export Calendar</span>
