@@ -694,13 +694,15 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     cursor: 'pointer',
                     display: 'flex',
                   {title} ({titleEntries.length} staff)
-                    gap: '4px',
                     opacity: isReloading ? 0.7 : 1,
                     border: '2px solid #374151',
                     borderRight: '3px solid #374151',
                     WebkitTapHighlightColor: 'transparent'
                   }}
                   title={
+                >
+                  {title} ({titleEntries.length} staff)
+                </th>
                     realtimeStatus === 'connected' ? 'Manual refresh (Real-time active)' :
                     realtimeStatus === 'connecting' ? 'Manual refresh (Connecting...)' :
                     realtimeStatus === 'error' ? 'Manual refresh (Real-time failed)' :
