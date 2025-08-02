@@ -301,7 +301,7 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
             }}
             title={isAdminAuthenticated ? "Import from PDF (authenticated)" : "Import from PDF (long press for more options)"}
           >
-            <Server className="w-6 h-6" style={{ transform: 'rotate(180deg) !important' }} />
+            <Server className="w-6 h-6 transform rotate-180" />
           </button>
         </div>
       </div>
@@ -691,7 +691,7 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
             }}>
               <div className="flex items-center justify-center space-x-3 mb-4">
                 <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
-                  <Server className="w-6 h-6 text-indigo-600" style={{ transform: 'rotate(180deg)' }} />
+                  <Server className="w-6 h-6 text-indigo-600" />
                 </div>
               </div>
               
