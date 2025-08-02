@@ -842,6 +842,11 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         alignedEntries.push(shiftEntries[rowIndex] || null);
                       }
                       
+                      // Don't render anything if no staff assigned to this shift
+                      if (shiftEntries.length === 0) {
+                        return null;
+                      }
+                      
                       return (
                         <td key={shiftType} className={`text-center overflow-hidden align-top relative ${
                           isPastDate(date) ? 'bg-red-50' : ''
