@@ -117,7 +117,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
     }
     
     // Manually edited and different from original - red pulsating text
-    return { className: 'text-red-600 animate-pulse', showAsterisk: false };
+    return { className: 'text-red-600 animate-pulse-subtle', showAsterisk: false };
   };
 
   // Handle long press for entry details
