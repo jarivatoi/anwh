@@ -340,7 +340,13 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                 <h4 className="font-medium text-gray-800 mb-2">Info:</h4>
                 <ol className="text-sm text-gray-700 space-y-1 list-decimal list-inside">
-                <li>Your shifts will automatically appear in your calendar tab</li>
+                <li>
+                  <div className="w-full overflow-hidden">
+                    <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                      Your shifts will automatically appear in your calendar tab after export
+                    </div>
+                  </div>
+                </li>
                 </ol>
               </div>
             </div>
