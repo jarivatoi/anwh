@@ -774,7 +774,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     <ScrollingText 
                       text={getShiftDisplayName(shiftType)}
                       className="text-white font-bold"
-                    />
                       key={shiftType}
                       style={{ 
                         position: 'sticky',
