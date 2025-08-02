@@ -218,21 +218,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     return groups;
   }, {} as Record<string, RosterEntry[]>);
 
-  // Group entries by date for rendering
-  const groupedEntries = filteredEntries.reduce((groups, entry) => {
-    const date = entry.date;
-    if (!groups[date]) {
-      groups[date] = [];
-    }
-    groups[date].push(entry);
-    return groups;
-  }, {} as Record<string, RosterEntry[]>);
-
-  // Calculate maximum staff count across all shifts and dates
-  const maxStaffCount = Object.values(groupedEntries).reduce((maxCount, dateEntries) => {
-    const shiftGroups = groupEntriesByShift(dateEntries);
-    const dateMaxCount = Math.max(...Object.values(shiftGroups).map(group => group.length));
-    return Math.max(maxCount, dateMaxCount);
   }, 0);
 
   // Format date for display in table (Tue 01-03-25)
@@ -412,6 +397,21 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                        String(now.getMonth() + 1).padStart(2, '0') + '-' + 
                        String(now.getDate()).padStart(2, '0');
     return dateString < todayString;
+  };
+
+  // Custom sorting function to prioritize (R) names first
+  const sortStaffNames = (entries: RosterEntry[]): RosterEntry[] => {
+    return [...entries].sort((a, b) => {
+      const aHasR = a.assigned_name.includes('(R)');
+      const bHasR = b.assigned_name.includes('(R)');
+      
+      // If one has (R) and other doesn't, (R) comes first
+      if (aHasR && !bHasR) return -1;
+      if (!aHasR && bHasR) return 1;
+      
+      // If both have (R) or both don't have (R), sort alphabetically
+      return a.assigned_name.localeCompare(b.assigned_name);
+    });
   };
 
   // Check if date is in the future
