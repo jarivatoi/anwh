@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Download } from 'lucide-react';
 import { Calendar } from './components/Calendar';
 import { ShiftModal } from './components/ShiftModal';
 import { SettingsPanel } from './components/SettingsPanel';
@@ -17,6 +16,7 @@ import { DaySchedule, SpecialDates, Settings, ExportData } from './types';
 import { gsap } from 'gsap';
 import { RosterPanel } from './components/RosterPanel';
 import { syncRosterToCalendar } from './utils/rosterCalendarSync';
+import { Download } from 'lucide-react';
 
 function App() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -722,6 +722,8 @@ function App() {
               onImportData={handleImportData}
               onExportData={handleExportData}
             />
+          ) : activeTab === 'roster' ? (
+            <RosterPanel />
           ) : (
             <div>
               {/* Export to Calendar Button */}
@@ -761,6 +763,24 @@ function App() {
           currentYear={currentYear}
         />
 
+        {/* Shift Modal */}
+        {showModal && selectedDate && (
+          <ShiftModal
+            isOpen={showModal}
+            onClose={closeModal}
+            selectedDate={selectedDate}
+            currentShifts={schedule[selectedDate] || []}
+            onToggleShift={toggleShift}
+            canSelectShift={canSelectShift}
+            onToggleSpecialDate={toggleSpecialDate}
+            isSpecialDate={specialDates[selectedDate] || false}
+            onResetDate={(dateKey) => {
+              const [year, month, day] = dateKey.split('-').map(Number);
+              handleResetMonth(year, month - 1, day, false);
+              closeModal();
+            }}
+          />
+        )}
       </div>
     </>
   );
