@@ -86,19 +86,25 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
 
   // Get display styling for the name
   const getNameStyling = (entry: RosterEntry) => {
-    // PRIORITY 1: If change description is "Imported from PDF" = black text (original PDF entry)
+    // PRIORITY 1: PDF imports are ALWAYS black text (highest priority)
     if (entry.change_description === 'Imported from PDF') {
-      console.log('🎨 PDF imported entry - black text');
+      console.log('🎨 PDF imported entry - ALWAYS black text');
       return { className: '', showAsterisk: false };
     }
     
-    // PRIORITY 2: If change description contains "Added by" = black text (admin added entry)
+    // PRIORITY 1B: PDF imports with conversion notes are ALWAYS black text
+    if (entry.change_description && entry.change_description.includes('Imported from PDF')) {
+      console.log('🎨 PDF imported entry (with conversion) - ALWAYS black text');
+      return { className: '', showAsterisk: false };
+    }
+    
+    // PRIORITY 2: Admin added entries = black text
     if (entry.change_description && entry.change_description.includes('Added by')) {
       console.log('🎨 Admin added entry - black text');
       return { className: '', showAsterisk: false };
     }
     
-    // NEW LOGIC: If no last_edited_by AND no initial assignment (change description) = black text
+    // PRIORITY 3: No edits and no initial assignment = black text
     if (!entry.last_edited_by && !entry.change_description) {
       console.log('🎨 No edits and no initial assignment - black text');
       return { className: '', showAsterisk: false };
