@@ -581,10 +581,12 @@ function App() {
   };
 
   const handleOpenCalendarExportModal = () => {
+    console.log('🔄 APP: Opening calendar export modal');
     setShowCalendarExportModal(true);
   };
 
   const handleCloseCalendarExportModal = () => {
+    console.log('🔄 APP: Closing calendar export modal');
     setShowCalendarExportModal(false);
   };
 
