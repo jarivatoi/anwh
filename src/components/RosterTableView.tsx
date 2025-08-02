@@ -625,7 +625,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           >
             <ChevronRight className="w-5 h-5" />
           </button>
-          </div>
         </div>
       </div>
 
