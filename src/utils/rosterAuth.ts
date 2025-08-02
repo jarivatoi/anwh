@@ -46,6 +46,7 @@ export const authCodes: AuthCode[] = [
 // Available staff names for dropdowns and validation
 export const availableNames = authCodes
   .filter(auth => auth.name !== 'ADMIN') // Exclude ADMIN from staff selection
+  .filter(auth => auth.name !== 'MIT' && auth.name !== 'SMIT') // Exclude titles
   .map(auth => auth.name)
   .sort((a, b) => {
     const aHasR = a.includes('(R)');
