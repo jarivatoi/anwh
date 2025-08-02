@@ -341,13 +341,9 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
 
               {/* Instructions */}
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <h4 className="font-medium text-gray-800 mb-2">How to use the exported file:</h4>
+                <h4 className="font-medium text-gray-800 mb-2">Info:</h4>
                 <ol className="text-sm text-gray-700 space-y-1 list-decimal list-inside">
-                  <li>Download the .ics file to your device</li>
-                  <li>Open your calendar app (Google, Outlook, Apple)</li>
-                  <li>Look for "Import" or "Add Calendar" option</li>
-                  <li>Select the downloaded .ics file</li>
-                  <li>Your shifts will appear in your calendar</li>
+                <li>Your shifts will automatically appear in your calendar tab</li>
                 </ol>
               </div>
             </div>
