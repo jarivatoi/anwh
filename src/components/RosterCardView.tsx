@@ -65,8 +65,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
     const handleRealtimeUpdate = (event: CustomEvent) => {
       console.log('📡 Card view received real-time update:', event.detail);
       
-      // Force component re-render to show real-time changes
-      setRefreshKey(prev => prev + 1);
+      // Real-time changes will be reflected through the entries prop
     };
 
     window.addEventListener('rosterRealtimeUpdate', handleRealtimeUpdate as EventListener);
@@ -81,20 +80,6 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
       if (onRefresh) {
         await onRefresh();
       }
-      
-      // Scroll to today's date after refresh
-      setTimeout(() => {
-        const today = new Date();
-        const todayString = today.toISOString().split('T')[0]; // YYYY-MM-DD format
-        const todaySection = document.querySelector(`[data-date="${todayString}"]`);
-        if (todaySection) {
-          todaySection.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center' 
-          });
-          console.log('📍 Scrolled to today\'s date after refresh');
-        }
-      }, 100);
       
       console.log('✅ Manual refresh completed');
     } catch (error) {
@@ -156,7 +141,6 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
       if (onRefresh) {
         onRefresh();
       }
-      setRefreshKey(prev => prev + 1);
     };
 
     window.addEventListener('rosterUpdated', handleRosterUpdate as EventListener);
@@ -262,7 +246,6 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
     // Also trigger a data refresh
     if (isMountedRef.current && onRefresh) {
       onRefresh();
-    }
   };
 
   // Handle edit button click
