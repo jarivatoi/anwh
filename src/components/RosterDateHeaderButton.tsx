@@ -45,7 +45,7 @@ export const RosterDateHeaderButton: React.FC<RosterDateHeaderButtonProps> = ({
       style={{
         position: 'sticky',
         top: '0px',
-        zIndex: 100,
+        zIndex: 150,
         padding: window.innerWidth > window.innerHeight ? '8px 12px' : '16px 16px', // Less padding in landscape
         margin: '0',
         border: 'none',
@@ -59,20 +59,33 @@ export const RosterDateHeaderButton: React.FC<RosterDateHeaderButtonProps> = ({
         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
         cursor: 'pointer',
         touchAction: 'manipulation',
-        width: '100%'
+        width: '100%',
+        // Prevent layout shifts during refresh
+        transform: 'translate3d(0,0,0)',
+        backfaceVisibility: 'hidden',
+        WebkitBackfaceVisibility: 'hidden',
+        // Prevent scrollbars
+        overflow: 'hidden',
+        // Ensure stable positioning
+        contain: 'layout style paint'
       }}
     >
       <div style={{ 
         display: 'flex', 
         alignItems: 'center', 
         width: '100%',
-        position: 'relative'
+        position: 'relative',
+        // Prevent content shifting
+        minHeight: window.innerWidth > window.innerHeight ? '20px' : '24px',
+        overflow: 'hidden'
       }}>
         {/* Left side icon */}
         <div style={{ 
           display: 'flex', 
           alignItems: 'center', 
-          flexShrink: 0
+          flexShrink: 0,
+          width: window.innerWidth > window.innerHeight ? '20px' : '24px',
+          justifyContent: 'center'
         }}>
           <Calendar style={{ 
             width: window.innerWidth > window.innerHeight ? '16px' : '20px', 
@@ -94,7 +107,8 @@ export const RosterDateHeaderButton: React.FC<RosterDateHeaderButtonProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: '8px'
+          gap: '8px',
+          minHeight: window.innerWidth > window.innerHeight ? '20px' : '24px'
         }}>
           <span>{formatSingleLineDate(date)}</span>
           
@@ -118,7 +132,13 @@ export const RosterDateHeaderButton: React.FC<RosterDateHeaderButtonProps> = ({
                 opacity: isRefreshing ? 0.7 : 1,
                 touchAction: 'manipulation',
                 WebkitTapHighlightColor: 'transparent',
-                flexShrink: 0
+                flexShrink: 0,
+                // Prevent button from causing layout shifts
+                width: '32px',
+                height: '24px',
+                justifyContent: 'center',
+                transform: 'translate3d(0,0,0)',
+                backfaceVisibility: 'hidden'
               }}
               title={
                 realtimeStatus === 'connected' ? 'Manual refresh (Real-time active)' :
@@ -132,7 +152,10 @@ export const RosterDateHeaderButton: React.FC<RosterDateHeaderButtonProps> = ({
                 style={{
                   width: '18px',
                   height: '18px',
-                  animation: isRefreshing ? 'spin 1s linear infinite' : 'none'
+                  animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
+                  // Prevent icon from causing shifts
+                  transform: 'translate3d(0,0,0)',
+                  backfaceVisibility: 'hidden'
                 }}
                 fill="none" 
                 stroke="currentColor" 
@@ -155,14 +178,22 @@ export const RosterDateHeaderButton: React.FC<RosterDateHeaderButtonProps> = ({
                                 realtimeStatus === 'connecting' ? '#f59e0b' :
                                 realtimeStatus === 'error' ? '#ef4444' : '#6b7280',
                 animation: realtimeStatus === 'connecting' ? 'pulse 1.5s ease-in-out infinite' : 'none',
-                boxShadow: realtimeStatus === 'connected' ? '0 0 8px rgba(16, 185, 129, 0.8)' : 'none'
+                boxShadow: realtimeStatus === 'connected' ? '0 0 8px rgba(16, 185, 129, 0.8)' : 'none',
+                // Prevent dot from causing shifts
+                flexShrink: 0,
+                transform: 'translate3d(0,0,0)',
+                backfaceVisibility: 'hidden'
               }} />
             </button>
           )}
         </div>
         
         {/* Empty space to maintain layout balance */}
-        <div style={{ width: '20px', flexShrink: 0 }} />
+        <div style={{ 
+          width: window.innerWidth > window.innerHeight ? '20px' : '24px', 
+          flexShrink: 0,
+          height: window.innerWidth > window.innerHeight ? '20px' : '24px'
+        }} />
       </div>
     </div>
   );
