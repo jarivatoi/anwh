@@ -4,6 +4,7 @@ import { X, Edit, Calendar, User, Clock } from 'lucide-react';
 import { RosterEntry } from '../types/roster';
 import { formatDisplayDate } from '../utils/rosterFilters';
 import { parseNameChange } from '../utils/rosterHelpers';
+import { ScrollingText } from './ScrollingText';
 
 interface EditDetailsModalProps {
   isOpen: boolean;
@@ -73,26 +74,34 @@ export const EditDetailsModal: React.FC<EditDetailsModalProps> = ({ isOpen, entr
             {/* Shift Type */}
             <div className="p-3 bg-gray-50 rounded-lg select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
               <div className="text-sm font-medium text-gray-700 mb-1 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>Shift Type</div>
-              <div className="text-gray-900 font-semibold select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{entry.shift_type}</div>
+              <ScrollingText 
+                text={entry.shift_type}
+                className="text-gray-900 font-semibold select-none"
+              />
             </div>
 
             {/* Current Assignment */}
             <div className="p-3 bg-gray-50 rounded-lg select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
               <div className="text-sm font-medium text-gray-700 mb-1 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>Current Assignment</div>
-              <div className="text-gray-900 font-semibold select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{entry.assigned_name}</div>
+              <ScrollingText 
+                text={entry.assigned_name}
+                className="text-gray-900 font-semibold select-none"
+              />
             </div>
 
             {/* Name Change Details */}
             {nameInfo.isNameChange && (
               <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
                 <div className="text-sm font-medium text-yellow-800 mb-2 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>Name Change</div>
-                <div className="flex items-center space-x-2 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
-                 <User className="w-4 h-4 text-red-600" />
-                  <span className="text-red-600 font-medium line-through select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{nameInfo.oldName}</span>
-                  <span className="text-gray-500 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>→</span>
-                 <User className="w-4 h-4 text-green-600" />
-                  <span className="text-green-600 font-medium select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{nameInfo.newName}</span>
-                </div>
+                <ScrollingText className="select-none">
+                  <div className="flex items-center space-x-2 whitespace-nowrap select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
+                    <User className="w-4 h-4 text-red-600 flex-shrink-0" />
+                    <span className="text-red-600 font-medium line-through select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{nameInfo.oldName}</span>
+                    <span className="text-gray-500 select-none flex-shrink-0" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>→</span>
+                    <User className="w-4 h-4 text-green-600 flex-shrink-0" />
+                    <span className="text-green-600 font-medium select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{nameInfo.newName}</span>
+                  </div>
+                </ScrollingText>
               </div>
             )}
 
@@ -100,10 +109,10 @@ export const EditDetailsModal: React.FC<EditDetailsModalProps> = ({ isOpen, entr
             {entry.change_description && (
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
                 <div className="text-sm font-medium text-blue-800 mb-1 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>Change Description</div>
-                <div className="text-blue-700 text-sm">
-                  {/* Remove the (Original PDF: ...) part from display */}
-                  {entry.change_description.replace(/\s*\(Original PDF: [^)]+\)/, '')}
-                </div>
+                <ScrollingText 
+                  text={entry.change_description.replace(/\s*\(Original PDF: [^)]+\)/, '')}
+                  className="text-blue-700 text-sm"
+                />
               </div>
             )}
 
@@ -111,10 +120,12 @@ export const EditDetailsModal: React.FC<EditDetailsModalProps> = ({ isOpen, entr
             {nameInfo.isNameChange && (
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
                 <div className="text-sm font-medium text-amber-800 mb-2 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>Initial Assignment</div>
-                <div className="flex items-center space-x-2 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
-                  <User className="w-4 h-4 text-amber-600" />
-                  <span className="text-amber-700 font-medium select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{nameInfo.oldName}</span>
-                </div>
+                <ScrollingText className="select-none">
+                  <div className="flex items-center space-x-2 whitespace-nowrap select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
+                    <User className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                    <span className="text-amber-700 font-medium select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{nameInfo.oldName}</span>
+                  </div>
+                </ScrollingText>
               </div>
             )}
 
@@ -123,15 +134,19 @@ export const EditDetailsModal: React.FC<EditDetailsModalProps> = ({ isOpen, entr
               <div className="p-3 bg-green-50 border border-green-200 rounded-lg select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
                 <div className="text-sm font-medium text-green-800 mb-2 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>Last Modified</div>
                 <div className="space-y-1 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
-                  <div className="flex items-center space-x-2 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
-                    <User className="w-4 h-4 text-green-600" />
-                    <span className="text-green-700 font-medium select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{entry.last_edited_by}</span>
-                  </div>
-                  {entry.last_edited_at && (
-                    <div className="flex items-center space-x-2 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
-                      <Clock className="w-4 h-4 text-green-600" />
-                      <span className="text-green-700 text-sm break-words select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{formatTimestamp(entry.last_edited_at)}</span>
+                  <ScrollingText className="select-none">
+                    <div className="flex items-center space-x-2 whitespace-nowrap select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
+                      <User className="w-4 h-4 text-green-600 flex-shrink-0" />
+                      <span className="text-green-700 font-medium select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{entry.last_edited_by}</span>
                     </div>
+                  </ScrollingText>
+                  {entry.last_edited_at && (
+                    <ScrollingText className="select-none">
+                      <div className="flex items-center space-x-2 whitespace-nowrap select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
+                        <Clock className="w-4 h-4 text-green-600 flex-shrink-0" />
+                        <span className="text-green-700 text-sm select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{formatTimestamp(entry.last_edited_at)}</span>
+                      </div>
+                    </ScrollingText>
                   )}
                 </div>
               </div>
