@@ -33,7 +33,7 @@ export const authCodes: AuthCode[] = [
   { code: 'M17R', name: 'MAUDHOO(R)', title: 'MIT' },
   { code: 'N28R', name: 'NARAYYA(R)', title: 'MIT' },
   { code: 'P09R', name: 'PITTEA(R)', title: 'SMIT' },
-  { code: 'R16R', name: 'RUNGADOO(R)', title: 'SMIT' },
+  { code: 'R21R', name: 'RUNGADOO(R)', title: 'SMIT' },
   { code: 'T16R', name: 'TEELUCK(R)', title: 'SMIT' },
   { code: 'V16R', name: 'VEERASAWMY(R)', title: 'SMIT' },
   
