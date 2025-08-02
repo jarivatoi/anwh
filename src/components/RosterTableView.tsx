@@ -678,7 +678,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       }
                       setRefreshKey(prev => prev + 1);
                       setLastUpdateTime(new Date().toLocaleTimeString());
-              border: '2px solid #374151',
+                      console.log('✅ Manual refresh completed');
                     } catch (error) {
                       console.error('Manual refresh failed in table view:', error);
                     } finally {
@@ -1040,7 +1040,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 </div>
               </div>
               
-                    border: '2px solid #374151',
+              <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
                 Export to Calendar
               </h3>
               
