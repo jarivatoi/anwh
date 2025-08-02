@@ -299,29 +299,6 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
         >
           {step === 'auth' && (
             <div className="space-y-6">
-              {/* Test button to verify function works */}
-              <button
-                onClick={() => {
-                  console.log('🧪 TEST BUTTON CLICKED - Function works!');
-                  alert('Test button works! Now try the real export.');
-                }}
-                className="w-full px-4 py-3 bg-purple-600 text-white rounded-lg font-bold"
-              >
-                🧪 TEST BUTTON (Click to verify)
-              </button>
-              
-              {/* Debug button to test function */}
-              <button
-                onClick={() => {
-                  console.log('🧪 TEST: Button click works!');
-                  console.log('🧪 TEST: handleExport function exists:', typeof handleExport);
-                  console.log('🧪 TEST: authCode value:', authCode);
-                }}
-                className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg"
-              >
-                TEST BUTTON (Check Console)
-              </button>
-              
               {/* Info Section */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex items-start space-x-3">
@@ -517,12 +494,7 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
                 onClick={handleExport}
                 disabled={isExporting || authCode.length < 4}
                 className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
-                onClick={(e) => {
-                  console.log('🚀 ACTUAL EXPORT BUTTON CLICKED!');
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleExport();
-                }}
+                onClick={handleExport}
               >
                 <Download className="w-4 h-4" />
                 <span>Export Calendar</span>
