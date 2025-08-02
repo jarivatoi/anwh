@@ -913,8 +913,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                               flexDirection: 'column',
                               justifyContent: shiftEntries.length > 0 ? 'flex-start' : 'center',
                               alignItems: 'center',
-                              position: 'relative',
-                              overflow: 'hidden'
+                              position: 'relative'
                             }}>
                               {/* BIG X WATERMARK for past dates - ON EMPTY SHIFT BOXES */}
                               {isPastDate(date) && shiftEntries.length === 0 && (
