@@ -78,12 +78,10 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
     setIsRefreshing(true);
     try {
       console.log('🔄 Manual refresh triggered in card view');
-      // Just show spinner animation - data updates through real-time
-      await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second spinner
+      if (onRefresh) {
+        await onRefresh();
+      }
       setLastUpdateTime(new Date().toLocaleTimeString());
-      
-      // Stay in current position after manual refresh
-      
       console.log('✅ Manual refresh completed');
     } catch (error) {
       console.error('Manual refresh failed:', error);
