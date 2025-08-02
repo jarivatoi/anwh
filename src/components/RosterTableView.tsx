@@ -775,12 +775,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       text={getShiftDisplayName(shiftType)}
                       className="text-white font-bold"
                       key={shiftType}
-                      style={{ 
-                        position: 'sticky',
                      />
-                    </ScrollingText>
-                        zIndex: 80,
-                        padding: window.innerWidth > window.innerHeight ? '4px' : '8px', // Less padding in landscape
                         fontWeight: '600',
                         textAlign: 'center',
                         fontSize: window.innerWidth > window.innerHeight ? '10px' : (window.innerWidth >= 640 ? '14px' : '12px'),
