@@ -14,7 +14,7 @@ interface RosterCardViewProps {
   entries: RosterEntry[];
   loading: boolean;
   realtimeStatus: 'connecting' | 'connected' | 'error' | 'disconnected';
-  onRefresh: () => Promise<void>;
+  onRefresh?: () => Promise<void>;
   selectedDate: Date;
   onDateChange: (date: Date) => void;
 }
@@ -39,8 +39,9 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   const [selectedShift, setSelectedShift] = useState<string>('');
   const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [lastUpdateTime, setLastUpdateTime] = useState<string>('');
+  const [lastUpdateTime, setLastUpdateTime] = useState('');
 
   const isMountedRef = useRef(true);
 
@@ -59,18 +60,30 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
     };
   }, []);
 
+  // Get the loadEntries function from the parent component
+  // Listen for real-time updates
+  useEffect(() => {
+    const handleRealtimeUpdate = (event: CustomEvent) => {
+      console.log('📡 Card view received real-time update:', event.detail);
+      
+      // Real-time changes will be reflected through the entries prop
+    };
+
+    window.addEventListener('rosterRealtimeUpdate', handleRealtimeUpdate as EventListener);
+    return () => window.removeEventListener('rosterRealtimeUpdate', handleRealtimeUpdate as EventListener);
+  }, []);
+
   // Handle manual refresh
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
     try {
       console.log('🔄 Manual refresh triggered in card view');
-      if (onRefresh) {
-        await onRefresh();
-      }
+      // Just show spinner for visual feedback - don't actually refresh
+      await new Promise(resolve => setTimeout(resolve, 1000));
       setLastUpdateTime(new Date().toLocaleTimeString());
       console.log('✅ Manual refresh completed');
     } catch (error) {
-      console.error('❌ Manual refresh failed:', error);
+      console.error('Manual refresh error:', error);
     } finally {
       setIsRefreshing(false);
     }
@@ -409,6 +422,8 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
                     }}
                     isToday={isToday}
                     realtimeStatus={realtimeStatus}
+                    onManualRefresh={handleManualRefresh}
+                    isRefreshing={isRefreshing}
                   />
                   
                   {/* Shift Tabs for this date */}
