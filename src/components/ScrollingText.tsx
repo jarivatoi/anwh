@@ -147,7 +147,8 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
       style={{
         position: 'relative',
         width: '100%',
-        maxWidth: '100%'
+        maxWidth: '100%',
+        textAlign: 'left' // Force left alignment for proper overflow detection
       }}
     >
       <div 
@@ -155,7 +156,8 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
         className="whitespace-nowrap"
         style={{
           display: 'inline-block',
-          minWidth: '100%',
+          textAlign: 'left', // Ensure text starts from the left
+          width: 'auto',
           maxWidth: 'none'
         }}
       >
