@@ -933,6 +933,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                     </div>
                                   </ScrollingText>
                                 </div>
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center" style={{
                                   fontSize: 'clamp(1.5rem, 4vw, 3rem)',
                                   fontWeight: 'bold',
                                   color: '#d1d5db',
