@@ -366,7 +366,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
     <>
       <div 
         ref={cellRef}
-        className={`text-center p-1 sm:p-2 transition-colors w-full flex items-center justify-center ${
+        className={`text-left p-1 sm:p-2 transition-colors w-full flex items-center justify-start ${
           'cursor-pointer'
         }`}
         {...interactionHandlers}
@@ -379,11 +379,11 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
           backgroundColor: 'transparent'
         }}
       >
-        <div className="text-[8px] sm:text-[10px] font-medium text-gray-900 leading-tight w-full flex items-center justify-center">
+        <div className="text-[8px] sm:text-[10px] font-medium text-gray-900 leading-tight w-full flex items-center justify-start">
           {isUpdating ? 'Updating...' : (() => {
             const styling = getNameStyling(entry);
             return (
-              <div className="flex items-center justify-center space-x-1">
+              <div className="flex items-center justify-start space-x-1">
                 <ScrollingText 
                   text={entry.assigned_name}
                   className={styling.className}
