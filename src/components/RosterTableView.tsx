@@ -888,10 +888,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             <div className="relative w-full h-full">
                               {shiftEntries.length > 0 ? (
                                 <div className="w-full h-full flex items-center justify-center p-2">
-                                  <ScrollingText 
-                                    text=""
-                                    className="w-full"
-                                  >
+                                
                                   <div className="bg-white rounded-lg border-2 border-black shadow-sm p-2 w-full relative" style={{
                                     paddingLeft: '2px',
                                     paddingRight: '2px',
