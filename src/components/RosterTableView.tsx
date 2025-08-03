@@ -876,16 +876,18 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             height: `${dynamicHeight}px`,
                             position: 'relative',
                             overflow: 'hidden',
+                            textAlign: 'left',
                             // No overflow properties - let content flow naturally
                           }}>
                         
                             <div className="relative w-full h-full">
                               {shiftEntries.length > 0 ? (
-                                <div className="w-full h-full flex items-center justify-center p-2">
-                                <div className="bg-white rounded-lg border-2 border-black shadow-sm p-2 w-full relative" style={{
+                                <div className="w-full h-full flex items-center justify-start p-2">
+                                <div className="bg-white rounded-lg border-2 border-black shadow-sm w-full relative" style={{
                                     overflow: 'hidden',
                                     padding: 0,
-                                    margin: 0
+                                    margin: 0,
+                                    textAlign: 'left'
                                   }}>
                                       {/* X watermark for past dates - positioned within the container only */}
                                       {isPastDate(date) && (
@@ -908,7 +910,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                           </div>
                                         </div>
                                       )}
-                                    <ScrollingText className="w-full" style={{ padding: 0, margin: 0 }}>
+                                    <ScrollingText className="w-full text-left" style={{ padding: 0, margin: 0, textAlign: 'left' }}>
                                       <div className="space-y-1 w-full">
                                         {sortStaffNames(shiftEntries).map((entry, index) => (
                                           <div key={entry.id} className="relative" style={{ zIndex: 60 }}>
