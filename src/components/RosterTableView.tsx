@@ -884,25 +884,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             overflow: 'hidden',
                             // No overflow properties - let content flow naturally
                           }}>
-                            
-                            <div className="flex flex-col relative" style={{ 
-                              zIndex: 10,
-                              gap: window.innerWidth > window.innerHeight ? '1px' : '2px', // Tighter spacing in landscape
-                              border: '2px solid #374151',
-                              backgroundColor: '#f9fafb',
-                              borderRadius: '4px',
-                                zIndex: 50, // Higher z-index to appear above names
-                              margin: '2px',
-                              minHeight: `${dynamicHeight - 16}px`,
-                              height: `${dynamicHeight - 16}px`,
-                              display: 'flex',
-                              flexDirection: 'column',
-                              justifyContent: shiftEntries.length > 0 ? 'flex-start' : 'center',
-                              alignItems: 'center',
-                              position: 'relative'
-                            }}>
-                             
-                              
+                        
                               {shiftEntries.length > 0 ? (
                                 <div className="space-y-1 w-full">
                                   {/* Single X watermark for past dates - positioned within names container */}
