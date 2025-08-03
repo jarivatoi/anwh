@@ -51,7 +51,7 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
         WebkitTouchCallout: 'none'
       }}
     >
-      {/* BIG X WATERMARK for past dates - covers entire date cell */}
+    
       <button
         {...useLongPress({
           onLongPress,
