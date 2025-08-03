@@ -888,10 +888,31 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             <div className="relative w-full h-full">
                               {shiftEntries.length > 0 ? (
                                 <div className="w-full h-full flex items-center justify-center p-2">
-                                  <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-2 w-full">
+                                  <div className="bg-white rounded-lg border-2 border-black shadow-sm p-2 w-full relative">
+                                    {/* X watermark for past dates - positioned within the container only */}
+                                    {isPastDate(date) && (
+                                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
+                                        zIndex: 50,
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0
+                                      }}>
+                                        <div className="font-bold select-none" style={{
+                                          fontSize: window.innerWidth > window.innerHeight ? 'clamp(1.5rem, 6vw, 3rem)' : 'clamp(2rem, 8vw, 4rem)',
+                                          lineHeight: '1',
+                                          color: '#fca5a5',
+                                          opacity: 0.4,
+                                          transform: 'scale(1.5)',
+                                          textShadow: '0 0 8px rgba(252, 165, 165, 0.6)'
+                                        }}>
+                                          ✕
+                                        </div>
+                                      </div>
+                                    )}
                                     <div className="space-y-1 w-full">
                                   {sortStaffNames(shiftEntries).map((entry, index) => (
-                                    <div key={entry.id} className="relative" style={{ zIndex: 30 }}>
+                                    <div key={entry.id} className="relative" style={{ zIndex: 60 }}>
                                       <RosterEntryCell
                                         entry={entry}
                                         onUpdate={handleEntryUpdate}
