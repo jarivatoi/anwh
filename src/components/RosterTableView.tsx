@@ -923,11 +923,11 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                             {sortStaffNames(shiftEntries).map((entry, index) => (
                                               <div key={entry.id} className="relative whitespace-nowrap" style={{ zIndex: 60 }}>
                                                 <RosterEntryCell
-                                                  entry={entry}
+                                          fontSize: window.innerWidth > window.innerHeight ? 'clamp(3rem, 12vw, 8rem)' : 'clamp(6rem, 20vw, 12rem)',
                                                   onUpdate={handleEntryUpdate}
                                                   onShowDetails={handleShowDetails}
-                                                  allEntriesForShift={shiftEntries}
-                                                />
+                                          opacity: 0.3,
+                                          transform: 'scale(2.5)',
                                               </div>
                                             ))}
                                           </div>
