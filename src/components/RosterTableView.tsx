@@ -768,7 +768,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       position: 'sticky',
                       top: window.innerWidth > window.innerHeight ? 40 : 56, // Adjust for shorter header
                       zIndex: 85,
-                      padding: window.innerWidth > window.innerHeight ? '4px' : '8px', // Less padding in landscape
                       fontWeight: '600',
                       textAlign: 'center',
                       fontSize: window.innerWidth > window.innerHeight ? '10px' : (window.innerWidth >= 640 ? '14px' : '12px'),
@@ -797,8 +796,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         position: 'sticky',
                         top: window.innerWidth > window.innerHeight ? 40 : 56,
                         zIndex: 85,
-                        padding: window.innerWidth > window.innerHeight ? '4px' : '8px',
-                        padding: '4px',
                         textAlign: 'center',
                         fontSize: window.innerWidth > window.innerHeight ? '10px' : (window.innerWidth >= 640 ? '14px' : '12px'),
                         color: 'white',
@@ -816,10 +813,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         WebkitTransform: 'translate3d(0,0,0)'
                       }}
                     >
-                      <ScrollingText 
-                        text={getShiftDisplayName(shiftType)}
-                        className="text-white font-bold"
-                      />
+                      {getShiftDisplayName(shiftType)}
                     </th>
                   ))}
                 </tr>
