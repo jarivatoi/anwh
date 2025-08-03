@@ -889,11 +889,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                               {shiftEntries.length > 0 ? (
                                 <div className="w-full h-full flex items-center justify-center p-2">
                                 <div className="bg-white rounded-lg border-2 border-black shadow-sm p-2 w-full relative" style={{
-                                    paddingLeft: '2px',
-                                    paddingRight: '2px',
                                     overflow: 'hidden'
                                   }}>
-                                    <ScrollingText className="w-full" style={{}}>
                                       {/* X watermark for past dates - positioned within the container only */}
                                       {isPastDate(date) && (
                                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
@@ -915,6 +912,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                           </div>
                                         </div>
                                       )}
+                                    <ScrollingText className="w-full">
                                       <div className="space-y-1 w-full">
                                         {sortStaffNames(shiftEntries).map((entry, index) => (
                                           <div key={entry.id} className="relative" style={{ zIndex: 60 }}>
