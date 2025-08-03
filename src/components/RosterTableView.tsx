@@ -888,28 +888,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             <div className="relative w-full h-full">
                               {shiftEntries.length > 0 ? (
                                 <div className="space-y-1 w-full">
-                                  {/* Single X watermark for past dates - positioned within names container */}
-                                  {isPastDate(date) && (
-                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
-                                      zIndex: 50,
-                                      top: 0,
-                                      left: 0,
-                                      right: 0,
-                                      bottom: 0
-                                    }}>
-                                      <div className="font-bold select-none" style={{
-                                        fontSize: window.innerWidth > window.innerHeight ? 'clamp(2rem, 8vw, 4rem)' : 'clamp(4rem, 12vw, 8rem)',
-                                        lineHeight: '1',
-                                        color: '#fca5a5',
-                                        opacity: 0.3,
-                                        transform: 'scale(1.8)',
-                                        textShadow: '0 0 10px rgba(252, 165, 165, 0.5)'
-                                      }}>
-                                        ✕
-                                      </div>
-                                    </div>
-                                  )}
-                                  
                                   {sortStaffNames(shiftEntries).map((entry, index) => (
                                     <div key={entry.id} className="relative" style={{ zIndex: 30 }}>
                                       <RosterEntryCell
