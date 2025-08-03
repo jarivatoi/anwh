@@ -142,10 +142,11 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
   return (
     <div 
       ref={containerRef}
-      className={`overflow-hidden ${className}`}
+      className={`overflow-hidden w-full ${className}`}
       style={{
         position: 'relative',
-        width: '100%'
+        width: '100%',
+        maxWidth: '100%'
       }}
     >
       <div 
@@ -153,7 +154,8 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
         className="whitespace-nowrap"
         style={{
           display: 'inline-block',
-          minWidth: '100%'
+          minWidth: '100%',
+          maxWidth: 'none'
         }}
       >
         {children || text}
