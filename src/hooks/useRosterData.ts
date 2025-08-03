@@ -21,16 +21,37 @@ export const useRosterData = () => {
       setLoading(true);
       setError(null);
       console.log('🔄 Loading entries from database...');
-      const data = await fetchRosterEntries();
-      console.log('✅ Fetched entries:', data.length);
-      setEntries(data);
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
+      
+      // Add timeout and better error handling for fetch operations
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 10000)
+      );
+      
+      const fetchPromise = fetchRosterEntries();
+      const data = await Promise.race([fetchPromise, timeoutPromise]);
+      
+      if (Array.isArray(data)) {
+        console.log('✅ Fetched entries:', data.length);
+        setEntries(data);
       } else {
-        setError('Failed to load roster entries. Please check your configuration.');
+        console.warn('⚠️ Invalid data format received, using empty array');
+        setEntries([]);
       }
-      console.error('❌ Supabase connection test failed:', err instanceof Error ? err.message : 'Unknown error');
+    } catch (err) {
+      console.error('❌ Failed to load entries:', err);
+      
+      if (err instanceof Error && err.message.includes('Failed to fetch')) {
+        setError('Unable to connect to the database. Please check your internet connection and try again.');
+      } else if (err instanceof Error && err.message.includes('timeout')) {
+        setError('Request timed out. Please try again.');
+      } else if (err instanceof Error) {
+        setError(`Database error: ${err.message}`);
+      } else {
+        setError('Failed to load roster entries. Please check your connection and try again.');
+      }
+      
+      // Set empty entries on error to prevent UI issues
+      setEntries([]);
     } finally {
       // CRITICAL: Always set loading to false, even if database is empty
       setLoading(false);
@@ -46,15 +67,33 @@ export const useRosterData = () => {
     }
     
     try {
-      const { data, error } = await supabase.from('roster_entries').select('id').limit(1);
+      // Add timeout for connection test
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Connection test timeout')), 5000)
+      );
+      
+      const testPromise = supabase.from('roster_entries').select('id').limit(1);
+      const { data, error } = await Promise.race([testPromise, timeoutPromise]);
+      
       if (error) {
         console.error('❌ Supabase connection test failed:', error.message);
+        setLastConnectionError(`Connection test failed: ${error.message}`);
         return false;
       }
       console.log('✅ Supabase connection test successful');
+      setLastConnectionError(null);
       return true;
     } catch (err) {
-      console.error('❌ Supabase connection test failed:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.error('❌ Supabase connection test failed:', errorMessage);
+      
+      if (errorMessage.includes('Failed to fetch')) {
+        setLastConnectionError('Network connection failed - please check your internet connection');
+      } else if (errorMessage.includes('timeout')) {
+        setLastConnectionError('Connection timeout - please try again');
+      } else {
+        setLastConnectionError(`Connection error: ${errorMessage}`);
+      }
       return false;
     }
   }, []);

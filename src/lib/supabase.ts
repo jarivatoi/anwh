@@ -12,7 +12,30 @@ if (supabaseUrl &&
     supabaseUrl.includes('supabase.co') && 
     supabaseAnonKey.length > 50) {
   try {
-    supabase = createClient(supabaseUrl, supabaseAnonKey);
+    supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: false, // Disable session persistence to avoid CORS issues
+      },
+      global: {
+        fetch: (url, options = {}) => {
+          // Add timeout and better error handling to all fetch requests
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+          
+          return fetch(url, {
+            ...options,
+            signal: controller.signal,
+          }).finally(() => {
+            clearTimeout(timeoutId);
+          }).catch(error => {
+            if (error.name === 'AbortError') {
+              throw new Error('Request timeout - please check your connection');
+            }
+            throw error;
+          });
+        }
+      }
+    });
     console.log('✅ Supabase client initialized');
   } catch (error) {
     console.error('⚠️ Supabase initialization failed:', error);
