@@ -939,7 +939,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                               
                               {shiftEntries.length > 0 ? (
                                 <div className="space-y-1 w-full">
-                                  {/* BIG X WATERMARK for past dates - INSIDE names container */}
+                                  {/* Single X watermark for past dates - positioned within names container */}
                                   {isPastDate(date) && (
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
                                       zIndex: 50,
