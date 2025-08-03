@@ -383,13 +383,13 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
           {isUpdating ? 'Updating...' : (() => {
             const styling = getNameStyling(entry);
             return (
-              <div className="flex items-center justify-start space-x-1">
+              <div className="flex items-center justify-start">
                 <ScrollingText 
                   text={entry.assigned_name}
                   className={styling.className}
                 />
                 {styling.showAsterisk && (
-                  <span className="text-black font-bold text-[10px] sm:text-[12px] animate-asterisk-zoom">*</span>
+                  <span className="text-black font-bold text-[10px] sm:text-[12px] animate-asterisk-zoom ml-0">*</span>
                 )}
               </div>
             );
