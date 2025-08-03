@@ -33,71 +33,71 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
       // Reset text position
       gsap.set(textElement, { x: 0 });
       
-      // Force layout recalculation and wait for next frame
-      requestAnimationFrame(() => {
-        const containerWidth = container.getBoundingClientRect().width;
-        const textWidth = textElement.getBoundingClientRect().width;
+      // Force layout recalculation
+      container.offsetWidth;
+      textElement.offsetWidth;
+      
+      // Check if text overflows container
+      const containerWidth = container.offsetWidth;
+      const textWidth = textElement.scrollWidth;
+      
+      console.log('📏 ScrollingText dimensions:', {
+        containerWidth,
+        textWidth,
+        needsScrolling: textWidth > containerWidth,
+        text: text || 'children content'
+      });
+      
+      if (textWidth > containerWidth) {
+        setNeedsScrolling(true);
         
-        console.log('📏 ScrollingText dimensions:', {
-          containerWidth,
-          textWidth,
-          needsScrolling: textWidth > containerWidth,
-          text: text || 'children content',
-          containerElement: container,
-          textElement: textElement
+        // Calculate scroll distance (how much text extends beyond container)
+        const scrollDistance = textWidth - containerWidth + 2; // Add 2px end padding
+        
+        // Create GSAP timeline with your specified timing
+        const timeline = gsap.timeline({ 
+          repeat: -1, // Infinite loop
+          ease: "power2.inOut"
         });
         
-        if (textWidth > containerWidth) {
-          setNeedsScrolling(true);
-          
-          // Calculate scroll distance (how much text extends beyond container)
-          const scrollDistance = textWidth - containerWidth + 10; // Add 10px end padding
-          
-          // Create GSAP timeline with your specified timing
-          const timeline = gsap.timeline({ 
-            repeat: -1, // Infinite loop
-            ease: "power2.inOut"
-          });
-          
-          // 1s pause at start
-          timeline.to(textElement, {
-            duration: 1,
-            x: 0
-          });
-          
-          // 2.5s scroll to end
-          timeline.to(textElement, {
-            duration: 2.5,
-            x: -scrollDistance,
-            ease: "power2.inOut"
-          });
-          
-          // 1s pause at end
-          timeline.to(textElement, {
-            duration: 1,
-            x: -scrollDistance
-          });
-          
-          // 2.5s scroll back to start
-          timeline.to(textElement, {
-            duration: 2.5,
-            x: 0,
-            ease: "power2.inOut"
-          });
-          
-          animationRef.current = timeline;
-          
-          console.log('🎬 Started scrolling animation for text:', text || 'children');
-        } else {
-          setNeedsScrolling(false);
-          console.log('✅ Text fits in container, no scrolling needed');
-        }
-      });
+        // 1s pause at start
+        timeline.to(textElement, {
+          duration: 1,
+          x: 0
+        });
+        
+        // 2.5s scroll to end
+        timeline.to(textElement, {
+          duration: 2.5,
+          x: -scrollDistance,
+          ease: "power2.inOut"
+        });
+        
+        // 1s pause at end
+        timeline.to(textElement, {
+          duration: 1,
+          x: -scrollDistance
+        });
+        
+        // 2.5s scroll back to start
+        timeline.to(textElement, {
+          duration: 2.5,
+          x: 0,
+          ease: "power2.inOut"
+        });
+        
+        animationRef.current = timeline;
+        
+        console.log('🎬 Started scrolling animation for text:', text || 'children');
+      } else {
+        setNeedsScrolling(false);
+        console.log('✅ Text fits in container, no scrolling needed');
+      }
     };
- 
-    // Initial check with delay to ensure DOM is ready
-    const timeoutId = setTimeout(checkAndAnimate, 100);
-      
+
+    // Initial check
+    checkAndAnimate();
+    
     // Recheck on window resize
     const handleResize = () => {
       setTimeout(checkAndAnimate, 100);
@@ -121,7 +121,6 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
     return () => {
       window.removeEventListener('resize', handleResize);
       observer.disconnect();
-      clearTimeout(timeoutId);
       
       if (animationRef.current) {
         animationRef.current.kill();
@@ -143,12 +142,10 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
   return (
     <div 
       ref={containerRef}
-      className={`overflow-hidden w-full ${className}`}
+      className={`overflow-hidden ${className}`}
       style={{
         position: 'relative',
-        width: '100%',
-        maxWidth: '100%',
-        textAlign: 'left' // Force left alignment for proper overflow detection
+        width: '100%'
       }}
     >
       <div 
@@ -156,9 +153,7 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
         className="whitespace-nowrap"
         style={{
           display: 'inline-block',
-          textAlign: 'left', // Ensure text starts from the left
-          width: 'auto',
-          maxWidth: 'none'
+          minWidth: '100%'
         }}
       >
         {children || text}
