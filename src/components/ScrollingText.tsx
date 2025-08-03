@@ -41,13 +41,13 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
         console.log('📏 ScrollingText dimensions:', {
           containerWidth,
           textWidth,
-          needsScrolling: textWidth > containerWidth + 5, // Add 5px tolerance
+          needsScrolling: textWidth > containerWidth,
           text: text || 'children content',
           containerElement: container,
           textElement: textElement
         });
         
-        if (textWidth > containerWidth + 5) { // Add 5px tolerance to prevent unnecessary scrolling
+        if (textWidth > containerWidth) {
           setNeedsScrolling(true);
           
           // Calculate scroll distance (how much text extends beyond container)
