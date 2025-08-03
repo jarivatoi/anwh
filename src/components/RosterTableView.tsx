@@ -88,8 +88,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         if (tableRef.current) {
           const container = tableRef.current;
           // Force reset scrolling properties
-          container.style.overflow = 'auto';
-          container.style.overflowX = 'auto';
+          container.style.overflow = 'hidden';
+          container.style.overflowX = 'hidden';
           container.style.overflowY = 'auto';
           container.style.WebkitOverflowScrolling = 'touch';
           container.style.touchAction = 'auto';
@@ -629,8 +629,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         ) : (
           <div ref={tableRef} style={{ 
             height: '100%', 
-            overflow: 'auto',
-            overflowX: 'auto',
+            overflow: 'hidden',
+            overflowX: 'hidden',
             overflowY: 'auto',
             position: 'relative', 
             width: '100%',
