@@ -51,8 +51,7 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
         WebkitTouchCallout: 'none'
       }}
     >
-    
-      <button
+     <button
         {...useLongPress({
           onLongPress,
           delay: 800
