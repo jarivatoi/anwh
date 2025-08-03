@@ -940,7 +940,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                               )}
                             </div>
                           </td>
-                          </td>
                         );
                       })}
                     </tr>
