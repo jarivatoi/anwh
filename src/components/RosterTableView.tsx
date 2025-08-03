@@ -882,8 +882,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             height: `${dynamicHeight}px`,
                             position: 'relative',
                             overflow: 'hidden',
-                            width: 'calc((100vw - 80px) / 4)',
-                            minWidth: 'calc((100vw - 80px) / 4)'
+                            // No overflow properties - let content flow naturally
                           }}>
                             {/* Big X watermark for past dates - covers entire cell including padding */}
                             {isPastDate(date) && shiftEntries.length > 0 && (
@@ -905,7 +904,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                               border: '2px solid #374151',
                               backgroundColor: '#f9fafb',
                               borderRadius: '4px',
-                              padding: '4px',
+                                zIndex: 50, // Higher z-index to appear above names
                               margin: '2px',
                               minHeight: `${dynamicHeight - 16}px`,
                               height: `${dynamicHeight - 16}px`,
