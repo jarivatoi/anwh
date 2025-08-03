@@ -891,12 +891,12 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                   <ScrollingText 
                                     text=""
                                     className="w-full"
-                                  >
-                                    <div className="bg-white rounded-lg border-2 border-black shadow-sm w-full relative overflow-hidden" style={{ 
-                                      padding: '2px',
-                                      paddingLeft: '2px',
-                                      paddingRight: '2px'
-                                    }}>
+                                  <div className="bg-white rounded-lg border-2 border-black shadow-sm p-2 w-full relative" style={{
+                                    paddingLeft: '2px',
+                                    paddingRight: '2px',
+                                    overflow: 'hidden'
+                                  }}>
+                                    <ScrollingText className="w-full">
                                       {/* X watermark for past dates - positioned within the container only */}
                                       {isPastDate(date) && (
                                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
@@ -930,8 +930,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                           </div>
                                         ))}
                                       </div>
-                                    </div>
-                                  </ScrollingText>
+                                    </ScrollingText>
+                                  </div>
                                 </div>
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center" style={{
