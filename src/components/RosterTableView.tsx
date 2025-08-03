@@ -914,28 +914,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                               alignItems: 'center',
                               position: 'relative'
                             }}>
-                              {/* BIG X WATERMARK for past dates - ON EMPTY SHIFT BOXES */}
-                              {isPastDate(date) && shiftEntries.length === 0 && (
-                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20" style={{
-                                    // Centered within content area only, avoiding header
-                                    top: window.innerWidth > window.innerHeight ? '24px' : '32px', // Adjust for landscape
-                                    left: '8px',
-                                    right: '8px', 
-                                    bottom: window.innerWidth > window.innerHeight ? '16px' : '24px' // Less padding in landscape
-                                }}>
-                                  <div className="font-bold select-none" style={{
-                                    fontSize: window.innerWidth > window.innerHeight ? 'clamp(1rem, 4vw, 2rem)' : 'clamp(2rem, 6vw, 3rem)', // Much smaller in landscape
-                                    lineHeight: '1',
-                                    color: '#fca5a5',
-                                    opacity: 0.25,
-                                    transform: 'scale(1.2)',
-                                    textShadow: '0 0 10px rgba(252, 165, 165, 0.5)',
-                                    zIndex: 50
-                                  }}>
-                                    ✕
-                                  </div>
-                                </div>
-                              )}
+                             
                               
                               {shiftEntries.length > 0 ? (
                                 <div className="space-y-1 w-full">
