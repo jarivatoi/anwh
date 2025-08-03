@@ -44,15 +44,15 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
       console.log('📏 ScrollingText dimensions:', {
         containerWidth,
         textWidth,
-        needsScrolling: textWidth > containerWidth,
+        needsScrolling: textWidth > containerWidth + 5, // Add 5px tolerance
         text: text || 'children content'
       });
       
-      if (textWidth > containerWidth) {
+      if (textWidth > containerWidth + 5) { // Only scroll if text is significantly wider
         setNeedsScrolling(true);
         
         // Calculate scroll distance (how much text extends beyond container)
-        const scrollDistance = textWidth - containerWidth + 2; // Add 2px end padding
+        const scrollDistance = textWidth - containerWidth; // Remove extra padding
         
         // Create GSAP timeline with your specified timing
         const timeline = gsap.timeline({ 
