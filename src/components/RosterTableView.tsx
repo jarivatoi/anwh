@@ -885,6 +885,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             // No overflow properties - let content flow naturally
                           }}>
                         
+                            <div className="relative w-full h-full">
                               {shiftEntries.length > 0 ? (
                                 <div className="space-y-1 w-full">
                                   {/* Single X watermark for past dates - positioned within names container */}
