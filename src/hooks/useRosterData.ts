@@ -103,6 +103,12 @@ export const useRosterData = () => {
             try {
               console.log('📡 Real-time update received:', payload);
               
+              // Validate payload structure
+              if (!payload || typeof payload !== 'object') {
+                console.warn('⚠️ Invalid payload received:', payload);
+                return;
+              }
+              
               // Dispatch custom event for components to handle
               window.dispatchEvent(new CustomEvent('rosterRealtimeUpdate', { 
                 detail: {
@@ -114,10 +120,14 @@ export const useRosterData = () => {
               }));
               
               // Refresh data
-              loadEntries();
+              if (isMountedRef.current) {
+                loadEntries();
+              }
             } catch (error) {
               console.error('❌ Error handling real-time update:', error);
-              // Don't throw the error to prevent subscription from failing
+              // Set error state but don't throw to prevent subscription from failing
+              setLastConnectionError(error instanceof Error ? error.message : 'Real-time update error');
+              // Continue with subscription despite the error
             }
           }
         )
