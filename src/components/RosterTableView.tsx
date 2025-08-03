@@ -910,20 +910,18 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                           </div>
                                         </div>
                                       )}
-                                    <ScrollingText className="w-full text-left" style={{ padding: 0, margin: 0, textAlign: 'left' }}>
-                                      <div className="space-y-1 w-full">
-                                        {sortStaffNames(shiftEntries).map((entry, index) => (
-                                          <div key={entry.id} className="relative" style={{ zIndex: 60 }}>
-                                            <RosterEntryCell
-                                              entry={entry}
-                                              onUpdate={handleEntryUpdate}
-                                              onShowDetails={handleShowDetails}
-                                              allEntriesForShift={shiftEntries}
-                                            />
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </ScrollingText>
+                                    <div className="space-y-1 w-full text-left" style={{ padding: 0, margin: 0, textAlign: 'left' }}>
+                                      {sortStaffNames(shiftEntries).map((entry, index) => (
+                                        <div key={entry.id} className="relative" style={{ zIndex: 60 }}>
+                                          <RosterEntryCell
+                                            entry={entry}
+                                            onUpdate={handleEntryUpdate}
+                                            onShowDetails={handleShowDetails}
+                                            allEntriesForShift={shiftEntries}
+                                          />
+                                        </div>
+                                      ))}
+                                    </div>
                                   </div>
                                  </div>
                               ) : (
