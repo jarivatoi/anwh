@@ -887,7 +887,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         
                             <div className="relative w-full h-full">
                               {shiftEntries.length > 0 ? (
-                                <div className="space-y-1 w-full">
+                                <div className="w-full h-full flex items-center justify-center p-2">
+                                  <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-2 w-full">
+                                    <div className="space-y-1 w-full">
                                   {sortStaffNames(shiftEntries).map((entry, index) => (
                                     <div key={entry.id} className="relative" style={{ zIndex: 30 }}>
                                       <RosterEntryCell
@@ -898,6 +900,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                       />
                                     </div>
                                   ))}
+                                    </div>
+                                  </div>
                                 </div>
                               ) : (
                                 <div style={{
