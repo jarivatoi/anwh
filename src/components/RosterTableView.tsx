@@ -924,11 +924,13 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                     bottom: window.innerWidth > window.innerHeight ? '16px' : '24px' // Less padding in landscape
                                 }}>
                                   <div className="font-bold select-none" style={{
-                                    fontSize: window.innerWidth > window.innerHeight ? 'clamp(2rem, 8vw, 4rem)' : 'clamp(4rem, 12vw, 8rem)', // Smaller in landscape
+                                    fontSize: window.innerWidth > window.innerHeight ? 'clamp(1rem, 4vw, 2rem)' : 'clamp(2rem, 6vw, 3rem)', // Much smaller in landscape
                                     lineHeight: '1',
                                     color: '#fca5a5',
-                                    opacity: 0.2,
-                                    transform: 'scale(1.8)'
+                                    opacity: 0.25,
+                                    transform: 'scale(1.2)',
+                                    textShadow: '0 0 10px rgba(252, 165, 165, 0.5)',
+                                    zIndex: 50
                                   }}>
                                     ✕
                                   </div>
