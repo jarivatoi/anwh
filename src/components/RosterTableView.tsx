@@ -921,12 +921,14 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                       <div className="space-y-1 w-full">
                                         {sortStaffNames(shiftEntries).map((entry, index) => (
                                           <div key={entry.id} className="relative" style={{ zIndex: 60 }}>
-                                            <RosterEntryCell
-                                              entry={entry}
-                                              onUpdate={handleEntryUpdate}
-                                              onShowDetails={handleShowDetails}
-                                              allEntriesForShift={shiftEntries}
-                                            />
+                                            <ScrollingText className="w-full">
+                                              <RosterEntryCell
+                                                entry={entry}
+                                                onUpdate={handleEntryUpdate}
+                                                onShowDetails={handleShowDetails}
+                                                allEntriesForShift={shiftEntries}
+                                              />
+                                            </ScrollingText>
                                           </div>
                                         ))}
                                       </div>
