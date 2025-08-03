@@ -884,20 +884,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             overflow: 'hidden',
                             // No overflow properties - let content flow naturally
                           }}>
-                            {/* Big X watermark for past dates - covers entire cell including padding */}
-                            {isPastDate(date) && shiftEntries.length > 0 && (
-                              <div className="absolute pointer-events-none inset-0" style={{ zIndex: 5 }}>
-                                <div className="absolute inset-0 flex items-center justify-center text-red-300 text-6xl sm:text-8xl font-bold opacity-60" style={{ 
-                                  opacity: 0.2,
-                                  transform: 'scale(1.8)',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center'
-                                }}>
-                                  ✕
-                                </div>
-                              </div>
-                            )}
+                            
                             <div className="flex flex-col relative" style={{ 
                               zIndex: 10,
                               gap: window.innerWidth > window.innerHeight ? '1px' : '2px', // Tighter spacing in landscape
