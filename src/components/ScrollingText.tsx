@@ -44,15 +44,15 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
       console.log('📏 ScrollingText dimensions:', {
         containerWidth,
         textWidth,
-        needsScrolling: textWidth > containerWidth + 5, // Add 5px tolerance
+        needsScrolling: textWidth > containerWidth,
         text: text || 'children content'
       });
       
-      if (textWidth > containerWidth + 5) { // Only scroll if text is significantly wider
+      if (textWidth > containerWidth) {
         setNeedsScrolling(true);
         
         // Calculate scroll distance (how much text extends beyond container)
-        const scrollDistance = textWidth - containerWidth; // Remove extra padding
+        const scrollDistance = textWidth - containerWidth + 2; // Add 2px end padding
         
         // Create GSAP timeline with your specified timing
         const timeline = gsap.timeline({ 
@@ -145,9 +145,7 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
       className={`overflow-hidden ${className}`}
       style={{
         position: 'relative',
-        width: '100%',
-        padding: 0,
-        margin: 0
+        width: '100%'
       }}
     >
       <div 
@@ -155,9 +153,7 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
         className="whitespace-nowrap"
         style={{
           display: 'inline-block',
-          minWidth: '100%',
-          padding: 0,
-          margin: 0
+          minWidth: '100%'
         }}
       >
         {children || text}
