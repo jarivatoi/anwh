@@ -891,6 +891,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                   <ScrollingText 
                                     text=""
                                     className="w-full"
+                                  >
                                   <div className="bg-white rounded-lg border-2 border-black shadow-sm p-2 w-full relative" style={{
                                     paddingLeft: '2px',
                                     paddingRight: '2px',
@@ -932,6 +933,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                       </div>
                                     </ScrollingText>
                                   </div>
+                                  </ScrollingText>
                                 </div>
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center" style={{
