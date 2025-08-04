@@ -803,4 +803,737 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     width: '12px',
                     height: '12px',
                     borderRadius: '50%',
-                    
+                    backgroundColor: realtimeStatus === 'connected' ? '#10b981' : 
+                                    realtimeStatus === 'connecting' ? '#f59e0b' :
+                                    realtimeStatus === 'error' ? '#ef4444' : '#6b7280',
+                    animation: realtimeStatus === 'connecting' ? 'pulse 1.5s ease-in-out infinite' : 'none',
+                    boxShadow: realtimeStatus === 'connected' ? '0 0 8px rgba(16, 185, 129, 0.8)' : 'none',
+                    border: 'none',
+                    outline: 'none',
+                    borderWidth: '0',
+                    borderStyle: 'none'
+                  }} />
+                </button>
+              </div>
+            </div>
+            
+            <table className="border-collapse table-fixed" style={{ width: '100vw', minWidth: '100vw' }}>
+              <thead>
+                <tr>
+                  <th 
+                    style={{ 
+                      position: 'sticky',
+                      top: window.innerWidth > window.innerHeight ? 40 : 56, // Adjust for shorter header
+                      zIndex: 80,
+                      fontWeight: '600',
+                      textAlign: 'center',
+                      fontSize: window.innerWidth > window.innerHeight ? '10px' : (window.innerWidth >= 640 ? '14px' : '12px'),
+                      color: 'white',
+                      border: '2px solid #374151',
+                      backgroundColor: '#6b7280',
+                      background: '#6b7280',
+                      margin: 0,
+                      width: '80px',
+                      minWidth: '80px',
+                      maxWidth: '80px',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                      opacity: 1,
+                      // Force proper rendering after orientation change
+                      transform: 'translateZ(0)',
+                      backfaceVisibility: 'hidden'
+                    }}
+                  >
+                    Date
+                  </th>
+                  {shiftTypes.map((shiftType) => (
+                    <th
+                      key={shiftType}
+                      style={{ 
+                        position: 'sticky',
+                        top: window.innerWidth > window.innerHeight ? 40 : 56,
+                        zIndex: 80,
+                        textAlign: 'center',
+                        fontSize: window.innerWidth > window.innerHeight ? '10px' : (window.innerWidth >= 640 ? '14px' : '12px'),
+                        color: 'white',
+                        border: '2px solid #374151',
+                        backgroundColor: '#6b7280',
+                        background: '#6b7280',
+                        margin: 0,
+                        padding: window.innerWidth > window.innerHeight ? '8px 4px' : '12px 8px',
+                        opacity: 1,
+                        width: 'calc((100vw - 80px) / 4)',
+                        minWidth: 'calc((100vw - 80px) / 4)',
+                        // Force proper rendering after orientation change
+                        transform: 'translate3d(0,0,0)',
+                        backfaceVisibility: 'hidden',
+                        WebkitBackfaceVisibility: 'hidden',
+                        WebkitTransform: 'translate3d(0,0,0)'
+                      }}
+                    >
+                      {getShiftDisplayName(shiftType)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+
+              {/* Table Body */}
+              <tbody className="divide-y divide-gray-200">
+                {sortedDates.map((date) => {
+                  const dateEntries = groupedByDate[date] || [];
+                  
+                  // Calculate the maximum number of staff in any shift for this date
+                  const maxStaffCount = Math.max(...shiftTypes.map(shiftType => 
+                    (dateEntries.filter(entry => entry.shift_type === shiftType) || []).length
+                  ));
+                  
+                  // Calculate dynamic height based on max staff count (minimum 60px, 40px per staff member)
+                  const dynamicHeight = Math.max(60, maxStaffCount * 40);
+
+                  return (
+                    <tr 
+                      key={date} 
+                      data-date={date}
+                      className={`${
+                        isToday(date) ? 'bg-green-200' : 
+                        isPastDate(date) ? 'bg-red-50' :
+                        isFutureDate(date) ? 'bg-green-50' : ''
+                      }`}
+                    >
+                      {/* Date Column */}
+                      <RosterDateCell
+                        date={date}
+                        isToday={isToday(date)}
+                        isPastDate={isPastDate(date)}
+                        isFutureDate={isFutureDate(date)}
+                        onLongPress={() => {
+                          setEditingDate(date);
+                          setShowAuthModal(true);
+                        }}
+                        formatTableDate={formatTableDate}
+                      />
+                      {shiftTypes.map((shiftType) => {
+                        const shiftEntries = sortStaffNames(getEntriesForDateAndShift(date, shiftType));
+                        const maxStaffForThisDate = getMaxStaffCountForDate(date);
+                        
+                        // Create aligned array with consistent row count for this date
+                        const alignedEntries = [];
+                        for (let rowIndex = 0; rowIndex < maxStaffForThisDate; rowIndex++) {
+                          alignedEntries.push(shiftEntries[rowIndex] || null);
+                        }
+                        return (
+                          <td key={shiftType} className={`text-center overflow-hidden align-top relative ${
+                            isPastDate(date) ? 'bg-red-50' : ''
+                          }`} style={{
+                            padding: '2px',
+                            border: '2px solid #374151',
+                            borderRadius: '4px',
+                            minHeight: `${dynamicHeight}px`,
+                            height: `${dynamicHeight}px`,
+                            position: 'relative',
+                            overflow: 'hidden',
+                            textAlign: 'center',
+                            width: 'calc((100vw - 80px) / 4)',
+                            minWidth: 'calc((100vw - 80px) / 4)',
+                            maxWidth: 'calc((100vw - 80px) / 4)'
+                          }}>
+                            
+                            <div className="w-full h-full relative" style={{
+                              overflow: 'hidden',
+                              padding: '4px',
+                              margin: 0,
+                              textAlign: 'center',
+                              width: '100%',
+                              height: '100%',
+                              minWidth: '0',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}>
+                              {shiftEntries.length > 0 ? (
+                                <div style={{
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  justifyContent: 'center',
+                                  alignItems: 'center',
+                                  gap: '2px',
+                                  minHeight: 'inherit',
+                                  width: '100%',
+                                  position: 'relative'
+                                }}>
+                                  {/* X watermark - centered over names area only */}
+                                  {isPastDate(date) && (
+                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                                      <div className="font-bold select-none" style={{
+                                        fontSize: window.innerWidth > window.innerHeight ? 'clamp(1.5rem, 6vw, 3rem)' : 'clamp(3rem, 10vw, 6rem)',
+                                        lineHeight: '1',
+                                        color: '#fca5a5',
+                                        opacity: 0.2,
+                                        transform: 'scale(1.5)'
+                                      }}>
+                                        X
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {sortStaffNames(shiftEntries).map((entry, index) => (
+                                    <div key={entry.id} className="relative" style={{ 
+                                      padding: 0, 
+                                      margin: 0, 
+                                      textAlign: 'center',
+                                      width: '100%',
+                                      fontSize: window.innerWidth > window.innerHeight ? '10px' : '12px',
+                                      lineHeight: '1.2',
+                                      fontWeight: '500',
+                                      backgroundColor: 'transparent',
+                                      border: 'none',
+                                      borderRadius: '2px',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                      minHeight: '16px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center'
+                                    }}>
+                                      <RosterEntryCell
+                                        entry={entry}
+                                        onUpdate={handleEntryUpdate}
+                                        onShowDetails={handleShowDetails}
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-center h-full">
+                                  {/* Empty cell - no content */}
+                                  {/* Empty cell - no content */}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+      </div>
+
+      {/* Authentication Modal */}
+      {showAuthModal && createPortal(
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 2147483647,
+            backgroundColor: 'rgba(0, 0, 0, 0.98)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+           display: 'flex',
+           alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
+           justifyContent: 'center',
+           padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
+           paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
+            overflow: 'hidden',
+            overflowY: 'hidden',
+            touchAction: 'none',
+            pointerEvents: 'auto'
+          }}
+          onWheel={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onScroll={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onTouchStart={(e) => {
+            e.stopPropagation();
+          }}
+          onTouchMove={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              handleCancelEdit();
+            }
+            e.stopPropagation();
+          }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full" style={{
+            maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
+            maxHeight: window.innerWidth > window.innerHeight ? '95vh' : 'none',
+            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0'
+          }}>
+            <div 
+              style={{
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={handleCancelEdit}
+                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+                style={{
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  zIndex: 10
+                }}
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
+                Authentication Required
+              </h3>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Authentication Code
+                </label>
+                <input
+                  type="text"
+                  value={authCode}
+                  onChange={(e) => setAuthCode(e.target.value.toUpperCase())}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center font-mono text-lg"
+                  placeholder="Enter admin code"
+                  maxLength={4}
+                  autoComplete="off"
+                  autoFocus
+                />
+              </div>
+              
+              {authError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-700 text-center">{authError}</p>
+                </div>
+              )}
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Shift Type
+                </label>
+                <select
+                  value={selectedShift}
+                  onChange={(e) => setSelectedShift(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  required
+                >
+                  <option value="">Select shift type</option>
+                  {shiftTypes.map(type => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleCancelEdit}
+                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAuthSubmit}
+                  disabled={authCode.length < 4 || !selectedShift || !isAdminCode(authCode)}
+                  className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200"
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        , document.body
+      )}
+
+      {/* Staff Selection Modal */}
+      {showExportModal && createPortal(
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 999999999, // Ultra-high z-index - higher than any sticky header
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            display: 'flex',
+            alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
+            justifyContent: 'center',
+            padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
+            paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
+            overflow: 'hidden', // Prevent any scrolling
+            overflowY: 'hidden',
+            touchAction: 'none' // Disable all touch actions
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.target === e.currentTarget && !isExporting) {
+              setShowExportModal(false);
+              setExportAuthCode('');
+              setExportAuthError('');
+              setExportResult(null);
+            }
+          }}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onTouchMove={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full" style={{
+            maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
+            maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
+            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            pointerEvents: 'auto'
+          }}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+          onWheel={(e) => e.stopPropagation()}
+          onScroll={(e) => e.stopPropagation()}
+          >
+            <div 
+              className="flex-shrink-0" 
+              style={{
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => {
+                  setShowExportModal(false);
+                  setExportAuthCode('');
+                  setExportAuthError('');
+                  setExportResult(null);
+                }}
+                disabled={isExporting}
+                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200 disabled:opacity-50"
+                style={{
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  zIndex: 10
+                }}
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <div className="flex items-center justify-center space-x-3 mb-4">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <Download className="w-6 h-6 text-green-600" />
+                </div>
+              </div>
+              
+              <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
+                Export to Calendar
+               </h3>
+               
+               {!exportResult ? (
+                 <>
+                  <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-start space-x-3">
+                      <Calendar className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-medium text-blue-800 mb-2">Export Your Shifts</h4>
+                        <ul className="text-sm text-blue-700 space-y-1">
+                          <li>• Exports only YOUR shifts for {formatMonthYear(selectedDate)}</li>
+                          <li>• Skips dates that already have shifts</li>
+                          <li>• Automatically marks special dates when needed</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Your Authentication Code
+                    </label>
+                    <input
+                      type="text"
+                      value={exportAuthCode}
+                      onChange={(e) => setExportAuthCode(e.target.value.toUpperCase())}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-center font-mono text-lg"
+                      placeholder="Enter your code"
+                      maxLength={4}
+                      autoComplete="off"
+                      autoFocus
+                      disabled={isExporting}
+                    />
+                  </div>
+                  
+                  {exportAuthError && (
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-sm text-red-700 text-center">{exportAuthError}</p>
+                    </div>
+                  )}
+                  
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={() => {
+                        setShowExportModal(false);
+                        setExportAuthCode('');
+                        setExportAuthError('');
+                        setExportResult(null);
+                      }}
+                      disabled={isExporting}
+                      className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleExportToCalendar}
+                      disabled={isExporting || exportAuthCode.length < 4}
+                      className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
+                    >
+                      {isExporting ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Exporting...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-4 h-4" />
+                          <span>Export to Calendar</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-center mb-6">
+                    <div className={`w-16 h-16 ${exportResult.success ? 'bg-green-100' : 'bg-red-100'} rounded-full flex items-center justify-center mx-auto mb-4`}>
+                      {exportResult.success ? (
+                        <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      ) : (
+                        <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      )}
+                    </div>
+                    <h4 className="text-lg font-medium text-gray-900 mb-2">
+                      {exportResult.success ? 'Export Successful!' : 'Export Failed'}
+                    </h4>
+                    <p className="text-gray-600">
+                      {exportResult.message}
+                    </p>
+                  </div>
+                  
+                  <button
+                    onClick={() => {
+                      setShowExportModal(false);
+                      setExportAuthCode('');
+                      setExportAuthError('');
+                      setExportResult(null);
+                      
+                      setActiveTab('calendar');
+                      
+                      // Dispatch event to navigate calendar to imported month
+                      window.dispatchEvent(new CustomEvent('navigateToMonth', {
+                        detail: { 
+                          month: selectedDate.getMonth(),
+                          year: selectedDate.getFullYear()
+                        }
+                      }));
+                      
+                      if (exportResult.success) {
+                        // Switch to calendar tab to show the exported data
+                        window.dispatchEvent(new CustomEvent('switchToCalendarTab'));
+                      }
+                    }}
+                    className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200"
+                  >
+                    {exportResult.success ? 'View in Calendar' : 'Close'}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+        , document.body
+      )}
+      
+      {/* Staff Selection Modal */}
+      {editingDate && selectedShift && authCode && !showAuthModal && createPortal(
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 999999999, // Ultra-high z-index
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            display: 'flex',
+            alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
+            justifyContent: 'center',
+            padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
+            paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
+            overflow: 'hidden', // Prevent any scrolling
+            overflowY: 'hidden',
+            touchAction: 'none', // Disable all touch actions
+            userSelect: 'none',
+            WebkitUserSelect: 'none'
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.target === e.currentTarget) {
+              handleCancelEdit();
+            }
+          }}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onTouchMove={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full flex flex-col" style={{
+            maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
+            maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
+            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
+            overflow: 'hidden',
+            pointerEvents: 'auto'
+          }}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+          onWheel={(e) => e.stopPropagation()}
+          onScroll={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+            {/* Header */}
+            <div className="border-b border-gray-200 flex-shrink-0 relative" style={{
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
+              userSelect: 'none',
+              WebkitUserSelect: 'none'
+            }}>
+              <button
+                onClick={handleCancelEdit}
+                disabled={isUpdating}
+                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+                style={{
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  zIndex: 10
+                }}
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <h3 className="text-xl font-bold text-gray-900 mb-2 text-center select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
+                Edit Staff Assignment
+              </h3>
+              <p className="text-sm text-gray-600 text-center select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
+                {editingDate && formatTableDate(editingDate).dayName} {editingDate && formatTableDate(editingDate).dateString} - {selectedShift}
+              </p>
+            </div>
+            
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto" style={{
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
+              WebkitOverflowScrolling: 'touch',
+              touchAction: 'pan-y', // Only allow vertical scrolling within modal
+              userSelect: 'none',
+              WebkitUserSelect: 'none'
+            }}>
+              <div className="space-y-3">
+                {sortByGroup(availableNames).map(name => (
+                  <label key={name} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedStaff.includes(name)}
+                      onChange={() => handleStaffToggle(name)}
+                      className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    />
+                    <span className="text-sm font-medium text-gray-900 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            
+            {/* Footer */}
+            <div className="border-t border-gray-200 flex-shrink-0" style={{
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
+              userSelect: 'none',
+              WebkitUserSelect: 'none'
+            }}>
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleCancelEdit}
+                  disabled={isUpdating}
+                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 select-none"
+                  style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveChanges}
+                  disabled={isUpdating}
+                  className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center justify-center space-x-2 select-none"
+                  style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
+                >
+                  {isUpdating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span className="select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>Saving...</span>
+                    </>
+                  ) : (
+                    <span className="select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>Save Changes</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        , document.body
+      )}
+      
+      {/* Edit Details Modal */}
+      <EditDetailsModal
+        isOpen={showDetailsModal}
+        entry={selectedEntry}
+        onClose={() => {
+          setShowDetailsModal(false);
+          setSelectedEntry(null);
+        }}
+      />
+      
+    </div>
+  );
+};
