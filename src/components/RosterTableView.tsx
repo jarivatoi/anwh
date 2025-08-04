@@ -782,7 +782,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     style={{
                       width: '20px',
                       height: '20px',
-                      animation: isReloading ? 'spin 1s linear infinite' : 'none'
+                      animation: isReloading ? 'spin 1s linear infinite' : 'none',
                       border: 'none',
                       outline: 'none'
                     }}
