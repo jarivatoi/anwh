@@ -493,6 +493,28 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     'Evening Shift (4-10)',
     'Night Duty'
   ];
+
+  // Escape key handler for modals
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showAuthModal && !isUpdating) {
+          handleCancelEdit();
+        } else if (showExportModal && !isExporting) {
+          setShowExportModal(false);
+          setExportAuthCode('');
+          setExportAuthError('');
+          setExportResult(null);
+        }
+      }
+    };
+
+    if (showAuthModal || showExportModal) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [showAuthModal, showExportModal, isUpdating, isExporting]);
+
   return (
     <div>
       {/* Date Picker */}
@@ -902,24 +924,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                       right: 0,
                                       bottom: 0
                                     }}>
-      if (e.key === 'Escape') {
-        if (showAuthModal && !isUpdating) {
-          handleCancelEdit();
-        } else if (showExportModal && !isExporting) {
-          setShowExportModal(false);
-          setExportAuthCode('');
-          setExportAuthError('');
-          setExportResult(null);
-        }
-      }
-    };
-
-    if (showAuthModal || showExportModal) {
-      document.addEventListener('keydown', handleEscape);
-      return () => document.removeEventListener('keydown', handleEscape);
-    }
-  }, [showAuthModal, showExportModal, isUpdating, isExporting]);
-
                                       <div className="font-bold select-none" style={{
                                         fontSize: window.innerWidth > window.innerHeight ? 'clamp(1.5rem, 6vw, 3rem)' : 'clamp(2rem, 8vw, 4rem)',
                                         lineHeight: '1',
@@ -928,7 +932,11 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                         transform: 'scale(1.5)',
                                         textShadow: '0 0 8px rgba(252, 165, 165, 0.6)'
                                       }}>
-                                <div className="w-full h-full relative" style={{
+                                        ✗
+                                      </div>
+                                    </div>
+                                  )}
+                                  <div className="w-full h-full relative" style={{
                                     overflow: 'hidden',
                                     padding: '4px',
                                     margin: 0,
