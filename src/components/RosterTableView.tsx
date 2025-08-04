@@ -936,7 +936,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                     </div>
                                   )}
                                   
-                                  {/* Staff entries */}
                                   <div className="w-full h-full relative" style={{
                                     overflow: 'hidden',
                                     padding: '4px',
@@ -954,6 +953,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                         textAlign: 'center',
                                         width: '100%',
                                         maxWidth: '100%',
+                                        overflow: 'hidden', // Contain each entry within white box
                                         overflow: 'visible',
                                         zIndex: 60 
                                       }}>
@@ -1005,41 +1005,25 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             left: 0,
             right: 0,
             bottom: 0,
-            zIndex: 999999999,
-            backgroundColor: 'rgba(0, 0, 0, 0.95)',
-            display: 'flex',
-            alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
-            justifyContent: 'center',
-            padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
-            paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
-            overflow: 'hidden',
-            touchAction: 'none',
-            WebkitOverflowScrolling: 'auto'
-          }}
-          onTouchStart={(e) => e.preventDefault()}
-          onTouchMove={(e) => e.preventDefault()}
-          onTouchEnd={(e) => e.preventDefault()}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              handleCancelEdit();
-            }
+            zIndex: 2147483647, // Maximum z-index value
+           backgroundColor: 'rgba(0, 0, 0, 0.95)',
+           display: 'flex',
+           alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
+           justifyContent: 'center',
+           padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
+           paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
+           overflow: 'auto',
+           overflowY: 'auto',
+           WebkitOverflowScrolling: 'touch',
+           touchAction: 'pan-y'
           }}
         >
           <div className="bg-white rounded-2xl shadow-2xl w-full" style={{
             maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
             maxHeight: window.innerWidth > window.innerHeight ? '95vh' : 'none',
-            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
-            overflow: 'hidden'
-          }}
-          onTouchStart={(e) => e.stopPropagation()}
-          onTouchMove={(e) => e.stopPropagation()}
-          onTouchEnd={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex flex-col h-full max-h-full" style={{
-            overflow: 'hidden'
+            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0'
           }}>
-            <div className="flex-shrink-0" style={{
+            <div style={{
               padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
             }}>
               <button
@@ -1354,22 +1338,10 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             userSelect: 'none',
             WebkitUserSelect: 'none'
           }}
-          onTouchStart={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onTouchMove={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onTouchEnd={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            if (e.target === e.currentTarget && !isUpdating) {
+            if (e.target === e.currentTarget) {
               handleCancelEdit();
             }
           }}
@@ -1384,11 +1356,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           onTouchEnd={(e) => {
             e.preventDefault();
             e.stopPropagation();
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget && !isUpdating) {
-              handleCancelEdit();
-            }
           }}
         >
           <div className="bg-white rounded-2xl shadow-2xl w-full flex flex-col" style={{
@@ -1400,20 +1367,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             overflow: 'hidden'
           }}
           onClick={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
-          onTouchMove={(e) => e.stopPropagation()}
-          onTouchEnd={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="relative">
-            <button
-              onClick={handleCancelEdit}
-              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200 z-10"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          <div className="flex flex-col h-full max-h-full" style={{ overflow: 'hidden' }}>
+          >
             {/* Header */}
             <div className="border-b border-gray-200 flex-shrink-0 relative" style={{
               padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
@@ -1424,6 +1378,12 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 onClick={handleCancelEdit}
                 disabled={isUpdating}
                 className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+                style={{
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  zIndex: 10
+                }}
               >
                 <X className="w-5 h-5" />
               </button>
