@@ -916,7 +916,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             border: '2px solid #374151',
                             backgroundColor: 'inherit', // Inherit row background color
                             borderRadius: '4px',
-                            backgroundColor: 'inherit',
+                            margin: '2px',
                             minHeight: `${dynamicHeight}px`,
                             height: `${dynamicHeight}px`,
                             position: 'relative',
@@ -928,22 +928,33 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                           }}>
                             {/* X watermark for past dates - spans ENTIRE CELL */}
                             {isPastDate(date) && (
-                              <div className="absolute flex items-center justify-center pointer-events-none z-20" style={{
-                                // Position below the shift header, centered in content area
-                                top: window.innerWidth > window.innerHeight ? '24px' : '32px', // Account for header height
-                                left: '8px',
-                                right: '8px', 
-                                bottom: window.innerWidth > window.innerHeight ? '8px' : '16px'
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
+                                position: 'absolute',
+                                top: '0px',
+                                left: '0px',
+                                right: '0px',
+                                bottom: '0px',
+                                zIndex: 20,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                pointerEvents: 'none',
+                                userSelect: 'none',
+                                WebkitUserSelect: 'none'
                               }}>
-                                <div className="font-bold select-none" style={{
-                                  fontSize: window.innerWidth > window.innerHeight ? 'clamp(1.5rem, 6vw, 3rem)' : 'clamp(3rem, 10vw, 6rem)',
+                                <div style={{
+                                  fontSize: window.innerWidth > window.innerHeight ? 'clamp(2rem, 8vw, 4rem)' : 'clamp(4rem, 12vw, 8rem)',
                                   lineHeight: '1',
                                   color: '#fca5a5',
                                   opacity: 0.2,
+                                  fontWeight: 'bold',
                                   transform: 'scale(1.8)',
-                                  textAlign: 'center'
+                                  textShadow: '0 0 20px rgba(252, 165, 165, 0.3)',
+                                  userSelect: 'none',
+                                  WebkitUserSelect: 'none',
+                                  pointerEvents: 'none'
                                 }}>
-                                  X
+                                  ✕
                                 </div>
                               </div>
                             )}
@@ -956,25 +967,19 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                               width: '100%',
                               height: '100%',
                               minWidth: '0',
-                              backgroundColor: 'inherit'
+                              backgroundColor: 'white'
                             }}>
                               {shiftEntries.length > 0 ? (
                                 <div>
-                                  {shiftEntries.map((entry) => (
+                                  {sortStaffNames(shiftEntries).map((entry, index) => (
                                     <div key={entry.id} className="relative" style={{ 
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
+                                      padding: 0, 
+                                      margin: 0, 
                                       textAlign: 'center',
-                                      fontSize: window.innerWidth > window.innerHeight ? 'clamp(1.5rem, 6vw, 3rem)' : 'clamp(2rem, 8vw, 4rem)',
-                                      lineHeight: '1',
-                                      color: '#fca5a5',
-                                      opacity: 0.2,
+                                      width: '100%',
                                       maxWidth: '100%',
                                       overflow: 'hidden', // Contain each entry within white box
-                                      pointerEvents: 'none',
-                                      transform: 'scale(1.8)',
-                                      textAlign: 'center'
+                                      zIndex: 60 
                                     }}>
                                       <RosterEntryCell
                                         entry={entry}
