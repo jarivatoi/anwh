@@ -763,7 +763,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     alignItems: 'center',
                     gap: '4px',
                     borderRight: '3px solid #374151',
-                    WebkitTapHighlightColor: 'transparent'
+                    WebkitTapHighlightColor: 'transparent',
+                    outline: 'none',
+                    boxShadow: 'none'
                   }}
                   title={
                     realtimeStatus === 'connected' ? 'Manual refresh (Real-time active)' :
@@ -966,13 +968,12 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
 
                                   {sortStaffNames(shiftEntries).map((entry, index) => (
                                     <div key={entry.id} className="relative" style={{ 
-                                      padding: '4px 8px', 
-                                      margin: '2px 0', 
+                                      padding: 0, 
+                                      margin: 0, 
                                       textAlign: 'center',
                                       width: '100%',
                                       fontSize: window.innerWidth > window.innerHeight ? '10px' : '12px',
                                       lineHeight: '1.2',
-                                      color: '#374151',
                                       fontWeight: '500',
                                       backgroundColor: 'transparent',
                                       border: 'none',
@@ -980,19 +981,16 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                       overflow: 'hidden',
                                       textOverflow: 'ellipsis',
                                       whiteSpace: 'nowrap',
-                                      minHeight: '32px',
+                                      minHeight: '16px',
                                       display: 'flex',
                                       alignItems: 'center',
-                                      justifyContent: 'center',
-                                      cursor: 'pointer',
-                                      touchAction: 'manipulation',
-                                      WebkitTapHighlightColor: 'transparent',
-                                      transition: 'background-color 0.2s ease',
-                                      ':hover': {
-                                        backgroundColor: 'rgba(0, 0, 0, 0.05)'
-                                      }
+                                      justifyContent: 'center'
                                     }}>
-                                      <ScrollingText text={entry.assigned_name} />
+                                      <RosterEntryCell
+                                        entry={entry}
+                                        onUpdate={handleEntryUpdate}
+                                        onShowDetails={handleShowDetails}
+                                      />
                                     </div>
                                   ))}
                                 </div>
