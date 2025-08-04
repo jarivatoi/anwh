@@ -921,22 +921,22 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                       right: 0,
                                       bottom: 0
                                     }}>
-                                      <div className="font-bold select-none" style={{
-                                        fontSize: window.innerWidth > window.innerHeight ? 'clamp(1.5rem, 6vw, 3rem)' : 'clamp(2rem, 8vw, 4rem)',
-                                        lineHeight: '1',
-                                        color: 'rgba(239, 68, 68, 0.3)',
-                                        textShadow: '0 0 10px rgba(239, 68, 68, 0.5)',
-                                        transform: 'rotate(-45deg)',
+                                      <div style={{
+                                        fontSize: 'clamp(2rem, 8vw, 6rem)',
+                                        fontWeight: 'bold',
+                                        color: '#ef4444',
+                                        opacity: 0.15,
                                         userSelect: 'none',
                                         WebkitUserSelect: 'none',
-                                        pointerEvents: 'none'
+                                        pointerEvents: 'none',
+                                        transform: 'rotate(-15deg)',
+                                        zIndex: 50
                                       }}>
                                         ✗
                                       </div>
                                     </div>
                                   )}
                                   
-                                  {/* Staff entries */}
                                   <div className="w-full h-full relative" style={{
                                     overflow: 'hidden',
                                     padding: '4px',
@@ -1154,8 +1154,16 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
             overflow: 'hidden',
             display: 'flex',
-            flexDirection: 'column'
-          }}>
+            flexDirection: 'column',
+            pointerEvents: 'auto'
+          }}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+          onWheel={(e) => e.stopPropagation()}
+          onScroll={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
             <div className="flex-shrink-0" style={{
               padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
             }}>
