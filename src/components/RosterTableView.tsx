@@ -874,7 +874,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             margin: '2px',
                             minHeight: `${dynamicHeight}px`,
                             height: `${dynamicHeight}px`,
-                            position: 'relative',
+                            position: 'relative'
+                          }}>
+                            {shiftEntries.length > 0 ? (
                                 <div className="w-full h-full relative" style={{
                                     overflow: 'hidden',
                                     padding: '4px',
@@ -935,7 +937,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                       ))}
                                     </div>
                                   </div>
-                                 </div>
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center" style={{
                                   fontSize: 'clamp(1.5rem, 4vw, 3rem)',
@@ -950,7 +951,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                   No Staff
                                 </div>
                               )}
-                            </div>
                           </td>
                         );
                       })}
