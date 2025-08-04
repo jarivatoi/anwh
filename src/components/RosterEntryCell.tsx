@@ -895,6 +895,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                 <div>
                                   {/* X watermark for past dates - positioned within the container only */}
                                   {isPastDate(date) && (
+                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
                                       padding: '1px', 
                                       zIndex: 50,
                                       top: 0,
@@ -906,7 +907,17 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                         fontSize: window.innerWidth > window.innerHeight ? 'clamp(1.5rem, 6vw, 3rem)' : 'clamp(2rem, 8vw, 4rem)',
                                         lineHeight: '1',
                                         color: '#fca5a5',
-                                <div className="w-full h-full relative" style={{
+                                        opacity: 0.3,
+                                        userSelect: 'none',
+                                        WebkitUserSelect: 'none',
+                                        pointerEvents: 'none'
+                                      }}>
+                                        ✗
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  <div className="w-full h-full relative" style={{
                                     overflow: 'hidden',
                                     padding: '4px',
                                     margin: 0,
