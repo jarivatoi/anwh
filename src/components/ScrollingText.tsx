@@ -21,10 +21,10 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
   const [isPaused, setIsPaused] = useState(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Global scroll detection to pause/resume all scrolling text
+  // Global scroll detection to pause all scrolling text
   useEffect(() => {
     const handleScroll = () => {
-      // Pause animation immediately without resetting position
+      // Pause animation immediately
       if (animationRef.current && !isPaused) {
         animationRef.current.pause();
         setIsPaused(true);
@@ -41,7 +41,7 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
           animationRef.current.resume();
           setIsPaused(false);
         }
-      }, 500); // Increased delay to ensure scroll has completely stopped
+      }, 300);
     };
 
     // Listen to scroll events on window and all scrollable containers
@@ -50,16 +50,11 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
     
     // Also listen for touch events that might cause scrolling
     document.addEventListener('touchmove', handleScroll, { passive: true });
-    document.addEventListener('touchend', () => {
-      // Add extra delay after touch end to ensure scrolling has stopped
-      setTimeout(handleScroll, 100);
-    }, { passive: true });
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
       document.removeEventListener('scroll', handleScroll);
       document.removeEventListener('touchmove', handleScroll);
-      document.removeEventListener('touchend', handleScroll);
       
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
@@ -138,7 +133,7 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
         
         animationRef.current = timeline;
         
-        // If currently paused due to scrolling, start the animation paused
+        // If currently paused due to scrolling, start paused
         if (isPaused) {
           timeline.pause();
         }
@@ -190,10 +185,6 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
       if (animationRef.current) {
         animationRef.current.kill();
         animationRef.current = null;
-      }
-      
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
       }
       
       if (scrollTimeoutRef.current) {
