@@ -922,19 +922,21 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                       bottom: 0
                                     }}>
                                       <div className="font-bold select-none" style={{
-                                        fontSize: 'clamp(1.5rem, 4vw, 3rem)',
-                                        color: '#ef4444',
-                                        opacity: 0.3,
+                                        fontSize: window.innerWidth > window.innerHeight ? 'clamp(1.5rem, 6vw, 3rem)' : 'clamp(2rem, 8vw, 4rem)',
+                                        lineHeight: '1',
+                                        color: 'rgba(239, 68, 68, 0.3)',
+                                        textShadow: '0 0 10px rgba(239, 68, 68, 0.5)',
+                                        transform: 'rotate(-45deg)',
                                         userSelect: 'none',
                                         WebkitUserSelect: 'none',
-                                        pointerEvents: 'none',
-                                        zIndex: 60
+                                        pointerEvents: 'none'
                                       }}>
                                         ✗
                                       </div>
                                     </div>
                                   )}
                                   
+                                  {/* Staff entries */}
                                   <div className="w-full h-full relative" style={{
                                     overflow: 'hidden',
                                     padding: '4px',
