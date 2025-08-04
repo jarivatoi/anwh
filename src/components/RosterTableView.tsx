@@ -883,11 +883,11 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     <tr 
                       key={date} 
                       data-date={date}
-                      style={{
-                        backgroundColor: isToday(date) ? '#bbf7d0' : 
-                                       isPastDate(date) ? '#fef2f2' :
-                                       isFutureDate(date) ? '#f0fdf4' : '#ffffff'
-                      }}
+                      className={`${
+                        isToday(date) ? 'bg-green-200' : 
+                        isPastDate(date) ? 'bg-red-50' :
+                        isFutureDate(date) ? 'bg-green-50' : ''
+                      }`}
                     >
                       {/* Date Column */}
                       <RosterDateCell
@@ -911,10 +911,12 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                           alignedEntries.push(shiftEntries[rowIndex] || null);
                         }
                         return (
-                          <td key={shiftType} className="text-center overflow-hidden align-top relative" style={{
+                          <td key={shiftType} className={`text-center overflow-hidden align-top relative ${
+                            isPastDate(date) ? 'bg-red-50' : ''
+                          }`} style={{
                             padding: '2px',
                             border: '2px solid #374151',
-                            backgroundColor: 'inherit', // Inherit row background color
+                            backgroundColor: '#f9fafb',
                             borderRadius: '4px',
                             margin: '2px',
                             minHeight: `${dynamicHeight}px`,
