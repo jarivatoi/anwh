@@ -916,7 +916,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                           }`} style={{
                             padding: '2px',
                             border: '2px solid #374151',
-                            backgroundColor: '#f9fafb',
                             borderRadius: '4px',
                             minHeight: `${dynamicHeight}px`,
                             height: `${dynamicHeight}px`,
