@@ -937,18 +937,23 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                               width: '100%',
                               height: '100%',
                               minWidth: '0',
-                              backgroundColor: 'white'
+                              backgroundColor: 'white',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
                             }}>
                               {shiftEntries.length > 0 ? (
                                 <div style={{
                                   display: 'flex',
                                   flexDirection: 'column',
                                   justifyContent: 'center',
+                                  alignItems: 'center',
                                   gap: '2px',
                                   minHeight: 'inherit',
+                                  width: '100%',
                                   position: 'relative'
                                 }}>
-                                  {/* X watermark - positioned relative to names container only */}
+                                  {/* X watermark - positioned relative to names container */}
                                   {isPastDate(date) && (
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
                                       <div className="font-bold select-none" style={{
