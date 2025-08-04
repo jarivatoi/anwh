@@ -896,7 +896,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                   {/* X watermark for past dates - positioned within the container only */}
                                   {isPastDate(date) && (
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
-                                      padding: '1px', 
                                       zIndex: 50,
                                       top: 0,
                                       left: 0,
@@ -911,19 +910,17 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                         transform: 'scale(1.5)',
                                         textShadow: '0 0 8px rgba(252, 165, 165, 0.6)'
                                       }}>
-                                        ✗
+                                        ✕
                                       </div>
                                     </div>
                                   )}
-                                <div className="w-full h-full relative" style={{
-                                    overflow: 'hidden',
-                                    padding: '4px',
-                                    margin: 0,
+                                  <div className="space-y-1 w-full text-center" style={{ 
+                                    padding: 0, 
+                                    margin: 0, 
                                     textAlign: 'center',
                                     width: '100%',
-                                    height: '100%',
-                                    minWidth: '0',
-                                    backgroundColor: 'white'
+                                    maxWidth: '100%',
+                                    overflow: 'hidden' // Ensure text stays within white box
                                   }}>
                                     {sortStaffNames(shiftEntries).map((entry, index) => (
                                       <div key={entry.id} className="relative" style={{ 
