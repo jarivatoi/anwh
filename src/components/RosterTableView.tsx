@@ -765,7 +765,10 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     borderRight: '3px solid #374151',
                     WebkitTapHighlightColor: 'transparent',
                     outline: 'none',
-                    boxShadow: 'none'
+                    boxShadow: 'none',
+                    borderRadius: '0',
+                    borderWidth: '0',
+                    borderStyle: 'none'
                   }}
                   title={
                     realtimeStatus === 'connected' ? 'Manual refresh (Real-time active)' :
@@ -780,6 +783,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       width: '20px',
                       height: '20px',
                       animation: isReloading ? 'spin 1s linear infinite' : 'none'
+                      border: 'none',
+                      outline: 'none'
                     }}
                     fill="none" 
                     stroke="currentColor" 
@@ -804,7 +809,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     animation: realtimeStatus === 'connecting' ? 'pulse 1.5s ease-in-out infinite' : 'none',
                     boxShadow: realtimeStatus === 'connected' ? '0 0 8px rgba(16, 185, 129, 0.8)' : 'none',
                     border: 'none',
-                    outline: 'none'
+                    outline: 'none',
+                    borderWidth: '0',
+                    borderStyle: 'none'
                   }} />
                 </button>
               </div>
