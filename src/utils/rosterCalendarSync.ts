@@ -910,6 +910,10 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                         transform: 'scale(1.5)',
                                         textShadow: '0 0 8px rgba(252, 165, 165, 0.6)'
                                       }}>
+                                        ✗
+                                      </div>
+                                    </div>
+                                  )}
                                 <div className="w-full h-full relative" style={{
                                     overflow: 'hidden',
                                     padding: '4px',
@@ -971,3 +975,49 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
 
       {/* Authentication Modal */}
       {showAuthModal && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">Authentication Required</h3>
+            <input
+              type="password"
+              value={authCode}
+              onChange={(e) => setAuthCode(e.target.value)}
+              placeholder="Enter authentication code"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            />
+            {authError && (
+              <p className="text-red-600 text-sm mt-2">{authError}</p>
+            )}
+            <div className="flex justify-end space-x-3 mt-4">
+              <button
+                onClick={handleCancelEdit}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAuthSubmit}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+              >
+                Authenticate
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Details Modal */}
+      {showDetailsModal && selectedEntry && (
+        <EditDetailsModal
+          entry={selectedEntry}
+          onClose={() => {
+            setShowDetailsModal(false);
+            setSelectedEntry(null);
+          }}
+          onUpdate={handleEntryUpdate}
+        />
+      )}
+    </div>
+  );
+};
