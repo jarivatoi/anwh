@@ -1024,21 +1024,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                       />
                                     </div>
                                   ))}
-                                </div>
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center" style={{
-                                  fontSize: 'clamp(1.5rem, 4vw, 3rem)',
-                                  fontWeight: 'bold',
-                                  color: '#d1d5db',
-                                  opacity: 0.3,
-                                  userSelect: 'none',
-                                  WebkitUserSelect: 'none',
-                                  pointerEvents: 'none',
-                                  zIndex: 10
-                                }}>
-                                  No Staff
-                                </div>
-                              )}
                             </div>
                           </td>
                         );
