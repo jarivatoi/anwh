@@ -150,7 +150,26 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     };
   }, []);
 
+  // Escape key handler for modals
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showAuthModal && !isUpdating) {
+          handleCancelEdit();
+        } else if (showExportModal && !isExporting) {
+          setShowExportModal(false);
+          setExportAuthCode('');
+          setExportAuthError('');
+          setExportResult(null);
+        }
+      }
+    };
 
+    if (showAuthModal || showExportModal) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [showAuthModal, showExportModal, isUpdating, isExporting]);
 
   // Auto-scroll to today's date ONLY on initial component mount
   useEffect(() => {
@@ -902,31 +921,22 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                       right: 0,
                                       bottom: 0
                                     }}>
-      if (e.key === 'Escape') {
-        if (showAuthModal && !isUpdating) {
-          handleCancelEdit();
-        } else if (showExportModal && !isExporting) {
-          setShowExportModal(false);
-          setExportAuthCode('');
-          setExportAuthError('');
-          setExportResult(null);
-        }
-      }
-    };
-
-    if (showAuthModal || showExportModal) {
-      document.addEventListener('keydown', handleEscape);
-      return () => document.removeEventListener('keydown', handleEscape);
-    }
-  }, [showAuthModal, showExportModal, isUpdating, isExporting]);
-
                                       <div className="font-bold select-none" style={{
                                         fontSize: window.innerWidth > window.innerHeight ? 'clamp(1.5rem, 6vw, 3rem)' : 'clamp(2rem, 8vw, 4rem)',
                                         lineHeight: '1',
                                         color: '#fca5a5',
                                         opacity: 0.4,
                                         transform: 'scale(1.5)',
-                                <div className="w-full h-full relative" style={{
+                                        userSelect: 'none',
+                                        WebkitUserSelect: 'none',
+                                        pointerEvents: 'none'
+                                      }}>
+                                        ✗
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  <div className="w-full h-full relative" style={{
                                     overflow: 'hidden',
                                     padding: '4px',
                                     margin: 0,
@@ -1347,11 +1357,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             e.preventDefault();
             e.stopPropagation();
           }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget && !isUpdating) {
-              handleCancelEdit();
-            }
-          }}
         >
           <div className="bg-white rounded-2xl shadow-2xl w-full flex flex-col" style={{
             maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
@@ -1371,6 +1376,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             }}>
               <button
                 onClick={handleCancelEdit}
+                disabled={isUpdating}
                 className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200"
                 style={{
                   position: 'absolute',
@@ -1378,14 +1384,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   right: '16px',
                   zIndex: 10
                 }}
-              >
-                <X className="w-5 h-5" />
-              </button>
-              
-              <button
-                onClick={handleCancelEdit}
-                disabled={isUpdating}
-                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200"
               >
                 <X className="w-5 h-5" />
               </button>
