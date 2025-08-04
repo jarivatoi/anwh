@@ -61,6 +61,33 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const tableRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef(false);
 
+  // Prevent body scroll when modals are open
+  useEffect(() => {
+    if (showAuthModal || showExportModal || (editingDate && selectedShift && authCode && !showAuthModal)) {
+      // Disable body scroll completely
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = '0';
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.bottom = '0';
+      document.body.style.width = '100%';
+      document.body.style.height = '100%';
+    }
+
+    return () => {
+      // Re-enable body scroll
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.bottom = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+    };
+  }, [showAuthModal, showExportModal, editingDate, selectedShift, authCode]);
+
   // Track mounted status
   useEffect(() => {
     isMountedRef.current = true;
@@ -998,7 +1025,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       {/* Authentication Modal */}
       {showAuthModal && createPortal(
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50"
+          className="fixed inset-0"
           style={{
             position: 'fixed',
             top: 0,
@@ -1012,17 +1039,38 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
            justifyContent: 'center',
            padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
            paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
-           overflow: 'auto',
-           overflowY: 'auto',
-           WebkitOverflowScrolling: 'touch',
-           touchAction: 'pan-y'
+           overflow: 'hidden',
+           touchAction: 'none',
+           WebkitOverflowScrolling: 'auto',
+           pointerEvents: 'auto'
+          }}
+          onTouchStart={(e) => e.preventDefault()}
+          onTouchMove={(e) => e.preventDefault()}
+          onTouchEnd={(e) => e.preventDefault()}
+          onWheel={(e) => e.preventDefault()}
+          onScroll={(e) => e.preventDefault()}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              handleCancelEdit();
+            }
           }}
         >
-          <div className="bg-white rounded-2xl shadow-2xl w-full" style={{
+          <div 
+            className="bg-white rounded-2xl shadow-2xl w-full" 
+            style={{
             maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
             maxHeight: window.innerWidth > window.innerHeight ? '95vh' : 'none',
-            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0'
-          }}>
+            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
+            overflow: 'hidden',
+            pointerEvents: 'auto'
+          }}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+          onWheel={(e) => e.stopPropagation()}
+          onScroll={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
             <div style={{
               padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
             }}>
@@ -1098,7 +1146,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 </button>
               </div>
             </div>
-          </div>
         </div>
         , document.body
       )}
@@ -1106,27 +1153,31 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       {/* Staff Selection Modal */}
       {showExportModal && createPortal(
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50"
+          className="fixed inset-0"
           style={{
             position: 'fixed',
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            zIndex: 999999999, // Ultra-high z-index
+            zIndex: 2147483647,
             backgroundColor: 'rgba(0, 0, 0, 0.95)',
             display: 'flex',
             alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
             justifyContent: 'center',
             padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
             paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
-            overflow: 'hidden', // Prevent any scrolling
-            overflowY: 'hidden',
-            touchAction: 'none' // Disable all touch actions
+            overflow: 'hidden',
+            touchAction: 'none',
+            WebkitOverflowScrolling: 'auto',
+            pointerEvents: 'auto'
           }}
+          onTouchStart={(e) => e.preventDefault()}
+          onTouchMove={(e) => e.preventDefault()}
+          onTouchEnd={(e) => e.preventDefault()}
+          onWheel={(e) => e.preventDefault()}
+          onScroll={(e) => e.preventDefault()}
           onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
             if (e.target === e.currentTarget && !isExporting) {
               setShowExportModal(false);
               setExportAuthCode('');
@@ -1134,27 +1185,23 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               setExportResult(null);
             }
           }}
-          onTouchStart={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onTouchMove={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onTouchEnd={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
         >
-          <div className="bg-white rounded-2xl shadow-2xl w-full" style={{
+          <div 
+            className="bg-white rounded-2xl shadow-2xl w-full" 
+            style={{
             maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
-            maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
+            maxHeight: window.innerWidth > window.innerHeight ? '95vh' : 'none',
             margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
             overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
+            pointerEvents: 'auto'
+          }}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+          onWheel={(e) => e.stopPropagation()}
+          onScroll={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
             <div className="flex-shrink-0" style={{
               padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
             }}>
@@ -1310,7 +1357,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 </>
               )}
             </div>
-          </div>
         </div>
         , document.body
       )}
@@ -1318,56 +1364,56 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       {/* Staff Selection Modal */}
       {editingDate && selectedShift && authCode && !showAuthModal && createPortal(
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50"
+          className="fixed inset-0"
           style={{
             position: 'fixed',
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            zIndex: 999999999, // Ultra-high z-index
+            zIndex: 2147483647,
             backgroundColor: 'rgba(0, 0, 0, 0.95)',
             display: 'flex',
             alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
             justifyContent: 'center',
             padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
             paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
-            overflow: 'hidden', // Prevent any scrolling
-            overflowY: 'hidden',
-            touchAction: 'none', // Disable all touch actions
+            overflow: 'hidden',
+            touchAction: 'none',
+            WebkitOverflowScrolling: 'auto',
             userSelect: 'none',
-            WebkitUserSelect: 'none'
+            WebkitUserSelect: 'none',
+            pointerEvents: 'auto'
           }}
+          onTouchStart={(e) => e.preventDefault()}
+          onTouchMove={(e) => e.preventDefault()}
+          onTouchEnd={(e) => e.preventDefault()}
+          onWheel={(e) => e.preventDefault()}
+          onScroll={(e) => e.preventDefault()}
           onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
             if (e.target === e.currentTarget) {
               handleCancelEdit();
             }
           }}
-          onTouchStart={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onTouchMove={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onTouchEnd={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
         >
-          <div className="bg-white rounded-2xl shadow-2xl w-full flex flex-col" style={{
+          <div 
+            className="bg-white rounded-2xl shadow-2xl w-full flex flex-col" 
+            style={{
             maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
             maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
             margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
             userSelect: 'none',
             WebkitUserSelect: 'none',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            pointerEvents: 'auto'
           }}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+          onWheel={(e) => e.stopPropagation()}
+          onScroll={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
-          >
+        >
             {/* Header */}
             <div className="border-b border-gray-200 flex-shrink-0 relative" style={{
               padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
@@ -1451,7 +1497,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 </button>
               </div>
             </div>
-          </div>
         </div>
         , document.body
       )}
