@@ -160,6 +160,7 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
           maxWidth: 'none',
           overflow: 'visible'
         }
+        }
       >
         {children || text}
       </div>
