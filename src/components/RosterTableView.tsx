@@ -493,28 +493,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     'Evening Shift (4-10)',
     'Night Duty'
   ];
-
-  // Escape key handler for modals
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (showAuthModal && !isUpdating) {
-          handleCancelEdit();
-        } else if (showExportModal && !isExporting) {
-          setShowExportModal(false);
-          setExportAuthCode('');
-          setExportAuthError('');
-          setExportResult(null);
-        }
-      }
-    };
-
-    if (showAuthModal || showExportModal) {
-      document.addEventListener('keydown', handleEscape);
-      return () => document.removeEventListener('keydown', handleEscape);
-    }
-  }, [showAuthModal, showExportModal, isUpdating, isExporting]);
-
   return (
     <div>
       {/* Date Picker */}
@@ -924,19 +902,31 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                       right: 0,
                                       bottom: 0
                                     }}>
+      if (e.key === 'Escape') {
+        if (showAuthModal && !isUpdating) {
+          handleCancelEdit();
+        } else if (showExportModal && !isExporting) {
+          setShowExportModal(false);
+          setExportAuthCode('');
+          setExportAuthError('');
+          setExportResult(null);
+        }
+      }
+    };
+
+    if (showAuthModal || showExportModal) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [showAuthModal, showExportModal, isUpdating, isExporting]);
+
                                       <div className="font-bold select-none" style={{
                                         fontSize: window.innerWidth > window.innerHeight ? 'clamp(1.5rem, 6vw, 3rem)' : 'clamp(2rem, 8vw, 4rem)',
                                         lineHeight: '1',
                                         color: '#fca5a5',
                                         opacity: 0.4,
                                         transform: 'scale(1.5)',
-                                        textShadow: '0 0 8px rgba(252, 165, 165, 0.6)'
-                                      }}>
-                                        ✗
-                                      </div>
-                                    </div>
-                                  )}
-                                  <div className="w-full h-full relative" style={{
+                                <div className="w-full h-full relative" style={{
                                     overflow: 'hidden',
                                     padding: '4px',
                                     margin: 0,
@@ -1026,6 +1016,19 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             <div style={{
               padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
             }}>
+              <button
+                onClick={handleCancelEdit}
+                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+                style={{
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  zIndex: 10
+                }}
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
               <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
                 Authentication Required
               </h3>
@@ -1100,19 +1103,20 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             left: 0,
             right: 0,
             bottom: 0,
-            zIndex: 2147483647,
+            zIndex: 999999999, // Ultra-high z-index
             backgroundColor: 'rgba(0, 0, 0, 0.95)',
             display: 'flex',
             alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
             justifyContent: 'center',
             padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
             paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
-            overflow: 'auto',
-            overflowY: 'auto',
-            WebkitOverflowScrolling: 'touch',
-            touchAction: 'pan-y'
+            overflow: 'hidden', // Prevent any scrolling
+            overflowY: 'hidden',
+            touchAction: 'none' // Disable all touch actions
           }}
           onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
             if (e.target === e.currentTarget && !isExporting) {
               setShowExportModal(false);
               setExportAuthCode('');
@@ -1120,15 +1124,49 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               setExportResult(null);
             }
           }}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onTouchMove={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
         >
           <div className="bg-white rounded-2xl shadow-2xl w-full" style={{
             maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
-            maxHeight: window.innerWidth > window.innerHeight ? '95vh' : 'none',
-            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0'
+            maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
+            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column'
           }}>
-            <div style={{
+            <div className="flex-shrink-0" style={{
               padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
             }}>
+              <button
+                onClick={() => {
+                  setShowExportModal(false);
+                  setExportAuthCode('');
+                  setExportAuthError('');
+                  setExportResult(null);
+                }}
+                disabled={isExporting}
+                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200 disabled:opacity-50"
+                style={{
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  zIndex: 10
+                }}
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
               <div className="flex items-center justify-center space-x-3 mb-4">
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                   <Download className="w-6 h-6 text-green-600" />
@@ -1277,19 +1315,37 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             left: 0,
             right: 0,
             bottom: 0,
-            zIndex: 2147483647, // Maximum z-index value
+            zIndex: 999999999, // Ultra-high z-index
             backgroundColor: 'rgba(0, 0, 0, 0.95)',
             display: 'flex',
             alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
             justifyContent: 'center',
             padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
             paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
-            overflow: 'auto',
-            overflowY: 'auto',
-            WebkitOverflowScrolling: 'touch',
-            touchAction: 'pan-y',
+            overflow: 'hidden', // Prevent any scrolling
+            overflowY: 'hidden',
+            touchAction: 'none', // Disable all touch actions
             userSelect: 'none',
             WebkitUserSelect: 'none'
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.target === e.currentTarget) {
+              handleCancelEdit();
+            }
+          }}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onTouchMove={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
           }}
           onClick={(e) => {
             if (e.target === e.currentTarget && !isUpdating) {
@@ -1302,16 +1358,30 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
             margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
             userSelect: 'none',
-            WebkitUserSelect: 'none'
+            WebkitUserSelect: 'none',
+            overflow: 'hidden'
           }}
           onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="border-b border-gray-200 flex-shrink-0" style={{
+            <div className="border-b border-gray-200 flex-shrink-0 relative" style={{
               padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
               userSelect: 'none',
               WebkitUserSelect: 'none'
             }}>
+              <button
+                onClick={handleCancelEdit}
+                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+                style={{
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  zIndex: 10
+                }}
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
               <button
                 onClick={handleCancelEdit}
                 disabled={isUpdating}
@@ -1332,7 +1402,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             <div className="flex-1 overflow-y-auto" style={{
               padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
               WebkitOverflowScrolling: 'touch',
-              touchAction: 'pan-y',
+              touchAction: 'pan-y', // Only allow vertical scrolling within modal
               userSelect: 'none',
               WebkitUserSelect: 'none'
             }}>
