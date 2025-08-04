@@ -5,17 +5,62 @@ interface ScrollingTextProps {
   text?: string;
   className?: string;
   children?: React.ReactNode;
+  style?: React.CSSProperties;
 }
 
 export const ScrollingText: React.FC<ScrollingTextProps> = ({ 
   text, 
   className = '', 
-  children 
+  children,
+  style = {}
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const [needsScrolling, setNeedsScrolling] = useState(false);
   const animationRef = useRef<gsap.core.Timeline | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Global scroll detection to pause all scrolling text
+  useEffect(() => {
+    const handleScroll = () => {
+      // Pause animation immediately
+      if (animationRef.current && !isPaused) {
+        animationRef.current.pause();
+        setIsPaused(true);
+      }
+      
+      // Clear existing timeout
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+      
+      // Resume animation after scroll stops (300ms delay)
+      scrollTimeoutRef.current = setTimeout(() => {
+        if (animationRef.current && isPaused) {
+          animationRef.current.resume();
+          setIsPaused(false);
+        }
+      }, 300);
+    };
+
+    // Listen to scroll events on window and all scrollable containers
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    document.addEventListener('scroll', handleScroll, { passive: true });
+    
+    // Also listen for touch events that might cause scrolling
+    document.addEventListener('touchmove', handleScroll, { passive: true });
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('touchmove', handleScroll);
+      
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, [isPaused]);
 
   useEffect(() => {
     const checkAndAnimate = () => {
@@ -88,6 +133,11 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
         
         animationRef.current = timeline;
         
+        // If currently paused due to scrolling, start paused
+        if (isPaused) {
+          timeline.pause();
+        }
+        
         console.log('🎬 Started scrolling animation for text:', text || 'children');
       } else {
         setNeedsScrolling(false);
@@ -127,7 +177,7 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
         animationRef.current = null;
       }
     };
-  }, [text, children]);
+  }, [text, children, isPaused]);
 
   // Cleanup animation on unmount
   useEffect(() => {
@@ -135,6 +185,10 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
       if (animationRef.current) {
         animationRef.current.kill();
         animationRef.current = null;
+      }
+      
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
       }
     };
   }, []);
@@ -147,9 +201,9 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
         position: 'relative',
         width: '100%',
         maxWidth: '100%',
-        overflow: 'hidden' // Contain text within parent boundaries
-      }
-      }
+        overflow: 'hidden', // Contain text within parent boundaries
+        ...style
+      }}
     >
       <div 
         ref={textRef}
@@ -159,8 +213,7 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
           minWidth: '100%',
           maxWidth: 'none',
           overflow: 'hidden' // Prevent text from escaping container
-        }
-        }
+        }}
       >
         {children || text}
       </div>
