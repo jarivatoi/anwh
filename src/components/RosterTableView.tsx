@@ -919,25 +919,18 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                       top: 0,
                                       left: 0,
                                       right: 0,
-                                      bottom: 0
+                                      bottom: 0,
+                                      fontSize: 'clamp(2rem, 6vw, 4rem)',
+                                      fontWeight: 'bold',
+                                      color: '#ef4444',
+                                      opacity: 0.3,
+                                      userSelect: 'none',
+                                      WebkitUserSelect: 'none',
+                                      pointerEvents: 'none'
                                     }}>
-                                      <div style={{
-                                        fontSize: 'clamp(2rem, 8vw, 6rem)',
-                                        fontWeight: 'bold',
-                                        color: '#ef4444',
-                                        opacity: 0.15,
-                                        userSelect: 'none',
-                                        WebkitUserSelect: 'none',
-                                        pointerEvents: 'none',
-                                        transform: 'rotate(-15deg)',
-                                        zIndex: 50
-                                      }}>
-                                        ✗
-                                      </div>
+                                      ✗
                                     </div>
                                   )}
-                                  
-                                  {/* Staff entries */}
                                   <div className="w-full h-full relative" style={{
                                     overflow: 'hidden',
                                     padding: '4px',
@@ -1166,11 +1159,14 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           onTouchEnd={(e) => e.stopPropagation()}
           onWheel={(e) => e.stopPropagation()}
           onScroll={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
-            <div className="flex-shrink-0" style={{
+          >
+            <div 
+              className="flex-shrink-0" 
+              style={{
               padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
-            }}>
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
               <button
                 onClick={() => {
                   setShowExportModal(false);
