@@ -895,7 +895,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                 <div>
                                   {/* X watermark for past dates - positioned within the container only */}
                                   {isPastDate(date) && (
-                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
                                       padding: '1px', 
                                       zIndex: 50,
                                       top: 0,
@@ -909,12 +908,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                         color: '#fca5a5',
                                         opacity: 0.4,
                                         transform: 'scale(1.5)',
-                                        textShadow: '0 0 8px rgba(252, 165, 165, 0.6)'
-                                      }}>
-                                        ✗
-                                      </div>
-                                    </div>
-                                  )}
                                 <div className="w-full h-full relative" style={{
                                     overflow: 'hidden',
                                     padding: '4px',
