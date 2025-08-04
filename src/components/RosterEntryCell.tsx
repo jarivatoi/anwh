@@ -379,13 +379,13 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
           backgroundColor: 'transparent',
           width: '100%',
           maxWidth: '100%',
-          overflow: 'visible'
+          overflow: 'hidden' // Keep text within white box boundaries
         }}
       >
         <div className="text-[8px] sm:text-[10px] font-medium text-gray-900 leading-tight w-full flex items-center justify-center" style={{
           width: '100%',
           maxWidth: '100%',
-          overflow: 'visible'
+          overflow: 'hidden' // Ensure text doesn't escape white box
         }}>
           {isUpdating ? 'Updating...' : (() => {
             const styling = getNameStyling(entry);
@@ -393,7 +393,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
               <div className="flex items-center justify-center w-full" style={{
                 width: '100%',
                 maxWidth: '100%',
-                overflow: 'visible'
+                overflow: 'hidden' // Keep content within white box
               }}>
                 <ScrollingText 
                   text={entry.assigned_name}
