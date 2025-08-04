@@ -24,6 +24,7 @@ interface RosterTableViewProps {
   onDateChange: (date: Date) => void;
   onExportToCalendar: () => void;
   setActiveTab: (tab: 'calendar' | 'settings' | 'data' | 'roster') => void;
+  setActiveTab?: (tab: 'calendar' | 'settings' | 'data' | 'roster') => void;
 }
 
 export const RosterTableView: React.FC<RosterTableViewProps> = ({
@@ -67,33 +68,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       isMountedRef.current = false;
     };
   }, []);
-
-  // Prevent body scroll when modals are open
-  useEffect(() => {
-    if (showAuthModal || showExportModal || (editingDate && selectedShift && authCode && !showAuthModal)) {
-      // Disable body scroll completely
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.top = '0';
-      document.body.style.left = '0';
-      document.body.style.right = '0';
-      document.body.style.bottom = '0';
-      document.body.style.width = '100%';
-      document.body.style.height = '100%';
-    }
-
-    return () => {
-      // Re-enable body scroll
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.left = '';
-      document.body.style.right = '';
-      document.body.style.bottom = '';
-      document.body.style.width = '';
-      document.body.style.height = '';
-    };
-  }, [showAuthModal, showExportModal, editingDate, selectedShift, authCode]);
   
   // iPhone orientation change handler
   useEffect(() => {
@@ -175,6 +149,27 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       window.removeEventListener('resize', handleOrientationChange);
     };
   }, []);
+
+  // Escape key handler for modals
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showAuthModal && !isUpdating) {
+          handleCancelEdit();
+        } else if (showExportModal && !isExporting) {
+          setShowExportModal(false);
+          setExportAuthCode('');
+          setExportAuthError('');
+          setExportResult(null);
+        }
+      }
+    };
+
+    if (showAuthModal || showExportModal) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [showAuthModal, showExportModal, isUpdating, isExporting]);
 
   // Auto-scroll to today's date ONLY on initial component mount
   useEffect(() => {
@@ -511,13 +506,12 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   };
 
   // Shift types in order
-  const shiftTypesOrder = [
+  const shiftTypes = [
     'Morning Shift (9-4)',
     'Saturday Regular (12-10)', 
     'Evening Shift (4-10)',
     'Night Duty'
   ];
-
   return (
     <div>
       {/* Date Picker */}
@@ -525,73 +519,75 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         <div className="flex items-center justify-center w-full">
           <div className="flex items-center justify-center space-x-4 w-full max-w-lg mx-auto">
             {/* Left Arrow - Centered */}
-            <button
-              onClick={() => navigateMonth('prev')}
-              className="p-3 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors duration-200 flex items-center justify-center"
-              style={{
-                touchAction: 'manipulation',
-                WebkitTapHighlightColor: 'transparent',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '44px',
-                height: '44px'
-              }}
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-            
+          <button
+            onClick={() => navigateMonth('prev')}
+            className="p-3 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors duration-200 flex items-center justify-center"
+            style={{
+              touchAction: 'manipulation',
+              WebkitTapHighlightColor: 'transparent',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '44px',
+              height: '44px'
+            }}
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          
             {/* Center Content - Month/Year Selectors */}
             <div className="flex items-center justify-center space-x-3 flex-1">
               <Calendar className="w-5 h-5 text-indigo-600" />
               <div className="flex items-center justify-center space-x-2">
-                <select
-                  value={selectedDate.getMonth()}
-                  onChange={(e) => {
-                    const newDate = new Date(selectedDate);
-                    newDate.setMonth(Number(e.target.value));
-                    onDateChange(newDate);
-                  }}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-semibold text-gray-900 bg-white text-center"
-                  style={{
-                    touchAction: 'manipulation',
-                    WebkitTapHighlightColor: 'transparent',
-                    textAlign: 'center'
-                  }}
-                >
-                  {[
-                    'January', 'February', 'March', 'April', 'May', 'June',
-                    'July', 'August', 'September', 'October', 'November', 'December'
-                  ].map((month, index) => (
-                    <option key={index} value={index}>{month}</option>
-                  ))}
-                </select>
-                
-                <select
-                  value={selectedDate.getFullYear()}
-                  onChange={(e) => {
-                    const newDate = new Date(selectedDate);
-                    newDate.setFullYear(Number(e.target.value));
-                    onDateChange(newDate);
-                  }}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-semibold text-gray-900 bg-white text-center"
-                  style={{
-                    touchAction: 'manipulation',
-                    WebkitTapHighlightColor: 'transparent',
-                    textAlign: 'center'
-                  }}
-                >
-                  {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() + i - 2).map(year => (
-                    <option key={year} value={year}>{year}</option>
-                  ))}
-                </select>
+              <select
+                value={selectedDate.getMonth()}
+                onChange={(e) => {
+                  const newDate = new Date(selectedDate);
+                  newDate.setMonth(Number(e.target.value));
+                  onDateChange(newDate);
+                }}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-semibold text-gray-900 bg-white text-center"
+                style={{
+                  touchAction: 'manipulation',
+                  WebkitTapHighlightColor: 'transparent',
+                  textAlign: 'center'
+                }}
+              >
+                {[
+                  'January', 'February', 'March', 'April', 'May', 'June',
+                  'July', 'August', 'September', 'October', 'November', 'December'
+                ].map((month, index) => (
+                  <option key={index} value={index}>{month}</option>
+                ))}
+              </select>
+              
+              <select
+                value={selectedDate.getFullYear()}
+                onChange={(e) => {
+                  const newDate = new Date(selectedDate);
+                  newDate.setFullYear(Number(e.target.value));
+                  onDateChange(newDate);
+                }}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-semibold text-gray-900 bg-white text-center"
+                style={{
+                  touchAction: 'manipulation',
+                  WebkitTapHighlightColor: 'transparent',
+                  textAlign: 'center'
+                }}
+              >
+                {Array.from({ length: 10 }, (_, i) => selectedDate.getFullYear() - 5 + i).map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
               </div>
-            </div>
             
-            {/* Right Arrow - Centered */}
+              {/* Export to Calendar Button - Centered */}
             <button
-              onClick={() => navigateMonth('next')}
-              className="p-3 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors duration-200 flex items-center justify-center"
+              onClick={() => {
+                console.log('🔄 ROSTER TABLE: Export to Calendar button clicked');
+                onExportToCalendar();
+              }}
+              className="p-3 rounded-lg hover:bg-green-100 text-green-600 transition-colors duration-200 flex items-center justify-center"
               style={{
                 touchAction: 'manipulation',
                 WebkitTapHighlightColor: 'transparent',
@@ -601,90 +597,254 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 width: '44px',
                 height: '44px'
               }}
+              title="Export your shifts to calendar"
             >
-              <ChevronRight className="w-6 h-6" />
+              <Download className="w-6 h-6" />
             </button>
-          </div>
-        </div>
-        
-        {/* Export Button */}
-        <div className="flex justify-center mt-4">
+            </div>
+          
+            {/* Right Arrow - Centered */}
           <button
-            onClick={() => setShowExportModal(true)}
-            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2"
+            onClick={() => navigateMonth('next')}
+            className="p-3 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors duration-200 flex items-center justify-center"
             style={{
               touchAction: 'manipulation',
-              WebkitTapHighlightColor: 'transparent'
+              WebkitTapHighlightColor: 'transparent',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '44px',
+              height: '44px'
             }}
           >
-            <Download className="w-4 h-4" />
-            <span>Export to Calendar</span>
+            <ChevronRight className="w-6 h-6" />
           </button>
+          </div>
         </div>
       </div>
 
-      {/* Roster Table */}
-      <div 
-        ref={tableRef}
-        className="bg-white rounded-lg border border-gray-200 shadow-sm"
-        style={{
-          height: '70vh',
-          overflow: 'hidden',
-          overflowY: 'auto',
-          WebkitOverflowScrolling: 'touch',
-          touchAction: 'pan-y',
-          position: 'relative'
-        }}
-      >
+      <div className="bg-white overflow-hidden w-full" style={{ 
+        height: window.innerWidth > window.innerHeight ? '60vh' : '70vh', // Shorter in landscape
+        minHeight: '400px',
+        maxHeight: '80vh',
+        width: '100vw',
+        marginLeft: 'calc(-50vw + 50%)',
+        marginRight: 'calc(-50vw + 50%)'
+      }}>
         {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading roster data...</p>
-            </div>
+          <div className="flex items-center justify-center py-12">
+            <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+          </div>
+        ) : sortedDates.length === 0 ? (
+          <div className="text-center py-12">
+            <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500 text-lg font-medium">
+              No roster entries found
+            </p>
+            <p className="text-gray-400 text-sm mt-2">
+              No entries available for {formatMonthYear(selectedDate)}
+            </p>
           </div>
         ) : (
-          <div className="w-full">
-            <table className="w-full border-collapse" style={{
-              tableLayout: 'fixed',
-              width: '100%',
-              minWidth: '100%'
-            }}>
-              <thead className="bg-gray-50 sticky top-0 z-10">
+          <div ref={tableRef} style={{ 
+            height: '100%', 
+            overflow: 'hidden',
+            overflowX: 'hidden',
+            overflowY: 'auto',
+            position: 'relative', 
+            width: '100%',
+            // Better mobile landscape handling
+            WebkitOverflowScrolling: 'touch',
+            // Force proper scrolling after orientation change
+            transform: 'translate3d(0,0,0)',
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
+            WebkitTransform: 'translate3d(0,0,0)',
+            // iPhone specific fixes
+            WebkitTouchCallout: 'none',
+            WebkitUserSelect: 'none',
+            userSelect: 'none'
+          }}>
+            {/* Separate Sticky Header for Roster Title */}
+            <div 
+              style={{ 
+                position: 'sticky',
+                top: 0,
+                zIndex: 95,
+                width: '100vw',
+                padding: '12px 16px',
+                fontSize: '18px',
+                fontWeight: 'bold',
+                color: 'white',
+                border: 'none',
+                margin: 0,
+                marginBottom: 0,
+                height: window.innerWidth > window.innerHeight ? '40px' : '56px', // Shorter header in landscape
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#4b5563',
+                background: '#4b5563',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                opacity: 1,
+                // Force proper rendering after orientation change
+                transform: 'translate3d(0,0,0)',
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
+                WebkitTransform: 'translate3d(0,0,0)',
+                // iPhone specific
+                WebkitTouchCallout: 'none'
+              }}
+            >
+              {/* Centered title with reload button */}
+              <div style={{ 
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: window.innerWidth > window.innerHeight ? '16px' : '18px',
+                gap: '8px'
+              }}>
+                <span>Roster for {formatMonthYear(selectedDate)}</span>
+                {/* Manual refresh button with real-time status */}
+                <button
+                  onClick={async () => {
+                    setIsReloading(true);
+                    try {
+                      console.log('🔄 Manual refresh triggered in table view');
+                      if (onRefresh) {
+                        await onRefresh();
+                      }
+                      setRefreshKey(prev => prev + 1);
+                      setLastUpdateTime(new Date().toLocaleTimeString());
+                      console.log('✅ Manual refresh completed');
+                    } catch (error) {
+                      console.error('Manual refresh failed in table view:', error);
+                    } finally {
+                      setIsReloading(false);
+                    }
+                  }}
+                  disabled={isReloading}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    padding: '4px',
+                    color: 'white',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    opacity: isReloading ? 0.7 : 1,
+                    border: '2px solid #374151',
+                    borderRight: '3px solid #374151',
+                    WebkitTapHighlightColor: 'transparent'
+                  }}
+                  title={
+                    realtimeStatus === 'connected' ? 'Manual refresh (Real-time active)' :
+                    realtimeStatus === 'connecting' ? 'Manual refresh (Connecting...)' :
+                    realtimeStatus === 'error' ? 'Manual refresh (Real-time failed)' :
+                    'Manual refresh (Real-time disconnected)'
+                  }
+                >
+                  {/* Refresh icon with rotation animation when loading */}
+                  <svg 
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      animation: isReloading ? 'spin 1s linear infinite' : 'none'
+                    }}
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+                    />
+                  </svg>
+                  
+                  {/* Real-time status indicator inside the button */}
+                  <div style={{
+                    width: '12px',
+                    height: '12px',
+                    borderRadius: '50%',
+                    backgroundColor: realtimeStatus === 'connected' ? '#10b981' : 
+                                    realtimeStatus === 'connecting' ? '#f59e0b' :
+                                    realtimeStatus === 'error' ? '#ef4444' : '#6b7280',
+                    animation: realtimeStatus === 'connecting' ? 'pulse 1.5s ease-in-out infinite' : 'none',
+                    boxShadow: realtimeStatus === 'connected' ? '0 0 8px rgba(16, 185, 129, 0.8)' : 'none'
+                  }} />
+                </button>
+              </div>
+            </div>
+            
+            <table className="border-collapse table-fixed" style={{ width: '100vw', minWidth: '100vw' }}>
+              <thead>
                 <tr>
-                  <th className="text-center font-semibold text-gray-900 border-2 border-gray-300" style={{
-                    padding: '8px 4px',
-                    fontSize: 'clamp(0.75rem, 2.5vw, 1rem)',
-                    width: '60px',
-                    minWidth: '60px',
-                    maxWidth: '60px',
-                    position: 'sticky',
-                    left: 0,
-                    backgroundColor: '#f9fafb',
-                    zIndex: 20
-                  }}>
+                  <th 
+                    style={{ 
+                      position: 'sticky',
+                      top: window.innerWidth > window.innerHeight ? 40 : 56, // Adjust for shorter header
+                      zIndex: 85,
+                      fontWeight: '600',
+                      textAlign: 'center',
+                      fontSize: window.innerWidth > window.innerHeight ? '10px' : (window.innerWidth >= 640 ? '14px' : '12px'),
+                      color: 'white',
+                      border: '2px solid #374151',
+                      backgroundColor: '#6b7280',
+                      background: '#6b7280',
+                      margin: 0,
+                      marginTop: 0,
+                      width: '80px',
+                      minWidth: '80px',
+                      maxWidth: '80px',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                      opacity: 1,
+                      // Force proper rendering after orientation change
+                      transform: 'translateZ(0)',
+                      backfaceVisibility: 'hidden'
+                    }}
+                  >
                     Date
                   </th>
-                  {shiftTypesOrder.map((shiftType) => (
-                    <th key={shiftType} className="text-center font-semibold text-gray-900 border-2 border-gray-300" style={{
-                      padding: '8px 4px',
-                      fontSize: 'clamp(0.75rem, 2.5vw, 1rem)',
-                      width: 'calc((100vw - 80px) / 4)',
-                      minWidth: 'calc((100vw - 80px) / 4)',
-                      maxWidth: 'calc((100vw - 80px) / 4)',
-                      backgroundColor: '#f9fafb'
-                    }}>
+                  {shiftTypes.map((shiftType) => (
+                    <th
+                      key={shiftType}
+                      style={{ 
+                        position: 'sticky',
+                        top: window.innerWidth > window.innerHeight ? 40 : 56,
+                        zIndex: 85,
+                        textAlign: 'center',
+                        fontSize: window.innerWidth > window.innerHeight ? '10px' : (window.innerWidth >= 640 ? '14px' : '12px'),
+                        color: 'white',
+                        border: 'none',
+                        backgroundColor: '#6b7280',
+                        background: '#6b7280',
+                        margin: 0,
+                        opacity: 1,
+                        width: 'calc((100vw - 80px) / 4)',
+                        minWidth: 'calc((100vw - 80px) / 4)',
+                        // Force proper rendering after orientation change
+                        transform: 'translate3d(0,0,0)',
+                        backfaceVisibility: 'hidden',
+                        WebkitBackfaceVisibility: 'hidden',
+                        WebkitTransform: 'translate3d(0,0,0)'
+                      }}
+                    >
                       {getShiftDisplayName(shiftType)}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody>
+
+              {/* Table Body */}
+              <tbody className="divide-y divide-gray-200">
                 {sortedDates.map((date) => {
                   const dateEntries = groupedByDate[date] || [];
                   
                   // Calculate the maximum number of staff in any shift for this date
-                  const maxStaffCount = Math.max(...shiftTypesOrder.map(shiftType => 
+                  const maxStaffCount = Math.max(...shiftTypes.map(shiftType => 
                     (dateEntries.filter(entry => entry.shift_type === shiftType) || []).length
                   ));
                   
@@ -713,10 +873,15 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         }}
                         formatTableDate={formatTableDate}
                       />
-                      {shiftTypesOrder.map((shiftType) => {
+                      {shiftTypes.map((shiftType) => {
                         const shiftEntries = sortStaffNames(getEntriesForDateAndShift(date, shiftType));
                         const maxStaffForThisDate = getMaxStaffCountForDate(date);
                         
+                        // Create aligned array with consistent row count for this date
+                        const alignedEntries = [];
+                        for (let rowIndex = 0; rowIndex < maxStaffForThisDate; rowIndex++) {
+                          alignedEntries.push(shiftEntries[rowIndex] || null);
+                        }
                         return (
                           <td key={shiftType} className={`text-center overflow-hidden align-top relative ${
                             isPastDate(date) ? 'bg-red-50' : ''
@@ -762,13 +927,14 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                         color: '#fca5a5',
                                         opacity: 0.4,
                                         transform: 'scale(1.5)',
-                                        textShadow: '0 0 8px rgba(252, 165, 165, 0.6)'
+                                        userSelect: 'none',
+                                        WebkitUserSelect: 'none',
+                                        pointerEvents: 'none'
                                       }}>
                                         ✗
                                       </div>
                                     </div>
-                                  )}
-                                  <div className="w-full h-full relative" style={{
+                                <div className="w-full h-full relative" style={{
                                     overflow: 'hidden',
                                     padding: '4px',
                                     margin: 0,
@@ -785,6 +951,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                         textAlign: 'center',
                                         width: '100%',
                                         maxWidth: '100%',
+                                        overflow: 'hidden', // Contain each entry within white box
                                         overflow: 'visible',
                                         zIndex: 60 
                                       }}>
@@ -823,6 +990,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             </table>
           </div>
         )}
+
       </div>
 
       {/* Authentication Modal */}
@@ -835,55 +1003,40 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             left: 0,
             right: 0,
             bottom: 0,
-            zIndex: 2147483647,
-            backgroundColor: 'rgba(0, 0, 0, 0.95)',
-            display: 'flex',
-            alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
-            justifyContent: 'center',
-            padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
-            paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
-            overflow: 'hidden',
-            touchAction: 'none',
-            WebkitOverflowScrolling: 'auto',
-            pointerEvents: 'auto'
-          }}
-          onTouchStart={(e) => e.preventDefault()}
-          onTouchMove={(e) => e.preventDefault()}
-          onTouchEnd={(e) => e.preventDefault()}
-          onWheel={(e) => e.preventDefault()}
-          onScroll={(e) => e.preventDefault()}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              handleCancelEdit();
-            }
+            zIndex: 2147483647, // Maximum z-index value
+           backgroundColor: 'rgba(0, 0, 0, 0.95)',
+           display: 'flex',
+           alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
+           justifyContent: 'center',
+           padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
+           paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
+           overflow: 'auto',
+           overflowY: 'auto',
+           WebkitOverflowScrolling: 'touch',
+           touchAction: 'pan-y'
           }}
         >
           <div className="bg-white rounded-2xl shadow-2xl w-full" style={{
             maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
             maxHeight: window.innerWidth > window.innerHeight ? '95vh' : 'none',
-            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
-            overflow: 'hidden',
-            pointerEvents: 'auto'
-          }}
-          onTouchStart={(e) => e.stopPropagation()}
-          onTouchMove={(e) => e.stopPropagation()}
-          onTouchEnd={(e) => e.stopPropagation()}
-          onWheel={(e) => e.stopPropagation()}
-          onScroll={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex flex-col h-full max-h-full" style={{ overflow: 'hidden' }}>
-            <div className="relative">
+            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0'
+          }}>
+            <div style={{
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
+            }}>
               <button
                 onClick={handleCancelEdit}
-                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200 z-10"
+                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+                style={{
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  zIndex: 10
+                }}
               >
                 <X className="w-5 h-5" />
               </button>
-            </div>
-            <div className="flex-shrink-0" style={{
-              padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
-            }}>
+              
               <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
                 Authentication Required
               </h3>
@@ -948,7 +1101,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         , document.body
       )}
 
-      {/* Export Modal */}
+      {/* Staff Selection Modal */}
       {showExportModal && createPortal(
         <div 
           className="fixed inset-0 bg-black bg-opacity-50"
@@ -958,24 +1111,20 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             left: 0,
             right: 0,
             bottom: 0,
-            zIndex: 2147483647,
+            zIndex: 999999999, // Ultra-high z-index
             backgroundColor: 'rgba(0, 0, 0, 0.95)',
             display: 'flex',
             alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
             justifyContent: 'center',
             padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
             paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
-            overflow: 'hidden',
-            touchAction: 'none',
-            WebkitOverflowScrolling: 'auto',
-            pointerEvents: 'auto'
+            overflow: 'hidden', // Prevent any scrolling
+            overflowY: 'hidden',
+            touchAction: 'none' // Disable all touch actions
           }}
-          onTouchStart={(e) => e.preventDefault()}
-          onTouchMove={(e) => e.preventDefault()}
-          onTouchEnd={(e) => e.preventDefault()}
-          onWheel={(e) => e.preventDefault()}
-          onScroll={(e) => e.preventDefault()}
           onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
             if (e.target === e.currentTarget && !isExporting) {
               setShowExportModal(false);
               setExportAuthCode('');
@@ -983,23 +1132,30 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               setExportResult(null);
             }
           }}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onTouchMove={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
         >
           <div className="bg-white rounded-2xl shadow-2xl w-full" style={{
             maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
-            maxHeight: window.innerWidth > window.innerHeight ? '95vh' : 'none',
+            maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
             margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
             overflow: 'hidden',
-            pointerEvents: 'auto'
-          }}
-          onTouchStart={(e) => e.stopPropagation()}
-          onTouchMove={(e) => e.stopPropagation()}
-          onTouchEnd={(e) => e.stopPropagation()}
-          onWheel={(e) => e.stopPropagation()}
-          onScroll={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex flex-col h-full max-h-full" style={{ overflow: 'hidden' }}>
-            <div className="relative">
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            <div className="flex-shrink-0" style={{
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
+            }}>
               <button
                 onClick={() => {
                   setShowExportModal(false);
@@ -1007,14 +1163,18 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   setExportAuthError('');
                   setExportResult(null);
                 }}
-                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200 z-10"
+                disabled={isExporting}
+                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200 disabled:opacity-50"
+                style={{
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  zIndex: 10
+                }}
               >
                 <X className="w-5 h-5" />
               </button>
-            </div>
-            <div className="flex-shrink-0" style={{
-              padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
-            }}>
+              
               <div className="flex items-center justify-center space-x-3 mb-4">
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                   <Download className="w-6 h-6 text-green-600" />
@@ -1071,6 +1231,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         setShowExportModal(false);
                         setExportAuthCode('');
                         setExportAuthError('');
+                        setExportResult(null);
                       }}
                       disabled={isExporting}
                       className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
@@ -1101,9 +1262,13 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   <div className="text-center mb-6">
                     <div className={`w-16 h-16 ${exportResult.success ? 'bg-green-100' : 'bg-red-100'} rounded-full flex items-center justify-center mx-auto mb-4`}>
                       {exportResult.success ? (
-                        <CheckCircle className="w-8 h-8 text-green-600" />
+                        <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
                       ) : (
-                        <AlertTriangle className="w-8 h-8 text-red-600" />
+                        <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                       )}
                     </div>
                     <h4 className="text-lg font-medium text-gray-900 mb-2">
@@ -1120,14 +1285,20 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       setExportAuthCode('');
                       setExportAuthError('');
                       setExportResult(null);
+                      
+                      setActiveTab('calendar');
+                      
+                      // Dispatch event to navigate calendar to imported month
+                      window.dispatchEvent(new CustomEvent('navigateToMonth', {
+                        detail: { 
+                          month: selectedDate.getMonth(),
+                          year: selectedDate.getFullYear()
+                        }
+                      }));
+                      
                       if (exportResult.success) {
-                        setActiveTab('calendar');
-                        window.dispatchEvent(new CustomEvent('navigateToMonth', {
-                          detail: { 
-                            month: selectedDate.getMonth(),
-                            year: selectedDate.getFullYear()
-                          }
-                        }));
+                        // Switch to calendar tab to show the exported data
+                        window.dispatchEvent(new CustomEvent('switchToCalendarTab'));
                       }
                     }}
                     className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200"
@@ -1152,29 +1323,37 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             left: 0,
             right: 0,
             bottom: 0,
-            zIndex: 2147483647,
+            zIndex: 999999999, // Ultra-high z-index
             backgroundColor: 'rgba(0, 0, 0, 0.95)',
             display: 'flex',
             alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
             justifyContent: 'center',
             padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
             paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
-            overflow: 'hidden',
-            touchAction: 'none',
-            WebkitOverflowScrolling: 'auto',
+            overflow: 'hidden', // Prevent any scrolling
+            overflowY: 'hidden',
+            touchAction: 'none', // Disable all touch actions
             userSelect: 'none',
-            WebkitUserSelect: 'none',
-            pointerEvents: 'auto'
+            WebkitUserSelect: 'none'
           }}
-          onTouchStart={(e) => e.preventDefault()}
-          onTouchMove={(e) => e.preventDefault()}
-          onTouchEnd={(e) => e.preventDefault()}
-          onWheel={(e) => e.preventDefault()}
-          onScroll={(e) => e.preventDefault()}
           onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
             if (e.target === e.currentTarget) {
               handleCancelEdit();
             }
+          }}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onTouchMove={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
           }}
         >
           <div className="bg-white rounded-2xl shadow-2xl w-full flex flex-col" style={{
@@ -1183,42 +1362,43 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
             userSelect: 'none',
             WebkitUserSelect: 'none',
-            overflow: 'hidden',
-            pointerEvents: 'auto'
+            overflow: 'hidden'
           }}
-          onTouchStart={(e) => e.stopPropagation()}
-          onTouchMove={(e) => e.stopPropagation()}
-          onTouchEnd={(e) => e.stopPropagation()}
-          onWheel={(e) => e.stopPropagation()}
-          onScroll={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex flex-col h-full max-h-full" style={{ overflow: 'hidden' }}>
-            <div className="relative">
-              <button
-                onClick={handleCancelEdit}
-                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200 z-10"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="border-b border-gray-200 flex-shrink-0" style={{
+          >
+            {/* Header */}
+            <div className="border-b border-gray-200 flex-shrink-0 relative" style={{
               padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
               userSelect: 'none',
               WebkitUserSelect: 'none'
             }}>
+              <button
+                onClick={handleCancelEdit}
+                disabled={isUpdating}
+                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+                style={{
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  zIndex: 10
+                }}
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
               <h3 className="text-xl font-bold text-gray-900 mb-2 text-center select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
                 Edit Staff Assignment
               </h3>
               <p className="text-sm text-gray-600 text-center select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
-                {formatTableDate(editingDate).dayName} {formatTableDate(editingDate).dateString} - {selectedShift}
+                {editingDate && formatTableDate(editingDate).dayName} {editingDate && formatTableDate(editingDate).dateString} - {selectedShift}
               </p>
             </div>
             
+            {/* Content */}
             <div className="flex-1 overflow-y-auto" style={{
               padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
               WebkitOverflowScrolling: 'touch',
-              touchAction: 'pan-y',
+              touchAction: 'pan-y', // Only allow vertical scrolling within modal
               userSelect: 'none',
               WebkitUserSelect: 'none'
             }}>
@@ -1237,6 +1417,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               </div>
             </div>
             
+            {/* Footer */}
             <div className="border-t border-gray-200 flex-shrink-0" style={{
               padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
               userSelect: 'none',
@@ -1282,6 +1463,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           setSelectedEntry(null);
         }}
       />
+      
     </div>
   );
 };
