@@ -900,21 +900,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                           setShowAuthModal(true);
                         }}
                         formatTableDate={formatTableDate}
-                        {/* X watermark - centered over names area only */}
-                        {isPastDate(date) && (
-                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                            <div className="font-bold select-none" style={{
-                              fontSize: window.innerWidth > window.innerHeight ? 'clamp(1.5rem, 6vw, 3rem)' : 'clamp(3rem, 10vw, 6rem)',
-                              lineHeight: '1',
-                              color: '#fca5a5',
-                              opacity: 0.2,
-                              transform: 'scale(1.5)'
-                            }}>
-                              X
-                            </div>
-                          </div>
-                        )}
-                        
                       />
                       {shiftTypes.map((shiftType) => {
                         const shiftEntries = sortStaffNames(getEntriesForDateAndShift(date, shiftType));
@@ -1312,7 +1297,30 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       </div>
                     </div>
                   </div>
-                })}
+                  
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Your Authentication Code
+                    </label>
+                    <input
+                      type="text"
+                      value={exportAuthCode}
+                      onChange={(e) => setExportAuthCode(e.target.value.toUpperCase())}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-center font-mono text-lg"
+                      placeholder="Enter your code"
+                      maxLength={4}
+                      autoComplete="off"
+                      autoFocus
+                      disabled={isExporting}
+                    />
+                  </div>
+                  
+                  {exportAuthError && (
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-sm text-red-700 text-center">{exportAuthError}</p>
+                    </div>
+                  )}
+                  
                   <div className="flex space-x-3">
                     <button
                       onClick={() => {
