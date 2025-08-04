@@ -96,10 +96,10 @@ export const EditDetailsModal: React.FC<EditDetailsModalProps> = ({ isOpen, entr
                 <ScrollingText className="select-none">
                   <div className="flex items-center space-x-2 whitespace-nowrap select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
                     <User className="w-4 h-4 text-red-600 flex-shrink-0" />
-                    <span className="text-red-600 font-medium line-through select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{nameInfo.oldName}</span>
+                    <span className="text-red-600 font-medium line-through select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{nameInfo.oldName || 'Unknown'}</span>
                     <span className="text-gray-500 select-none flex-shrink-0" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>→</span>
                     <User className="w-4 h-4 text-green-600 flex-shrink-0" />
-                    <span className="text-green-600 font-medium select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{nameInfo.newName}</span>
+                    <span className="text-green-600 font-medium select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{nameInfo.newName || entry.assigned_name}</span>
                   </div>
                 </ScrollingText>
               </div>
