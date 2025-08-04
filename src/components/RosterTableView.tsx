@@ -821,6 +821,186 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 </button>
               </div>
             </div>
+
+            {/* Table Content */}
+            <table style={{ 
+              width: '100%', 
+              borderCollapse: 'collapse',
+              tableLayout: 'fixed'
+            }}>
+              <thead>
+                <tr>
+                  {/* Date Column Header */}
+                  <th 
+                    style={{ 
+                      position: 'sticky',
+                      left: 0,
+                      top: window.innerWidth > window.innerHeight ? 40 : 56,
+                      zIndex: 80,
+                      textAlign: 'center',
+                      fontSize: window.innerWidth > window.innerHeight ? '10px' : (window.innerWidth >= 640 ? '14px' : '12px'),
+                      color: 'white',
+                      border: '2px solid #374151',
+                      backgroundColor: '#6b7280',
+                      background: '#6b7280',
+                      margin: 0,
+                      padding: window.innerWidth > window.innerHeight ? '8px 4px' : '12px 8px',
+                      opacity: 1,
+                      width: '80px',
+                      minWidth: '80px',
+                      maxWidth: '80px',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                      // Force proper rendering after orientation change
+                      transform: 'translate3d(0,0,0)',
+                      backfaceVisibility: 'hidden',
+                      WebkitBackfaceVisibility: 'hidden',
+                      WebkitTransform: 'translate3d(0,0,0)',
+                      // iPhone specific
+                      WebkitTouchCallout: 'none'
+                    }}
+                  >
+                    Date
+                  </th>
+                  
+                  {/* Shift Headers */}
+                  {shiftTypes.map((shiftType, index) => (
+                    <th 
+                      key={shiftType}
+                      style={{ 
+                        position: 'sticky',
+                        top: window.innerWidth > window.innerHeight ? 40 : 56,
+                        zIndex: 80,
+                        textAlign: 'center',
+                        fontSize: window.innerWidth > window.innerHeight ? '10px' : (window.innerWidth >= 640 ? '14px' : '12px'),
+                        color: 'white',
+                        border: '2px solid #374151',
+                        backgroundColor: '#6b7280',
+                        background: '#6b7280',
+                        margin: 0,
+                        padding: window.innerWidth > window.innerHeight ? '8px 4px' : '12px 8px',
+                        opacity: 1,
+                        width: 'calc((100vw - 80px) / 4)',
+                        minWidth: 'calc((100vw - 80px) / 4)',
+                        maxWidth: 'calc((100vw - 80px) / 4)',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                        // Force proper rendering after orientation change
+                        transform: 'translate3d(0,0,0)',
+                        backfaceVisibility: 'hidden',
+                        WebkitBackfaceVisibility: 'hidden',
+                        WebkitTransform: 'translate3d(0,0,0)',
+                        // iPhone specific
+                        WebkitTouchCallout: 'none'
+                      }}
+                    >
+                      {getShiftDisplayName(shiftType)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              
+              <tbody>
+                {sortedDates.map(date => {
+                  const dateEntries = groupedByDate[date] || [];
+                  const shiftGroups = groupEntriesByShift(dateEntries);
+                  const maxStaffCount = getMaxStaffCountForDate(date);
+                  
+                  // Create rows for this date (one row per staff member)
+                  const rows = [];
+                  for (let staffIndex = 0; staffIndex < maxStaffCount; staffIndex++) {
+                    rows.push(
+                      <tr key={`${date}-${staffIndex}`} data-date={date}>
+                        {/* Date Cell - only show on first row */}
+                        {staffIndex === 0 ? (
+                          <RosterDateCell
+                            date={date}
+                            isToday={isToday}
+                            isPastDate={isPastDate}
+                            isFutureDate={isFutureDate}
+                            onLongPress={() => handleEditClick(date)}
+                            formatTableDate={formatTableDate}
+                          />
+                        ) : (
+                          <td style={{ 
+                            position: 'sticky',
+                            left: 0,
+                            zIndex: 75,
+                            backgroundColor: '#ffffff',
+                            border: '2px solid #374151',
+                            borderRight: '3px solid #374151',
+                            width: '80px',
+                            minWidth: '80px',
+                            maxWidth: '80px'
+                          }} />
+                        )}
+                        
+                        {/* Shift Cells */}
+                        {shiftTypes.map(shiftType => {
+                          const shiftEntries = shiftGroups[shiftType] || [];
+                          const entry = shiftEntries[staffIndex];
+                          
+                          return (
+                            <td 
+                              key={shiftType}
+                              style={{ 
+                                border: '1px solid #d1d5db',
+                                padding: 0,
+                                margin: 0,
+                                textAlign: 'center',
+                                verticalAlign: 'middle',
+                                position: 'relative',
+                                width: 'calc((100vw - 80px) / 4)',
+                                minWidth: 'calc((100vw - 80px) / 4)',
+                                maxWidth: 'calc((100vw - 80px) / 4)',
+                                minHeight: '40px',
+                                backgroundColor: isPastDate(date) ? '#fef2f2' : '#ffffff'
+                              }}
+                            >
+                              {entry ? (
+                                <RosterEntryCell
+                                  entry={entry}
+                                  onUpdate={handleEntryUpdate}
+                                  onShowDetails={handleShowDetails}
+                                  allEntriesForShift={shiftEntries}
+                                />
+                              ) : (
+                                <div style={{ 
+                                  minHeight: '32px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }} />
+                              )}
+                              
+                              {/* Past date watermark */}
+                              {isPastDate(date) && (
+                                <div style={{
+                                  position: 'absolute',
+                                  top: '50%',
+                                  left: '50%',
+                                  transform: 'translate(-50%, -50%)',
+                                  fontSize: window.innerWidth > window.innerHeight ? 'clamp(1.5rem, 6vw, 3rem)' : 'clamp(3rem, 10vw, 6rem)',
+                                  fontWeight: 'bold',
+                                  color: '#fca5a5',
+                                  opacity: 0.2,
+                                  pointerEvents: 'none',
+                                  zIndex: 10,
+                                  userSelect: 'none',
+                                  WebkitUserSelect: 'none'
+                                }}>
+                                  X
+                                </div>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  }
+                  
+                  return rows;
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
