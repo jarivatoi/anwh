@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { RosterEntry } from '../types/roster';
 import { StaffSelectionModal } from './StaffSelectionModal';
 import { validateAuthCode, availableNames } from '../utils/rosterAuth';
@@ -24,6 +25,27 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authError, setAuthError] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // Prevent body scroll when auth modal is open
+  React.useEffect(() => {
+    if (showAuthModal) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = '0';
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.bottom = '0';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.bottom = '';
+    };
+  }, [showAuthModal]);
 
   // Check if entry has been edited (name changed)
   const hasBeenEdited = (entry: RosterEntry) => {
@@ -177,8 +199,30 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
       </div>
 
       {/* Authentication Modal */}
-      {showAuthModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-[99999] flex items-center justify-center p-4">
+      {showAuthModal && createPortal(
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center p-4"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 999999999,
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            pointerEvents: 'auto'
+          }}
+          onWheel={(e) => e.preventDefault()}
+          onScroll={(e) => e.preventDefault()}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.target === e.currentTarget) {
+              handleCancelAuth();
+            }
+          }}
+        >
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
             <div className="p-6">
               <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
@@ -225,8 +269,8 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
             </div>
           </div>
         </div>
+        , document.body
       )}
-
       {/* Staff Selection Modal */}
       <StaffSelectionModal
         isOpen={showStaffModal}
