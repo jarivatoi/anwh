@@ -967,8 +967,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
 
                                   {sortStaffNames(shiftEntries).map((entry, index) => (
                                     <div key={entry.id} className="relative" style={{ 
-                                      padding: 0, 
-                                      margin: 0, 
+                                      padding: '4px 8px', 
+                                      margin: '2px 0', 
                                       textAlign: 'center',
                                       width: '100%',
                                       fontSize: window.innerWidth > window.innerHeight ? '10px' : '12px',
@@ -981,10 +981,17 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                       overflow: 'hidden',
                                       textOverflow: 'ellipsis',
                                       whiteSpace: 'nowrap',
-                                      minHeight: '16px',
+                                      minHeight: '32px',
                                       display: 'flex',
                                       alignItems: 'center',
-                                      justifyContent: 'center'
+                                      justifyContent: 'center',
+                                      cursor: 'pointer',
+                                      touchAction: 'manipulation',
+                                      WebkitTapHighlightColor: 'transparent',
+                                      transition: 'background-color 0.2s ease',
+                                      ':hover': {
+                                        backgroundColor: 'rgba(0, 0, 0, 0.05)'
+                                      }
                                     }}>
                                       <ScrollingText text={entry.assigned_name} />
                                     </div>
@@ -992,6 +999,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                 </div>
                               ) : (
                                 <div className="flex items-center justify-center h-full">
+                                  {/* Empty cell - no content */}
                                   {/* Empty cell - no content */}
                                 </div>
                               )}
