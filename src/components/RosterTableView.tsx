@@ -678,7 +678,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 color: 'white',
                 border: 'none',
                 margin: 0,
-                marginBottom: 0,
                 height: window.innerWidth > window.innerHeight ? '40px' : '56px', // Shorter header in landscape
                 display: 'flex',
                 alignItems: 'center',
@@ -795,7 +794,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       backgroundColor: '#6b7280',
                       background: '#6b7280',
                       margin: 0,
-                      marginTop: 0,
                       width: '80px',
                       minWidth: '80px',
                       maxWidth: '80px',
