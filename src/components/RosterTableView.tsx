@@ -446,6 +446,20 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     return dateString < todayString;
   };
 
+  // Format date for display in table headers
+  const formatTableDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear().toString().slice(-2);
+    
+    return {
+      dayName: dayNames[date.getDay()],
+      dateString: `${day}-${month}-${year}`
+    };
+  };
+
   // Custom sorting function to prioritize (R) names first
   const sortStaffNames = (entries: RosterEntry[]): RosterEntry[] => {
     // Extract names, sort them using group sorting, then reorder entries
