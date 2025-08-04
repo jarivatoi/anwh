@@ -881,17 +881,15 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                           }}>
                         
                             <div className="relative w-full h-full">
-                              {shiftEntries.length > 0 ? (
-                                <div className="w-full h-full flex items-center justify-center p-2">
-                                <div className="bg-white rounded-lg border-2 border-black shadow-sm relative" style={{
-                                    width: 'calc(100% - 4px)', // Subtract padding to get exact width
-                                    maxWidth: 'calc(100% - 4px)',
-                                    overflow: 'hidden', // Keep text contained within white box
+                                <div className="w-full h-full relative" style={{
+                                    overflow: 'hidden',
                                     padding: '4px',
                                     margin: 0,
                                     textAlign: 'center',
-                                    height: 'calc(100% - 8px)',
-                                    minWidth: '0'
+                                    width: '100%',
+                                    height: '100%',
+                                    minWidth: '0',
+                                    backgroundColor: 'white'
                                   }}>
                                       {/* X watermark for past dates - positioned within the container only */}
                                       {isPastDate(date) && (
