@@ -985,17 +985,15 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center'
+                                    }}>
+                                      <ScrollingText text={entry.assigned_name} />
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
                                 <div className="flex items-center justify-center h-full">
                                   {/* Empty cell - no content */}
                                 </div>
-                              ) : (
-                                <span className="text-gray-400 text-xs font-medium select-none" style={{
-                                  userSelect: 'none',
-                                  WebkitUserSelect: 'none',
-                                  fontSize: window.innerWidth > window.innerHeight ? '10px' : '12px'
-                                }}>
-                                  No staff
-                                </span>
                               )}
                             </div>
                           </td>
