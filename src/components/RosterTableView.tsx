@@ -916,51 +916,36 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                   {isPastDate(date) && (
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
                                       zIndex: 50,
-                                      top: 0,
-                                      left: 0,
-                                      right: 0,
-                                      bottom: 0,
-                                      fontSize: 'clamp(2rem, 6vw, 4rem)',
+                                      opacity: 0.1,
+                                      fontSize: 'clamp(2rem, 8vw, 6rem)',
                                       fontWeight: 'bold',
                                       color: '#ef4444',
-                                      opacity: 0.3,
                                       userSelect: 'none',
                                       WebkitUserSelect: 'none',
                                       pointerEvents: 'none'
                                     }}>
-                                      ✗
+                                      ✕
                                     </div>
                                   )}
-                                  <div className="w-full h-full relative" style={{
-                                    overflow: 'hidden',
-                                    padding: '4px',
-                                    margin: 0,
-                                    textAlign: 'center',
-                                    width: '100%',
-                                    height: '100%',
-                                    minWidth: '0',
-                                    backgroundColor: 'white'
-                                  }}>
-                                    {sortStaffNames(shiftEntries).map((entry, index) => (
-                                      <div key={entry.id} className="relative" style={{ 
-                                        padding: 0, 
-                                        margin: 0, 
-                                        textAlign: 'center',
-                                        width: '100%',
-                                        maxWidth: '100%',
-                                        overflow: 'hidden', // Contain each entry within white box
-                                        overflow: 'visible',
-                                        zIndex: 60 
-                                      }}>
-                                        <RosterEntryCell
-                                          entry={entry}
-                                          onUpdate={handleEntryUpdate}
-                                          onShowDetails={handleShowDetails}
-                                          allEntriesForShift={shiftEntries}
-                                        />
-                                      </div>
-                                    ))}
-                                  </div>
+                                  
+                                  {sortStaffNames(shiftEntries).map((entry, index) => (
+                                    <div key={entry.id} className="relative" style={{ 
+                                      padding: 0, 
+                                      margin: 0, 
+                                      textAlign: 'center',
+                                      width: '100%',
+                                      maxWidth: '100%',
+                                      overflow: 'hidden', // Contain each entry within white box
+                                      zIndex: 60 
+                                    }}>
+                                      <RosterEntryCell
+                                        entry={entry}
+                                        onUpdate={handleEntryUpdate}
+                                        onShowDetails={handleShowDetails}
+                                        allEntriesForShift={shiftEntries}
+                                      />
+                                    </div>
+                                  ))}
                                 </div>
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center" style={{
