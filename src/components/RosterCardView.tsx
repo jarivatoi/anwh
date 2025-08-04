@@ -446,23 +446,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
                         <div key={shiftType} className="bg-white border border-gray-200 rounded-md overflow-hidden shadow-sm min-w-0 flex-1 relative">
                           {/* BIG X WATERMARK for past dates - ON EACH SHIFT BOX */}
                           {isPastDate(date) && (
-                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20" style={{
-                                // Centered within content area only, avoiding header
-                                top: window.innerWidth > window.innerHeight ? '24px' : '32px', // Adjust for landscape
-                                left: '8px',
-                                right: '8px', 
-                                bottom: window.innerWidth > window.innerHeight ? '16px' : '24px' // Less padding in landscape
-                            }}>
-                              <div className="font-bold select-none" style={{
-                                fontSize: window.innerWidth > window.innerHeight ? 'clamp(2rem, 8vw, 4rem)' : 'clamp(4rem, 12vw, 8rem)', // Smaller in landscape
-                                lineHeight: '1',
-                                color: '#fca5a5',
-                                opacity: 0.2,
-                                transform: 'scale(1.8)'
-                              }}>
-                               X
-                              </div>
-                            </div>
+                            // X watermark moved to names list area below
                           )}
                           
                           {/* Shift Header */}
@@ -487,6 +471,26 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
                             position: 'relative',
                             padding: window.innerWidth > window.innerHeight ? '4px' : '8px' // Less padding in landscape
                           }}>
+                            {/* X watermark - centered over names area only */}
+                            {isPastDate(date) && (
+                              <div className="absolute flex items-center justify-center pointer-events-none z-20" style={{
+                                top: '0',
+                                left: '0',
+                                right: '0',
+                                bottom: '0'
+                              }}>
+                                <div className="font-bold select-none" style={{
+                                  fontSize: window.innerWidth > window.innerHeight ? 'clamp(1.5rem, 6vw, 3rem)' : 'clamp(3rem, 10vw, 6rem)', // Slightly smaller to fit names area
+                                  lineHeight: '1',
+                                  color: '#fca5a5',
+                                  opacity: 0.2,
+                                  transform: 'scale(1.5)' // Reduced scale to fit better in names area
+                                }}>
+                                  X
+                                </div>
+                              </div>
+                            )}
+                            
                             {shiftEntries.map((entry, index) => (
                              <div key={entry.id} className="relative" style={{ zIndex: 30 }}>
                                 <RosterCardItem
