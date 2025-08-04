@@ -915,29 +915,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                   {/* X watermark for past dates - positioned within the container only */}
                                   {isPastDate(date) && (
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
-                                      zIndex: 50,
-                                      top: 0,
-                                      left: 0,
-                                      right: 0,
-                                      bottom: 0
-                                    }}>
-                                      <div style={{
-                                        fontSize: 'clamp(2rem, 8vw, 6rem)',
-                                        fontWeight: 'bold',
-                                        color: '#ef4444',
-                                        opacity: 0.15,
-                                        userSelect: 'none',
-                                        WebkitUserSelect: 'none',
-                                        pointerEvents: 'none',
-                                        transform: 'rotate(-15deg)',
-                                        zIndex: 50
-                                      }}>
-                                        ✗
-                                      </div>
-                                    </div>
-                                  )}
-                                  
-                                  <div className="w-full h-full relative" style={{
+                                <div className="w-full h-full relative" style={{
                                     overflow: 'hidden',
                                     padding: '4px',
                                     margin: 0,
@@ -1024,9 +1002,12 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             maxHeight: window.innerWidth > window.innerHeight ? '95vh' : 'none',
             margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0'
           }}>
-            <div style={{
+            <div 
+              style={{
               padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
-            }}>
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
               <button
                 onClick={handleCancelEdit}
                 className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200"
@@ -1162,11 +1143,17 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           onTouchEnd={(e) => e.stopPropagation()}
           onWheel={(e) => e.stopPropagation()}
           onScroll={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
-            <div className="flex-shrink-0" style={{
+            display: 'flex',
+            flexDirection: 'column',
+            pointerEvents: 'auto'
+          }}>
+            <div 
+              className="flex-shrink-0" 
+              style={{
               padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
-            }}>
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
               <button
                 onClick={() => {
                   setShowExportModal(false);
@@ -1373,10 +1360,18 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
             userSelect: 'none',
             WebkitUserSelect: 'none',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            pointerEvents: 'auto'
           }}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+          onWheel={(e) => e.stopPropagation()}
+            overflow: 'hidden',
+            pointerEvents: 'auto'
+          onScroll={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
-          >
+        >
             {/* Header */}
             <div className="border-b border-gray-200 flex-shrink-0 relative" style={{
               padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
