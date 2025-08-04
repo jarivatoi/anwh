@@ -1120,10 +1120,19 @@ export const Calendar: React.FC<CalendarProps> = ({
               >
                 {day && (
                   <div className="flex flex-col select-none h-full">
+                    {/* BIG X WATERMARK for past dates */}
+                    {isPastDate(day) && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                        <div className="text-gray-300 text-4xl sm:text-5xl font-bold opacity-30 select-none">
+                          ✕
+                        </div>
+                      </div>
+                    )}
+                    
    
                     
                     {/* Date header with special indicator and TODAY CIRCLE */}
-                    <div className={`flex-shrink-0 mb-1.5 sm:mb-2 relative ${pastDate ? 'z-30' : ''}`}>
+                    <div className={`flex-shrink-0 mb-1.5 sm:mb-2 relative ${isPastDate(day) ? 'z-30' : ''}`}>
                       <div className={`text-sm sm:text-base text-center font-semibold ${getDateTextColor(day)} relative select-none`}>
                         {/* TODAY CIRCLE - PERFECT SIZE FOR 2-DIGIT DATES */}
                         {todayDate && (
@@ -1159,7 +1168,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                     </div>
                     
                     {/* Content container - grows to fill available space */}
-                    <div className={`flex flex-col items-center justify-start space-y-0.5 sm:space-y-1 px-0.5 select-none min-w-0 flex-1 ${pastDate ? 'z-30' : ''}`}>
+                    <div className={`flex flex-col items-center justify-start space-y-0.5 sm:space-y-1 px-0.5 select-none min-w-0 flex-1 ${isPastDate(day) ? 'z-30' : ''}`}>
                       {/* Special date indicator */}
                       {hasSpecialDate && (
                         <div 
@@ -1193,7 +1202,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                         return shift ? (
                           <div
                             key={`${shiftId}-${idx}`}
-                            className={`shift-text text-[8px] sm:text-[11px] font-bold leading-tight text-black flex-shrink-0 w-full select-none whitespace-nowrap overflow-hidden ${pastDate ? 'opacity-60' : ''}`}
+                            className={`shift-text text-[8px] sm:text-[11px] font-bold leading-tight text-black flex-shrink-0 w-full select-none whitespace-nowrap overflow-hidden ${isPastDate(day) ? 'opacity-60' : ''}`}
                           >
                             <div className="text-center select-none truncate px-0.5">{shift.time}</div>
                           </div>
