@@ -1230,10 +1230,10 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               
               <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
                 Export to Calendar
-              </h3>
-              
-              {!exportResult ? (
-                <>
+                        top: '0px',
+                        left: '0px',
+                        right: '0px', 
+                        bottom: '0px',
                   <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                     <div className="flex items-start space-x-3">
                       <Calendar className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
@@ -1241,7 +1241,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         <h4 className="font-medium text-blue-800 mb-2">Export Your Shifts</h4>
                         <ul className="text-sm text-blue-700 space-y-1">
                           <li>• Exports only YOUR shifts for {formatMonthYear(selectedDate)}</li>
-                          <li>• Adds shifts to your personal calendar tab</li>
+                          transform: 'scale(2.5)',
+                          textShadow: '0 0 20px rgba(252, 165, 165, 0.3)'
                           <li>• Skips dates that already have shifts</li>
                           <li>• Automatically marks special dates when needed</li>
                         </ul>
