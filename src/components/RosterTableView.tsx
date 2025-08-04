@@ -87,7 +87,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       document.body.style.width = '';
       document.body.style.height = '';
       
-    
     };
   }, [showAuthModal, showExportModal, showDetailsModal, editingDate, selectedShift, authCode]);
 
@@ -819,3 +818,12 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     WebkitBackfaceVisibility: 'hidden',
                     WebkitTransform: 'translate3d(0,0,0)'
                   }} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
