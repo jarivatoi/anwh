@@ -1230,10 +1230,10 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               
               <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
                 Export to Calendar
-                        top: '0px',
-                        left: '0px',
-                        right: '0px', 
-                        bottom: '0px',
+               </h3>
+               
+               {!exportResult ? (
+                 <>
                   <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                     <div className="flex items-start space-x-3">
                       <Calendar className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
