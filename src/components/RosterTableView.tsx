@@ -802,7 +802,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                     realtimeStatus === 'connecting' ? '#f59e0b' :
                                     realtimeStatus === 'error' ? '#ef4444' : '#6b7280',
                     animation: realtimeStatus === 'connecting' ? 'pulse 1.5s ease-in-out infinite' : 'none',
-                    boxShadow: realtimeStatus === 'connected' ? '0 0 8px rgba(16, 185, 129, 0.8)' : 'none'
+                    boxShadow: realtimeStatus === 'connected' ? '0 0 8px rgba(16, 185, 129, 0.8)' : 'none',
+                    border: 'none',
+                    outline: 'none'
                   }} />
                 </button>
               </div>
