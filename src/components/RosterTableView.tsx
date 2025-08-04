@@ -14,6 +14,7 @@ import { addRosterEntry, deleteRosterEntry } from '../utils/rosterApi';
 import { EditDetailsModal } from './EditDetailsModal';
 import { ScrollingText } from './ScrollingText';
 import { fetchRosterEntries } from '../utils/rosterApi';
+import { gsap } from 'gsap';
 
 interface RosterTableViewProps {
   entries: RosterEntry[];
@@ -60,6 +61,55 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   
   const tableRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef(false);
+
+  // Function to kill all GSAP animations instantly
+  const killAllAnimations = () => {
+    console.log('🛑 Killing all GSAP animations for instant response');
+    gsap.killTweensOf("*");
+    gsap.set("*", { clearProps: "all" });
+    
+    // Also kill any CSS animations
+    const allElements = document.querySelectorAll('*');
+    allElements.forEach(el => {
+      const element = el as HTMLElement;
+      element.style.animation = 'none';
+      element.style.transition = 'none';
+    });
+    
+    // Force immediate layout recalculation
+    document.body.offsetHeight;
+    
+    // Re-enable transitions after a brief moment
+    setTimeout(() => {
+      allElements.forEach(el => {
+        const element = el as HTMLElement;
+        element.style.animation = '';
+        element.style.transition = '';
+      });
+    }, 50);
+  };
+
+  // Add touch handlers to stop animations on any touch interaction
+  useEffect(() => {
+    const handleTouchStart = (e: TouchEvent) => {
+      console.log('👆 Touch detected - stopping all animations');
+      killAllAnimations();
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      // Kill animations on scroll/swipe
+      killAllAnimations();
+    };
+
+    // Add global touch listeners
+    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.addEventListener('touchmove', handleTouchMove, { passive: true });
+    
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchmove', handleTouchMove);
+    };
+  }, []);
 
   // CRITICAL: Prevent body scroll when ANY modal is open
   useEffect(() => {
@@ -318,6 +368,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
 
   // Handle authentication
   const handleAuthSubmit = () => {
+    // Kill animations for instant response
+    killAllAnimations();
+    
     const editorName = validateAuthCode(authCode);
     if (!editorName || !isAdminCode(authCode)) {
       setAuthError(!editorName ? 'Invalid authentication code' : 'Admin access required for date editing');
@@ -346,6 +399,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
 
   // Handle save changes
   const handleSaveChanges = async () => {
+    // Kill animations for instant response
+    killAllAnimations();
+    
     if (!editingDate || !selectedShift || !authCode) return;
     
     setIsUpdating(true);
@@ -406,6 +462,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
 
   // Handle cancel edit
   const handleCancelEdit = () => {
+    // Kill animations for instant response
+    killAllAnimations();
+    
     setEditingDate(null);
     setSelectedShift('');
     setSelectedStaff([]);
@@ -499,6 +558,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   };
 
   const handleExportToCalendar = async () => {
+    // Kill animations for instant response
+    killAllAnimations();
+    
     const editorName = validateAuthCode(exportAuthCode);
     if (!editorName) {
       setExportAuthError('Invalid authentication code');
@@ -551,6 +613,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             {/* Left Arrow - Centered */}
           <button
             onClick={() => navigateMonth('prev')}
+            onTouchStart={() => killAllAnimations()}
             className="p-3 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors duration-200 flex items-center justify-center"
             style={{
               touchAction: 'manipulation',
@@ -571,7 +634,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               <div className="flex items-center justify-center space-x-2">
               <select
                 value={selectedDate.getMonth()}
+                onTouchStart={() => killAllAnimations()}
                 onChange={(e) => {
+                  killAllAnimations();
                   const newDate = new Date(selectedDate);
                   newDate.setMonth(Number(e.target.value));
                   onDateChange(newDate);
@@ -593,7 +658,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               
               <select
                 value={selectedDate.getFullYear()}
+                onTouchStart={() => killAllAnimations()}
                 onChange={(e) => {
+                  killAllAnimations();
                   const newDate = new Date(selectedDate);
                   newDate.setFullYear(Number(e.target.value));
                   onDateChange(newDate);
@@ -614,9 +681,11 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               {/* Export to Calendar Button - Centered */}
             <button
               onClick={() => {
+                killAllAnimations();
                 console.log('🔄 ROSTER TABLE: Export to Calendar button clicked');
                 onExportToCalendar();
               }}
+              onTouchStart={() => killAllAnimations()}
               className="p-3 rounded-lg hover:bg-green-100 text-green-600 transition-colors duration-200 flex items-center justify-center"
               style={{
                 touchAction: 'manipulation',
@@ -636,6 +705,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             {/* Right Arrow - Centered */}
           <button
             onClick={() => navigateMonth('next')}
+            onTouchStart={() => killAllAnimations()}
             className="p-3 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors duration-200 flex items-center justify-center"
             style={{
               touchAction: 'manipulation',
@@ -737,6 +807,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 {/* Manual refresh button with real-time status */}
                 <button
                   onClick={async () => {
+                    killAllAnimations();
                     setIsReloading(true);
                     try {
                       console.log('🔄 Manual refresh triggered in table view');
@@ -752,6 +823,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       setIsReloading(false);
                     }
                   }}
+                  onTouchStart={() => killAllAnimations()}
                   disabled={isReloading}
                   style={{
                     background: 'transparent',
