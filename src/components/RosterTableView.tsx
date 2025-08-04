@@ -701,7 +701,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               style={{ 
                 position: 'sticky',
                 top: 0,
-                zIndex: 95,
+                zIndex: 90,
                 width: '100vw',
                 padding: '12px 16px',
                 fontSize: '18px',
@@ -816,7 +816,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     style={{ 
                       position: 'sticky',
                       top: window.innerWidth > window.innerHeight ? 40 : 56, // Adjust for shorter header
-                      zIndex: 85,
+                      zIndex: 80,
                       fontWeight: '600',
                       textAlign: 'center',
                       fontSize: window.innerWidth > window.innerHeight ? '10px' : (window.innerWidth >= 640 ? '14px' : '12px'),
@@ -843,7 +843,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       style={{ 
                         position: 'sticky',
                         top: window.innerWidth > window.innerHeight ? 40 : 56,
-                        zIndex: 85,
+                        zIndex: 80,
                         textAlign: 'center',
                         fontSize: window.innerWidth > window.innerHeight ? '10px' : (window.innerWidth >= 640 ? '14px' : '12px'),
                         color: 'white',
