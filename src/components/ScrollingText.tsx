@@ -148,6 +148,8 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
         width: '100%'
         maxWidth: '100%',
         overflow: 'visible'
+      }
+      }
     >
       <div 
         ref={textRef}
@@ -157,6 +159,8 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
           minWidth: '100%'
           maxWidth: 'none',
           overflow: 'visible'
+        }
+        }
       >
         {children || text}
       </div>
