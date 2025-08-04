@@ -935,8 +935,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                       </div>
                                     </div>
                                   )}
-                                  
-                                  {/* Staff entries */}
                                   <div className="w-full h-full relative" style={{
                                     overflow: 'hidden',
                                     padding: '4px',
