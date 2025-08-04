@@ -985,14 +985,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center'
-                                    }}>
-                                      <RosterEntryCell
-                                        entry={entry}
-                                        onUpdate={handleEntryUpdate}
-                                        onShowDetails={handleShowDetails}
-                                      />
-                                    </div>
-                                  ))}
+                                <div className="flex items-center justify-center h-full">
+                                  {/* Empty cell - no content */}
                                 </div>
                               ) : (
                                 <span className="text-gray-400 text-xs font-medium select-none" style={{
