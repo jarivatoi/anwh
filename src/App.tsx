@@ -545,6 +545,115 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               <select
                 value={selectedDate.getFullYear()}
                 onChange={(e) => {
+                  const newDate = new Date(selectedDate);
+                  newDate.setFullYear(Number(e.target.value));
+                  onDateChange(newDate);
+                }}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-semibold text-gray-900 bg-white text-center"
+                style={{
+                  touchAction: 'manipulation',
+                  WebkitTapHighlightColor: 'transparent',
+                  textAlign: 'center'
+                }}
+              >
+                {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() + i - 2).map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+              </div>
+            </div>
+            
+            {/* Right Arrow - Centered */}
+            <button
+              onClick={() => navigateMonth('next')}
+              className="p-3 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors duration-200 flex items-center justify-center"
+              style={{
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '44px',
+                height: '44px'
+              }}
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </div>
+        </div>
+        
+        {/* Export Button */}
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={() => setShowExportModal(true)}
+            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2"
+            style={{
+              touchAction: 'manipulation',
+              WebkitTapHighlightColor: 'transparent'
+            }}
+          >
+            <Download className="w-4 h-4" />
+            <span>Export to Calendar</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Roster Table */}
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading roster data...</p>
+            </div>
+          </div>
+        ) : (
+          <div 
+            ref={tableRef}
+            className="overflow-auto"
+            style={{
+              height: '70vh',
+              WebkitOverflowScrolling: 'touch',
+              touchAction: 'pan-y',
+              overflowX: 'hidden',
+              overflowY: 'auto'
+            }}
+          >
+            <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
+              <thead className="bg-gray-50 sticky top-0 z-10">
+                <tr>
+                  <th className="text-center font-semibold text-gray-900 border-2 border-gray-300" style={{
+                    padding: '8px 4px',
+                    fontSize: 'clamp(0.75rem, 2.5vw, 1rem)',
+                    width: '60px',
+                    minWidth: '60px',
+                    maxWidth: '60px',
+                    position: 'sticky',
+                    top: 0,
+                    backgroundColor: '#f9fafb',
+                    zIndex: 20
+                  }}>
+                    Date
+                  </th>
+                  {shiftTypes.map((shiftType) => (
+                    <th key={shiftType} className="text-center font-semibold text-gray-900 border-2 border-gray-300" style={{
+                      padding: '8px 4px',
+                      fontSize: 'clamp(0.75rem, 2.5vw, 1rem)',
+                      width: 'calc((100vw - 80px) / 4)',
+                      minWidth: 'calc((100vw - 80px) / 4)',
+                      maxWidth: 'calc((100vw - 80px) / 4)',
+                      position: 'sticky',
+                      top: 0,
+                      backgroundColor: '#f9fafb',
+                      zIndex: 20
+                    }}>
+                      {getShiftDisplayName(shiftType)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {sortedDates.map((date) => {
                   const dateEntries = groupedByDate[date] || [];
                   
                   // Calculate the maximum number of staff in any shift for this date
