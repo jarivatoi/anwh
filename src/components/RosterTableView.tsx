@@ -921,9 +921,21 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                       right: 0,
                                       bottom: 0
                                     }}>
-          onTouchEnd={(e) => e.stopPropagation()}
-          onWheel={(e) => e.stopPropagation()}
-                                <div className="w-full h-full relative" style={{
+                                      <div className="font-bold select-none" style={{
+                                        fontSize: 'clamp(1.5rem, 4vw, 3rem)',
+                                        color: '#ef4444',
+                                        opacity: 0.3,
+                                        userSelect: 'none',
+                                        WebkitUserSelect: 'none',
+                                        pointerEvents: 'none',
+                                        zIndex: 60
+                                      }}>
+                                        ✗
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  <div className="w-full h-full relative" style={{
                                     overflow: 'hidden',
                                     padding: '4px',
                                     margin: 0,
@@ -1140,16 +1152,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
             overflow: 'hidden',
             display: 'flex',
-            flexDirection: 'column',
-            pointerEvents: 'auto'
-          }}
-          onTouchStart={(e) => e.stopPropagation()}
-          onTouchMove={(e) => e.stopPropagation()}
-          onTouchEnd={(e) => e.stopPropagation()}
-          onWheel={(e) => e.stopPropagation()}
-          onScroll={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
+            flexDirection: 'column'
           }}>
             <div className="flex-shrink-0" style={{
               padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
@@ -1360,16 +1363,10 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
             userSelect: 'none',
             WebkitUserSelect: 'none',
-            overflow: 'hidden',
-            pointerEvents: 'auto'
+            overflow: 'hidden'
           }}
-          onTouchStart={(e) => e.stopPropagation()}
-          onTouchMove={(e) => e.stopPropagation()}
-          onTouchEnd={(e) => e.stopPropagation()}
-          onWheel={(e) => e.stopPropagation()}
-          onScroll={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
-        >
+          >
             {/* Header */}
             <div className="border-b border-gray-200 flex-shrink-0 relative" style={{
               padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
