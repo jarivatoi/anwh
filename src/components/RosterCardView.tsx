@@ -42,6 +42,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   const [refreshKey, setRefreshKey] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState('');
+  const [refreshingDate, setRefreshingDate] = useState<string | null>(null);
 
   const isMountedRef = useRef(true);
 
@@ -76,6 +77,12 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   // Handle manual refresh
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
+    
+    // Set the current date as the refreshing date
+    const today = new Date();
+    const todayString = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+    setRefreshingDate(todayString);
+    
     try {
       console.log('🔄 Manual refresh triggered in card view');
       // Just show spinner for visual feedback - don't actually refresh
@@ -86,6 +93,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
       console.error('Manual refresh error:', error);
     } finally {
       setIsRefreshing(false);
+      setRefreshingDate(null);
     }
   };
 
@@ -423,7 +431,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
                     isToday={isToday}
                     realtimeStatus={realtimeStatus}
                    onManualRefresh={handleManualRefresh}
-                   isRefreshing={isRefreshing}
+                   isRefreshing={isRefreshing && refreshingDate === date}
                   />
                   
                   {/* Shift Tabs for this date */}
