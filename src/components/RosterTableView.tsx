@@ -926,15 +926,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                         lineHeight: '1',
                                         color: '#fca5a5',
                                         opacity: 0.4,
-                                        transform: 'scale(1.5)',
-                                        userSelect: 'none',
-                                        WebkitUserSelect: 'none',
-                                        pointerEvents: 'none'
-                                      }}>
-                                        ✗
-                                      </div>
-                                    </div>
-                                  )}
                                 <div className="w-full h-full relative" style={{
                                     overflow: 'hidden',
                                     padding: '4px',
