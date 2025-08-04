@@ -613,7 +613,18 @@ function App() {
   if (!showMainApp) {
     console.log('⏳ Data still loading, showing enhanced loading screen');
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-indigo-100" style={{ minHeight: '100vh', minHeight: '-webkit-fill-available' }}>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-indigo-100" style={{ 
+        minHeight: '100vh', 
+        minHeight: '-webkit-fill-available',
+        width: '100vw',
+        height: '100vh',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 9999
+      }}>
         <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
           <div className="flex items-center justify-center space-x-3 mb-6">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
