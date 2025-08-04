@@ -879,8 +879,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             textAlign: 'center',
                             // No overflow properties - let content flow naturally
                           }}>
-                        
-                            <div className="relative w-full h-full">
                                 <div className="w-full h-full relative" style={{
                                     overflow: 'hidden',
                                     padding: '4px',
