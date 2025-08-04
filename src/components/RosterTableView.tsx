@@ -924,14 +924,14 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                       overflow: 'hidden'
                                     }}>
                                       {sortStaffNames(shiftEntries).map((entry, index) => (
+                                        <div key={entry.id} className="relative" style={{ 
                                         padding: 0, 
                                         margin: 0, 
                                         textAlign: 'center',
                                         width: '100%',
-                                        maxWidth: '100%'
+                                        maxWidth: '100%',
+                                        zIndex: 60 
                                       }}>
-                                      {sortStaffNames(shiftEntries).map((entry, index) => (
-                                        <div key={entry.id} className="relative" style={{ zIndex: 60 }}>
                                           <RosterEntryCell
                                             entry={entry}
                                             onUpdate={handleEntryUpdate}
