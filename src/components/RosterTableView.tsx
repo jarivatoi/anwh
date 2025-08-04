@@ -902,6 +902,24 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                       right: 0,
                                       bottom: 0
                                     }}>
+      if (e.key === 'Escape') {
+        if (showAuthModal && !isUpdating) {
+          handleCancelEdit();
+        } else if (showExportModal && !isExporting) {
+          setShowExportModal(false);
+          setExportAuthCode('');
+          setExportAuthError('');
+          setExportResult(null);
+        }
+      }
+    };
+
+    if (showAuthModal || showExportModal) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [showAuthModal, showExportModal, isUpdating, isExporting]);
+
                                       <div className="font-bold select-none" style={{
                                         fontSize: window.innerWidth > window.innerHeight ? 'clamp(1.5rem, 6vw, 3rem)' : 'clamp(2rem, 8vw, 4rem)',
                                         lineHeight: '1',
@@ -910,17 +928,15 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                         transform: 'scale(1.5)',
                                         textShadow: '0 0 8px rgba(252, 165, 165, 0.6)'
                                       }}>
-                                        ✕
-                                      </div>
-                                    </div>
-                                  )}
-                                  <div className="space-y-1 w-full text-center" style={{ 
-                                    padding: 0, 
-                                    margin: 0, 
+                                <div className="w-full h-full relative" style={{
+                                    overflow: 'hidden',
+                                    padding: '4px',
+                                    margin: 0,
                                     textAlign: 'center',
                                     width: '100%',
-                                    maxWidth: '100%',
-                                    overflow: 'hidden' // Ensure text stays within white box
+                                    height: '100%',
+                                    minWidth: '0',
+                                    backgroundColor: 'white'
                                   }}>
                                     {sortStaffNames(shiftEntries).map((entry, index) => (
                                       <div key={entry.id} className="relative" style={{ 
@@ -1158,10 +1174,10 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   <div className="flex space-x-3">
                     <button
                       onClick={() => {
-                        onExportToCalendar(); // Close the export modal
                         setShowExportModal(false);
                         setExportAuthCode('');
                         setExportAuthError('');
+                        setExportResult(null);
                       }}
                       disabled={isExporting}
                       className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
@@ -1211,11 +1227,12 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   
                   <button
                     onClick={() => {
-                      // Close the export modal and switch to calendar tab
-                      onExportToCalendar(); // This should close the modal
+                      setShowExportModal(false);
+                      setExportAuthCode('');
+                      setExportAuthError('');
+                      setExportResult(null);
+                      
                       setActiveTab('calendar');
-                      // Dispatch event to ensure modal closes
-                      window.dispatchEvent(new CustomEvent('closeCalendarExportModal'));
                       
                       // Dispatch event to navigate calendar to imported month
                       window.dispatchEvent(new CustomEvent('navigateToMonth', {
@@ -1225,7 +1242,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         }
                       }));
                       
-                      setExportResult(null);
                       if (exportResult.success) {
                         // Switch to calendar tab to show the exported data
                         window.dispatchEvent(new CustomEvent('switchToCalendarTab'));
@@ -1243,6 +1259,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         , document.body
       )}
       
+      {/* Staff Selection Modal */}
       {editingDate && selectedShift && authCode && !showAuthModal && createPortal(
         <div 
           className="fixed inset-0 bg-black bg-opacity-50"
@@ -1253,18 +1270,23 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             right: 0,
             bottom: 0,
             zIndex: 2147483647, // Maximum z-index value
-           backgroundColor: 'rgba(0, 0, 0, 0.95)',
-           display: 'flex',
-           alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
-           justifyContent: 'center',
-           padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
-           paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
-           overflow: 'auto',
-           overflowY: 'auto',
-           WebkitOverflowScrolling: 'touch',
-           touchAction: 'pan-y',
-           userSelect: 'none',
-           WebkitUserSelect: 'none'
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            display: 'flex',
+            alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
+            justifyContent: 'center',
+            padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
+            paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
+            overflow: 'auto',
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y',
+            userSelect: 'none',
+            WebkitUserSelect: 'none'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isUpdating) {
+              handleCancelEdit();
+            }
           }}
         >
           <div className="bg-white rounded-2xl shadow-2xl w-full flex flex-col" style={{
@@ -1273,20 +1295,32 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
             userSelect: 'none',
             WebkitUserSelect: 'none'
-          }}>
+          }}
+          onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
             <div className="border-b border-gray-200 flex-shrink-0" style={{
               padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
               userSelect: 'none',
               WebkitUserSelect: 'none'
             }}>
+              <button
+                onClick={handleCancelEdit}
+                disabled={isUpdating}
+                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
               <h3 className="text-xl font-bold text-gray-900 mb-2 text-center select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
                 Edit Staff Assignment
               </h3>
               <p className="text-sm text-gray-600 text-center select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
-                {formatTableDate(editingDate).dayName} {formatTableDate(editingDate).dateString} - {selectedShift}
+                {editingDate && formatTableDate(editingDate).dayName} {editingDate && formatTableDate(editingDate).dateString} - {selectedShift}
               </p>
             </div>
             
+            {/* Content */}
             <div className="flex-1 overflow-y-auto" style={{
               padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
               WebkitOverflowScrolling: 'touch',
@@ -1309,6 +1343,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               </div>
             </div>
             
+            {/* Footer */}
             <div className="border-t border-gray-200 flex-shrink-0" style={{
               padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
               userSelect: 'none',
@@ -1355,23 +1390,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         }}
       />
       
-      {/* Add CSS for reload animation */}
-      <style jsx>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes pulse {
-          0%, 100% {
-            opacity: 0.8;
-            transform: scale(1);
-          }
-          50% {
-            opacity: 1;
-            transform: scale(1.1);
-          }
-        }
-      `}</style>
     </div>
   );
 };
