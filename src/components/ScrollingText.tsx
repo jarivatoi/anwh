@@ -20,14 +20,20 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
   const animationRef = useRef<gsap.core.Timeline | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Global scroll detection to pause all scrolling text
+  // Global scroll detection to pause/resume all scrolling text
   useEffect(() => {
     const handleScroll = () => {
-      // Pause animation immediately
+      // Pause animation immediately without resetting position
       if (animationRef.current && !isPaused) {
         animationRef.current.pause();
         setIsPaused(true);
+      }
+      
+      // Clear existing timeout
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
       }
       
       // Clear existing timeout
@@ -55,6 +61,10 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
       window.removeEventListener('scroll', handleScroll);
       document.removeEventListener('scroll', handleScroll);
       document.removeEventListener('touchmove', handleScroll);
+      
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
       
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
@@ -133,7 +143,7 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
         
         animationRef.current = timeline;
         
-        // If currently paused due to scrolling, start paused
+        // If currently paused due to scrolling, start the animation paused
         if (isPaused) {
           timeline.pause();
         }
@@ -185,6 +195,10 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
       if (animationRef.current) {
         animationRef.current.kill();
         animationRef.current = null;
+      }
+      
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
       }
       
       if (scrollTimeoutRef.current) {
