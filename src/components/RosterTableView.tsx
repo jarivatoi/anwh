@@ -978,17 +978,22 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                       padding: 0, 
                                       margin: 0, 
                                       textAlign: 'center',
-                                      width: '100%',
-                                      maxWidth: '100%',
-                                      overflow: 'hidden', // Contain each entry within white box
-                                      zIndex: 60 
+                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20" style={{
+                                      // Centered within content area only, avoiding header
+                                      top: window.innerWidth > window.innerHeight ? '24px' : '32px', // Adjust for landscape
+                                      left: '8px',
+                                      right: '8px', 
+                                      bottom: window.innerWidth > window.innerHeight ? '16px' : '24px' // Less padding in landscape
                                     }}>
-                                      <RosterEntryCell
-                                        entry={entry}
-                                        onUpdate={handleEntryUpdate}
-                                        onShowDetails={handleShowDetails}
-                                        allEntriesForShift={shiftEntries}
-                                      />
+                                      <div className="font-bold select-none" style={{
+                                        fontSize: window.innerWidth > window.innerHeight ? 'clamp(2rem, 8vw, 4rem)' : 'clamp(4rem, 12vw, 8rem)', // Smaller in landscape
+                                        lineHeight: '1',
+                                        color: '#fca5a5',
+                                        opacity: 0.2,
+                                        transform: 'scale(1.8)'
+                                      }}>
+                                       X
+                                      </div>
                                     </div>
                                   ))}
                                 </div>
