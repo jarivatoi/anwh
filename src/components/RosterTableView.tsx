@@ -916,7 +916,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             border: '2px solid #374151',
                             backgroundColor: 'inherit', // Inherit row background color
                             borderRadius: '4px',
-                            margin: '2px',
+                            backgroundColor: 'inherit',
                             minHeight: `${dynamicHeight}px`,
                             height: `${dynamicHeight}px`,
                             position: 'relative',
@@ -967,7 +967,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                               width: '100%',
                               height: '100%',
                               minWidth: '0',
-                              backgroundColor: 'white'
+                              backgroundColor: 'inherit'
                             }}>
                               {shiftEntries.length > 0 ? (
                                 <div>
