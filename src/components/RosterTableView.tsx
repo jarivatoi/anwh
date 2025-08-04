@@ -923,6 +923,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                       maxWidth: '100%',
                                       overflow: 'hidden'
                                     }}>
+                                      {sortStaffNames(shiftEntries).map((entry, index) => (
                                         padding: 0, 
                                         margin: 0, 
                                         textAlign: 'center',
