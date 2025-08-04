@@ -268,9 +268,10 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
               </div>
             </div>
           </div>
-        </div>
-        , document.body
+        </div>,
+        document.body
       )}
+
       {/* Staff Selection Modal */}
       <StaffSelectionModal
         isOpen={showStaffModal}
