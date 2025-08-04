@@ -988,7 +988,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                         onUpdate={handleEntryUpdate}
                                         onShowDetails={handleShowDetails}
                                         allEntriesForShift={shiftEntries}
-                                     X
+                                      />
                                     </div>
                                   ))}
                                 </div>
@@ -1258,8 +1258,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         <h4 className="font-medium text-blue-800 mb-2">Export Your Shifts</h4>
                         <ul className="text-sm text-blue-700 space-y-1">
                           <li>• Exports only YOUR shifts for {formatMonthYear(selectedDate)}</li>
-                          transform: 'scale(2.5)',
-                          textShadow: '0 0 20px rgba(252, 165, 165, 0.3)'
                           <li>• Skips dates that already have shifts</li>
                           <li>• Automatically marks special dates when needed</li>
                         </ul>
