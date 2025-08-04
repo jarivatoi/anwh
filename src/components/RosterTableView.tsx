@@ -928,6 +928,39 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             minWidth: 'calc((100vw - 80px) / 4)',
                             maxWidth: 'calc((100vw - 80px) / 4)'
                           }}>
+                            {/* X watermark for past dates - spans ENTIRE CELL */}
+                            {isPastDate(date) && (
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
+                                position: 'absolute',
+                                top: '0px',
+                                left: '0px',
+                                right: '0px',
+                                bottom: '0px',
+                                zIndex: 20,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                pointerEvents: 'none',
+                                userSelect: 'none',
+                                WebkitUserSelect: 'none'
+                              }}>
+                                <div style={{
+                                  fontSize: window.innerWidth > window.innerHeight ? 'clamp(2rem, 8vw, 4rem)' : 'clamp(4rem, 12vw, 8rem)',
+                                  lineHeight: '1',
+                                  color: '#fca5a5',
+                                  opacity: 0.2,
+                                  fontWeight: 'bold',
+                                  transform: 'scale(1.8)',
+                                  textShadow: '0 0 20px rgba(252, 165, 165, 0.3)',
+                                  userSelect: 'none',
+                                  WebkitUserSelect: 'none',
+                                  pointerEvents: 'none'
+                                }}>
+                                  ✕
+                                </div>
+                              </div>
+                            )}
+                            
                             <div className="w-full h-full relative" style={{
                               overflow: 'hidden',
                               padding: '4px',
@@ -940,22 +973,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             }}>
                               {shiftEntries.length > 0 ? (
                                 <div>
-                                  {/* X watermark for past dates - positioned within the container only */}
-                                  {isPastDate(date) && (
-                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
-                                      zIndex: 50,
-                                      opacity: 0.1,
-                                      fontSize: 'clamp(2rem, 8vw, 6rem)',
-                                      fontWeight: 'bold',
-                                      color: '#ef4444',
-                                      userSelect: 'none',
-                                      WebkitUserSelect: 'none',
-                                      pointerEvents: 'none'
-                                    }}>
-                                      ✕
-                                    </div>
-                                  )}
-                                  
                                   {sortStaffNames(shiftEntries).map((entry, index) => (
                                     <div key={entry.id} className="relative" style={{ 
                                       padding: 0, 
