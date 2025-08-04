@@ -74,8 +74,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       document.body.style.width = '100%';
       document.body.style.height = '100%';
       
-      console.log('🔒 Body scroll DISABLED - modal is open');
-    }
+     }
 
     return () => {
       // Re-enable body scroll when modals close
@@ -88,7 +87,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       document.body.style.width = '';
       document.body.style.height = '';
       
-      console.log('🔓 Body scroll ENABLED - modal closed');
+    
     };
   }, [showAuthModal, showExportModal, showDetailsModal, editingDate, selectedShift, authCode]);
 
