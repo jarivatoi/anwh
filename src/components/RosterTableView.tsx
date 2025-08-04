@@ -887,20 +887,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         isToday(date) ? 'bg-green-200' : 
                         isPastDate(date) ? 'bg-red-50' :
                         isFutureDate(date) ? 'bg-green-50' : ''
-                      }`}
-                    >
-                      {/* Date Column */}
-                      <RosterDateCell
-                        date={date}
-                        isToday={isToday(date)}
-                        isPastDate={isPastDate(date)}
-                        isFutureDate={isFutureDate(date)}
-                        onLongPress={() => {
-                          setEditingDate(date);
-                          setShowAuthModal(true);
-                        }}
-                        formatTableDate={formatTableDate}
-                        {/* X watermark - centered over names area only */}
                       />
                       {shiftTypes.map((shiftType) => {
                         const shiftEntries = sortStaffNames(getEntriesForDateAndShift(date, shiftType));
