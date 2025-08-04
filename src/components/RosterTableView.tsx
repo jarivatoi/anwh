@@ -748,7 +748,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       console.log('✅ Manual refresh completed');
                     } catch (error) {
                       console.error('Manual refresh failed in table view:', error);
-              {shiftOrder.map((shiftType, index) => (
+                    } finally {
                       setIsReloading(false);
                     }
                   }}
@@ -845,7 +845,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   >
                     Date
                   </th>
-                  {shiftTypes.map((shiftType) => (
+                  {shiftTypes.map((shiftType, index) => (
                     <th
                       key={shiftType}
                       style={{ 
