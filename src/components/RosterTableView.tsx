@@ -987,7 +987,13 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                               backgroundColor: 'white'
                             }}>
                               {shiftEntries.length > 0 ? (
-                                <div>
+                                <div style={{
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  justifyContent: 'center',
+                                  gap: '2px',
+                                  minHeight: 'inherit'
+                                }}>
                                   {sortStaffNames(shiftEntries).map((entry, index) => (
                                     <div key={entry.id} className="relative" style={{ 
                                       padding: 0, 
