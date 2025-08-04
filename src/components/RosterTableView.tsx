@@ -928,6 +928,21 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             minWidth: 'calc((100vw - 80px) / 4)',
                             maxWidth: 'calc((100vw - 80px) / 4)'
                           }}>
+                            {/* X watermark - centered over names area only */}
+                            {isPastDate(date) && (
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                                <div className="font-bold select-none" style={{
+                                  fontSize: window.innerWidth > window.innerHeight ? 'clamp(1.5rem, 6vw, 3rem)' : 'clamp(3rem, 10vw, 6rem)',
+                                  lineHeight: '1',
+                                  color: '#fca5a5',
+                                  opacity: 0.2,
+                                  transform: 'scale(1.5)'
+                                }}>
+                                  X
+                                </div>
+                              </div>
+                            )}
+                            
                             {/* X watermark for past dates - spans ENTIRE CELL */}
                             {isPastDate(date) && (
                               <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
