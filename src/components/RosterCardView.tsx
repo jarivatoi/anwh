@@ -599,41 +599,68 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       </div>
 
       {/* Roster Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div 
+        ref={tableRef}
+        className="bg-white rounded-lg border border-gray-200 shadow-sm"
+        style={{
+          height: '70vh',
+          overflow: 'hidden',
+          overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          touchAction: 'pan-y',
+          position: 'relative'
+        }}
+      >
         {loading ? (
-          <div className="flex items-center justify-center py-12">
+          <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
               <p className="text-gray-600">Loading roster data...</p>
             </div>
           </div>
         ) : (
-          <div 
-            ref={tableRef}
-            className="overflow-auto"
-            style={{
-              height: '70vh',
-              WebkitOverflowScrolling: 'touch',
-              touchAction: 'pan-y',
-              overflowX: 'hidden',
-              overflowY: 'auto'
-            }}
-          >
-            <table className="w-full border-collapse">
+          <div className="w-full">
+            <table className="w-full border-collapse" style={{
+              tableLayout: 'fixed',
+              width: '100%',
+              minWidth: '100%'
+            }}>
               <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                  <th className="text-center font-semibold text-gray-900 border-2 border-gray-300" style={{
+                    padding: '8px 4px',
+                    fontSize: 'clamp(0.75rem, 2.5vw, 1rem)',
+                    lineHeight: '1.2',
+                    width: '60px',
+                    minWidth: '60px',
+                    maxWidth: '60px',
+                    position: 'sticky',
+                    top: 0,
+                    backgroundColor: '#f9fafb',
+                    zIndex: 20
+                  }}>
                     Date
                   </th>
-                  {shiftTypes.map(shiftType => (
-                    <th key={shiftType} className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                  {shiftTypes.map((shiftType) => (
+                    <th key={shiftType} className="text-center font-semibold text-gray-900 border-2 border-gray-300" style={{
+                      padding: '8px 4px',
+                      fontSize: 'clamp(0.75rem, 2.5vw, 1rem)',
+                      lineHeight: '1.2',
+                      width: 'calc((100vw - 80px) / 4)',
+                      minWidth: 'calc((100vw - 80px) / 4)',
+                      maxWidth: 'calc((100vw - 80px) / 4)',
+                      position: 'sticky',
+                      top: 0,
+                      backgroundColor: '#f9fafb',
+                      zIndex: 20
+                    }}>
                       {getShiftDisplayName(shiftType)}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {sortedDates.map(date => {
+              <tbody>
+                {sortedDates.map((date) => {
                   const dateEntries = groupedByDate[date] || [];
                   
                   // Calculate the maximum number of staff in any shift for this date
