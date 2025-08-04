@@ -926,7 +926,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                         lineHeight: '1',
                                         color: '#fca5a5',
                                         opacity: 0.4,
-                                        textShadow: '0 0 10px rgba(252, 165, 165, 0.8)',
+                                        transform: 'scale(1.5)',
                                         userSelect: 'none',
                                         WebkitUserSelect: 'none',
                                         pointerEvents: 'none'
@@ -936,6 +936,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                     </div>
                                   )}
                                   
+                                  {/* Staff entries */}
                                   <div className="w-full h-full relative" style={{
                                     overflow: 'hidden',
                                     padding: '4px',
