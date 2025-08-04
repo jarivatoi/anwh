@@ -1148,7 +1148,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             left: 0,
             right: 0,
             bottom: 0,
-            zIndex: 999999999, // Ultra-high z-index
+            zIndex: 999999999, // Ultra-high z-index - higher than any sticky header
             backgroundColor: 'rgba(0, 0, 0, 0.95)',
             display: 'flex',
             alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
@@ -1409,7 +1409,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
             margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
             overflow: 'hidden',
-            pointerEvents: 'auto'
             pointerEvents: 'auto'
           }}
           onTouchStart={(e) => e.stopPropagation()}
