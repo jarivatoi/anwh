@@ -61,6 +61,37 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const tableRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef(false);
 
+  // CRITICAL: Prevent body scroll when ANY modal is open
+  useEffect(() => {
+    if (showAuthModal || showExportModal || showDetailsModal || (editingDate && selectedShift && authCode && !showAuthModal)) {
+      // Completely disable body scroll
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = '0';
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.bottom = '0';
+      document.body.style.width = '100%';
+      document.body.style.height = '100%';
+      
+      console.log('🔒 Body scroll DISABLED - modal is open');
+    }
+
+    return () => {
+      // Re-enable body scroll when modals close
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.bottom = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+      
+      console.log('🔓 Body scroll ENABLED - modal closed');
+    };
+  }, [showAuthModal, showExportModal, showDetailsModal, editingDate, selectedShift, authCode]);
+
   // Track mounted status
   useEffect(() => {
     isMountedRef.current = true;
@@ -983,17 +1014,40 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             left: 0,
             right: 0,
             bottom: 0,
-            zIndex: 2147483647, // Maximum z-index value
-           backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            zIndex: 2147483647,
+            backgroundColor: 'rgba(0, 0, 0, 0.98)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
            display: 'flex',
            alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
            justifyContent: 'center',
            padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
            paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
-           overflow: 'auto',
-           overflowY: 'auto',
-           WebkitOverflowScrolling: 'touch',
-           touchAction: 'pan-y'
+            overflow: 'hidden',
+            overflowY: 'hidden',
+            touchAction: 'none',
+            pointerEvents: 'auto'
+          }}
+          onWheel={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onScroll={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onTouchStart={(e) => {
+            e.stopPropagation();
+          }}
+          onTouchMove={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              handleCancelEdit();
+            }
+            e.stopPropagation();
           }}
         >
           <div className="bg-white rounded-2xl shadow-2xl w-full" style={{
