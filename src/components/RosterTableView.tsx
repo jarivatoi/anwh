@@ -971,22 +971,32 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             }}>
                               {shiftEntries.length > 0 ? (
                                 <div>
-                                  {sortStaffNames(shiftEntries).map((entry, index) => (
+                                    <div className="absolute flex items-center justify-center pointer-events-none" style={{
+                                      top: '0',
+                                      left: '0',
+                                      right: '0',
+                                      bottom: '0',
                                     <div key={entry.id} className="relative" style={{ 
-                                      padding: 0, 
-                                      margin: 0, 
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
                                       textAlign: 'center',
-                                      width: '100%',
+                                      fontSize: window.innerWidth > window.innerHeight ? 'clamp(1.5rem, 6vw, 3rem)' : 'clamp(2rem, 8vw, 4rem)',
+                                      lineHeight: '1',
+                                      color: '#fca5a5',
+                                      opacity: 0.2,
                                       maxWidth: '100%',
                                       overflow: 'hidden', // Contain each entry within white box
-                                      zIndex: 60 
+                                      pointerEvents: 'none',
+                                      transform: 'scale(1.8)',
+                                      textAlign: 'center'
                                     }}>
                                       <RosterEntryCell
                                         entry={entry}
                                         onUpdate={handleEntryUpdate}
                                         onShowDetails={handleShowDetails}
                                         allEntriesForShift={shiftEntries}
-                                      />
+                                      X
                                     </div>
                                   ))}
                                 </div>
