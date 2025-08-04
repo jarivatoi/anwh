@@ -858,7 +858,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         border: '2px solid #000000',
                         backgroundColor: '#6b7280',
                         background: '#6b7280',
-                        margin: 0,
+                        margin: '0',
+                        marginLeft: index === 0 ? '0' : '-2px', // Overlap borders to remove gaps
                         padding: window.innerWidth > window.innerHeight ? '8px 4px' : '12px 8px',
                         opacity: 1,
                         width: 'calc((100vw - 80px) / 4)',
