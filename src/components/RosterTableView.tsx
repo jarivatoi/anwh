@@ -803,4 +803,19 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     width: '12px',
                     height: '12px',
                     borderRadius: '50%',
-                    
+                    backgroundColor: 
+                      realtimeStatus === 'connected' ? '#10b981' :
+                      realtimeStatus === 'connecting' ? '#f59e0b' :
+                      realtimeStatus === 'error' ? '#ef4444' :
+                      '#6b7280',
+                    animation: realtimeStatus === 'connected' ? 'pulse 2s infinite' : 'none',
+                    boxShadow: realtimeStatus === 'connected' ? '0 0 8px rgba(16, 185, 129, 0.6)' : 'none',
+                    border: 'none',
+                    outline: 'none',
+                    borderWidth: '0',
+                    borderStyle: 'none',
+                    transform: 'translate3d(0,0,0)',
+                    backfaceVisibility: 'hidden',
+                    WebkitBackfaceVisibility: 'hidden',
+                    WebkitTransform: 'translate3d(0,0,0)'
+                  }} />
