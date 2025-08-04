@@ -75,7 +75,7 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
         onShowDetails(entry);
       }
     },
-    delay: 800
+    delay: 5000
   });
 
   const handleAuthSubmit = () => {

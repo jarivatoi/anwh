@@ -54,7 +54,7 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
      <button
         {...useLongPress({
           onLongPress,
-          delay: 800
+          delay: 5000
         })}
         className={`text-center w-full h-full p-1 rounded transition-colors duration-200 ${
           isToday ? 'bg-green-300' : 'hover:bg-gray-100'

@@ -75,7 +75,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
         onShowDetails(entry);
       }
     },
-    delay: 800
+    delay: 5000
   });
 
   const handleAuthSubmit = () => {
