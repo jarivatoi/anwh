@@ -910,17 +910,15 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                         transform: 'scale(1.5)',
                                         textShadow: '0 0 8px rgba(252, 165, 165, 0.6)'
                                       }}>
-                                        ✕
-                                      </div>
-                                    </div>
-                                  )}
-                                  <div className="space-y-1 w-full text-center" style={{ 
-                                    padding: 0, 
-                                    margin: 0, 
+                                <div className="w-full h-full relative" style={{
+                                    overflow: 'hidden',
+                                    padding: '4px',
+                                    margin: 0,
                                     textAlign: 'center',
                                     width: '100%',
-                                    maxWidth: '100%',
-                                    overflow: 'hidden' // Ensure text stays within white box
+                                    height: '100%',
+                                    minWidth: '0',
+                                    backgroundColor: 'white'
                                   }}>
                                     {sortStaffNames(shiftEntries).map((entry, index) => (
                                       <div key={entry.id} className="relative" style={{ 
