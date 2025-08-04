@@ -376,17 +376,27 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
           zIndex: 10, // Lower z-index so sticky headers appear above
           minHeight: '20px',
           border: 'none',
-          backgroundColor: 'transparent'
+          backgroundColor: 'transparent',
+          width: '100%',
+          maxWidth: '100%',
+          overflow: 'hidden'
         }}
       >
-        <div className="text-[8px] sm:text-[10px] font-medium text-gray-900 leading-tight w-full flex items-center justify-center">
+        <div className="text-[8px] sm:text-[10px] font-medium text-gray-900 leading-tight w-full flex items-center justify-center" style={{
+          width: '100%',
+          maxWidth: '100%',
+          overflow: 'hidden'
+        }}>
           {isUpdating ? 'Updating...' : (() => {
             const styling = getNameStyling(entry);
             return (
-              <div className="flex items-center justify-center">
+              <div className="flex items-center justify-center w-full" style={{
+                width: '100%',
+                maxWidth: '100%'
+              }}>
                 <ScrollingText 
                   text={entry.assigned_name}
-                  className={styling.className}
+                  className={`${styling.className} w-full`}
                 />
                 {styling.showAsterisk && (
                   <span className="text-black font-bold text-[10px] sm:text-[12px] animate-asterisk-zoom ml-0">*</span>
