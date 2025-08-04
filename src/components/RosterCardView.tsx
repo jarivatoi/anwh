@@ -75,13 +75,12 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   }, []);
 
   // Handle manual refresh
-  const handleManualRefresh = async () => {
+  const handleManualRefresh = async (clickedDate?: string) => {
     setIsRefreshing(true);
     
-    // Set the current date as the refreshing date
-    const today = new Date();
-    const todayString = today.toISOString().split('T')[0]; // YYYY-MM-DD format
-    setRefreshingDate(todayString);
+    // Set the clicked date as the refreshing date (or today if not specified)
+    const refreshDate = clickedDate || new Date().toISOString().split('T')[0];
+    setRefreshingDate(refreshDate);
     
     try {
       console.log('🔄 Manual refresh triggered in card view');
@@ -430,7 +429,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
                     }}
                     isToday={isToday}
                     realtimeStatus={realtimeStatus}
-                   onManualRefresh={handleManualRefresh}
+                   onManualRefresh={() => handleManualRefresh(date)}
                    isRefreshing={isRefreshing && refreshingDate === date}
                   />
                   

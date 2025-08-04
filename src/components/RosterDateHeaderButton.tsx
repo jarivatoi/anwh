@@ -7,7 +7,7 @@ interface RosterDateHeaderButtonProps {
   onLongPress: () => void;
   isToday: (dateString: string) => boolean;
   realtimeStatus?: 'connecting' | 'connected' | 'error' | 'disconnected';
-  onManualRefresh?: () => void;
+  onManualRefresh?: (date?: string) => void;
   isRefreshing?: boolean;
 }
 
@@ -115,7 +115,7 @@ export const RosterDateHeaderButton: React.FC<RosterDateHeaderButtonProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onManualRefresh();
+                onManualRefresh(date);
               }}
               disabled={isRefreshing}
               style={{
