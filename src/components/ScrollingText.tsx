@@ -35,18 +35,13 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
         clearTimeout(scrollTimeoutRef.current);
       }
       
-      // Clear existing timeout
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-      
       // Resume animation after scroll stops (300ms delay)
       scrollTimeoutRef.current = setTimeout(() => {
         if (animationRef.current && isPaused) {
           animationRef.current.resume();
           setIsPaused(false);
         }
-      }, 300);
+      }, 500); // Increased delay to ensure scroll has completely stopped
     };
 
     // Listen to scroll events on window and all scrollable containers
@@ -55,15 +50,16 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
     
     // Also listen for touch events that might cause scrolling
     document.addEventListener('touchmove', handleScroll, { passive: true });
+    document.addEventListener('touchend', () => {
+      // Add extra delay after touch end to ensure scrolling has stopped
+      setTimeout(handleScroll, 100);
+    }, { passive: true });
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
       document.removeEventListener('scroll', handleScroll);
       document.removeEventListener('touchmove', handleScroll);
-      
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
+      document.removeEventListener('touchend', handleScroll);
       
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
