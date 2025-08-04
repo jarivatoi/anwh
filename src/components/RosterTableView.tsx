@@ -886,11 +886,10 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                 <div className="bg-white rounded-lg border-2 border-black shadow-sm relative" style={{
                                     width: 'calc(100% - 4px)', // Subtract padding to get exact width
                                     maxWidth: 'calc(100% - 4px)',
-                                    overflow: 'visible',
+                                    overflow: 'hidden', // Keep text contained within white box
                                     padding: '4px',
                                     margin: 0,
                                     textAlign: 'center',
-                                    width: 'calc(100% - 8px)',
                                     height: 'calc(100% - 8px)',
                                     minWidth: '0'
                                   }}>
@@ -921,7 +920,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                       textAlign: 'center',
                                       width: '100%',
                                       maxWidth: '100%',
-                                      overflow: 'visible'
+                                      overflow: 'hidden' // Ensure text stays within white box
                                     }}>
                                       {sortStaffNames(shiftEntries).map((entry, index) => (
                                         <div key={entry.id} className="relative" style={{ 
@@ -930,6 +929,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                         textAlign: 'center',
                                         width: '100%',
                                         maxWidth: '100%',
+                                        overflow: 'hidden', // Contain each entry within white box
                                         overflow: 'visible',
                                         zIndex: 60 
                                       }}>

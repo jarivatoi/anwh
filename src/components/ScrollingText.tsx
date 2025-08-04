@@ -147,7 +147,7 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
         position: 'relative',
         width: '100%',
         maxWidth: '100%',
-        overflow: 'visible'
+        overflow: 'hidden' // Contain text within parent boundaries
       }
       }
     >
@@ -158,7 +158,7 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
           display: 'inline-block',
           minWidth: '100%',
           maxWidth: 'none',
-          overflow: 'visible'
+          overflow: 'hidden' // Prevent text from escaping container
         }
         }
       >
