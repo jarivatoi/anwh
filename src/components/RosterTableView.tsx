@@ -446,20 +446,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     return dateString < todayString;
   };
 
-  // Format date for display in table headers
-  const formatTableDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear().toString().slice(-2);
-    
-    return {
-      dayName: dayNames[date.getDay()],
-      dateString: `${day}-${month}-${year}`
-    };
-  };
-
   // Custom sorting function to prioritize (R) names first
   const sortStaffNames = (entries: RosterEntry[]): RosterEntry[] => {
     // Extract names, sort them using group sorting, then reorder entries
@@ -903,33 +889,33 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         isFutureDate(date) ? 'bg-green-50' : ''
                       }`}
                     >
-                      {/* Date Cell */}
-                      <td className={`text-center overflow-hidden align-top relative ${
-                        isPastDate(date) ? 'bg-red-50' : ''
-                      }`} style={{
-                        padding: '2px',
-                        border: '2px solid #374151',
-                        backgroundColor: '#f9fafb',
-                        borderRadius: '4px',
-                        margin: '2px',
-                        minHeight: `${dynamicHeight}px`,
-                        height: `${dynamicHeight}px`,
-                        position: 'relative',
-                        overflow: 'hidden',
-                        textAlign: 'center',
-                        width: '80px',
-                        minWidth: '80px',
-                        maxWidth: '80px'
-                      }}>
-                        <RosterDateCell
-                          date={date}
-                          isToday={isToday(date)}
-                          isPast={isPastDate(date)}
-                          isFuture={isFutureDate(date)}
-                          onEdit={handleEditClick}
-                        />
-                      </td>
-                      
+                      {/* Date Column */}
+                      <RosterDateCell
+                        date={date}
+                        isToday={isToday(date)}
+                        isPastDate={isPastDate(date)}
+                        isFutureDate={isFutureDate(date)}
+                        onLongPress={() => {
+                          setEditingDate(date);
+                          setShowAuthModal(true);
+                        }}
+                        formatTableDate={formatTableDate}
+                        {/* X watermark - centered over names area only */}
+                        {isPastDate(date) && (
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                            <div className="font-bold select-none" style={{
+                              fontSize: window.innerWidth > window.innerHeight ? 'clamp(1.5rem, 6vw, 3rem)' : 'clamp(3rem, 10vw, 6rem)',
+                              lineHeight: '1',
+                              color: '#fca5a5',
+                              opacity: 0.2,
+                              transform: 'scale(1.5)'
+                            }}>
+                              X
+                            </div>
+                          </div>
+                        )}
+                        
+                      />
                       {shiftTypes.map((shiftType) => {
                         const shiftEntries = sortStaffNames(getEntriesForDateAndShift(date, shiftType));
                         const maxStaffForThisDate = getMaxStaffCountForDate(date);
@@ -957,21 +943,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             minWidth: 'calc((100vw - 80px) / 4)',
                             maxWidth: 'calc((100vw - 80px) / 4)'
                           }}>
-                            {/* X watermark - centered over names area only */}
-                            {isPastDate(date) && (
-                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                                <div className="font-bold select-none" style={{
-                                  fontSize: window.innerWidth > window.innerHeight ? 'clamp(1.5rem, 6vw, 3rem)' : 'clamp(3rem, 10vw, 6rem)',
-                                  lineHeight: '1',
-                                  color: '#fca5a5',
-                                  opacity: 0.2,
-                                  transform: 'scale(1.5)'
-                                }}>
-                                  X
-                                </div>
-                              </div>
-                            )}
-                            
                             {/* X watermark - centered over names area only */}
                             {isPastDate(date) && (
                               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
@@ -1341,30 +1312,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Authentication Code
-                    </label>
-                    <input
-                      type="text"
-                      value={exportAuthCode}
-                      onChange={(e) => setExportAuthCode(e.target.value.toUpperCase())}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-center font-mono text-lg"
-                      placeholder="Enter your code"
-                      maxLength={4}
-                      autoComplete="off"
-                      autoFocus
-                    />
-                  </div>
-                  
-                  {exportAuthError && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-sm text-red-700 text-center">{exportAuthError}</p>
-                    </div>
-                  )}
-                </>
-              ) : null}
+                })}
                   <div className="flex space-x-3">
                     <button
                       onClick={() => {
@@ -1396,7 +1344,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       )}
                     </button>
                   </div>
-                {!exportResult ? null : (
+                </>
+              ) : (
                 <>
                   <div className="text-center mb-6">
                     <div className={`w-16 h-16 ${exportResult.success ? 'bg-green-100' : 'bg-red-100'} rounded-full flex items-center justify-center mx-auto mb-4`}>
