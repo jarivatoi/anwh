@@ -1053,13 +1053,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           <div className="bg-white rounded-2xl shadow-2xl w-full" style={{
             maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
             maxHeight: window.innerWidth > window.innerHeight ? '95vh' : 'none',
-            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
-            pointerEvents: 'auto'
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
-        >
+            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0'
+          }}>
             <div 
               style={{
               padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
@@ -1413,9 +1408,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
             maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
             margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
-            userSelect: 'none',
-            WebkitUserSelect: 'none',
             overflow: 'hidden',
+            pointerEvents: 'auto'
             pointerEvents: 'auto'
           }}
           onTouchStart={(e) => e.stopPropagation()}
