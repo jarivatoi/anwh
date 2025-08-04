@@ -971,11 +971,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             }}>
                               {shiftEntries.length > 0 ? (
                                 <div>
-                                    <div className="absolute flex items-center justify-center pointer-events-none" style={{
-                                      top: '0',
-                                      left: '0',
-                                      right: '0',
-                                      bottom: '0',
+                                  {shiftEntries.map((entry) => (
                                     <div key={entry.id} className="relative" style={{ 
                                       display: 'flex',
                                       alignItems: 'center',
@@ -996,7 +992,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                         onUpdate={handleEntryUpdate}
                                         onShowDetails={handleShowDetails}
                                         allEntriesForShift={shiftEntries}
-                                      X
+                                      />
                                     </div>
                                   ))}
                                 </div>
