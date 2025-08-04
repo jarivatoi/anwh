@@ -101,7 +101,8 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
         }`} style={{
           textAlign: 'center',
           width: '100%',
-          display: 'block'
+          display: 'block',
+          fontSize: window.innerWidth > window.innerHeight ? '10px' : '12px'
         }}>
           {formatTableDate(date).dayName}
         </div>
@@ -110,7 +111,8 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
         }`} style={{
           textAlign: 'center',
           width: '100%',
-          display: 'block'
+          display: 'block',
+          fontSize: window.innerWidth > window.innerHeight ? '10px' : '12px'
         }}>
           {formatTableDate(date).dateString}
         </div>
