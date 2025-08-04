@@ -20,7 +20,6 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
   const animationRef = useRef<gsap.core.Timeline | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Global scroll detection to pause/resume all scrolling text
   useEffect(() => {
