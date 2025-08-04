@@ -887,9 +887,12 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                     width: 'calc(100% - 4px)', // Subtract padding to get exact width
                                     maxWidth: 'calc(100% - 4px)',
                                     overflow: 'hidden',
-                                    padding: 0,
+                                    padding: '4px',
                                     margin: 0,
-                                    textAlign: 'center'
+                                    textAlign: 'center',
+                                    width: 'calc(100% - 8px)',
+                                    height: 'calc(100% - 8px)',
+                                    minWidth: '0'
                                   }}>
                                       {/* X watermark for past dates - positioned within the container only */}
                                       {isPastDate(date) && (
@@ -912,7 +915,14 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                           </div>
                                         </div>
                                       )}
-                                    <div className="space-y-1 text-center" style={{ 
+                                    <div className="space-y-1 w-full text-center" style={{ 
+                                      padding: 0, 
+                                      margin: 0, 
+                                      textAlign: 'center',
+                                      width: '100%',
+                                      maxWidth: '100%',
+                                      overflow: 'hidden'
+                                    }}>
                                         padding: 0, 
                                         margin: 0, 
                                         textAlign: 'center',
