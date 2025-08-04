@@ -1,1055 +1,508 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { Calendar, User, ChevronLeft, ChevronRight, Edit, RotateCcw, FileText, X, CheckCircle, AlertTriangle, Download } from 'lucide-react';
-import { RosterEntry, ShiftFilterType } from '../types/roster';
-import { formatDisplayDate } from '../utils/rosterFilters';
-import { RosterEntryCell } from './RosterEntryCell';
-import { RosterDateCell } from './RosterDateCell';
+import { RosterEntry } from '../types/roster';
+import { useLongPress } from '../hooks/useLongPress';
 import { useState, useEffect, useRef } from 'react';
-import { useRosterData } from '../hooks/useRosterData';
-import { availableNames, validateAuthCode, shiftTypes } from '../utils/rosterAuth';
-import { isAdminCode } from '../utils/rosterAuth';
-import { sortByGroup } from '../utils/rosterAuth';
-import { addRosterEntry, deleteRosterEntry } from '../utils/rosterApi';
-import { EditDetailsModal } from './EditDetailsModal';
+import { X, Edit, Calendar, User, Clock } from 'lucide-react';
+import { availableNames, validateAuthCode } from '../utils/rosterAuth';
 import { ScrollingText } from './ScrollingText';
-import { fetchRosterEntries } from '../utils/rosterApi';
+import { isPastDate } from '../utils/rosterHelpers';
+import { parseNameChange } from '../utils/rosterHelpers';
+import { updateRosterEntry } from '../utils/rosterApi';
+import { StaffSelectionModal } from './StaffSelectionModal';
+import { gsap } from 'gsap';
 
-interface RosterTableViewProps {
-  entries: RosterEntry[];
-  loading: boolean;
-  realtimeStatus: 'connecting' | 'connected' | 'error' | 'disconnected';
-  onRefresh?: () => Promise<void>;
-  selectedDate: Date;
-  onDateChange: (date: Date) => void;
-  onExportToCalendar: () => void;
-  setActiveTab: (tab: 'calendar' | 'settings' | 'data' | 'roster') => void;
-  setActiveTab?: (tab: 'calendar' | 'settings' | 'data' | 'roster') => void;
+interface RosterCardItemProps {
+  entry: RosterEntry;
+  onShowDetails: (entry: RosterEntry) => void;
+  onUpdate?: (updatedEntry: RosterEntry) => void;
+  allEntriesForShift?: RosterEntry[];
 }
 
-export const RosterTableView: React.FC<RosterTableViewProps> = ({
-  entries,
-  loading,
-  realtimeStatus,
-  onRefresh,
-  selectedDate,
-  onDateChange,
-  onExportToCalendar,
-  setActiveTab,
+export const RosterCardItem: React.FC<RosterCardItemProps> = ({
+  entry,
+  onShowDetails,
+  onUpdate,
+  allEntriesForShift
 }) => {
-  // All hooks must be declared at the top level before any conditional returns
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [hasAutoScrolled, setHasAutoScrolled] = useState(false);
-  const [editingDate, setEditingDate] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authCode, setAuthCode] = useState('');
   const [authError, setAuthError] = useState('');
-  const [selectedShift, setSelectedShift] = useState<string>('');
-  const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedEntry, setSelectedEntry] = useState<RosterEntry | null>(null);
-  const [hasInitialLoad, setHasInitialLoad] = useState(false);
-  const [isReloading, setIsReloading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [lastUpdateTime, setLastUpdateTime] = useState<string>('');
-  const [showExportModal, setShowExportModal] = useState(false);
-  const [exportAuthCode, setExportAuthCode] = useState('');
-  const [exportAuthError, setExportAuthError] = useState('');
-  const [isExporting, setIsExporting] = useState(false);
-  const [exportResult, setExportResult] = useState<{success: boolean, message: string} | null>(null);
-  
-  const tableRef = useRef<HTMLDivElement>(null);
-  const isMountedRef = useRef(false);
+  const selectRef = useRef<HTMLSelectElement>(null);
+  const [showStaffModal, setShowStaffModal] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
-  // Track mounted status
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
-  
-  // iPhone orientation change handler
-  useEffect(() => {
-    const handleOrientationChange = () => {
-      console.log('📱 Orientation change detected, fixing roster table...');
-      
-      // Fix UI issues without database calls
-      setTimeout(() => {
-        // Only fix UI elements, no database operations
-        document.body.style.overflow = '';
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.left = '';
-        document.body.style.right = '';
-        document.body.style.bottom = '';
-        
-        // Ensure table container maintains proper scrolling
-        if (tableRef.current) {
-          const container = tableRef.current;
-          // Force reset scrolling properties
-          container.style.overflow = 'hidden';
-          container.style.overflowX = 'hidden';
-          container.style.overflowY = 'auto';
-          container.style.WebkitOverflowScrolling = 'touch';
-          container.style.touchAction = 'auto';
-          container.style.pointerEvents = 'auto';
-          
-          // Force reflow
-          container.offsetHeight;
-          console.log('📱 Table container scrolling restored');
-        }
-        
-        // Ensure all roster containers can scroll
-        const rosterContainers = document.querySelectorAll('[style*="height: 70vh"], [style*="height: 60vh"]');
-        rosterContainers.forEach(container => {
-          const el = container as HTMLElement;
-          el.style.overflow = 'auto';
-          el.style.overflowY = 'auto';
-          el.style.WebkitOverflowScrolling = 'touch';
-          el.style.touchAction = 'auto';
-          el.style.pointerEvents = 'auto';
-        });
-        
-        // Force repaint of all interactive elements
-        const interactiveElements = document.querySelectorAll('button, [role="button"], input, select');
-        interactiveElements.forEach(element => {
-          const el = element as HTMLElement;
-          // Reset any disabled touch actions
-          el.style.touchAction = 'manipulation';
-          el.style.pointerEvents = 'auto';
-          el.style.transform = 'translateZ(0)';
-          el.style.backfaceVisibility = 'hidden';
-          el.style.WebkitBackfaceVisibility = 'hidden';
-          el.style.WebkitTransform = 'translateZ(0)';
-        });
-        
-        // Force repaint of sticky headers
-        const stickyHeaders = document.querySelectorAll('[style*="position: sticky"]');
-        stickyHeaders.forEach(header => {
-          const el = header as HTMLElement;
-          el.style.pointerEvents = 'auto';
-          el.style.transform = 'translateZ(0)';
-          el.style.backfaceVisibility = 'hidden';
-          el.style.WebkitBackfaceVisibility = 'hidden';
-          el.style.WebkitTransform = 'translateZ(0)';
-        });
-        
-        console.log('📱 All interactive elements restored');
-        
-      }, 100);
-    };
+  // Get available staff (excluding others already working this shift, including same base names)
+  const getAvailableStaff = () => {
+    if (!allEntriesForShift || allEntriesForShift.length === 0) {
+      return availableNames.filter(name => name !== 'ADMIN');
+    }
 
-    // Listen for orientation changes
-    window.addEventListener('orientationchange', handleOrientationChange);
-    window.addEventListener('resize', handleOrientationChange);
+    // Get all currently assigned staff for this shift
+    const currentlyAssigned = allEntriesForShift.map(e => e.assigned_name);
     
-    return () => {
-      window.removeEventListener('orientationchange', handleOrientationChange);
-      window.removeEventListener('resize', handleOrientationChange);
-    };
-  }, []);
-
-
-
-  // Auto-scroll to today's date ONLY on initial component mount
-  useEffect(() => {
-    if (!loading && !hasAutoScrolled && entries.length > 0 && selectedDate.getMonth() === new Date().getMonth() && selectedDate.getFullYear() === new Date().getFullYear()) {
-      const today = new Date();
-      const todayString = today.toISOString().split('T')[0]; // YYYY-MM-DD format
-      
-      // Check if today's date exists in the entries
-      const todayEntry = entries.find(entry => entry.date === todayString);
-      
-      // Only auto-scroll if today's date actually exists in the roster
-      if (todayEntry && tableRef.current) {
-        // Scroll to today's row after a brief delay to ensure DOM is ready
-        setTimeout(() => {
-          const todayRow = document.querySelector(`[data-date="${todayString}"]`);
-          if (todayRow) {
-            todayRow.scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'center' 
-            });
-            console.log(`📍 Auto-scrolled to today's date: ${todayString}`);
-          }
-        }, 100);
-      } else {
-        console.log(`📍 Today's date (${todayString}) not found in roster entries - no auto-scroll`);
+    // Filter out staff who are already working, including matching base names
+    return availableNames.filter(staffName => {
+      // Exclude ADMIN from selection
+      if (staffName === 'ADMIN') {
+        return false;
       }
       
-      setHasAutoScrolled(true);
-    }
-  }, [loading, hasAutoScrolled, entries, selectedDate]);
-
-  // Group entries by shift type for each date
-  const groupEntriesByShift = (dateEntries: RosterEntry[]) => {
-    const shiftGroups: Record<string, RosterEntry[]> = {};
-    
-    dateEntries.forEach(entry => {
-      if (!shiftGroups[entry.shift_type]) {
-        shiftGroups[entry.shift_type] = [];
+      // Don't filter out the current assignment (allow keeping same person)
+      if (staffName === entry.assigned_name) {
+        return true;
       }
-      shiftGroups[entry.shift_type].push(entry);
+      
+      // Check if this staff member (or their counterpart) is already assigned
+      const baseName = staffName.replace(/\(R\)$/, '').trim();
+      const isAlreadyAssigned = currentlyAssigned.some(assigned => {
+        const assignedBaseName = assigned.replace(/\(R\)$/, '').trim();
+        return baseName === assignedBaseName;
+      });
+      
+      return !isAlreadyAssigned;
     });
+  };
+
+  // Check if entry has been edited
+  const hasBeenEdited = (entry: RosterEntry) => {
+    const result = !!(entry.last_edited_by && entry.last_edited_by.trim() !== '');
+    return result;
+  };
+
+  // Check if current assignment matches original assignment (show black with asterisk)
+  const isBackToOriginal = (entry: RosterEntry) => {
+    // Only check for name changes if the entry has actually been edited AND has change description
+    if (!hasBeenEdited(entry) || !entry.change_description || !entry.change_description.includes('Name changed from')) return false;
     
-    // Sort each shift group to prioritize (R) names first
-    Object.keys(shiftGroups).forEach(shiftType => {
-      shiftGroups[shiftType] = sortStaffNames(shiftGroups[shiftType]);
-    });
+    const nameInfo = parseNameChange(entry.change_description || '', entry.assigned_name);
+    const result = nameInfo.isNameChange && nameInfo.oldName && entry.assigned_name === nameInfo.oldName;
     
-    return shiftGroups;
+    return result;
   };
 
-  // Filter entries based on selected date (show entries for the selected month)
-  const filteredEntries = entries.filter(entry => {
-    const entryDate = new Date(entry.date);
-    return entryDate.getMonth() === selectedDate.getMonth() && 
-           entryDate.getFullYear() === selectedDate.getFullYear();
-  });
-
-  // Group entries by date
-  const groupedByDate = filteredEntries.reduce((groups, entry) => {
-    const date = entry.date;
-    if (!groups[date]) {
-      groups[date] = [];
-    }
-    groups[date].push(entry);
-    return groups;
-  }, {} as Record<string, RosterEntry[]>);
-
-  // Format date for display in table (Tue 01-03-25)
-  const formatTableDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const dayName = dayNames[date.getDay()];
-    const day = date.getDate();
-    const monthName = monthNames[date.getMonth()];
-    return { dayName, dateString: `${day} ${monthName}` };
-  };
-
-  // Navigate months
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    const newDate = new Date(selectedDate);
-    newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
-    onDateChange(newDate);
-  };
-
-  // Format month/year for display
-  const formatMonthYear = (date: Date) => {
-    const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
-  };
-
-  const handleEntryUpdate = (updatedEntry: RosterEntry) => {
-    // Check if component is still mounted before calling loadEntries
-    if (!isMountedRef.current) {
-      console.warn('Component unmounted, skipping loadEntries call');
-      return;
+  // Get display styling for the name
+  const getNameStyling = (entry: RosterEntry) => {
+    // PRIORITY 1: PDF imports are ALWAYS black text (highest priority)
+    if (entry.change_description === 'Imported from PDF') {
+      console.log('🎨 PDF imported entry - ALWAYS black text');
+      return { className: '', showAsterisk: false };
     }
     
-    // Force component re-render
-    setRefreshKey(prev => prev + 1);
-    
-    // Also trigger a data refresh
-    if (onRefresh && isMountedRef.current) {
-      onRefresh();
+    // PRIORITY 1B: PDF imports with conversion notes are ALWAYS black text
+    if (entry.change_description && entry.change_description.includes('Imported from PDF')) {
+      console.log('🎨 PDF imported entry (with conversion) - ALWAYS black text');
+      return { className: '', showAsterisk: false };
     }
+    
+    // PRIORITY 2: Admin added entries = black text
+    if (entry.change_description && entry.change_description.includes('Added by')) {
+      console.log('🎨 Admin added entry - black text');
+      return { className: '', showAsterisk: false };
+    }
+    
+    // PRIORITY 3: No edits and no initial assignment = black text
+    if (!entry.last_edited_by && !entry.change_description) {
+      console.log('🎨 No edits and no initial assignment - black text');
+      return { className: '', showAsterisk: false };
+    }
+    
+    if (!hasBeenEdited(entry)) {
+      // Has change description but never manually edited - normal black text
+      return { className: '', showAsterisk: false };
+    }
+    
+    // Check for original assignment if we have change description
+    if (!entry.change_description || !entry.change_description.includes('Name changed from')) {
+      // Manually edited but no change description - red text
+      return { className: 'text-red-600 animate-pulse-subtle', showAsterisk: false };
+    }
+    
+    if (isBackToOriginal(entry)) {
+      // Manually edited but back to original - black text with asterisk
+      return { className: 'text-black animate-pulse-subtle', showAsterisk: true };
+    }
+    
+    // Manually edited and different from original - red pulsating text
+    return { className: 'text-red-600 animate-pulse-subtle', showAsterisk: false };
   };
 
-  // Handle edit button click
-  const handleEditClick = (date: string) => {
-    setEditingDate(date);
+  // Handle long press for entry details
+  const handleLongPress = () => {
+    // Long press shows authentication for editing
     setShowAuthModal(true);
   };
 
-  // Handle authentication
+  const handleDoublePress = () => {
+    // Double tap shows details for edited entries
+    if (hasBeenEdited(entry)) {
+      onShowDetails(entry);
+    }
+  };
+
+  const interactionHandlers = useLongPress({
+    onLongPress: handleLongPress,
+    onDoublePress: handleDoublePress,
+    delay: 5000
+  });
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (showAuthModal) {
+      // Disable body scroll
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = '0';
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.bottom = '0';
+      
+      // CRITICAL: Disable scrolling on ALL table containers
+      const tableContainers = document.querySelectorAll('[style*="overflow: auto"], [style*="overflow-y: auto"], .overflow-y-auto');
+      tableContainers.forEach(container => {
+        (container as HTMLElement).style.overflow = 'hidden';
+        (container as HTMLElement).style.overflowY = 'hidden';
+      });
+      
+      // Disable scrolling on roster card view specifically
+      const rosterCardView = document.querySelector('[style*="height: 70vh"]');
+      if (rosterCardView) {
+        (rosterCardView as HTMLElement).style.overflow = 'hidden';
+        (rosterCardView as HTMLElement).style.overflowY = 'hidden';
+      }
+      
+      // Find and disable any scrollable divs in card view
+      const scrollableDivs = document.querySelectorAll('div[style*="overflow: auto"]');
+      scrollableDivs.forEach(div => {
+        (div as HTMLElement).style.overflow = 'hidden';
+      });
+    }
+
+    return () => {
+      // Re-enable body scroll
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.bottom = '';
+      
+      // Re-enable table scrolling on ALL containers
+      const tableContainers = document.querySelectorAll('[style*="overflow: hidden"], [style*="overflow-y: hidden"]');
+      tableContainers.forEach(container => {
+        (container as HTMLElement).style.overflow = 'auto';
+        (container as HTMLElement).style.overflowY = 'auto';
+      });
+      
+      // Re-enable roster card view scrolling
+      const rosterCardView = document.querySelector('[style*="height: 70vh"]');
+      if (rosterCardView) {
+        (rosterCardView as HTMLElement).style.overflow = 'auto';
+        (rosterCardView as HTMLElement).style.overflowY = 'auto';
+      }
+      
+      // Re-enable scrollable divs
+      const scrollableDivs = document.querySelectorAll('div[style*="overflow: hidden"]');
+      scrollableDivs.forEach(div => {
+        (div as HTMLElement).style.overflow = 'auto';
+      });
+    };
+  }, [showAuthModal]);
+
   const handleAuthSubmit = () => {
     const editorName = validateAuthCode(authCode);
-    if (!editorName || !isAdminCode(authCode)) {
-      setAuthError(!editorName ? 'Invalid authentication code' : 'Admin access required for date editing');
+    if (!editorName) {
+      setAuthError('Invalid authentication code');
       return;
     }
     
     setShowAuthModal(false);
-    setAuthError('');
-    
-    // Get current staff for the selected date and shift
-    if (editingDate && selectedShift) {
-      const currentEntries = getEntriesForDateAndShift(editingDate, selectedShift);
-      const currentStaff = currentEntries.map(entry => entry.assigned_name);
-      setSelectedStaff(currentStaff);
+    setShowStaffModal(true);
+  };
+
+  const handleStaffSelect = async (newName: string) => {
+    if (newName === entry.assigned_name || !newName) {
+      setShowStaffModal(false);
+      return;
     }
-  };
 
-  // Handle staff selection change
-  const handleStaffToggle = (staffName: string) => {
-    setSelectedStaff(prev => 
-      prev.includes(staffName) 
-        ? prev.filter(name => name !== staffName)
-        : [...prev, staffName]
-    );
-  };
-
-  // Handle save changes
-  const handleSaveChanges = async () => {
-    if (!editingDate || !selectedShift || !authCode) return;
-    
     setIsUpdating(true);
     
     try {
-      console.log('🔄 Manual refresh triggered in table view');
       const editorName = validateAuthCode(authCode);
       if (!editorName) return;
 
-      const currentEntries = getEntriesForDateAndShift(editingDate, selectedShift);
-      const currentStaff = currentEntries.map(entry => entry.assigned_name);
+      const updatedEntry = await updateRosterEntry(entry.id, {
+        date: entry.date,
+        shiftType: entry.shift_type,
+        assignedName: newName,
+        changeDescription: `Name changed from "${entry.assigned_name}" to "${newName}"`
+      }, editorName);
+
+      // Update the entry object directly for immediate UI reflection
+      entry.assigned_name = newName;
+      entry.last_edited_by = editorName;
+      entry.last_edited_at = updatedEntry.last_edited_at;
+      entry.change_description = updatedEntry.change_description;
       
-      // Find staff to add and remove
-      const staffToAdd = selectedStaff.filter(name => !currentStaff.includes(name));
-      const staffToRemove = currentStaff.filter(name => !selectedStaff.includes(name));
-      
-      // Remove staff
-      for (const entry of currentEntries) {
-        if (staffToRemove.includes(entry.assigned_name)) {
-          await deleteRosterEntry(entry.id);
-        }
+      // Add bounce animation to highlight the change
+      if (cardRef.current) {
+        gsap.fromTo(cardRef.current,
+          {
+            scale: 1,
+            backgroundColor: '#fef2f2', // Light red background
+            force3D: true
+          },
+          {
+            scale: 1.08,
+            duration: 0.25,
+            ease: "back.out(1.7)",
+            yoyo: true,
+            repeat: 1,
+            force3D: true,
+            onComplete: () => {
+              // Fade background back to normal
+              gsap.to(cardRef.current, {
+                backgroundColor: 'transparent',
+                duration: 0.6,
+                ease: "power2.out"
+              });
+            }
+          }
+        );
       }
       
-      // Add new staff
-      for (const staffName of staffToAdd) {
-        await addRosterEntry({
-          date: editingDate,
-          shiftType: selectedShift,
-          assignedName: staffName,
-          changeDescription: `Added by ${editorName}`
-        }, editorName);
-      }
+      // Call parent update callback with updated entry
+      onUpdate?.(updatedEntry);
       
-      // Don't auto-refresh from server to prevent position jumping
-      setRefreshKey(prev => prev + 1);
-      console.log('✅ Manual refresh completed');
-      
-      // Dispatch custom event to notify other components
+      // Force a re-render by dispatching a custom event
       window.dispatchEvent(new CustomEvent('rosterUpdated', { 
-        detail: { 
-          type: 'bulk_edit',
-          date: editingDate,
-          shift: selectedShift,
-          staffAdded: staffToAdd,
-          staffRemoved: staffToRemove
+        detail: {
+          ...updatedEntry,
+          assigned_name: newName,
+          last_edited_by: editorName,
+          last_edited_at: updatedEntry.last_edited_at,
+          change_description: updatedEntry.change_description
         }
       }));
       
-      handleCancelEdit();
-      
     } catch (error) {
-      console.error('Failed to update roster:', error);
-      alert('Failed to update roster. Please try again.');
+      console.error('Failed to update entry:', error);
+      alert('Failed to update entry. Please try again.');
     } finally {
       setIsUpdating(false);
+      setShowStaffModal(false);
+      setAuthCode('');
     }
   };
 
-  // Handle cancel edit
-  const handleCancelEdit = () => {
-    setEditingDate(null);
-    setSelectedShift('');
-    setSelectedStaff([]);
+  const handleCancel = () => {
+    setShowAuthModal(false);
+    setShowStaffModal(false);
     setAuthCode('');
     setAuthError('');
-    setShowAuthModal(false);
-  };
-  
-  // Handle showing details modal
-  const handleShowDetails = (entry: RosterEntry) => {
-    console.log('🔍 RosterTableView: handleShowDetails called with entry:', entry.id);
-    setSelectedEntry(entry);
-    setShowDetailsModal(true);
-  };
-  
-  const getEntriesForDateAndShift = (date: string, shiftType: string) => {
-    const dateEntries = groupedByDate[date] || [];
-    return dateEntries.filter(entry => entry.shift_type === shiftType);
   };
 
-  // Check if date is today
-  const isToday = (dateString: string) => {
-    const now = new Date();
-    // Force local timezone calculation
-    const todayString = now.getFullYear() + '-' + 
-                       String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                       String(now.getDate()).padStart(2, '0');
-    return dateString === todayString;
-  };
-  
-  // Check if date is in the past
-  const isPastDate = (dateString: string) => {
-    const now = new Date();
-    // Force local timezone calculation
-    const todayString = now.getFullYear() + '-' + 
-                       String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                       String(now.getDate()).padStart(2, '0');
-    return dateString < todayString;
-  };
-
-  // Custom sorting function to prioritize (R) names first
-  const sortStaffNames = (entries: RosterEntry[]): RosterEntry[] => {
-    // Extract names, sort them using group sorting, then reorder entries
-    const names = entries.map(entry => entry.assigned_name);
-    const sortedNames = sortByGroup(names);
-    
-    // Create a map for quick lookup of original entries
-    const entryMap = new Map<string, RosterEntry[]>();
-    entries.forEach(entry => {
-      if (!entryMap.has(entry.assigned_name)) {
-        entryMap.set(entry.assigned_name, []);
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+        setShowAuthModal(false);
       }
-      entryMap.get(entry.assigned_name)!.push(entry);
-    });
-    
-    // Rebuild entries array in sorted order
-    const sortedEntries: RosterEntry[] = [];
-    sortedNames.forEach(name => {
-      const nameEntries = entryMap.get(name) || [];
-      sortedEntries.push(...nameEntries);
-    });
-    
-    return sortedEntries;
-  };
+    };
 
-  // Check if date is in the future
-  const isFutureDate = (dateString: string) => {
-    const now = new Date();
-    // Force local timezone calculation
-    const todayString = now.getFullYear() + '-' + 
-                       String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                       String(now.getDate()).padStart(2, '0');
-    return dateString > todayString;
-  };
-  
-  // Sort dates in ascending order (oldest first)
-  const sortedDates = Object.keys(groupedByDate).sort((a, b) => 
-    new Date(a).getTime() - new Date(b).getTime()
-  );
-
-  // Calculate max staff count for each date to align columns
-  const getMaxStaffCountForDate = (date: string) => {
-    const dateEntries = groupedByDate[date] || [];
-    const shiftGroups = shiftTypes.reduce((groups, shiftType) => {
-      const shiftEntries = dateEntries.filter(entry => entry.shift_type === shiftType);
-      groups[shiftType] = sortStaffNames(shiftEntries);
-      return groups;
-    }, {} as Record<string, RosterEntry[]>);
-    
-    return Math.max(...Object.values(shiftGroups).map(entries => entries.length), 1);
-  };
-
-  const handleExportToCalendar = async () => {
-    const editorName = validateAuthCode(exportAuthCode);
-    if (!editorName) {
-      setExportAuthError('Invalid authentication code');
-      return;
+    if (showAuthModal) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
     }
-    
-    setIsExporting(true);
-    setExportAuthError('');
-    
-    try {
-      // Call the parent's export function
-      await onExportToCalendar();
-      setExportResult({
-        success: true,
-        message: `Successfully exported your shifts for ${formatMonthYear(selectedDate)} to your personal calendar.`
-      });
-    } catch (error) {
-      console.error('Export failed:', error);
-      setExportResult({
-        success: false,
-        message: 'Failed to export shifts. Please try again.'
-      });
-    } finally {
-      setIsExporting(false);
-    }
-  };
+  }, [showAuthModal]);
 
-  // Helper function to get shift display name
-  const getShiftDisplayName = (shiftType: string) => {
-    if (shiftType === 'Morning Shift (9-4)') return '9-4';
-    if (shiftType === 'Saturday Regular (12-10)') return '12-10';
-    if (shiftType === 'Evening Shift (4-10)') return '4-10';
-    if (shiftType === 'Night Duty') return 'N';
-    return shiftType;
-  };
-
-  // Shift types in order
-  const shiftTypes = [
-    'Morning Shift (9-4)',
-    'Saturday Regular (12-10)', 
-    'Evening Shift (4-10)',
-    'Night Duty'
-  ];
   return (
-    <div>
-      {/* Date Picker */}
-      <div className="mb-6 bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex items-center justify-center w-full">
-          <div className="flex items-center justify-center space-x-4 w-full max-w-lg mx-auto">
-            {/* Left Arrow - Centered */}
-          <button
-            onClick={() => navigateMonth('prev')}
-            className="p-3 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors duration-200 flex items-center justify-center"
-            style={{
-              touchAction: 'manipulation',
-              WebkitTapHighlightColor: 'transparent',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '44px',
-              height: '44px'
-            }}
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          
-            {/* Center Content - Month/Year Selectors */}
-            <div className="flex items-center justify-center space-x-3 flex-1">
-              <Calendar className="w-5 h-5 text-indigo-600" />
-              <div className="flex items-center justify-center space-x-2">
-              <select
-                value={selectedDate.getMonth()}
-                onChange={(e) => {
-                  const newDate = new Date(selectedDate);
-                  newDate.setMonth(Number(e.target.value));
-                  onDateChange(newDate);
-                }}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-semibold text-gray-900 bg-white text-center"
-                style={{
-                  touchAction: 'manipulation',
-                  WebkitTapHighlightColor: 'transparent',
-                  textAlign: 'center'
-                }}
-              >
-                {[
-                  'January', 'February', 'March', 'April', 'May', 'June',
-                  'July', 'August', 'September', 'October', 'November', 'December'
-                ].map((month, index) => (
-                  <option key={index} value={index}>{month}</option>
-                ))}
-              </select>
-              
-              <select
-                value={selectedDate.getFullYear()}
-                onChange={(e) => {
-                  const newDate = new Date(selectedDate);
-                  newDate.setFullYear(Number(e.target.value));
-                  onDateChange(newDate);
-                }}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-semibold text-gray-900 bg-white text-center"
-                style={{
-                  touchAction: 'manipulation',
-                  WebkitTapHighlightColor: 'transparent',
-                  textAlign: 'center'
-                }}
-              >
-                {Array.from({ length: 10 }, (_, i) => selectedDate.getFullYear() - 5 + i).map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
-              </div>
-            
-              {/* Export to Calendar Button - Centered */}
-            <button
-              onClick={() => {
-                console.log('🔄 ROSTER TABLE: Export to Calendar button clicked');
-                onExportToCalendar();
-              }}
-              className="p-3 rounded-lg hover:bg-green-100 text-green-600 transition-colors duration-200 flex items-center justify-center"
-              style={{
-                touchAction: 'manipulation',
-                WebkitTapHighlightColor: 'transparent',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '44px',
-                height: '44px'
-              }}
-              title="Export your shifts to calendar"
-            >
-              <Download className="w-6 h-6" />
-            </button>
-            </div>
-          
-            {/* Right Arrow - Centered */}
-          <button
-            onClick={() => navigateMonth('next')}
-            className="p-3 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors duration-200 flex items-center justify-center"
-            style={{
-              touchAction: 'manipulation',
-              WebkitTapHighlightColor: 'transparent',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '44px',
-              height: '44px'
-            }}
-          >
-            <ChevronRight className="w-6 h-6" />
-          </button>
+    <>
+      <div 
+        ref={cardRef}
+        className={`text-center p-1 sm:p-2 transition-colors w-full flex items-center justify-center min-h-[28px] ${
+          'cursor-pointer'
+        }`}
+        {...(!isPastDate(entry.date) ? interactionHandlers : {})}
+        style={{ 
+          userSelect: 'none', 
+         zIndex: 10, // Lower z-index so sticky headers appear above
+          touchAction: 'manipulation',
+          border: 'none',
+          backgroundColor: 'transparent'
+        }}
+      >
+        <div className="font-medium text-gray-900 text-xs leading-tight w-full flex items-center justify-center">
+          <div className="text-[8px] sm:text-[10px] font-medium text-gray-900 leading-tight w-full text-center">
+            {isUpdating ? 'Updating...' : (() => {
+              const styling = getNameStyling(entry);
+              return (
+                <div className="flex items-center justify-center space-x-1">
+                  <ScrollingText 
+                    text={entry.assigned_name}
+                    className={styling.className}
+                  />
+                  {styling.showAsterisk && (
+                    <span className="text-black font-bold text-[10px] sm:text-[12px] animate-asterisk-zoom">*</span>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
 
-      <div className="bg-white overflow-hidden w-full" style={{ 
-        height: window.innerWidth > window.innerHeight ? '60vh' : '70vh', // Shorter in landscape
-        minHeight: '400px',
-        maxHeight: '80vh',
-        width: '100vw',
-        marginLeft: 'calc(-50vw + 50%)',
-        marginRight: 'calc(-50vw + 50%)'
-      }}>
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-          </div>
-        ) : sortedDates.length === 0 ? (
-          <div className="text-center py-12">
-            <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg font-medium">
-              No roster entries found
-            </p>
-            <p className="text-gray-400 text-sm mt-2">
-              No entries available for {formatMonthYear(selectedDate)}
-            </p>
-          </div>
-        ) : (
-          <div ref={tableRef} style={{ 
-            height: '100%', 
-            overflow: 'hidden',
-            overflowX: 'hidden',
-            overflowY: 'auto',
-            position: 'relative', 
-            width: '100%',
-            // Better mobile landscape handling
-            WebkitOverflowScrolling: 'touch',
-            // Force proper scrolling after orientation change
-            transform: 'translate3d(0,0,0)',
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden',
-            WebkitTransform: 'translate3d(0,0,0)',
-            // iPhone specific fixes
-            WebkitTouchCallout: 'none',
-            WebkitUserSelect: 'none',
-            userSelect: 'none'
-          }}>
-            {/* Separate Sticky Header for Roster Title */}
-            <div 
-              style={{ 
-                position: 'sticky',
-                top: 0,
-                zIndex: 95,
-                width: '100vw',
-                padding: '12px 16px',
-                fontSize: '18px',
-                fontWeight: 'bold',
-                color: 'white',
-                border: 'none',
-                margin: 0,
-                marginBottom: 0,
-                height: window.innerWidth > window.innerHeight ? '40px' : '56px', // Shorter header in landscape
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: '#4b5563',
-                background: '#4b5563',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-                opacity: 1,
-                // Force proper rendering after orientation change
-                transform: 'translate3d(0,0,0)',
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden',
-                WebkitTransform: 'translate3d(0,0,0)',
-                // iPhone specific
-                WebkitTouchCallout: 'none'
-              }}
-            >
-              {/* Centered title with reload button */}
-              <div style={{ 
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: window.innerWidth > window.innerHeight ? '16px' : '18px',
-                gap: '8px'
-              }}>
-                <span>Roster for {formatMonthYear(selectedDate)}</span>
-                {/* Manual refresh button with real-time status */}
-                <button
-                  onClick={async () => {
-                    setIsReloading(true);
-                    try {
-                      console.log('🔄 Manual refresh triggered in table view');
-                      if (onRefresh) {
-                        await onRefresh();
-                      }
-                      setRefreshKey(prev => prev + 1);
-                      setLastUpdateTime(new Date().toLocaleTimeString());
-                      console.log('✅ Manual refresh completed');
-                    } catch (error) {
-                      console.error('Manual refresh failed in table view:', error);
-                    } finally {
-                      setIsReloading(false);
-                    }
-                  }}
-                  disabled={isReloading}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    padding: '4px',
-                    color: 'white',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    opacity: isReloading ? 0.7 : 1,
-                    border: '2px solid #374151',
-                    borderRight: '3px solid #374151',
-                    WebkitTapHighlightColor: 'transparent'
-                  }}
-                  title={
-                    realtimeStatus === 'connected' ? 'Manual refresh (Real-time active)' :
-                    realtimeStatus === 'connecting' ? 'Manual refresh (Connecting...)' :
-                    realtimeStatus === 'error' ? 'Manual refresh (Real-time failed)' :
-                    'Manual refresh (Real-time disconnected)'
-                  }
-                >
-                  {/* Refresh icon with rotation animation when loading */}
-                  <svg 
-                    style={{
-                      width: '20px',
-                      height: '20px',
-                      animation: isReloading ? 'spin 1s linear infinite' : 'none'
-                    }}
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
-                    />
-                  </svg>
-                  
-                  {/* Real-time status indicator inside the button */}
-                  <div style={{
-                    width: '12px',
-                    height: '12px',
-                    borderRadius: '50%',
-                    backgroundColor: realtimeStatus === 'connected' ? '#10b981' : 
-                                    realtimeStatus === 'connecting' ? '#f59e0b' :
-                                    realtimeStatus === 'error' ? '#ef4444' : '#6b7280',
-                    animation: realtimeStatus === 'connecting' ? 'pulse 1.5s ease-in-out infinite' : 'none',
-                    boxShadow: realtimeStatus === 'connected' ? '0 0 8px rgba(16, 185, 129, 0.8)' : 'none'
-                  }} />
-                </button>
-              </div>
-            </div>
-            
-            <table className="border-collapse table-fixed" style={{ width: '100vw', minWidth: '100vw' }}>
-              <thead>
-                <tr>
-                  <th 
-                    style={{ 
-                      position: 'sticky',
-                      top: window.innerWidth > window.innerHeight ? 40 : 56, // Adjust for shorter header
-                      zIndex: 85,
-                      fontWeight: '600',
-                      textAlign: 'center',
-                      fontSize: window.innerWidth > window.innerHeight ? '10px' : (window.innerWidth >= 640 ? '14px' : '12px'),
-                      color: 'white',
-                      border: '2px solid #374151',
-                      backgroundColor: '#6b7280',
-                      background: '#6b7280',
-                      margin: 0,
-                      marginTop: 0,
-                      width: '80px',
-                      minWidth: '80px',
-                      maxWidth: '80px',
-                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-                      opacity: 1,
-                      // Force proper rendering after orientation change
-                      transform: 'translateZ(0)',
-                      backfaceVisibility: 'hidden'
-                    }}
-                  >
-                    Date
-                  </th>
-                  {shiftTypes.map((shiftType) => (
-                    <th
-                      key={shiftType}
-                      style={{ 
-                        position: 'sticky',
-                        top: window.innerWidth > window.innerHeight ? 40 : 56,
-                        zIndex: 85,
-                        textAlign: 'center',
-                        fontSize: window.innerWidth > window.innerHeight ? '10px' : (window.innerWidth >= 640 ? '14px' : '12px'),
-                        color: 'white',
-                        border: 'none',
-                        backgroundColor: '#6b7280',
-                        background: '#6b7280',
-                        margin: 0,
-                        opacity: 1,
-                        width: 'calc((100vw - 80px) / 4)',
-                        minWidth: 'calc((100vw - 80px) / 4)',
-                        // Force proper rendering after orientation change
-                        transform: 'translate3d(0,0,0)',
-                        backfaceVisibility: 'hidden',
-                        WebkitBackfaceVisibility: 'hidden',
-                        WebkitTransform: 'translate3d(0,0,0)'
-                      }}
-                    >
-                      {getShiftDisplayName(shiftType)}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-
-              {/* Table Body */}
-              <tbody className="divide-y divide-gray-200">
-                {sortedDates.map((date) => {
-                  const dateEntries = groupedByDate[date] || [];
-                  
-                  // Calculate the maximum number of staff in any shift for this date
-                  const maxStaffCount = Math.max(...shiftTypes.map(shiftType => 
-                    (dateEntries.filter(entry => entry.shift_type === shiftType) || []).length
-                  ));
-                  
-                  // Calculate dynamic height based on max staff count (minimum 60px, 40px per staff member)
-                  const dynamicHeight = Math.max(60, maxStaffCount * 40);
-
-                  return (
-                    <tr 
-                      key={date} 
-                      data-date={date}
-                      className={`${
-                        isToday(date) ? 'bg-green-200' : 
-                        isPastDate(date) ? 'bg-red-50' :
-                        isFutureDate(date) ? 'bg-green-50' : ''
-                      }`}
-                    >
-                      {/* Date Column */}
-                      <RosterDateCell
-                        date={date}
-                        isToday={isToday(date)}
-                        isPastDate={isPastDate(date)}
-                        isFutureDate={isFutureDate(date)}
-                        onLongPress={() => {
-                          setEditingDate(date);
-                          setShowAuthModal(true);
-                        }}
-                        formatTableDate={formatTableDate}
-                      />
-                      {shiftTypes.map((shiftType) => {
-                        const shiftEntries = sortStaffNames(getEntriesForDateAndShift(date, shiftType));
-                        const maxStaffForThisDate = getMaxStaffCountForDate(date);
-                        
-                        // Create aligned array with consistent row count for this date
-                        const alignedEntries = [];
-                        for (let rowIndex = 0; rowIndex < maxStaffForThisDate; rowIndex++) {
-                          alignedEntries.push(shiftEntries[rowIndex] || null);
-                        }
-                        return (
-                          <td key={shiftType} className={`text-center overflow-hidden align-top relative ${
-                            isPastDate(date) ? 'bg-red-50' : ''
-                          }`} style={{
-                            padding: '2px',
-                            border: '2px solid #374151',
-                            backgroundColor: '#f9fafb',
-                            borderRadius: '4px',
-                            margin: '2px',
-                            minHeight: `${dynamicHeight}px`,
-                            height: `${dynamicHeight}px`,
-                            position: 'relative',
-                            overflow: 'hidden'
-                          }}>
-                            {shiftEntries.length > 0 ? (
-                              <div className="w-full h-full relative" style={{
-                                overflow: 'hidden',
-                                padding: '4px',
-                                margin: 0,
-                                textAlign: 'center',
-                                width: '100%',
-                                height: '100%',
-                                minWidth: '0',
-                                backgroundColor: 'white'
-                              }}>
-                                {/* X watermark for past dates - positioned within the container only */}
-                                {isPastDate(date) && (
-                                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
-                                    zIndex: 50,
-                                    top: 0,
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 0
-                                  }}>
-                                    <div className="font-bold select-none" style={{
-                                      fontSize: window.innerWidth > window.innerHeight ? 'clamp(1.5rem, 6vw, 3rem)' : 'clamp(2rem, 8vw, 4rem)',
-                                      lineHeight: '1',
-                                      color: '#fca5a5',
-                                      opacity: 0.4,
-                                      transform: 'scale(1.5)',
-                                      textShadow: '0 0 8px rgba(252, 165, 165, 0.6)'
-                                    }}>
-                                      ✕
-                                    </div>
-                                  </div>
-                                )}
-                                <div className="space-y-1 w-full text-center" style={{ 
-                                  padding: 0, 
-                                  margin: 0, 
-                                  textAlign: 'center',
-                                  width: '100%',
-                                  maxWidth: '100%',
-                                  overflow: 'hidden' // Ensure text stays within white box
-                                }}>
-                                  {sortStaffNames(shiftEntries).map((entry, index) => (
-                                    <div key={entry.id} className="relative" style={{ 
-                                      padding: 0, 
-                                      margin: 0, 
-                                      textAlign: 'center',
-                                      width: '100%',
-                                      maxWidth: '100%',
-                                      overflow: 'hidden', // Contain each entry within white box
-                                      overflow: 'visible',
-                                      zIndex: 60 
-                                    }}>
-                                      <RosterEntryCell
-                                        entry={entry}
-                                        onUpdate={handleEntryUpdate}
-                                        onShowDetails={handleShowDetails}
-                                        allEntriesForShift={shiftEntries}
-                                      />
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center" style={{
-                                fontSize: 'clamp(1.5rem, 4vw, 3rem)',
-                                fontWeight: 'bold',
-                                color: '#d1d5db',
-                                opacity: 0.3,
-                                userSelect: 'none',
-                                WebkitUserSelect: 'none',
-                                pointerEvents: 'none',
-                                zIndex: 10
-                              }}>
-                                No Staff
-                              </div>
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-      </div>
+      {/* Staff Selection Modal */}
+      <StaffSelectionModal
+        isOpen={showStaffModal}
+        entry={entry}
+        availableStaff={getAvailableStaff()}
+        allEntriesForShift={allEntriesForShift}
+        onSelectStaff={handleStaffSelect}
+        onClose={() => setShowStaffModal(false)}
+      />
 
       {/* Authentication Modal */}
       {showAuthModal && createPortal(
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50"
           style={{
             position: 'fixed',
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            zIndex: 2147483647, // Maximum z-index value
-           backgroundColor: 'rgba(0, 0, 0, 0.95)',
-           display: 'flex',
-           alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
-           justifyContent: 'center',
-           padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
-           paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
-           overflow: 'auto',
-           overflowY: 'auto',
-           WebkitOverflowScrolling: 'touch',
-           touchAction: 'pan-y'
+            zIndex: 2147483647,
+            backgroundColor: 'rgba(0, 0, 0, 0.98)',
+            display: 'flex',
+             alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
+            justifyContent: 'center',
+             padding: window.innerWidth > window.innerHeight ? '8px' : '20px',
+             paddingTop: window.innerWidth > window.innerHeight ? '4px' : '20px',
+             overflow: 'auto',
+             overflowY: 'auto',
+             WebkitOverflowScrolling: 'touch',
+             touchAction: 'pan-y',
+             backdropFilter: 'blur(8px)',
+             WebkitBackdropFilter: 'blur(8px)'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              handleCancel();
+            }
           }}
         >
-          <div className="bg-white rounded-2xl shadow-2xl w-full" style={{
-            maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
-            maxHeight: window.innerWidth > window.innerHeight ? '95vh' : 'none',
-            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0'
-          }}>
-            <div style={{
-              padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
-            }}>
+          <div 
+            ref={modalRef} 
+            style={{ 
+              userSelect: 'none', 
+              WebkitUserSelect: 'none',
+              maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
+              minHeight: window.innerWidth > window.innerHeight ? '200px' : '400px',
+              backgroundColor: '#ffffff',
+              opacity: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              margin: window.innerWidth > window.innerHeight ? '4px auto' : '16px auto',
+              position: 'relative',
+              zIndex: 2147483647,
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.9)',
+              border: '2px solid #ffffff',
+              borderRadius: '16px',
+              maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
+              width: '100%',
+              transform: 'translate3d(0,0,0)',
+              backfaceVisibility: 'hidden',
+              touchAction: 'auto'
+            }}
+            onClick={(e) => {
+              // Prevent modal from closing when clicking inside
+              e.stopPropagation();
+            }}
+          >
+            {/* Header - Fixed */}
+            <div className="p-6 border-b-2 border-indigo-200 bg-gradient-to-r from-indigo-50 to-blue-50 flex-shrink-0">
+              <div className="flex items-center justify-center space-x-3 mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+              </div>
               <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
                 Authentication Required
               </h3>
+              <p className="text-sm text-indigo-600 text-center">
+                Enter your authentication code to edit this entry
+              </p>
+            </div>
               
-              <div className="mb-4">
+            {/* Scrollable Content */}
+            <div 
+              className="flex-1 p-6 overflow-y-auto"
+              style={{
+                // CRITICAL: Enable smooth touch scrolling
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                WebkitOverflowScrolling: 'touch',
+                touchAction: 'pan-y', // Allow vertical panning (scrolling)
+                overscrollBehavior: 'contain', // Prevent scroll chaining to parent
+                maxHeight: 'calc(90vh - 200px)',
+                minHeight: '100px'
+              }}
+            >
+              <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Authentication Code
+                  Your Authentication Code
                 </label>
+                <div className="relative">
                 <input
                   type="text"
                   value={authCode}
                   onChange={(e) => setAuthCode(e.target.value.toUpperCase())}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center font-mono text-lg"
-                  placeholder="Enter admin code"
+                  className="w-full px-4 py-4 border-2 border-indigo-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 text-center font-mono text-xl tracking-widest bg-gradient-to-r from-indigo-50 to-blue-50 transition-all duration-200 shadow-inner"
+                  placeholder="Enter your code"
                   maxLength={4}
                   autoComplete="off"
                   autoFocus
+                  style={{
+                    textAlign: 'center',
+                    letterSpacing: '0.2em',
+                    textTransform: 'uppercase'
+                  }}
                 />
+                  <div className="absolute inset-0 pointer-events-none rounded-xl border-2 border-transparent bg-gradient-to-r from-indigo-400 to-blue-500 opacity-0 transition-opacity duration-200 focus-within:opacity-20"></div>
+                </div>
               </div>
               
               {authError && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-700 text-center">{authError}</p>
+                <div className="mb-4 p-4 bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 rounded-xl shadow-sm">
+                  <div className="flex items-center justify-center space-x-2">
+                    <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    <p className="text-sm text-red-700 font-medium text-center">{authError}</p>
+                  </div>
                 </div>
               )}
+            </div>
               
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Shift Type
-                </label>
-                <select
-                  value={selectedShift}
-                  onChange={(e) => setSelectedShift(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  required
-                >
-                  <option value="">Select shift type</option>
-                  {shiftTypes.map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </div>
-              
+            {/* Footer - Fixed */}
+            <div className="p-6 pt-0 flex-shrink-0 bg-gradient-to-r from-gray-50 to-indigo-50 border-t border-indigo-100">
               <div className="flex space-x-3">
                 <button
-                  onClick={handleCancelEdit}
-                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200"
+                  onClick={handleCancel}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 rounded-xl font-medium transition-all duration-200 border border-gray-300 shadow-sm"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleAuthSubmit}
-                  disabled={authCode.length < 4 || !selectedShift || !isAdminCode(authCode)}
-                  className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200"
+                  disabled={authCode.length < 4}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-all duration-200 shadow-lg disabled:shadow-none"
                 >
                   Continue
                 </button>
@@ -1059,313 +512,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         </div>
         , document.body
       )}
-
-      {/* Staff Selection Modal */}
-      {showExportModal && createPortal(
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 2147483647,
-            backgroundColor: 'rgba(0, 0, 0, 0.95)',
-            display: 'flex',
-            alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
-            justifyContent: 'center',
-            padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
-            paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
-            overflow: 'auto',
-            overflowY: 'auto',
-            WebkitOverflowScrolling: 'touch',
-            touchAction: 'pan-y'
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget && !isExporting) {
-              setShowExportModal(false);
-              setExportAuthCode('');
-              setExportAuthError('');
-              setExportResult(null);
-            }
-          }}
-        >
-          <div className="bg-white rounded-2xl shadow-2xl w-full" style={{
-            maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
-            maxHeight: window.innerWidth > window.innerHeight ? '95vh' : 'none',
-            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0'
-          }}>
-            <div style={{
-              padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
-            }}>
-              <div className="flex items-center justify-center space-x-3 mb-4">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                  <Download className="w-6 h-6 text-green-600" />
-                </div>
-              </div>
-              
-              <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
-                Export to Calendar
-              </h3>
-              
-              {!exportResult ? (
-                <>
-                  <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="flex items-start space-x-3">
-                      <Calendar className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <h4 className="font-medium text-blue-800 mb-2">Export Your Shifts</h4>
-                        <ul className="text-sm text-blue-700 space-y-1">
-                          <li>• Exports only YOUR shifts for {formatMonthYear(selectedDate)}</li>
-                          <li>• Adds shifts to your personal calendar tab</li>
-                          <li>• Skips dates that already have shifts</li>
-                          <li>• Automatically marks special dates when needed</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Your Authentication Code
-                    </label>
-                    <input
-                      type="text"
-                      value={exportAuthCode}
-                      onChange={(e) => setExportAuthCode(e.target.value.toUpperCase())}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-center font-mono text-lg"
-                      placeholder="Enter your code"
-                      maxLength={4}
-                      autoComplete="off"
-                      autoFocus
-                      disabled={isExporting}
-                    />
-                  </div>
-                  
-                  {exportAuthError && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-sm text-red-700 text-center">{exportAuthError}</p>
-                    </div>
-                  )}
-                  
-                  <div className="flex space-x-3">
-                    <button
-                      onClick={() => {
-                        onExportToCalendar(); // Close the export modal
-                        setShowExportModal(false);
-                        setExportAuthCode('');
-                        setExportAuthError('');
-                      }}
-                      disabled={isExporting}
-                      className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleExportToCalendar}
-                      disabled={isExporting || exportAuthCode.length < 4}
-                      className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
-                    >
-                      {isExporting ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          <span>Exporting...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Download className="w-4 h-4" />
-                          <span>Export to Calendar</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="text-center mb-6">
-                    <div className={`w-16 h-16 ${exportResult.success ? 'bg-green-100' : 'bg-red-100'} rounded-full flex items-center justify-center mx-auto mb-4`}>
-                      {exportResult.success ? (
-                        <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      ) : (
-                        <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      )}
-                    </div>
-                    <h4 className="text-lg font-medium text-gray-900 mb-2">
-                      {exportResult.success ? 'Export Successful!' : 'Export Failed'}
-                    </h4>
-                    <p className="text-gray-600">
-                      {exportResult.message}
-                    </p>
-                  </div>
-                  
-                  <button
-                    onClick={() => {
-                      // Close the export modal and switch to calendar tab
-                      onExportToCalendar(); // This should close the modal
-                      setActiveTab('calendar');
-                      // Dispatch event to ensure modal closes
-                      window.dispatchEvent(new CustomEvent('closeCalendarExportModal'));
-                      
-                      // Dispatch event to navigate calendar to imported month
-                      window.dispatchEvent(new CustomEvent('navigateToMonth', {
-                        detail: { 
-                          month: selectedDate.getMonth(),
-                          year: selectedDate.getFullYear()
-                        }
-                      }));
-                      
-                      setExportResult(null);
-                      if (exportResult.success) {
-                        // Switch to calendar tab to show the exported data
-                        window.dispatchEvent(new CustomEvent('switchToCalendarTab'));
-                      }
-                    }}
-                    className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200"
-                  >
-                    {exportResult.success ? 'View in Calendar' : 'Close'}
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-        , document.body
-      )}
-      
-      {editingDate && selectedShift && authCode && !showAuthModal && createPortal(
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 2147483647, // Maximum z-index value
-           backgroundColor: 'rgba(0, 0, 0, 0.95)',
-           display: 'flex',
-           alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
-           justifyContent: 'center',
-           padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
-           paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
-           overflow: 'auto',
-           overflowY: 'auto',
-           WebkitOverflowScrolling: 'touch',
-           touchAction: 'pan-y',
-           userSelect: 'none',
-           WebkitUserSelect: 'none'
-          }}
-        >
-          <div className="bg-white rounded-2xl shadow-2xl w-full flex flex-col" style={{
-            maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
-            maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
-            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
-            userSelect: 'none',
-            WebkitUserSelect: 'none'
-          }}>
-            <div className="border-b border-gray-200 flex-shrink-0" style={{
-              padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
-              userSelect: 'none',
-              WebkitUserSelect: 'none'
-            }}>
-              <h3 className="text-xl font-bold text-gray-900 mb-2 text-center select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
-                Edit Staff Assignment
-              </h3>
-              <p className="text-sm text-gray-600 text-center select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
-                {formatTableDate(editingDate).dayName} {formatTableDate(editingDate).dateString} - {selectedShift}
-              </p>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto" style={{
-              padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
-              WebkitOverflowScrolling: 'touch',
-              touchAction: 'pan-y',
-              userSelect: 'none',
-              WebkitUserSelect: 'none'
-            }}>
-              <div className="space-y-3">
-                {sortByGroup(availableNames).map(name => (
-                  <label key={name} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
-                    <input
-                      type="checkbox"
-                      checked={selectedStaff.includes(name)}
-                      onChange={() => handleStaffToggle(name)}
-                      className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                    />
-                    <span className="text-sm font-medium text-gray-900 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{name}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            
-            <div className="border-t border-gray-200 flex-shrink-0" style={{
-              padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
-              userSelect: 'none',
-              WebkitUserSelect: 'none'
-            }}>
-              <div className="flex space-x-3">
-                <button
-                  onClick={handleCancelEdit}
-                  disabled={isUpdating}
-                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 select-none"
-                  style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSaveChanges}
-                  disabled={isUpdating}
-                  className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center justify-center space-x-2 select-none"
-                  style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
-                >
-                  {isUpdating ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span className="select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>Saving...</span>
-                    </>
-                  ) : (
-                    <span className="select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>Save Changes</span>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        , document.body
-      )}
-      
-      {/* Edit Details Modal */}
-      <EditDetailsModal
-        isOpen={showDetailsModal}
-        entry={selectedEntry}
-        onClose={() => {
-          setShowDetailsModal(false);
-          setSelectedEntry(null);
-        }}
-      />
-      
-      {/* Add CSS for reload animation */}
-      <style jsx>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes pulse {
-          0%, 100% {
-            opacity: 0.8;
-            transform: scale(1);
-          }
-          50% {
-            opacity: 1;
-            transform: scale(1.1);
-          }
-        }
-      `}</style>
-    </div>
+    </>
   );
 };
