@@ -988,7 +988,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                         onUpdate={handleEntryUpdate}
                                         onShowDetails={handleShowDetails}
                                         allEntriesForShift={shiftEntries}
-                                      />
+                                     X
                                     </div>
                                   ))}
                                 </div>

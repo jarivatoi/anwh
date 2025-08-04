@@ -460,7 +460,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
                                 opacity: 0.2,
                                 transform: 'scale(1.8)'
                               }}>
-                                ✕
+                               X
                               </div>
                             </div>
                           )}
