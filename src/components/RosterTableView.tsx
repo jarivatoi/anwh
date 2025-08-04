@@ -762,8 +762,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     gap: '4px',
-                    opacity: isReloading ? 0.7 : 1,
-                    border: '2px solid #374151',
                     borderRight: '3px solid #374151',
                     WebkitTapHighlightColor: 'transparent'
                   }}
@@ -846,10 +844,11 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         textAlign: 'center',
                         fontSize: window.innerWidth > window.innerHeight ? '10px' : (window.innerWidth >= 640 ? '14px' : '12px'),
                         color: 'white',
-                        border: 'none',
+                        border: '2px solid #374151',
                         backgroundColor: '#6b7280',
                         background: '#6b7280',
                         margin: 0,
+                        padding: window.innerWidth > window.innerHeight ? '8px 4px' : '12px 8px',
                         opacity: 1,
                         width: 'calc((100vw - 80px) / 4)',
                         minWidth: 'calc((100vw - 80px) / 4)',
