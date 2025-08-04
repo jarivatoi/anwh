@@ -926,11 +926,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             textAlign: 'center',
                             width: 'calc((100vw - 80px) / 4)',
                             minWidth: 'calc((100vw - 80px) / 4)',
-                            padding: window.innerWidth > window.innerHeight ? '4px' : '8px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'center',
-                            alignItems: 'center'
+                            maxWidth: 'calc((100vw - 80px) / 4)'
                           }}>
                             {/* X watermark - centered over names area only */}
                             {isPastDate(date) && (
