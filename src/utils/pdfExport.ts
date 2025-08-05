@@ -190,8 +190,52 @@ export class PDFExporter {
    */
   private formatTimestamp(timestamp: string): string {
     if (!timestamp) return 'N/A';
-    const date = new Date(timestamp);
-    return date.toLocaleString();
+    
+    try {
+      // Handle custom format: "20-01-2025 09:00:00"
+      if (timestamp.includes('-') && timestamp.includes(' ')) {
+        const [datePart, timePart] = timestamp.split(' ');
+        const [day, month, year] = datePart.split('-');
+        const [hour, minute, second] = (timePart || '00:00:00').split(':');
+        
+        const date = new Date(
+          parseInt(year), 
+          parseInt(month) - 1, 
+          parseInt(day), 
+          parseInt(hour || '0'), 
+          parseInt(minute || '0'), 
+          parseInt(second || '0')
+        );
+        
+        // Validate the parsed date
+        if (isNaN(date.getTime())) {
+          return 'Invalid Date';
+        }
+        
+        // Format as: dd/mm/yyyy hh:mm
+        const formattedDate = `${day}/${month}/${year}`;
+        const formattedTime = `${hour}:${minute}`;
+        return `${formattedDate} ${formattedTime}`;
+      }
+      
+      // Handle ISO format or other standard formats
+      const date = new Date(timestamp);
+      if (isNaN(date.getTime())) {
+        return 'Invalid Date';
+      }
+      
+      // Format as dd/mm/yyyy hh:mm
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      const hour = date.getHours().toString().padStart(2, '0');
+      const minute = date.getMinutes().toString().padStart(2, '0');
+      
+      return `${day}/${month}/${year} ${hour}:${minute}`;
+    } catch (error) {
+      console.warn('Failed to parse timestamp:', timestamp, error);
+      return 'Invalid Date';
+    }
   }
 }
 
