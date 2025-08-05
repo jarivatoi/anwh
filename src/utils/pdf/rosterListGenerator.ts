@@ -84,8 +84,8 @@ export class RosterListGenerator {
         head: [['Date', 'Day', 'Staff Name', 'Shift Type']],
         body: tableData,
         styles: {
-          fontSize: 9,
-          cellPadding: 3,
+          fontSize: 7,
+          cellPadding: 1.5,
           overflow: 'linebreak',
           halign: 'center'
         },
@@ -93,18 +93,21 @@ export class RosterListGenerator {
           fillColor: [79, 70, 229],
           textColor: 255,
           fontStyle: 'bold',
-          fontSize: 10
+          fontSize: 8
         },
         alternateRowStyles: {
           fillColor: [248, 250, 252]
         },
         columnStyles: {
-          0: { cellWidth: 30 }, // Date
-          1: { cellWidth: 25 }, // Day
-          2: { cellWidth: 60 }, // Staff Name
-          3: { cellWidth: 50 }  // Shift Type
+          0: { cellWidth: 25 }, // Date
+          1: { cellWidth: 20 }, // Day
+          2: { cellWidth: 50 }, // Staff Name
+          3: { cellWidth: 45 }  // Shift Type
         },
-        margin: { left: 15, right: 15 }
+        margin: { left: 15, right: 15 },
+        pageBreak: 'avoid',
+        rowPageBreak: 'avoid',
+        tableLineWidth: 0.1
       });
     }
     
