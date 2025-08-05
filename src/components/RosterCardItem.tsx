@@ -97,7 +97,7 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
       setShowAuthModal(true);
     },
     onDoublePress: () => {
-      if (hasBeenEdited(entry) && onShowDetails) {
+      if (hasBeenEdited(entry) && onShowDetails && entry.last_edited_by !== 'ADMIN') {
         console.log('👆👆 Double press detected on edited entry:', entry.id);
         onShowDetails(entry);
       }
