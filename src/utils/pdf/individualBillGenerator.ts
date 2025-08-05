@@ -128,7 +128,7 @@ export class IndividualBillGenerator {
     });
     
     // Add summary section
-    const finalY = (doc as any).lastAutoTable.finalY + 5;
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
     this.addSummarySection(doc, tableData.totalDays, tableData.totalHours, tableData.nightDutyCount, hourlyRate, finalY);
     
     // Add signature sections
