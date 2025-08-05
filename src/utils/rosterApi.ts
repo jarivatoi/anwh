@@ -126,8 +126,7 @@ export const updateRosterEntry = async (id: string, formData: RosterFormData, ed
       assigned_name: formData.assignedName,
       last_edited_by: editorName,
       last_edited_at: timestamp,
-      change_description: newChangeDescription || null,
-      text_color: formData.textColor || null
+      change_description: newChangeDescription || null
     };
 
     const { data, error } = await supabase
