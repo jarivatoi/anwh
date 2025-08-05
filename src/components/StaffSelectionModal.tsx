@@ -61,6 +61,7 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
   useEffect(() => {
     if (isOpen && entry) {
       setSelectedStaff(entry.assigned_name);
+      setSelectedColor(entry.text_color || '#000000');
     }
   }, [isOpen, entry]);
 
@@ -133,7 +134,11 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
 
   const handleConfirm = () => {
     if (selectedStaff && selectedStaff !== entry.assigned_name) {
-      onSelectStaff(selectedStaff);
+      if (onSelectStaffWithColor && isAdmin) {
+        onSelectStaffWithColor(selectedStaff, selectedColor);
+      } else {
+        onSelectStaff(selectedStaff);
+      }
     }
     onClose();
   };
@@ -283,6 +288,60 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
               ))
             )}
           </div>
+
+          {/* Color Selection for ADMIN */}
+          {isAdmin && (
+            <div 
+              className="border-t border-gray-200 flex-shrink-0"
+              style={{
+                padding: window.innerWidth > window.innerHeight ? '8px' : '16px'
+              }}
+            >
+              <div className="space-y-3">
+                <div className="text-sm font-medium text-gray-700 text-center">
+                  <Palette className="w-4 h-4 inline mr-2" />
+                  Text Color (Admin Only)
+                </div>
+                
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { color: '#000000', name: 'Black' },
+                    { color: '#dc2626', name: 'Red' },
+                    { color: '#059669', name: 'Green' },
+                    { color: '#2563eb', name: 'Blue' },
+                    { color: '#7c3aed', name: 'Purple' },
+                    { color: '#ea580c', name: 'Orange' },
+                    { color: '#0891b2', name: 'Cyan' },
+                    { color: '#be123c', name: 'Rose' }
+                  ].map(({ color, name }) => (
+                    <button
+                      key={color}
+                      onClick={() => setSelectedColor(color)}
+                      className={`w-full h-10 rounded-lg border-2 transition-all duration-200 ${
+                        selectedColor === color 
+                          ? 'border-gray-800 scale-110' 
+                          : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                      style={{ backgroundColor: color }}
+                      title={name}
+                    >
+                      {selectedColor === color && (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <div className="w-3 h-3 bg-white rounded-full border border-gray-300" />
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                
+                <div className="text-center">
+                  <span className="text-xs text-gray-600">
+                    Preview: <span style={{ color: selectedColor, fontWeight: 'bold' }}>{selectedStaff || 'Staff Name'}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Add extra padding at bottom */}
           <div className="h-8" />
