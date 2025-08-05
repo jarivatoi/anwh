@@ -199,14 +199,14 @@ export class IndividualBillGenerator {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.text('Date',15,summaryEndY);
-    doc.text('Signature:-________________', 20, summaryEndY);
+    doc.text('Signature:-________________', 15, summaryEndY+10);
     
     // Right side - Certification
     const rightX = 120;
-    doc.text('Certified Correct as per Attendance.', rightX, summaryEndY);
-    doc.text('Name: _____________________________', rightX, summaryEndY + 8);
-    doc.text('Grade: Principal Medical Imaging Technologist.', rightX, summaryEndY + 16);
-    doc.text('Signature: ____________________________________', rightX, summaryEndY + 24);
+    doc.text('Certified Correct as per Attendance.', rightX, summaryEndY-50);
+    doc.text('Name: _____________________________', rightX, summaryEndY + 8-50);
+    doc.text('Grade: Principal Medical Imaging Technologist.', rightX, summaryEndY + 16-50);
+    doc.text('Signature: ____________________________________', rightX, summaryEndY + 24-50);
   }
   
   /**
