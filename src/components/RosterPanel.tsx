@@ -131,18 +131,7 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
     setShowDeleteConfirm(null);
   };
 
-  const handlePDFImport = async (pdfEntries: RosterFormData[], editorName: string) => {
-    try {
-      let successCount = 0;
-      let errorCount = 0;
-      let importedMonth: number | null = null;
-      let importedYear: number | null = null;
-      
-      for (const entry of pdfEntries) {
-        try {
-          await addRosterEntry(entry, editorName);
-          successCount++;
-          
+        <div className="flex items-center justify-center">          
           // Track the month/year of imported entries
           if (importedMonth === null) {
             const entryDate = new Date(entry.date);
