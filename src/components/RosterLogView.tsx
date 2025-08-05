@@ -209,7 +209,7 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
             >
               <option value="all">
                 All Roster Edits{(() => {
-                  const count = monthFilteredEntries.filter(e => (e.change_description || e.last_edited_by) && !(e.change_description === 'Imported from PDF' || e.change_description?.includes('Saturday 4-10 converted to 12-10'))).length;
+                  const count = monthFilteredEntries.filter(e => (e.change_description || e.last_edited_by) && !(e.change_description === 'Imported from PDF' || e.change_description?.includes('Saturday 4-10 converted to 12-10')) && e.last_edited_by !== 'ADMIN').length;
                   return count > 0 ? ` (${count})` : '';
                 })()}
               </option>
