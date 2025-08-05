@@ -1,20 +1,6 @@
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { RosterEntry } from '../types/roster';
-
-// Extend jsPDF type to include autoTable
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-  }
-}
-
-declare module 'jspdf' {
-  export default class jsPDF {
-    constructor(options?: any);
-    autoTable: (options: any) => jsPDF;
-  }
-}
 
 export interface PDFExportOptions {
   entries: RosterEntry[];
@@ -77,7 +63,7 @@ export class PDFExporter {
       const tableData = this.prepareTableData(monthEntries);
       
       // Create table using autoTable
-      doc.autoTable({
+      autoTable(doc, {
         startY: 40,
         head: [['Date', 'Day', 'Shift Type', 'Assigned Staff', 'Last Edited By', 'Last Edited At']],
         body: tableData,
@@ -197,20 +183,6 @@ export class PDFExporter {
       'Sunday/Public Holiday/Special': 'Special (9-4)'
     };
     return shortNames[shiftType] || shiftType;
-  }
-  
-  /**
-   * Format timestamp for PDF display
-   */
-  private formatTimestamp(timestamp: string): string {
-    if (!timestamp) return 'N/A';
-    
-    try {
-      // Handle custom format: "20-01-2025 09:00:00"
-      const [datePart, timePart] = timestamp.split(' ');
-      const [day, month, year] = datePart.split('-');
-      const [hour, minute] = timePart.split(':');
-      
       return `${day}/${month}/${year} ${hour}:${minute}`;
     } catch (error) {
       return timestamp;
