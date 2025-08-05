@@ -442,11 +442,6 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                     { color: '#000000', name: 'Black' },
                     { color: '#dc2626', name: 'Red' },
                     { color: '#059669', name: 'Green' },
-                    { color: '#2563eb', name: 'Blue' },
-                    { color: '#7c3aed', name: 'Purple' },
-                    { color: '#ea580c', name: 'Orange' },
-                    { color: '#0891b2', name: 'Cyan' },
-                    { color: '#be123c', name: 'Rose' }
                   ].map(({ color, name }) => (
                     <button
                       key={color}
