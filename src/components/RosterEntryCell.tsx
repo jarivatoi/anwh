@@ -6,7 +6,6 @@ import { validateAuthCode, availableNames } from '../utils/rosterAuth';
 import { updateRosterEntry } from '../utils/rosterApi';
 import { useLongPress } from '../hooks/useLongPress';
 import { ScrollingText } from './ScrollingText';
-import { getEntryColor, setEntryColor } from './StaffSelectionModal';
 
 interface RosterEntryCellProps {
   entry: RosterEntry;
@@ -26,19 +25,6 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authError, setAuthError] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
-  const [localColor, setLocalColor] = useState<string | null>(null);
-
-  // Listen for color changes
-  useEffect(() => {
-    const handleColorChange = (event: CustomEvent) => {
-      if (event.detail.entryId === entry.id) {
-        setLocalColor(event.detail.color);
-      }
-    };
-
-    window.addEventListener('entryColorChanged', handleColorChange as EventListener);
-    return () => window.removeEventListener('entryColorChanged', handleColorChange as EventListener);
-  }, [entry.id]);
 
   // Prevent body scroll when auth modal is open
   React.useEffect(() => {
@@ -91,13 +77,18 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
 
   // Get text color based on edit status
   const getTextColor = () => {
-    // HIGHEST PRIORITY: Local admin color override
-    if (localColor) {
-      return localColor;
+    // HIGHEST PRIORITY: Admin-set text color
+    if (entry.text_color) {
+      return entry.text_color;
     }
     
-    // Use the shared color logic
-    return getEntryColor(entry);
+    if (hasBeenReverted(entry)) {
+      return '#000000'; // Black for ADMIN-reverted entries
+    } else if (hasBeenEdited(entry)) {
+      return '#dc2626'; // Red for edited entries
+    } else {
+      return '#000000'; // Black for original entries
+    }
   };
 
   const longPressHandlers = useLongPress({
@@ -138,15 +129,21 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
       entryId: entry.id
     });
     
-    // Handle color change locally (no database update needed)
-    if (textColor && textColor !== getTextColor()) {
-      console.log('🎨 RosterEntryCell: Applying color change locally:', textColor);
-      setEntryColor(entry.id, textColor);
-    }
-    
-    // Handle name change (requires database update)
     if (newStaffName === entry.assigned_name) {
-      console.log('🎨 RosterEntryCell: Name unchanged, closing modal');
+      console.log('🎨 RosterEntryCell: Name unchanged, checking color change...');
+      
+      // For ADMIN: Allow color-only changes even if name is the same
+      if (textColor && textColor !== getTextColor()) {
+        console.log('🎨 RosterEntryCell: Color-only change detected, proceeding with update');
+        // Continue with the update for color change
+      } else {
+        console.log('🎨 RosterEntryCell: No changes detected, closing modal');
+        setShowStaffModal(false);
+        return;
+      }
+    }
+
+    if (newStaffName === entry.assigned_name && !textColor) {
       setShowStaffModal(false);
       return;
     }
@@ -156,8 +153,9 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
       const editorName = validateAuthCode(authCode);
       if (!editorName) return;
 
-      console.log('🎨 RosterEntryCell: Updating entry name:', {
+      console.log('🎨 RosterEntryCell: Updating entry with:', {
         newStaffName,
+        textColor,
         editorName
       });
 
@@ -165,10 +163,11 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
         date: entry.date,
         shiftType: entry.shift_type,
         assignedName: newStaffName,
-        changeDescription: `Name changed from "${entry.assigned_name}" to "${newStaffName}"`
+        changeDescription: `Name changed from "${entry.assigned_name}" to "${newStaffName}"`,
+        textColor: textColor
       }, editorName);
 
-      console.log('🎨 RosterEntryCell: Entry name updated successfully:', updatedEntry);
+      console.log('🎨 RosterEntryCell: Entry updated successfully:', updatedEntry);
 
       if (onUpdate) {
         onUpdate(updatedEntry);
