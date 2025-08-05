@@ -57,32 +57,30 @@ export class IndividualBillGenerator {
     doc.setFontSize(12);
     doc.text(`INDIVIDUAL WORK SUMMARY - ${monthNames[month]} ${year}`, doc.internal.pageSize.getWidth() / 2, 25, { align: 'center' });
     
-    // Staff details section - compact two-column layout
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
+    // Staff details section - two-column layout with proper alignment
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
     
-    // Left column (first set)
-    doc.text('Title:', 20, 35);
-    doc.text('Salary:', 20, 40);
-    doc.text('Employee ID:', 20, 45);
+    // Left column - Name, Month, Year
+    doc.text('Name:', 20, 35);
+    doc.text('Month/Year:', 20, 42);
     
     // Left column values
-    doc.setFont('helvetica', 'bold');
-    doc.text(staffInfo?.title || 'MIT', 50, 35);
-    doc.text(`Rs ${(staffInfo?.salary || 0).toLocaleString()}`, 50, 40);
-    doc.text(staffInfo?.employeeId || '', 50, 45);
-    
-    // Right column (second set)
     doc.setFont('helvetica', 'normal');
-    doc.text('Name:', 120, 35);
-    doc.text('Surname:', 120, 40);
-    doc.text('Month/Year:', 120, 45);
+    doc.text(`${staffInfo?.firstName || ''} ${staffInfo?.surname || staffName}`, 80, 35);
+    doc.text(`${monthNames[month]} ${year}`, 80, 42);
+    
+    // Right column - Title, Salary, Employee ID
+    doc.setFont('helvetica', 'bold');
+    doc.text('Title:', 120, 35);
+    doc.text('Salary:', 120, 42);
+    doc.text('Employee ID:', 120, 49);
     
     // Right column values
-    doc.setFont('helvetica', 'bold');
-    doc.text(staffInfo?.firstName || '', 150, 35);
-    doc.text(staffInfo?.surname || staffName, 150, 40);
-    doc.text(`${monthNames[month]} ${year}`, 150, 45);
+    doc.setFont('helvetica', 'normal');
+    doc.text(staffInfo?.title || 'MIT', 170, 35);
+    doc.text(`Rs ${(staffInfo?.salary || 0).toLocaleString()}`, 170, 42);
+    doc.text(staffInfo?.employeeId || '', 170, 49);
     
     // Prepare table data for ALL days in the month
     const tableData = this.prepareAllDaysTableData(staffEntries, month, year, hourlyRate, shiftCombinations);
@@ -109,20 +107,22 @@ export class IndividualBillGenerator {
         cellPadding: 2
       },
       columnStyles: {
-        0: { cellWidth: 20, halign: 'center' }, // Day Date
-        1: { cellWidth: 18, halign: 'center', fontStyle: 'bold', fontSize: 10 }, // Morning (9-4)
-        2: { cellWidth: 18, halign: 'center', fontStyle: 'bold', fontSize: 10 }, // Saturday (12-10)
-        3: { cellWidth: 18, halign: 'center', fontStyle: 'bold', fontSize: 10 }, // Evening (4-10)
-        4: { cellWidth: 18, halign: 'center', fontStyle: 'bold', fontSize: 10 }, // Night Duty
+        0: { cellWidth: 25, halign: 'center' }, // Day Date
+        1: { cellWidth: 20, halign: 'center', fontStyle: 'bold', fontSize: 8 }, // Morning (9-4)
+        2: { cellWidth: 20, halign: 'center', fontStyle: 'bold', fontSize: 8 }, // Saturday (12-10)
+        3: { cellWidth: 20, halign: 'center', fontStyle: 'bold', fontSize: 8 }, // Evening (4-10)
+        4: { cellWidth: 20, halign: 'center', fontStyle: 'bold', fontSize: 8 }, // Night Duty
         5: { cellWidth: 15, halign: 'center' }, // Hours
-        6: { cellWidth: 40, halign: 'left' }    // Remarks (blank)
+        6: { cellWidth: 35, halign: 'left' }    // Remarks (blank)
       },
-      margin: { left: 15, right: 15 },
+      margin: { left: 20, right: 20 },
       pageBreak: 'auto',
       rowPageBreak: 'avoid',
       theme: 'grid',
-      tableLineWidth: 0.3,
-      tableLineColor: [0, 0, 0]
+      tableLineWidth: 0.2,
+      tableLineColor: [0, 0, 0],
+      // Ensure table doesn't extend beyond content
+      tableWidth: 'wrap'
     });
     
     // Add summary section
@@ -164,10 +164,11 @@ export class IndividualBillGenerator {
     doc.text(`Hourly Rate: ${formatMauritianRupees(hourlyRate).formatted}`, 15, startY + 20);
     doc.text(`Subtotal (Hours): ${formatMauritianRupees(totalAmount).formatted}`, 15, startY + 26);
     
-    // Night duty allowance - corrected calculation: (number of nights) × 6 × 0.25
-    const nightAllowance = nightDutyCount * 6 * 0.25;
+    // Night duty allowance - corrected calculation: (number of nights) × 6 × 0.25 × hourly_rate
+    const nightAllowanceBase = nightDutyCount * 6 * 0.25;
+    const nightAllowance = nightAllowanceBase * hourlyRate;
     if (nightDutyCount > 0) {
-      doc.text(`Night Duty Allowance: ${nightDutyCount} nights × 6 × 0.25 = ${formatMauritianRupees(nightAllowance).formatted}`, 15, startY + 32);
+      doc.text(`Night Allowance: ${nightDutyCount} × 6 × 0.25 × ${formatMauritianRupees(hourlyRate).formatted} = ${formatMauritianRupees(nightAllowance).formatted}`, 20, startY + 32);
     }
     
     // Grand total
