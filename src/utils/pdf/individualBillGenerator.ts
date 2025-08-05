@@ -14,7 +14,13 @@ class IndividualBillGenerator {
   generateBill(options: IndividualBillOptions): jsPDF {
     const { staffName, month, year, entries, hourlyRate } = options;
     
-    const doc = new jsPDF();
+    console.log('📄 Starting individual bill generation for:', staffName);
+    
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
     
     // Filter entries for the specific staff member
     const staffEntries = entries.filter(entry => 
@@ -157,7 +163,17 @@ class IndividualBillGenerator {
     doc.setFontSize(12);
     doc.text(`TOTAL AMOUNT: Rs ${grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 20, finalY + (nightDutyCount > 0 ? 70 : 60));
 
-    return doc;
+    // Generate filename
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const filename = `${staffName}_${monthNames[month]}_${year}_Bill.pdf`;
+    
+    // Save the PDF
+    doc.save(filename);
+    
+    console.log('✅ Individual bill generated:', filename);
   }
 }
 
