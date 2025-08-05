@@ -61,9 +61,21 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
   useEffect(() => {
     if (isOpen && entry) {
       setSelectedStaff(entry.assigned_name);
-      setSelectedColor(entry.text_color || '#000000');
+      
+      // For ADMIN: Detect current color from entry and set it as initial selection
+      if (isAdmin) {
+        const currentColor = entry.text_color || '#000000';
+        console.log('🎨 ADMIN: Setting initial color from entry:', {
+          entryTextColor: entry.text_color,
+          currentColor,
+          assignedName: entry.assigned_name
+        });
+        setSelectedColor(currentColor);
+      } else {
+        setSelectedColor('#000000');
+      }
     }
-  }, [isOpen, entry]);
+  }, [isOpen, entry, isAdmin]);
 
   // Close on escape key
   useEffect(() => {
@@ -135,18 +147,17 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
   const handleConfirm = () => {
     const nameChanged = selectedStaff !== entry.assigned_name;
     
-    // Get the current color - handle null/undefined properly
-    const currentColor = entry.text_color || '#000000';
-    const colorChanged = isAdmin && selectedColor !== currentColor;
+    // For ADMIN: Check if color has changed from the original entry color
+    const originalColor = entry.text_color || '#000000';
+    const colorChanged = isAdmin && selectedColor !== originalColor;
     
     console.log('🎨 Color change detection:', {
       isAdmin,
       selectedColor,
-      entryTextColor: entry.text_color,
-      currentColor,
+      originalColor,
       colorChanged,
       nameChanged,
-      comparison: `"${selectedColor}" !== "${currentColor}"`
+      comparison: `"${selectedColor}" !== "${originalColor}"`
     });
     
     if (selectedStaff && (nameChanged || colorChanged)) {
@@ -270,12 +281,20 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
               filteredStaff.map((staffName) => (
               <button
                 key={staffName}
-                disabled={(() => {
-                  if (!selectedStaff || filteredStaff.length === 0) return true;
-                  
+                disabled={!selectedStaff || filteredStaff.length === 0 || (() => {
                   const nameChanged = selectedStaff !== entry.assigned_name;
-                  const currentColor = entry.text_color || '#000000';
-                  const colorChanged = isAdmin && selectedColor !== currentColor;
+                  const originalColor = entry.text_color || '#000000';
+                  const colorChanged = isAdmin && selectedColor !== originalColor;
+                  
+                  console.log('🎨 Button enable check:', {
+                    selectedStaff,
+                    nameChanged,
+                    isAdmin,
+                    selectedColor,
+                    originalColor,
+                    colorChanged,
+                    shouldEnable: nameChanged || colorChanged
+                  });
                   
                   // For regular users: only enable if name changed
                   if (!isAdmin) {
