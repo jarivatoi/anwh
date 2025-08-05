@@ -1124,7 +1124,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                     {isPastDate(day) && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
                         <div className="text-red-400 text-4xl sm:text-5xl font-bold opacity-30 select-none">
-                          ✕
+                          className="text-gray-300 opacity-30 font-bold select-none"
                         </div>
                       </div>
                     )}
