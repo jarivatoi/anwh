@@ -34,3 +34,13 @@ export interface ExportData {
   exportDate: string;
   version: string;
 }
+
+export interface AuthCode {
+  code: string;
+  name: string;
+  title?: string;
+  salary?: number;
+  employeeId?: string;
+  firstName?: string;
+  surname?: string;
+}
