@@ -1121,7 +1121,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                 {day && (
                   <div className="flex flex-col select-none h-full">
                     {/* BIG X WATERMARK for past dates */}
-                    {isPastDate(day) && !hasSpecialDate && (
+                    {isPastDate(day) && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
                         <div className="text-gray-300 text-4xl sm:text-5xl font-bold opacity-30 select-none">
                           ✕
@@ -1175,7 +1175,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                           className="special-text text-[8px] sm:text-[9px] text-red-500 font-bold leading-none mt-0.5 flex justify-center select-none"
                         >
                           {/* X watermark for past dates */}
-                          {isPastDate(day) && !hasSpecialDate && (
+                          {isPastDate(day) && (
                             <div 
                               className="absolute inset-0 flex items-center justify-center pointer-events-none"
                               style={{
