@@ -12,6 +12,7 @@ import { clearMonthRosterEntries } from '../utils/rosterApi';
 import { RosterFormData } from '../types/roster';
 import { validateAuthCode, isAdminCode } from '../utils/rosterAuth';
 import { useLongPress } from '../hooks/useLongPress';
+import { pdfExporter } from '../utils/pdfExport';
 
 interface RosterPanelProps {
   setActiveTab: (tab: 'calendar' | 'settings' | 'data' | 'roster') => void;
@@ -50,6 +51,7 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
   const [authError, setAuthError] = useState('');
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [adminName, setAdminName] = useState<string | null>(null);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
 
   const { entries: fetchedEntries, loading, error, removeEntry, loadEntries, realtimeStatus } = useRosterData();
 
@@ -262,6 +264,34 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
     setShowAuthModal(false);
     setAuthCode('');
     setAuthError('');
+  };
+
+  const handleExportToPDF = async () => {
+    setIsExportingPDF(true);
+    
+    try {
+      console.log('📄 Starting PDF export...');
+      
+      // Use current selected date for month/year
+      const month = selectedDate.getMonth();
+      const year = selectedDate.getFullYear();
+      
+      await pdfExporter.exportToPDF({
+        entries: entries,
+        month: month,
+        year: year,
+        title: 'X-ray ANWH Roster'
+      });
+      
+      showSuccess('PDF exported successfully! Check your downloads folder.');
+      console.log('✅ PDF export completed');
+      
+    } catch (error) {
+      console.error('❌ PDF export failed:', error);
+      alert('Failed to export PDF. Please try again.');
+    } finally {
+      setIsExportingPDF(false);
+    }
   };
 
   return (
@@ -718,13 +748,22 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
                 <button
                   onClick={() => {
                     setShowQuickActions(false);
-                    // TODO: Implement PDF export functionality
-                    alert('PDF export functionality coming soon!');
+                    handleExportToPDF();
                   }}
-                  className="w-full flex items-center space-x-3 px-4 py-3 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg font-medium transition-colors duration-200"
+                  disabled={isExportingPDF}
+                  className="w-full flex items-center space-x-3 px-4 py-3 bg-green-50 hover:bg-green-100 disabled:bg-gray-100 disabled:text-gray-500 text-green-700 rounded-lg font-medium transition-colors duration-200"
                 >
-                  <Download className="w-5 h-5" />
-                  <span>Export to PDF</span>
+                  {isExportingPDF ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+                      <span>Exporting PDF...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-5 h-5" />
+                      <span>Export to PDF</span>
+                    </>
+                  )}
                 </button>
                 
                 <button
