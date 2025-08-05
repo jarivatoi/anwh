@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Server, CheckCircle, Table, Grid, FileText, Upload, Trash2, AlertTriangle } from 'lucide-react';
+import { Server, CheckCircle, Table, Grid, FileText, Upload, Download, Trash2, AlertTriangle } from 'lucide-react';
 import { ViewType, ShiftFilterType } from '../types/roster';
 import { useRosterData } from '../hooks/useRosterData';
 import { RosterTableView } from './RosterTableView';
@@ -713,6 +713,18 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
                 >
                   <Upload className="w-5 h-5" />
                   <span>Import from PDF</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setShowQuickActions(false);
+                    // TODO: Implement PDF export functionality
+                    alert('PDF export functionality coming soon!');
+                  }}
+                  className="w-full flex items-center space-x-3 px-4 py-3 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg font-medium transition-colors duration-200"
+                >
+                  <Download className="w-5 h-5" />
+                  <span>Export to PDF</span>
                 </button>
                 
                 <button
