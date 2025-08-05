@@ -25,7 +25,7 @@ export const authCodes: AuthCode[] = [
   { code: 'B16R', name: 'BHEKUR(R)', title: 'MIT' },
   { code: 'B19R', name: 'BHOLLOORAM(R)', title: 'MIT' },
   { code: 'D28R', name: 'DHUNNY(R)', title: 'MIT' },
-  { code: 'D07R', name: 'DOMUN(R)', title: 'MIT' },
+  { code: 'D07R', name: 'DOMUN(R)', title: 'SMIT' },
   { code: 'H30R', name: 'FOKEERCHAND(R)', title: 'MIT' },
   { code: 'H13R', name: 'HOSENBUX(R)', title: 'MIT' },
   { code: 'S06R', name: 'GHOORAN(R)', title: 'MIT' },
