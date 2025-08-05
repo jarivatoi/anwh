@@ -97,11 +97,11 @@ export class IndividualBillGenerator {
         },
         columnStyles: {
           0: { cellWidth: 35, halign: 'center' }, // Date & Day
-          1: { cellWidth: 20, halign: 'center', fontStyle: 'bold' }, // Morning (9-4)
-          2: { cellWidth: 20, halign: 'center', fontStyle: 'bold' }, // Saturday (12-10)
-          3: { cellWidth: 20, halign: 'center', fontStyle: 'bold' }, // Evening (4-10)
-          4: { cellWidth: 20, halign: 'center', fontStyle: 'bold' }, // Night Duty
-          5: { cellWidth: 20, halign: 'center', fontStyle: 'bold' }, // Special (9-4)
+          1: { cellWidth: 20, halign: 'center', fontStyle: 'bold', fontSize: 10 }, // Morning (9-4)
+          2: { cellWidth: 20, halign: 'center', fontStyle: 'bold', fontSize: 10 }, // Saturday (12-10)
+          3: { cellWidth: 20, halign: 'center', fontStyle: 'bold', fontSize: 10 }, // Evening (4-10)
+          4: { cellWidth: 20, halign: 'center', fontStyle: 'bold', fontSize: 10 }, // Night Duty
+          5: { cellWidth: 20, halign: 'center', fontStyle: 'bold', fontSize: 10 }, // Special (9-4)
           6: { cellWidth: 20, halign: 'right' },  // Hours
           7: { cellWidth: 30, halign: 'right' }   // Amount
         },
