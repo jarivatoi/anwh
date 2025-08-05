@@ -74,15 +74,15 @@ export class IndividualBillGenerator {
     
     // Right column - Title, Salary, Hourly Rate
     doc.setFont('helvetica', 'bold');
-    doc.text('Title:', 120, 40);
-    doc.text('Salary:', 120, 47);
-    doc.text('Hourly Rate:', 120, 54);
+    doc.text('Title:', 120, 30);
+    doc.text('Salary:', 120, 37);
+    doc.text('Hourly Rate:', 120, 44);
     
     // Right column values
     doc.setFont('helvetica', 'normal');
-    doc.text(staffInfo?.title || 'MIT', 120, 40);
-    doc.text(`Rs ${(staffInfo?.salary || 0).toLocaleString()}`, 120, 47);
-    doc.text(`Rs ${hourlyRate.toFixed(2)}`, 120, 54);
+    doc.text(staffInfo?.title || 'MIT', 150, 30);
+    doc.text(`Rs ${(staffInfo?.salary || 0).toLocaleString()}`, 150, 37);
+    doc.text(`Rs ${hourlyRate.toFixed(2)}`, 150, 44);
     
     // Prepare table data for ALL days in the month
     const tableData = this.prepareAllDaysTableData(staffEntries, month, year, hourlyRate, shiftCombinations);
