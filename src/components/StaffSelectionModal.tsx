@@ -134,7 +134,17 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
 
   const handleConfirm = () => {
     const nameChanged = selectedStaff !== entry.assigned_name;
-    const colorChanged = isAdmin && selectedColor !== (entry.text_color || '#000000');
+    const currentColor = entry.text_color || '#000000';
+    const colorChanged = isAdmin && selectedColor !== currentColor;
+    
+    console.log('🎨 Color change detection:', {
+      isAdmin,
+      selectedColor,
+      currentColor: entry.text_color,
+      defaultedCurrentColor: currentColor,
+      colorChanged,
+      nameChanged
+    });
     
     if (selectedStaff && (nameChanged || colorChanged)) {
       if (onSelectStaffWithColor && isAdmin) {
