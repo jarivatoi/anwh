@@ -134,16 +134,19 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
 
   const handleConfirm = () => {
     const nameChanged = selectedStaff !== entry.assigned_name;
+    
+    // Get the current color - handle null/undefined properly
     const currentColor = entry.text_color || '#000000';
     const colorChanged = isAdmin && selectedColor !== currentColor;
     
     console.log('🎨 Color change detection:', {
       isAdmin,
       selectedColor,
-      currentColor: entry.text_color,
-      defaultedCurrentColor: currentColor,
+      entryTextColor: entry.text_color,
+      currentColor,
       colorChanged,
-      nameChanged
+      nameChanged,
+      comparison: `"${selectedColor}" !== "${currentColor}"`
     });
     
     if (selectedStaff && (nameChanged || colorChanged)) {
@@ -267,7 +270,21 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
               filteredStaff.map((staffName) => (
               <button
                 key={staffName}
-                onClick={() => handleStaffSelect(staffName)}
+                disabled={(() => {
+                  if (!selectedStaff || filteredStaff.length === 0) return true;
+                  
+                  const nameChanged = selectedStaff !== entry.assigned_name;
+                  const currentColor = entry.text_color || '#000000';
+                  const colorChanged = isAdmin && selectedColor !== currentColor;
+                  
+                  // For regular users: only enable if name changed
+                  if (!isAdmin) {
+                    return !nameChanged;
+                  }
+                  
+                  // For ADMIN: enable if either name or color changed
+                  return !nameChanged && !colorChanged;
+                })()}
                 className={`w-full p-4 rounded-lg border-2 text-left transition-all duration-200 ${
                   selectedStaff === staffName
                     ? 'border-blue-500 bg-blue-50 text-blue-900'
