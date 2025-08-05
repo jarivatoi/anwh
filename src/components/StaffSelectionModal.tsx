@@ -478,7 +478,33 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
             </button>
             <button
               onClick={handleConfirm}
-              disabled={!selectedStaff || filteredStaff.length === 0 || (!isAdmin && selectedStaff === entry.assigned_name) || (isAdmin && selectedStaff === entry.assigned_name && selectedColor === (entry.text_color || '#000000'))}
+              disabled={(() => {
+                if (!selectedStaff || filteredStaff.length === 0) return true;
+                
+                const nameChanged = selectedStaff !== entry.assigned_name;
+                
+                if (!isAdmin) {
+                  // For regular users: only enable if name changed
+                  return !nameChanged;
+                }
+                
+                // For ADMIN: enable if either name OR color changed
+                const currentColor = getCurrentColor();
+                const colorChanged = selectedColor !== currentColor;
+                
+                console.log('🎨 Button enable check (FIXED):', {
+                  selectedStaff,
+                  nameChanged,
+                  isAdmin,
+                  selectedColor,
+                  currentColor,
+                  colorChanged,
+                  shouldEnable: nameChanged || colorChanged,
+                  buttonDisabled: !nameChanged && !colorChanged
+                });
+                
+                return !nameChanged && !colorChanged;
+              })()}
               className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
             >
               <Check className="w-4 h-4" />
