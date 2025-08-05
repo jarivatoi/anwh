@@ -80,9 +80,9 @@ export class IndividualBillGenerator {
     
     // Right column values
     doc.setFont('helvetica', 'normal');
-    doc.text(staffInfo?.title || 'MIT', 150, 40);
-    doc.text(`Rs ${(staffInfo?.salary || 0).toLocaleString()}`, 150, 47);
-    doc.text(`Rs ${hourlyRate.toFixed(2)}`, 150, 54);
+    doc.text(staffInfo?.title || 'MIT', 120, 40);
+    doc.text(`Rs ${(staffInfo?.salary || 0).toLocaleString()}`, 120, 47);
+    doc.text(`Rs ${hourlyRate.toFixed(2)}`, 120, 54);
     
     // Prepare table data for ALL days in the month
     const tableData = this.prepareAllDaysTableData(staffEntries, month, year, hourlyRate, shiftCombinations);
