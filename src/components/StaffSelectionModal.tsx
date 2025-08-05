@@ -395,7 +395,7 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                   className={`w-full p-4 rounded-lg border-2 text-left transition-all duration-200 ${
                     selectedStaff === staffName
                       ? 'border-blue-500 bg-blue-50 text-blue-900'
-                      : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                     : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
                   }`}
                   style={{
                     touchAction: 'manipulation',
