@@ -61,7 +61,6 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
   useEffect(() => {
     if (isOpen && entry) {
       setSelectedStaff(entry.assigned_name);
-      setSelectedColor(entry.text_color || '#000000');
     }
   }, [isOpen, entry]);
 
