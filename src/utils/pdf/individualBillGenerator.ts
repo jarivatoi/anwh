@@ -198,7 +198,8 @@ export class IndividualBillGenerator {
     // Left side - Date and signature
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.text('Date and Signature: ________________', 15, summaryEndY);
+    doc.text('Date',15,summaryEndY);
+    doc.text('Signature:-________________', 20, summaryEndY);
     
     // Right side - Certification
     const rightX = 120;
