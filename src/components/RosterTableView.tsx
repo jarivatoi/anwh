@@ -854,7 +854,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         zIndex: 80,
                         textAlign: 'center',
                         fontSize: window.innerWidth > window.innerHeight ? '10px' : (window.innerWidth >= 640 ? '14px' : '12px'),
-                        color: 'white',
+                       border: '2px solid #374151',
                         border: '2px solid #000000',
                         backgroundColor: '#6b7280',
                         background: '#6b7280',
