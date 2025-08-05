@@ -67,7 +67,7 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
         // Get the actual current color - prioritize text_color, then detect from other logic
         let actualCurrentColor = '#000000'; // Default to black
         
-          return '#059669'; // Green for reverted entries (back to original PDF)
+        if (entry.text_color) {
           // If admin has set a custom color, use that
           actualCurrentColor = entry.text_color;
         } else {
