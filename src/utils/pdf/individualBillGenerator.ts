@@ -36,18 +36,20 @@ export class IndividualBillGenerator {
     // Filter entries for this staff member and month
     const staffEntries = this.filterStaffEntries(entries, staffName, month, year);
     
-    // Calculate totals
-    const calculations = this.calculateTotals(staffEntries, hourlyRate, shiftCombinations);
+    // Sort entries by date
+    const sortedEntries = staffEntries.sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
     
     // Generate the bill content
-    this.generateBillContent(doc, {
+    this.generateDetailedBillContent(doc, {
       staffName,
       month,
       year,
-      entries: staffEntries,
-      calculations,
+      entries: sortedEntries,
       basicSalary,
-      hourlyRate
+      hourlyRate,
+      shiftCombinations
     });
     
     // Generate filename
@@ -88,7 +90,245 @@ export class IndividualBillGenerator {
   }
   
   /**
-   * Calculate totals and breakdown
+   * Generate detailed bill content matching the PDF template
+   */
+  private generateDetailedBillContent(doc: jsPDF, data: {
+    staffName: string;
+    month: number;
+    year: number;
+    entries: RosterEntry[];
+    basicSalary: number;
+    hourlyRate: number;
+    shiftCombinations: Array<{id: string, combination: string, hours: number}>;
+  }) {
+    const { staffName, month, year, entries, basicSalary, hourlyRate, shiftCombinations } = data;
+    
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    
+    // Page margins
+    const leftMargin = 15;
+    const rightMargin = 20;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const contentWidth = pageWidth - leftMargin - rightMargin;
+    
+    let yPosition = 30;
+    
+    // Header - Company/Department Name
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('X-RAY DEPARTMENT', pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 10;
+    
+    doc.setFontSize(14);
+    doc.text('ANWH - Work Schedule', pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 15;
+    
+    // Title
+    doc.setFontSize(16);
+    doc.text('INDIVIDUAL WORK SUMMARY', pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 20;
+    
+    // Staff Details Box
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    
+    // Draw border for staff details (smaller box)
+    doc.rect(leftMargin, yPosition - 5, contentWidth, 40);
+    yPosition += 5;
+    
+    // Staff Name
+    doc.setFont('helvetica', 'bold');
+    doc.text('Staff Name:', leftMargin + 10, yPosition);
+    doc.setFont('helvetica', 'normal');
+    doc.text(staffName, leftMargin + 50, yPosition);
+    yPosition += 8;
+    
+    // Period
+    doc.setFont('helvetica', 'bold');
+    doc.text('Period:', leftMargin + 10, yPosition);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${monthNames[month]} ${year}`, leftMargin + 50, yPosition);
+    yPosition += 8;
+    
+    // Basic Salary
+    doc.setFont('helvetica', 'bold');
+    doc.text('Basic Salary:', leftMargin + 10, yPosition);
+    doc.setFont('helvetica', 'normal');
+    doc.text(formatMauritianRupees(basicSalary).formatted, leftMargin + 50, yPosition);
+    yPosition += 8;
+    
+    // Hourly Rate
+    doc.setFont('helvetica', 'bold');
+    doc.text('Hourly Rate:', leftMargin + 10, yPosition);
+    doc.setFont('helvetica', 'normal');
+    doc.text(formatMauritianRupees(hourlyRate).formatted, leftMargin + 50, yPosition);
+    yPosition += 20;
+    
+    // Detailed Work Record
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('DETAILED WORK RECORD', pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 15;
+    
+    // Create detailed table with all dates and shifts
+    const tableData = this.prepareDetailedTableData(entries, hourlyRate, shiftCombinations);
+    
+    // Calculate totals
+    let totalHours = 0;
+    let totalAmount = 0;
+    let nightDutyCount = 0;
+    let nightAllowanceAmount = 0;
+    
+    tableData.forEach(row => {
+      totalHours += parseFloat(row[3]) || 0;
+      totalAmount += parseFloat(row[4].replace(/[^\d.-]/g, '')) || 0;
+      if (row[2] === 'Night Duty') {
+        nightDutyCount++;
+        nightAllowanceAmount += 500; // Rs 500 per night duty
+      }
+    });
+    
+    // Use autoTable for better formatting
+    const autoTable = (doc as any).autoTable;
+    autoTable({
+      startY: yPosition,
+      head: [['Date', 'Day', 'Shift Type', 'Hours', 'Amount (Rs)']],
+      body: tableData,
+      styles: {
+        fontSize: 8,
+        cellPadding: 1.5,
+        overflow: 'linebreak'
+      },
+      headStyles: {
+        fillColor: [79, 70, 229],
+        textColor: 255,
+        fontStyle: 'bold',
+        fontSize: 9
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252]
+      },
+      columnStyles: {
+        0: { cellWidth: 25, halign: 'center' }, // Date
+        1: { cellWidth: 20, halign: 'center' }, // Day
+        2: { cellWidth: 50, halign: 'left' },   // Shift Type
+        3: { cellWidth: 20, halign: 'center' }, // Hours
+        4: { cellWidth: 30, halign: 'right' }   // Amount
+      },
+      margin: { left: leftMargin, right: rightMargin },
+      theme: 'striped'
+    });
+    
+    // Get the final Y position after the table
+    yPosition = (doc as any).lastAutoTable.finalY + 15;
+    
+    // Summary Section
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('SUMMARY', pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 15;
+    
+    // Summary box
+    doc.rect(leftMargin, yPosition - 5, contentWidth, 50);
+    yPosition += 5;
+    
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    
+    // Basic calculations
+    doc.text(`Total Working Days: ${entries.length}`, leftMargin + 10, yPosition);
+    yPosition += 8;
+    
+    doc.text(`Total Working Hours: ${totalHours}`, leftMargin + 10, yPosition);
+    yPosition += 8;
+    
+    doc.text(`Hourly Rate: ${formatMauritianRupees(hourlyRate).formatted}`, leftMargin + 10, yPosition);
+    yPosition += 8;
+    
+    doc.text(`Subtotal (Hours): ${formatMauritianRupees(totalAmount).formatted}`, leftMargin + 10, yPosition);
+    yPosition += 8;
+    
+    // Night duty allowance breakdown
+    if (nightDutyCount > 0) {
+      doc.text(`Night Duty Allowance: ${nightDutyCount} nights × Rs 500 = ${formatMauritianRupees(nightAllowanceAmount).formatted}`, leftMargin + 10, yPosition);
+      yPosition += 8;
+    }
+    
+    // Final total
+    const grandTotal = totalAmount + nightAllowanceAmount;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text(`TOTAL AMOUNT: ${formatMauritianRupees(grandTotal).formatted}`, leftMargin + 10, yPosition);
+    yPosition += 15;
+    
+    // Footer
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, leftMargin, yPosition);
+    doc.text(`Generated by: X-ray ANWH System`, pageWidth - rightMargin, yPosition, { align: 'right' });
+    
+    // Page number
+    doc.text('Page 1 of 1', pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+  }
+  
+  /**
+   * Prepare detailed table data showing all dates and shifts
+   */
+  private prepareDetailedTableData(
+    entries: RosterEntry[], 
+    hourlyRate: number, 
+    shiftCombinations: Array<{id: string, combination: string, hours: number}>
+  ): string[][] {
+    return entries.map(entry => {
+      // Map roster shift types to calculation IDs
+      const shiftMapping: Record<string, string> = {
+        'Morning Shift (9-4)': '9-4',
+        'Evening Shift (4-10)': '4-10',
+        'Saturday Regular (12-10)': '12-10',
+        'Night Duty': 'N',
+        'Sunday/Public Holiday/Special': '9-4'
+      };
+      
+      const shiftId = shiftMapping[entry.shift_type];
+      const combination = shiftCombinations.find(combo => combo.id === shiftId);
+      const hours = combination ? combination.hours : 0;
+      const amount = hours * hourlyRate;
+      
+      return [
+        this.formatDate(entry.date),
+        this.getDayName(entry.date),
+        this.formatShiftType(entry.shift_type),
+        hours.toString(),
+        formatMauritianRupees(amount).formatted
+      ];
+    });
+  }
+  
+  /**
+   * Format date for PDF display (DD/MM/YYYY)
+   */
+  private formatDate(dateString: string): string {
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+  
+  /**
+   * Get day name for date
+   */
+  private getDayName(dateString: string): string {
+    const date = new Date(dateString);
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return dayNames[date.getDay()];
+  }
+  
+  /**
+   * Calculate totals and breakdown (kept for compatibility)
    */
   private calculateTotals(
     entries: RosterEntry[], 
@@ -135,181 +375,6 @@ export class IndividualBillGenerator {
       totalAmount,
       totalEntries: entries.length
     };
-  }
-  
-  /**
-   * Generate the bill content matching the template
-   */
-  private generateBillContent(doc: jsPDF, data: {
-    staffName: string;
-    month: number;
-    year: number;
-    entries: RosterEntry[];
-    calculations: any;
-    basicSalary: number;
-    hourlyRate: number;
-  }) {
-    const { staffName, month, year, calculations, basicSalary, hourlyRate } = data;
-    
-    const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    
-    // Page margins
-    const leftMargin = 20;
-    const rightMargin = 20;
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const contentWidth = pageWidth - leftMargin - rightMargin;
-    
-    let yPosition = 30;
-    
-    // Header - Company/Department Name
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text('X-RAY DEPARTMENT', pageWidth / 2, yPosition, { align: 'center' });
-    yPosition += 10;
-    
-    doc.setFontSize(14);
-    doc.text('ANWH - Work Schedule', pageWidth / 2, yPosition, { align: 'center' });
-    yPosition += 15;
-    
-    // Title
-    doc.setFontSize(18);
-    doc.text('INDIVIDUAL WORK SUMMARY', pageWidth / 2, yPosition, { align: 'center' });
-    yPosition += 20;
-    
-    // Staff Details Box
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    
-    // Draw border for staff details
-    doc.rect(leftMargin, yPosition - 5, contentWidth, 40);
-    yPosition += 5;
-    
-    // Staff Name
-    doc.setFont('helvetica', 'bold');
-    doc.text('Staff Name:', leftMargin + 10, yPosition);
-    doc.setFont('helvetica', 'normal');
-    doc.text(staffName, leftMargin + 50, yPosition);
-    yPosition += 8;
-    
-    // Period
-    doc.setFont('helvetica', 'bold');
-    doc.text('Period:', leftMargin + 10, yPosition);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`${monthNames[month]} ${year}`, leftMargin + 50, yPosition);
-    yPosition += 8;
-    
-    // Basic Salary
-    doc.setFont('helvetica', 'bold');
-    doc.text('Basic Salary:', leftMargin + 10, yPosition);
-    doc.setFont('helvetica', 'normal');
-    doc.text(formatMauritianRupees(basicSalary).formatted, leftMargin + 50, yPosition);
-    yPosition += 8;
-    
-    // Hourly Rate
-    doc.setFont('helvetica', 'bold');
-    doc.text('Hourly Rate:', leftMargin + 10, yPosition);
-    doc.setFont('helvetica', 'normal');
-    doc.text(formatMauritianRupees(hourlyRate).formatted, leftMargin + 50, yPosition);
-    yPosition += 20;
-    
-    // Work Summary Table
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.text('WORK SUMMARY', pageWidth / 2, yPosition, { align: 'center' });
-    yPosition += 15;
-    
-    // Table headers
-    const tableStartY = yPosition;
-    const colWidths = [80, 30, 30, 50];
-    const colPositions = [
-      leftMargin,
-      leftMargin + colWidths[0],
-      leftMargin + colWidths[0] + colWidths[1],
-      leftMargin + colWidths[0] + colWidths[1] + colWidths[2]
-    ];
-    
-    // Draw table header
-    doc.setFillColor(240, 240, 240);
-    doc.rect(leftMargin, yPosition - 5, contentWidth, 10, 'F');
-    doc.rect(leftMargin, yPosition - 5, contentWidth, 10);
-    
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text('Shift Type', colPositions[0] + 2, yPosition);
-    doc.text('Days', colPositions[1] + 2, yPosition);
-    doc.text('Hours', colPositions[2] + 2, yPosition);
-    doc.text('Amount', colPositions[3] + 2, yPosition);
-    yPosition += 10;
-    
-    // Table rows
-    doc.setFont('helvetica', 'normal');
-    let rowCount = 0;
-    
-    Object.entries(calculations.shiftCounts).forEach(([shiftType, count]) => {
-      const hours = calculations.shiftHours[shiftType] || 0;
-      const amount = hours * hourlyRate;
-      
-      // Alternate row colors
-      if (rowCount % 2 === 1) {
-        doc.setFillColor(248, 248, 248);
-        doc.rect(leftMargin, yPosition - 5, contentWidth, 8, 'F');
-      }
-      
-      // Draw row border
-      doc.rect(leftMargin, yPosition - 5, contentWidth, 8);
-      
-      // Draw vertical lines
-      colPositions.slice(1).forEach(pos => {
-        doc.line(pos, yPosition - 5, pos, yPosition + 3);
-      });
-      
-      // Row data
-      doc.text(this.formatShiftType(shiftType), colPositions[0] + 2, yPosition);
-      doc.text(count.toString(), colPositions[1] + 2, yPosition);
-      doc.text(hours.toString(), colPositions[2] + 2, yPosition);
-      doc.text(formatMauritianRupees(amount).formatted, colPositions[3] + 2, yPosition);
-      
-      yPosition += 8;
-      rowCount++;
-    });
-    
-    // Total row
-    doc.setFillColor(220, 220, 220);
-    doc.rect(leftMargin, yPosition - 5, contentWidth, 10, 'F');
-    doc.rect(leftMargin, yPosition - 5, contentWidth, 10);
-    
-    // Draw vertical lines for total row
-    colPositions.slice(1).forEach(pos => {
-      doc.line(pos, yPosition - 5, pos, yPosition + 5);
-    });
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text('TOTAL', colPositions[0] + 2, yPosition);
-    doc.text(calculations.totalEntries.toString(), colPositions[1] + 2, yPosition);
-    doc.text(calculations.totalHours.toString(), colPositions[2] + 2, yPosition);
-    doc.text(formatMauritianRupees(calculations.totalAmount).formatted, colPositions[3] + 2, yPosition);
-    yPosition += 20;
-    
-    // Summary Section
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.text('SUMMARY', pageWidth / 2, yPosition, { align: 'center' });
-    yPosition += 15;
-    
-    // Summary details
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    
-    doc.text(`Total Working Days: ${calculations.totalEntries}`, leftMargin, yPosition);
-    yPosition += 8;
-    
-    doc.text(`Total Working Hours: ${calculations.totalHours}`, leftMargin, yPosition);
-    yPosition += 8;
-    
-    doc.text(`Hourly Rate: ${formatMauritianRupees(hourlyRate).formatted}`, leftMargin, yPosition);
     yPosition += 8;
     
     doc.setFont('helvetica', 'bold');
