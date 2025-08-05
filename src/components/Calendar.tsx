@@ -1182,10 +1182,12 @@ export const Calendar: React.FC<CalendarProps> = ({
                       {dayShifts.map((shiftId, idx) => {
                         const shift = getShiftDisplay(shiftId);
                         return shift ? (
+                          <div
                             key={`${shiftId}-${idx}`}
                             className={`shift-text text-[8px] sm:text-[11px] font-bold leading-tight text-black flex-shrink-0 w-full select-none whitespace-nowrap overflow-hidden ${isPastDate(day) ? 'opacity-60' : ''}`}
                           >
                             <div className="text-center select-none truncate px-0.5">{shift.time}</div>
+                          </div>
                           </div>
                         ) : null;
                       })}
