@@ -1174,24 +1174,6 @@ export const Calendar: React.FC<CalendarProps> = ({
                         <div 
                           className="special-text text-[8px] sm:text-[9px] text-red-500 font-bold leading-none mt-0.5 flex justify-center select-none"
                         >
-                          {/* X watermark for past dates */}
-                          {isPastDate(day) && (
-                            <div 
-                              className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                              style={{
-                                zIndex: 10,
-                                fontSize: 'clamp(2rem, 8vw, 4rem)',
-                                fontWeight: 'bold',
-                                color: '#fca5a5',
-                                opacity: 0.3,
-                                userSelect: 'none',
-                                WebkitUserSelect: 'none'
-                              }}
-                            >
-                              X
-                            </div>
-                          )}
-                          
                           <div className="text-center select-none">SPECIAL</div>
                         </div>
                       )}
