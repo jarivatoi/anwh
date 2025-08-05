@@ -184,7 +184,15 @@ export class PDFExporter {
     };
     return shortNames[shiftType] || shiftType;
   }
-}
+
+  /**
+   * Format timestamp for PDF display
+   */
+  private formatTimestamp(timestamp: string): string {
+    if (!timestamp) return 'N/A';
+    const date = new Date(timestamp);
+    return date.toLocaleString();
+  }
 }
 
 // Create singleton instance
