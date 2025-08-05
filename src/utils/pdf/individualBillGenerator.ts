@@ -352,6 +352,11 @@ export class IndividualBillGenerator {
       return 0;
     }
     
+    // Special case: Night Duty should show 11 hours (since allowances are paid separately)
+    if (shiftType === 'Night Duty') {
+      return 11;
+    }
+    
     const combination = shiftCombinations.find(combo => combo.id === combinationId);
     if (!combination) {
       console.warn(`No combination found for shift ID: ${combinationId}`);
