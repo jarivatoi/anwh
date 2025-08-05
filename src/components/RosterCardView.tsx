@@ -467,7 +467,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
                             padding: window.innerWidth > window.innerHeight ? '4px' : '8px' // Less padding in landscape
                           }}>
                             {/* X watermark - centered over names area only */}
-                            {isPastDate(date) && (
+                            {isPastDate(date) && !isSpecialDate(date) && (
                               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
                                 <div className="font-bold select-none" style={{
                                   fontSize: window.innerWidth > window.innerHeight ? 'clamp(1.5rem, 6vw, 3rem)' : 'clamp(3rem, 10vw, 6rem)',
