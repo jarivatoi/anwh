@@ -62,15 +62,48 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     if (isOpen && entry) {
       setSelectedStaff(entry.assigned_name);
       
-      // For ADMIN: Detect current color from entry and set it as initial selection
+      // For ADMIN: Always detect and set the actual current color from the entry
       if (isAdmin) {
-        const currentColor = entry.text_color || '#000000';
-        console.log('🎨 ADMIN: Setting initial color from entry:', {
+        // Get the actual current color - prioritize text_color, then detect from other logic
+        let actualCurrentColor = '#000000'; // Default to black
+        
+        if (entry.text_color) {
+          // If admin has set a custom color, use that
+          actualCurrentColor = entry.text_color;
+        } else {
+          // Otherwise, detect color based on edit status (same logic as getTextColor)
+          const hasBeenReverted = (() => {
+            if (!entry.change_description) return false;
+            const originalPdfMatch = entry.change_description.match(/\(Original PDF: ([^)]+)\)/);
+            if (originalPdfMatch) {
+              let originalPdfAssignment = originalPdfMatch[1].trim();
+              if (originalPdfAssignment.includes('(R') && !originalPdfAssignment.includes('(R)')) {
+                originalPdfAssignment = originalPdfAssignment.replace('(R', '(R)');
+              }
+              return entry.assigned_name === originalPdfAssignment && entry.last_edited_by === 'ADMIN';
+            }
+            return false;
+          })();
+          
+          const hasBeenEdited = entry.change_description && 
+                               entry.change_description.includes('Name changed from') &&
+                               entry.last_edited_by;
+          
+          if (hasBeenReverted) {
+            actualCurrentColor = '#000000'; // Black for ADMIN-reverted entries
+          } else if (hasBeenEdited) {
+            actualCurrentColor = '#dc2626'; // Red for edited entries
+          } else {
+            actualCurrentColor = '#000000'; // Black for original entries
+          }
+        }
+        
+        console.log('🎨 ADMIN: Detecting and setting initial color:', {
           entryTextColor: entry.text_color,
-          currentColor,
+          actualCurrentColor,
           assignedName: entry.assigned_name
         });
-        setSelectedColor(currentColor);
+        setSelectedColor(actualCurrentColor);
       } else {
         setSelectedColor('#000000');
       }
@@ -147,8 +180,39 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
   const handleConfirm = () => {
     const nameChanged = selectedStaff !== entry.assigned_name;
     
-    // For ADMIN: Check if color has changed from the original entry color
-    const originalColor = entry.text_color || '#000000';
+    // For ADMIN: Check if color has changed from the actual current color
+    let originalColor = '#000000';
+    
+    if (entry.text_color) {
+      originalColor = entry.text_color;
+    } else {
+      // Detect the current color based on edit status (same logic as above)
+      const hasBeenReverted = (() => {
+        if (!entry.change_description) return false;
+        const originalPdfMatch = entry.change_description.match(/\(Original PDF: ([^)]+)\)/);
+        if (originalPdfMatch) {
+          let originalPdfAssignment = originalPdfMatch[1].trim();
+          if (originalPdfAssignment.includes('(R') && !originalPdfAssignment.includes('(R)')) {
+            originalPdfAssignment = originalPdfAssignment.replace('(R', '(R)');
+          }
+          return entry.assigned_name === originalPdfAssignment && entry.last_edited_by === 'ADMIN';
+        }
+        return false;
+      })();
+      
+      const hasBeenEdited = entry.change_description && 
+                           entry.change_description.includes('Name changed from') &&
+                           entry.last_edited_by;
+      
+      if (hasBeenReverted) {
+        originalColor = '#000000';
+      } else if (hasBeenEdited) {
+        originalColor = '#dc2626';
+      } else {
+        originalColor = '#000000';
+      }
+    }
+    
     const colorChanged = isAdmin && selectedColor !== originalColor;
     
     console.log('🎨 Color change detection:', {
@@ -157,7 +221,9 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
       originalColor,
       colorChanged,
       nameChanged,
-      comparison: `"${selectedColor}" !== "${originalColor}"`
+      comparison: `"${selectedColor}" !== "${originalColor}"`,
+      entryTextColor: entry.text_color,
+      hasCustomTextColor: !!entry.text_color
     });
     
     if (selectedStaff && (nameChanged || colorChanged)) {
