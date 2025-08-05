@@ -11,7 +11,7 @@ export interface RosterListOptions {
 export class RosterListGenerator {
   
   /**
-   * Generate simple roster list showing name, date, and shift only
+   * Generate roster list matching the PDF template format - all on one page
    */
   async generateRosterList(options: RosterListOptions): Promise<void> {
     const { month, year, entries } = options;
@@ -33,10 +33,13 @@ export class RosterListGenerator {
     // Header
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text('X-RAY DEPARTMENT - ANWH', doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+    doc.text('X-RAY DEPARTMENT', doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
     
     doc.setFontSize(14);
-    doc.text(`ROSTER LIST - ${monthNames[month]} ${year}`, doc.internal.pageSize.getWidth() / 2, 30, { align: 'center' });
+    doc.text('ANWH - Work Schedule', doc.internal.pageSize.getWidth() / 2, 25, { align: 'center' });
+    
+    doc.setFontSize(12);
+    doc.text(`ROSTER - ${monthNames[month]} ${year}`, doc.internal.pageSize.getWidth() / 2, 35, { align: 'center' });
     
     // Filter entries for the specified month/year
     const monthEntries = entries.filter(entry => {
@@ -49,43 +52,19 @@ export class RosterListGenerator {
     if (monthEntries.length === 0) {
       // Show "No data" message
       doc.setFontSize(14);
-      doc.text('No roster entries found for this month', doc.internal.pageSize.getWidth() / 2, 60, { align: 'center' });
+      doc.text('No roster entries found for this month', doc.internal.pageSize.getWidth() / 2, 50, { align: 'center' });
     } else {
-      // Sort entries by date, then by shift type
-      const sortedEntries = [...monthEntries].sort((a, b) => {
-        const dateComparison = new Date(a.date).getTime() - new Date(b.date).getTime();
-        if (dateComparison !== 0) return dateComparison;
-        
-        // Secondary sort by shift type
-        const shiftOrder = [
-          'Morning Shift (9-4)',
-          'Saturday Regular (12-10)',
-          'Evening Shift (4-10)',
-          'Night Duty',
-          'Sunday/Public Holiday/Special'
-        ];
-        
-        const aIndex = shiftOrder.indexOf(a.shift_type);
-        const bIndex = shiftOrder.indexOf(b.shift_type);
-        return aIndex - bIndex;
-      });
+      // Group entries by date and staff, then create table data
+      const tableData = this.prepareRosterTableData(monthEntries);
       
-      // Prepare table data - ONLY name, date, and shift
-      const tableData = sortedEntries.map(entry => [
-        this.formatDate(entry.date),
-        this.getDayName(entry.date),
-        entry.assigned_name,
-        this.formatShiftType(entry.shift_type)
-      ]);
-      
-      // Create table
+      // Create table with very small fonts to fit everything
       autoTable(doc, {
-        startY: 40,
-        head: [['Date', 'Day', 'Staff Name', 'Shift Type']],
+        startY: 45,
+        head: [['Date', 'Day', 'Staff Name', 'Morning (9-4)', 'Saturday (12-10)', 'Evening (4-10)', 'Night Duty', 'Special (9-4)']],
         body: tableData,
         styles: {
-          fontSize: 7,
-          cellPadding: 1.5,
+          fontSize: 5, // Very small font to fit more
+          cellPadding: 1,
           overflow: 'linebreak',
           halign: 'center'
         },
@@ -93,48 +72,104 @@ export class RosterListGenerator {
           fillColor: [79, 70, 229],
           textColor: 255,
           fontStyle: 'bold',
-          fontSize: 8
+          fontSize: 6
         },
         alternateRowStyles: {
           fillColor: [248, 250, 252]
         },
         columnStyles: {
-          0: { cellWidth: 25 }, // Date
-          1: { cellWidth: 20 }, // Day
-          2: { cellWidth: 50 }, // Staff Name
-          3: { cellWidth: 45 }  // Shift Type
+          0: { cellWidth: 20 }, // Date
+          1: { cellWidth: 15 }, // Day
+          2: { cellWidth: 35 }, // Staff Name
+          3: { cellWidth: 20 }, // Morning (9-4)
+          4: { cellWidth: 20 }, // Saturday (12-10)
+          5: { cellWidth: 20 }, // Evening (4-10)
+          6: { cellWidth: 20 }, // Night Duty
+          7: { cellWidth: 20 }  // Special (9-4)
         },
-        margin: { left: 15, right: 15 },
+        margin: { left: 10, right: 10 },
         pageBreak: 'avoid',
         rowPageBreak: 'avoid',
-        tableLineWidth: 0.1
+        tableLineWidth: 0.1,
+        theme: 'grid'
       });
     }
     
     // Footer
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.text(`Generated on: ${new Date().toLocaleString()}`, 15, doc.internal.pageSize.getHeight() - 10);
-    doc.text(`Total Entries: ${monthEntries.length}`, doc.internal.pageSize.getWidth() - 15, doc.internal.pageSize.getHeight() - 10, { align: 'right' });
-    
-    // Page numbers
-    const pageCount = doc.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.text(
-        `Page ${i} of ${pageCount}`,
-        doc.internal.pageSize.getWidth() / 2,
-        doc.internal.pageSize.getHeight() - 5,
-        { align: 'center' }
-      );
-    }
+    doc.setFontSize(6);
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 10, doc.internal.pageSize.getHeight() - 8);
+    doc.text(`Total Staff: ${this.getUniqueStaffCount(monthEntries)}`, doc.internal.pageSize.getWidth() - 10, doc.internal.pageSize.getHeight() - 8, { align: 'right' });
     
     // Save
     const filename = `Roster_List_${monthNames[month]}_${year}.pdf`;
     doc.save(filename);
     
     console.log('✅ Roster list generated:', filename);
+  }
+  
+  /**
+   * Prepare roster table data with checkmarks for shifts worked
+   */
+  private prepareRosterTableData(entries: RosterEntry[]): string[][] {
+    // Group entries by date and staff
+    const groupedData: Record<string, Record<string, string[]>> = {};
+    
+    entries.forEach(entry => {
+      const dateKey = entry.date;
+      const staffName = entry.assigned_name;
+      
+      if (!groupedData[dateKey]) {
+        groupedData[dateKey] = {};
+      }
+      if (!groupedData[dateKey][staffName]) {
+        groupedData[dateKey][staffName] = [];
+      }
+      groupedData[dateKey][staffName].push(entry.shift_type);
+    });
+    
+    // Convert to table rows
+    const tableData: string[][] = [];
+    
+    // Sort dates
+    const sortedDates = Object.keys(groupedData).sort();
+    
+    sortedDates.forEach(date => {
+      const staffData = groupedData[date];
+      const staffNames = Object.keys(staffData).sort();
+      
+      staffNames.forEach(staffName => {
+        const shifts = staffData[staffName];
+        
+        // Create checkmarks for each shift type
+        const morning = shifts.includes('Morning Shift (9-4)') || shifts.includes('Sunday/Public Holiday/Special') ? '✓' : '';
+        const saturday = shifts.includes('Saturday Regular (12-10)') ? '✓' : '';
+        const evening = shifts.includes('Evening Shift (4-10)') ? '✓' : '';
+        const night = shifts.includes('Night Duty') ? '✓' : '';
+        const special = shifts.includes('Sunday/Public Holiday/Special') ? '✓' : '';
+        
+        tableData.push([
+          this.formatDate(date),
+          this.getDayName(date),
+          staffName,
+          morning,
+          saturday,
+          evening,
+          night,
+          special
+        ]);
+      });
+    });
+    
+    return tableData;
+  }
+  
+  /**
+   * Get count of unique staff members
+   */
+  private getUniqueStaffCount(entries: RosterEntry[]): number {
+    const uniqueStaff = new Set(entries.map(entry => entry.assigned_name));
+    return uniqueStaff.size;
   }
   
   /**
