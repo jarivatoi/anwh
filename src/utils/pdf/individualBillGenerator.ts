@@ -52,42 +52,51 @@ export class IndividualBillGenerator {
     // Header - compact format
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('X-RAY DEPARTMENT - ANWH', doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
+    doc.text('X-RAY DEPARTMENT - ANWH', doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
     
     doc.setFontSize(12);
-    doc.text(`INDIVIDUAL WORK SUMMARY - ${monthNames[month]} ${year}`, doc.internal.pageSize.getWidth() / 2, 25, { align: 'center' });
+    doc.text(`INDIVIDUAL WORK SUMMARY - ${monthNames[month]} ${year}`, doc.internal.pageSize.getWidth() / 2, 30, { align: 'center' });
+    
+    // Add images above X-RAY DEPARTMENT
+    // Left image placeholder
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text('[LEFT IMAGE]', 20, 15, { align: 'left' });
+    
+    // Right image placeholder  
+    doc.text('[RIGHT IMAGE]', doc.internal.pageSize.getWidth() - 20, 15, { align: 'right' });
     
     // Staff details section - two-column layout with proper alignment
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     
     // Left column - Name, Month, Year
-    doc.text('Name:', 20, 35);
-    doc.text('Month/Year:', 20, 42);
+    doc.text('Name:', 20, 40);
+    doc.text('Month/Year:', 20, 47);
     
     // Left column values
     doc.setFont('helvetica', 'normal');
-    doc.text(`${staffInfo?.firstName || ''} ${staffInfo?.surname || staffName}`, 80, 35);
-    doc.text(`${monthNames[month]} ${year}`, 80, 42);
+    doc.text(`${staffInfo?.firstName || ''} ${staffInfo?.surname || staffName}`, 50, 40);
+    doc.text(`${monthNames[month]} ${year}`, 50, 47);
     
     // Right column - Title, Salary, Employee ID
     doc.setFont('helvetica', 'bold');
-    doc.text('Title:', 120, 35);
-    doc.text('Salary:', 120, 42);
-    doc.text('Employee ID:', 120, 49);
+    doc.text('Title:', 120, 40);
+    doc.text('Salary:', 120, 47);
+    doc.text('Employee ID:', 120, 54);
     
     // Right column values
     doc.setFont('helvetica', 'normal');
-    doc.text(staffInfo?.title || 'MIT', 170, 35);
-    doc.text(`Rs ${(staffInfo?.salary || 0).toLocaleString()}`, 170, 42);
-    doc.text(staffInfo?.employeeId || '', 170, 49);
+    doc.text(staffInfo?.title || 'MIT', 150, 40);
+    doc.text(`Rs ${(staffInfo?.salary || 0).toLocaleString()}`, 150, 47);
+    doc.text(staffInfo?.employeeId || '', 150, 54);
     
     // Prepare table data for ALL days in the month
     const tableData = this.prepareAllDaysTableData(staffEntries, month, year, hourlyRate, shiftCombinations);
     
     // Create table with compact layout
     autoTable(doc, {
-      startY: 55,
+      startY: 60,
       head: [['Day Date', 'Morning\n(9-4)', 'Saturday\n(12-10)', 'Evening\n(4-10)', 'Night\nDuty', 'Hours', 'Remarks']],
       body: tableData.rows,
       styles: {
@@ -127,13 +136,14 @@ export class IndividualBillGenerator {
     
     // Add summary section
     const finalY = (doc as any).lastAutoTable.finalY + 5;
-    this.addSummarySection(doc, tableData.totalDays, tableData.totalHours, tableData.nightDutyCount, hourlyRate, finalY);
+    this.addSummarySection(doc, tableData.totalDays, tableData.totalHours, tableData.nightDutyCount, hourlyRate, finalY, staffInfo?.salary || 0);
     
-    // Footer
+    // Footer - positioned at absolute bottom
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6);
-    doc.text(`Generated on: ${new Date().toLocaleString()}`, 15, doc.internal.pageSize.getHeight() - 10);
-    doc.text('X-ray ANWH System', doc.internal.pageSize.getWidth() - 15, doc.internal.pageSize.getHeight() - 10, { align: 'right' });
+    const pageHeight = doc.internal.pageSize.getHeight();
+    doc.text('X-ray ANWH System', doc.internal.pageSize.getWidth() - 15, pageHeight - 15, { align: 'right' });
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, doc.internal.pageSize.getWidth() - 15, pageHeight - 10, { align: 'right' });
     
     // Generate filename
     const filename = `${staffName}_${monthNames[month]}_${year}_Bill.pdf`;
@@ -147,7 +157,7 @@ export class IndividualBillGenerator {
   /**
    * Add compact summary section with corrected night allowance calculation
    */
-  private addSummarySection(doc: jsPDF, totalDays: number, totalHours: number, nightDutyCount: number, hourlyRate: number, startY: number): void {
+  private addSummarySection(doc: jsPDF, totalDays: number, totalHours: number, nightDutyCount: number, hourlyRate: number, startY: number, staffSalary: number): void {
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.text('SUMMARY:', 15, startY);
@@ -168,7 +178,7 @@ export class IndividualBillGenerator {
     const nightAllowanceBase = nightDutyCount * 6 * 0.25;
     const nightAllowance = nightAllowanceBase * hourlyRate;
     if (nightDutyCount > 0) {
-      doc.text(`Night Allowance: ${nightDutyCount} × 6 × 0.25 × ${formatMauritianRupees(hourlyRate).formatted} = ${formatMauritianRupees(nightAllowance).formatted}`, 20, startY + 32);
+      doc.text(`Night Allowance: ${nightDutyCount} × 6 × 0.25 × ${formatMauritianRupees(hourlyRate).formatted} = ${formatMauritianRupees(nightAllowance).formatted}`, 15, startY + 32);
     }
     
     // Grand total
