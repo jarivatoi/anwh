@@ -77,6 +77,11 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
 
   // Get text color based on edit status
   const getTextColor = () => {
+    // HIGHEST PRIORITY: Admin-set text color
+    if (entry.text_color) {
+      return entry.text_color;
+    }
+    
     if (hasBeenReverted(entry)) {
       return '#000000'; // Black for ADMIN-reverted entries
     } else if (hasBeenEdited(entry)) {
@@ -113,6 +118,10 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
   };
 
   const handleStaffSelect = async (newStaffName: string) => {
+    await this.handleStaffSelectWithColor(newStaffName);
+  };
+
+  const handleStaffSelectWithColor = async (newStaffName: string, textColor?: string) => {
     if (newStaffName === entry.assigned_name) {
       setShowStaffModal(false);
       return;
@@ -127,7 +136,8 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
         date: entry.date,
         shiftType: entry.shift_type,
         assignedName: newStaffName,
-        changeDescription: `Name changed from "${entry.assigned_name}" to "${newStaffName}"`
+        changeDescription: `Name changed from "${entry.assigned_name}" to "${newStaffName}"`,
+        textColor: textColor
       }, editorName);
 
       if (onUpdate) {
@@ -279,7 +289,9 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
         availableStaff={availableNames}
         allEntriesForShift={allEntriesForShift}
         onSelectStaff={handleStaffSelect}
+        onSelectStaffWithColor={handleStaffSelectWithColor}
         onClose={handleCancelStaffSelection}
+        authCode={authCode}
       />
     </>
   );

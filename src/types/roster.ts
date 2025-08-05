@@ -8,6 +8,7 @@ export interface RosterEntry {
   last_edited_at: string;
   created_at: string;
   change_description?: string;
+  text_color?: string; // Admin-set text color (highest priority)
 }
 
 export interface AuthCode {
@@ -20,6 +21,7 @@ export interface RosterFormData {
   shiftType: string;
   assignedName: string;
   changeDescription: string;
+  textColor?: string;
 }
 
 export type ViewType = 'table' | 'card' | 'log';
