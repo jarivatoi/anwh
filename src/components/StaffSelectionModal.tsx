@@ -141,7 +141,7 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
           if (originalPdfAssignment.includes('(R') && !originalPdfAssignment.includes('(R)')) {
             originalPdfAssignment = originalPdfAssignment.replace('(R', '(R)');
           }
-          return entry.assigned_name === originalPdfAssignment && entry.last_edited_by === 'ADMIN';
+          return entry.assigned_name === originalPdfAssignment;
         }
         return false;
       })();
@@ -151,7 +151,7 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                            entry.last_edited_by;
       
       if (hasBeenReverted) {
-        return '#000000'; // Black for ADMIN-reverted entries
+        return '#059669'; // Green for reverted entries (back to original PDF)
       } else if (hasBeenEdited) {
         return '#dc2626'; // Red for edited entries
       } else {

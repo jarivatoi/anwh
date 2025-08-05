@@ -68,8 +68,8 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
         originalPdfAssignment = originalPdfAssignment.replace('(R', '(R)');
       }
       
-      // Check if current assignment matches original PDF assignment AND was reverted by ADMIN
-      return entry.assigned_name === originalPdfAssignment && entry.last_edited_by === 'ADMIN';
+      // Check if current assignment matches original PDF assignment (reverted to original)
+      return entry.assigned_name === originalPdfAssignment;
     }
     
     return false;
@@ -83,7 +83,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
     }
     
     if (hasBeenReverted(entry)) {
-      return '#000000'; // Black for ADMIN-reverted entries
+      return '#059669'; // Green for reverted entries (back to original PDF)
     } else if (hasBeenEdited(entry)) {
       return '#dc2626'; // Red for edited entries
     } else {
