@@ -124,6 +124,42 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     }
   }, [isOpen, onClose]);
 
+  // Helper function to get the current color of the entry
+  const getCurrentColor = () => {
+    if (!entry) return '#000000';
+    
+    if (entry.text_color) {
+      // If admin has set a custom color, use that
+      return entry.text_color;
+    } else {
+      // Otherwise, detect color based on edit status
+      const hasBeenReverted = (() => {
+        if (!entry.change_description) return false;
+        const originalPdfMatch = entry.change_description.match(/\(Original PDF: ([^)]+)\)/);
+        if (originalPdfMatch) {
+          let originalPdfAssignment = originalPdfMatch[1].trim();
+          if (originalPdfAssignment.includes('(R') && !originalPdfAssignment.includes('(R)')) {
+            originalPdfAssignment = originalPdfAssignment.replace('(R', '(R)');
+          }
+          return entry.assigned_name === originalPdfAssignment && entry.last_edited_by === 'ADMIN';
+        }
+        return false;
+      })();
+      
+      const hasBeenEdited = entry.change_description && 
+                           entry.change_description.includes('Name changed from') &&
+                           entry.last_edited_by;
+      
+      if (hasBeenReverted) {
+        return '#000000'; // Black for ADMIN-reverted entries
+      } else if (hasBeenEdited) {
+        return '#dc2626'; // Red for edited entries
+      } else {
+        return '#000000'; // Black for original entries
+      }
+    }
+  };
+
   if (!isOpen || !entry) return null;
 
   // Filter out staff who are already working this shift
