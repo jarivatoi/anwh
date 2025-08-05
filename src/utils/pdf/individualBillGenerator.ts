@@ -198,15 +198,15 @@ export class IndividualBillGenerator {
     // Left side - Date and signature
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.text('Date:___________________',15,summaryEndY+10);
-    doc.text('Signature:_________________', 15, summaryEndY+18);
+    doc.text('Date:___________________',15,summaryEndY + 5);
+    doc.text('Signature:_________________', 15, summaryEndY + 12);
     
     // Right side - Certification
     const rightX = 120;
-    doc.text('Certified Correct as per Attendance.', rightX, summaryEndY-30);
-    doc.text('Name: _____________________________', rightX, summaryEndY + 8-30);
-    doc.text('Grade: Principal Medical Imaging Technologist.', rightX, summaryEndY + 16-30);
-    doc.text('Signature: ____________________________________', rightX, summaryEndY + 24-30);
+    doc.text('Certified Correct as per Attendance.', rightX, summaryEndY -30);
+    doc.text('Name: _____________________________', rightX, summaryEndY + 8 -30);
+    doc.text('Grade: Principal Medical Imaging Technologist.', rightX, summaryEndY + 16 -30);
+    doc.text('Signature: ____________________________________', rightX, summaryEndY + 24 -30);
   }
   
   /**
