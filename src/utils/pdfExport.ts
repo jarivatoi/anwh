@@ -189,6 +189,7 @@ export class PDFExporter {
     }
   }
 }
+}
 
 // Create singleton instance
 export const pdfExporter = new PDFExporter();
