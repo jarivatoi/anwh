@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Download, FileText, Users, List, Calendar, CheckCircle, AlertTriangle } from 'lucide-react';
+import { X, Download, FileText, Users, List, Calendar, CheckCircle, AlertTriangle, User } from 'lucide-react';
 import { monthlyReportGenerator } from '../utils/pdf/monthlyReportGenerator';
+import { individualBillGenerator } from '../utils/pdf/individualBillGenerator';
+import { annexureGenerator } from '../utils/pdf/annexureGenerator';
+import { rosterListGenerator } from '../utils/pdf/rosterListGenerator';
 import { RosterEntry } from '../types/roster';
+import { availableNames, sortByGroup } from '../utils/rosterAuth';
 
 interface MonthlyReportsModalProps {
   isOpen: boolean;
@@ -28,10 +32,14 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [isGenerating, setIsGenerating] = useState(false);
+  const [reportType, setReportType] = useState<'all' | 'individual' | 'annexure' | 'roster'>('all');
+  const [selectedStaff, setSelectedStaff] = useState<string>('');
   const [generationResult, setGenerationResult] = useState<{
     individualBills: number;
     annexureGenerated: boolean;
     rosterListGenerated: boolean;
+    reportType: string;
+    staffName?: string;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,6 +70,8 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
       setIsGenerating(false);
       setGenerationResult(null);
       setError(null);
+      setReportType('all');
+      setSelectedStaff('');
     }
   }, [isOpen]);
 
@@ -87,14 +97,76 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
     try {
       console.log('🚀 Starting monthly report generation...');
       
-      const result = await monthlyReportGenerator.generateAllReports({
-        month: selectedMonth,
-        year: selectedYear,
-        entries,
-        basicSalary,
-        hourlyRate,
-        shiftCombinations
+      // Filter entries for the month
+      const monthEntries = entries.filter(entry => {
+        const entryDate = new Date(entry.date);
+        return entryDate.getMonth() === selectedMonth && entryDate.getFullYear() === selectedYear;
       });
+      
+      if (monthEntries.length === 0) {
+        throw new Error(`No roster entries found for ${formatMonthYear()}`);
+      }
+      
+      let result = {
+        individualBills: 0,
+        annexureGenerated: false,
+        rosterListGenerated: false,
+        reportType: reportType,
+        staffName: selectedStaff
+      };
+      
+      if (reportType === 'all') {
+        // Generate all reports
+        const allResult = await monthlyReportGenerator.generateAllReports({
+          month: selectedMonth,
+          year: selectedYear,
+          entries,
+          basicSalary,
+          hourlyRate,
+          shiftCombinations
+        });
+        result = { ...allResult, reportType: 'all' };
+        
+      } else if (reportType === 'individual') {
+        // Generate individual bill for selected staff
+        if (!selectedStaff) {
+          throw new Error('Please select a staff member for individual report');
+        }
+        
+        await individualBillGenerator.generateBill({
+          staffName: selectedStaff,
+          month: selectedMonth,
+          year: selectedYear,
+          entries: monthEntries,
+          basicSalary,
+          hourlyRate,
+          shiftCombinations
+        });
+        
+        result.individualBills = 1;
+        
+      } else if (reportType === 'annexure') {
+        // Generate annexure only
+        await annexureGenerator.generateAnnexure({
+          month: selectedMonth,
+          year: selectedYear,
+          entries: monthEntries,
+          hourlyRate,
+          shiftCombinations
+        });
+        
+        result.annexureGenerated = true;
+        
+      } else if (reportType === 'roster') {
+        // Generate roster list only
+        await rosterListGenerator.generateRosterList({
+          month: selectedMonth,
+          year: selectedYear,
+          entries: monthEntries
+        });
+        
+        result.rosterListGenerated = true;
+      }
       
       setGenerationResult(result);
       console.log('✅ Monthly reports generated successfully:', result);
@@ -129,6 +201,20 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
     }).length;
   };
 
+  // Get unique staff members for the selected month
+  const getStaffForMonth = () => {
+    const monthEntries = entries.filter(entry => {
+      const entryDate = new Date(entry.date);
+      return entryDate.getMonth() === selectedMonth && entryDate.getFullYear() === selectedYear;
+    });
+    
+    const staffSet = new Set<string>();
+    monthEntries.forEach(entry => {
+      staffSet.add(entry.assigned_name);
+    });
+    
+    return sortByGroup(Array.from(staffSet));
+  };
   if (!isOpen) return null;
 
   return createPortal(
@@ -231,47 +317,166 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
                 </div>
               </div>
 
-              {/* Report Types */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-medium text-gray-800 mb-3">Reports to Generate:</h4>
+              {/* Report Type Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Select Report Type
+                </label>
                 <div className="space-y-3">
-                  <div className="flex items-center space-x-3">
-                    <Users className="w-5 h-5 text-blue-600" />
-                    <div>
-                      <div className="font-medium text-gray-900">Individual Staff Bills</div>
-                      <div className="text-sm text-gray-600">One PDF per staff member with their work summary</div>
+                  <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                    <input
+                      type="radio"
+                      value="all"
+                      checked={reportType === 'all'}
+                      onChange={(e) => setReportType(e.target.value as any)}
+                      className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div className="flex items-center space-x-2">
+                      <FileText className="w-5 h-5 text-blue-600" />
+                      <div>
+                        <div className="font-medium text-gray-900">All Reports</div>
+                        <div className="text-sm text-gray-600">Generate all three report types</div>
+                      </div>
                     </div>
-                  </div>
+                  </label>
                   
-                  <div className="flex items-center space-x-3">
-                    <FileText className="w-5 h-5 text-green-600" />
-                    <div>
-                      <div className="font-medium text-gray-900">Annexure (All Staff Summary)</div>
-                      <div className="text-sm text-gray-600">Combined summary for all staff members</div>
+                  <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                    <input
+                      type="radio"
+                      value="individual"
+                      checked={reportType === 'individual'}
+                      onChange={(e) => setReportType(e.target.value as any)}
+                      className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div className="flex items-center space-x-2">
+                      <User className="w-5 h-5 text-green-600" />
+                      <div>
+                        <div className="font-medium text-gray-900">Individual Staff Bill</div>
+                        <div className="text-sm text-gray-600">Generate bill for one staff member</div>
+                      </div>
                     </div>
-                  </div>
+                  </label>
                   
-                  <div className="flex items-center space-x-3">
-                    <List className="w-5 h-5 text-purple-600" />
-                    <div>
-                      <div className="font-medium text-gray-900">Roster List</div>
-                      <div className="text-sm text-gray-600">Simple list showing name, date, and shift</div>
+                  <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                    <input
+                      type="radio"
+                      value="annexure"
+                      checked={reportType === 'annexure'}
+                      onChange={(e) => setReportType(e.target.value as any)}
+                      className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div className="flex items-center space-x-2">
+                      <Users className="w-5 h-5 text-purple-600" />
+                      <div>
+                        <div className="font-medium text-gray-900">Annexure (All Staff Summary)</div>
+                        <div className="text-sm text-gray-600">Combined summary for all staff</div>
+                      </div>
                     </div>
-                  </div>
+                  </label>
+                  
+                  <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                    <input
+                      type="radio"
+                      value="roster"
+                      checked={reportType === 'roster'}
+                      onChange={(e) => setReportType(e.target.value as any)}
+                      className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div className="flex items-center space-x-2">
+                      <List className="w-5 h-5 text-orange-600" />
+                      <div>
+                        <div className="font-medium text-gray-900">Roster List</div>
+                        <div className="text-sm text-gray-600">Simple list of name, date, and shift</div>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Staff Selection - Only show when Individual Report is selected */}
+              {reportType === 'individual' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Select Staff Member
+                  </label>
+                  <select
+                    value={selectedStaff}
+                    onChange={(e) => setSelectedStaff(e.target.value)}
+                    disabled={isGenerating}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                  >
+                    <option value="">Select staff member</option>
+                    {getStaffForMonth().map(staffName => (
+                      <option key={staffName} value={staffName}>{staffName}</option>
+                    ))}
+                  </select>
+                  
+                  {selectedStaff && (
+                    <div className="mt-2 text-sm text-gray-600 text-center">
+                      Will generate individual bill for {selectedStaff}
+                    </div>
+                  )}
+                </div>
+              )}
+              {/* Report Types Info */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="font-medium text-gray-800 mb-3">
+                  {reportType === 'all' ? 'Reports to Generate:' : 'Selected Report:'}
+                </h4>
+                <div className="space-y-3">
+                  {(reportType === 'all' || reportType === 'individual') && (
+                    <div className="flex items-center space-x-3">
+                      <User className="w-5 h-5 text-green-600" />
+                      <div>
+                        <div className="font-medium text-gray-900">
+                          {reportType === 'individual' ? `Individual Bill - ${selectedStaff || 'Select staff'}` : 'Individual Staff Bills'}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {reportType === 'individual' ? 'One PDF for selected staff member' : 'One PDF per staff member with their work summary'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {(reportType === 'all' || reportType === 'annexure') && (
+                    <div className="flex items-center space-x-3">
+                      <Users className="w-5 h-5 text-purple-600" />
+                      <div>
+                        <div className="font-medium text-gray-900">Annexure (All Staff Summary)</div>
+                        <div className="text-sm text-gray-600">Combined summary for all staff members</div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {(reportType === 'all' || reportType === 'roster') && (
+                    <div className="flex items-center space-x-3">
+                      <List className="w-5 h-5 text-orange-600" />
+                      <div>
+                        <div className="font-medium text-gray-900">Roster List</div>
+                        <div className="text-sm text-gray-600">Simple list showing name, date, and shift</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Warning if no entries */}
-              {getMonthEntryCount() === 0 && (
+              {(getMonthEntryCount() === 0 || (reportType === 'individual' && !selectedStaff)) && (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                   <div className="flex items-center space-x-2">
                     <AlertTriangle className="w-5 h-5 text-amber-600" />
                     <span className="text-sm text-amber-800 font-medium">
-                      No entries found for {formatMonthYear()}
+                      {getMonthEntryCount() === 0 
+                        ? `No entries found for ${formatMonthYear()}`
+                        : 'Please select a staff member for individual report'
+                      }
                     </span>
                   </div>
                   <p className="text-sm text-amber-700 mt-1">
-                    Please select a different month or ensure roster data exists.
+                    {getMonthEntryCount() === 0 
+                      ? 'Please select a different month or ensure roster data exists.'
+                      : 'Choose a staff member from the dropdown above.'
+                    }
                   </p>
                 </div>
               )}
@@ -317,30 +522,56 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
                 <h5 className="font-medium text-green-800 mb-3">Generation Summary:</h5>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-green-700">Individual Bills:</span>
-                    <span className="text-green-800 font-medium">{generationResult.individualBills} files</span>
+                    <span className="text-green-700">Report Type:</span>
+                    <span className="text-green-800 font-medium capitalize">{generationResult.reportType}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-green-700">Annexure:</span>
-                    <span className="text-green-800 font-medium">
-                      {generationResult.annexureGenerated ? '✅ Generated' : '❌ Failed'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-green-700">Roster List:</span>
-                    <span className="text-green-800 font-medium">
-                      {generationResult.rosterListGenerated ? '✅ Generated' : '❌ Failed'}
-                    </span>
-                  </div>
+                  
+                  {generationResult.reportType === 'individual' && generationResult.staffName && (
+                    <div className="flex justify-between">
+                      <span className="text-green-700">Staff Member:</span>
+                      <span className="text-green-800 font-medium">{generationResult.staffName}</span>
+                    </div>
+                  )}
+                  
+                  {generationResult.individualBills > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-green-700">Individual Bills:</span>
+                      <span className="text-green-800 font-medium">{generationResult.individualBills} files</span>
+                    </div>
+                  )}
+                  
+                  {generationResult.reportType === 'all' || generationResult.reportType === 'annexure' ? (
+                    <div className="flex justify-between">
+                      <span className="text-green-700">Annexure:</span>
+                      <span className="text-green-800 font-medium">
+                        {generationResult.annexureGenerated ? '✅ Generated' : '❌ Failed'}
+                      </span>
+                    </div>
+                  ) : null}
+                  
+                  {generationResult.reportType === 'all' || generationResult.reportType === 'roster' ? (
+                    <div className="flex justify-between">
+                      <span className="text-green-700">Roster List:</span>
+                      <span className="text-green-800 font-medium">
+                        {generationResult.rosterListGenerated ? '✅ Generated' : '❌ Failed'}
+                      </span>
+                    </div>
+                  ) : null}
                 </div>
               </div>
               
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h5 className="font-medium text-blue-800 mb-2">Files Generated:</h5>
                 <ul className="text-sm text-blue-700 space-y-1">
-                  <li>• {generationResult.individualBills} individual staff bills</li>
-                  <li>• 1 annexure summary (all staff)</li>
-                  <li>• 1 roster list (name, date, shift)</li>
+                  {generationResult.individualBills > 0 && (
+                    <li>• {generationResult.individualBills} individual staff bill{generationResult.individualBills > 1 ? 's' : ''}</li>
+                  )}
+                  {generationResult.annexureGenerated && (
+                    <li>• 1 annexure summary (all staff)</li>
+                  )}
+                  {generationResult.rosterListGenerated && (
+                    <li>• 1 roster list (name, date, shift)</li>
+                  )}
                 </ul>
                 <p className="text-sm text-blue-600 mt-2">
                   Check your downloads folder for all PDF files.
@@ -379,7 +610,7 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
             {!generationResult && !error && (
               <button
                 onClick={handleGenerateReports}
-                disabled={isGenerating || getMonthEntryCount() === 0}
+                disabled={isGenerating || getMonthEntryCount() === 0 || (reportType === 'individual' && !selectedStaff)}
                 className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
               >
                 {isGenerating ? (
@@ -390,7 +621,11 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
                 ) : (
                   <>
                     <Download className="w-4 h-4" />
-                    <span>Generate All Reports</span>
+                    <span>
+                      {reportType === 'all' ? 'Generate All Reports' :
+                       reportType === 'individual' ? 'Generate Individual Bill' :
+                       reportType === 'annexure' ? 'Generate Annexure' : 'Generate Roster List'}
+                    </span>
                   </>
                 )}
               </button>
