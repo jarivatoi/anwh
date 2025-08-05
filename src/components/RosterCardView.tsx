@@ -472,7 +472,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
                                 <div className="font-bold select-none" style={{
                                   fontSize: window.innerWidth > window.innerHeight ? 'clamp(1.5rem, 6vw, 3rem)' : 'clamp(3rem, 10vw, 6rem)',
                                   lineHeight: '1',
-                                  color: '#fca5a5',
+                                  color: '#9ca3af',
                                   opacity: 0.2,
                                   transform: 'scale(1.5)'
                                 }}>
