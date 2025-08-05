@@ -257,21 +257,36 @@ export class BoxParser {
       }
     }
     
-    // PRIORITY 1: Perfect exact match - text must match staff name exactly (including "(R)" if present)
+    // PRIORITY 1: Perfect exact match - text must match staff name exactly
     for (const nameUpper of availableNames) {
-      // Extract base name without (R) for comparison
+      if (cleanText === nameUpper) {
+        console.log(`✅ EXACT MATCH: "${cleanText}" exactly matches "${nameUpper}"`);
+        return nameUpper;
+      }
+    }
+    
+    // PRIORITY 2: Base name match - find the version that matches the PDF text format
+    for (const nameUpper of availableNames) {
       const baseName = nameUpper.replace(/\(R\)$/, '').trim();
       const cleanTextBase = cleanText.replace(/\(R\)$/, '').trim();
       
-      // Base name exact match (without (R) suffix)
+      // If PDF text matches base name, return the exact format from PDF
       if (cleanTextBase === baseName && baseName.length >= 3) {
-        console.log(`✅ PRIORITY 2 - BASE NAME EXACT MATCH: "${cleanText}" base matches "${nameUpper}" (base: "${baseName}")`);
-        return nameUpper;
-      }
-      
-      if (cleanText === nameUpper) {
-        console.log(`✅ PRIORITY 1 - EXACT MATCH: "${cleanText}" exactly matches "${nameUpper}"`);
-        return nameUpper;
+        // If PDF text has (R), return the (R) version
+        if (cleanText.includes('(R)')) {
+          const rVersion = availableNames.find(name => name === baseName + '(R)');
+          if (rVersion) {
+            console.log(`✅ BASE NAME MATCH WITH (R): "${cleanText}" matches "${rVersion}"`);
+            return rVersion;
+          }
+        } else {
+          // If PDF text doesn't have (R), return the non-(R) version
+          const nonRVersion = availableNames.find(name => name === baseName && !name.includes('(R)'));
+          if (nonRVersion) {
+            console.log(`✅ BASE NAME MATCH WITHOUT (R): "${cleanText}" matches "${nonRVersion}"`);
+            return nonRVersion;
+          }
+        }
       }
     }
     
