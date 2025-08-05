@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Edit, Calendar, User, Clock, Palette, Check } from 'lucide-react';
 import { RosterEntry } from '../types/roster';
-import { validateAuthCode, isAdminCode } from '../utils/rosterAuth';
+import { validateAuthCode, isAdminCode, sortByGroup } from '../utils/rosterAuth';
 
 interface StaffSelectionModalProps {
   isOpen: boolean;
@@ -165,14 +165,15 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
   // Filter out staff who are already working this shift
   const getFilteredStaff = () => {
     if (!allEntriesForShift || allEntriesForShift.length === 0) {
-      return availableStaff.filter(name => name !== 'ADMIN');
+      const filtered = availableStaff.filter(name => name !== 'ADMIN');
+      return sortByGroup(filtered);
     }
 
     // Get all currently assigned staff for this shift
     const currentlyAssigned = allEntriesForShift.map(e => e.assigned_name);
     
     // Filter out staff who are already working, including matching base names
-    return availableStaff.filter(staffName => {
+    const filtered = availableStaff.filter(staffName => {
       // Exclude ADMIN from selection
       if (staffName === 'ADMIN') {
         return false;
@@ -192,6 +193,8 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
       
       return !isAlreadyAssigned;
     });
+    
+    return sortByGroup(filtered);
   };
 
   const filteredStaff = getFilteredStaff();
