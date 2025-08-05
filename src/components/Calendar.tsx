@@ -1188,7 +1188,6 @@ export const Calendar: React.FC<CalendarProps> = ({
                           >
                             <div className="text-center select-none truncate px-0.5">{shift.time}</div>
                           </div>
-                          </div>
                         ) : null;
                       })}
                     </div>
