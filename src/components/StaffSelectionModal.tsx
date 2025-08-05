@@ -133,7 +133,10 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
   };
 
   const handleConfirm = () => {
-    if (selectedStaff && selectedStaff !== entry.assigned_name) {
+    const nameChanged = selectedStaff !== entry.assigned_name;
+    const colorChanged = isAdmin && selectedColor !== (entry.text_color || '#000000');
+    
+    if (selectedStaff && (nameChanged || colorChanged)) {
       if (onSelectStaffWithColor && isAdmin) {
         onSelectStaffWithColor(selectedStaff, selectedColor);
       } else {
@@ -363,7 +366,7 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
             </button>
             <button
               onClick={handleConfirm}
-              disabled={!selectedStaff || selectedStaff === entry.assigned_name || filteredStaff.length === 0}
+              disabled={!selectedStaff || filteredStaff.length === 0 || (!isAdmin && selectedStaff === entry.assigned_name) || (isAdmin && selectedStaff === entry.assigned_name && selectedColor === (entry.text_color || '#000000'))}
               className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
             >
               <Check className="w-4 h-4" />
