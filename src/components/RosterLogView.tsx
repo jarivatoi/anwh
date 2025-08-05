@@ -51,6 +51,11 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
       return false;
     }
     
+    // Exclude entries edited by ADMIN
+    if (entry.last_edited_by === 'ADMIN') {
+      return false;
+    }
+    
     if (filterType === 'nameChanges') {
       // Only show entries that have name change descriptions (containing "Name changed from")
       return entry.change_description && 
