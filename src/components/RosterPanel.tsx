@@ -782,6 +782,17 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
                 <button
                   onClick={() => {
                     setShowQuickActions(false);
+                    setShowMonthlyReports(true);
+                  }}
+                  className="w-full flex items-center space-x-3 px-4 py-3 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg font-medium transition-colors duration-200"
+                >
+                  <FileText className="w-5 h-5" />
+                  <span>Monthly Reports</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setShowQuickActions(false);
                     setClearType('all');
                     setShowClearConfirm(true);
                   }}
