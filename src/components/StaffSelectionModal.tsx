@@ -263,9 +263,14 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     });
     
     if (selectedStaff && (nameChanged || colorChanged)) {
-      if (onSelectStaffWithColor && isAdmin) {
+      if (onSelectStaffWithColor && isAdmin && colorChanged) {
+        console.log('🎨 Calling onSelectStaffWithColor with color:', selectedColor);
+        onSelectStaffWithColor(selectedStaff, selectedColor);
+      } else if (onSelectStaffWithColor && isAdmin && nameChanged) {
+        console.log('🎨 Calling onSelectStaffWithColor for name change only');
         onSelectStaffWithColor(selectedStaff, selectedColor);
       } else {
+        console.log('🎨 Calling onSelectStaff (regular user or no color change)');
         onSelectStaff(selectedStaff);
       }
     }
