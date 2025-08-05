@@ -60,7 +60,7 @@ type Database = {
           last_edited_at: string;
           created_at: string;
           change_description: string;
-          text_color: string;
+          text_color?: string;
         };
         Insert: {
           id?: string;

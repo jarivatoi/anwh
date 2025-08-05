@@ -29,8 +29,9 @@ Since the table already exists, skip the table creation and go directly to Step 
 Since the table already exists, first clear any existing data and then add the new roster entries:
 
 ```sql
--- Add the missing change_description column to existing table
+-- Add the missing columns to existing table
 ALTER TABLE roster_entries ADD COLUMN IF NOT EXISTS change_description TEXT;
+ALTER TABLE roster_entries ADD COLUMN IF NOT EXISTS text_color TEXT;
 
 -- Clear existing data (optional - only if you want to start fresh)
 DELETE FROM roster_entries;
