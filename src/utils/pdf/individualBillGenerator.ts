@@ -173,7 +173,7 @@ export class IndividualBillGenerator {
     const nightAllowanceBase = nightDutyCount * 6 * 0.25;
     const nightAllowance = nightAllowanceBase * hourlyRate;
     if (nightDutyCount > 0) {
-      doc.text(`Night Allowance: ${nightDutyCount} × 6 × 0.25 × ${formatMauritianRupees(hourlyRate).formatted} = ${formatMauritianRupees(nightAllowance).formatted}`, 15, startY + 26);
+      doc.text(`Night Allowance: ${nightDutyCount} × 6 × 0.25 × ${formatMauritianRupees(hourlyRate).formatted} = ${formatMauritianRupees(nightAllowance).formatted}`, 15, startY + 26, { align: 'left' });
     }
     
     // Grand total
@@ -198,15 +198,15 @@ export class IndividualBillGenerator {
     // Left side - Date and signature
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.text('Date:___________________',15,summaryEndY + 5);
+    doc.text('Date and Signature: ________________', 15, summaryEndY + 5);
     doc.text('Signature:_________________', 15, summaryEndY + 12);
     
     // Right side - Certification
     const rightX = 120;
-    doc.text('Certified Correct as per Attendance.', rightX, summaryEndY -30);
-    doc.text('Name: _____________________________', rightX, summaryEndY + 8 -30);
-    doc.text('Grade: Principal Medical Imaging Technologist.', rightX, summaryEndY + 16 -30);
-    doc.text('Signature: ____________________________________', rightX, summaryEndY + 24 -30);
+    doc.text('Certified Correct as per Attendance.', rightX, summaryEndY + 5);
+    doc.text('Name :- _____________________________', rightX, summaryEndY + 12);
+    doc.text('Grade: Principal Medical Imaging Technologist.', rightX, summaryEndY + 19);
+    doc.text('Signature:- ____________________________________', rightX, summaryEndY + 26);
   }
   
   /**

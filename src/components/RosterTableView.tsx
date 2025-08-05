@@ -12,8 +12,10 @@ import { isAdminCode } from '../utils/rosterAuth';
 import { sortByGroup } from '../utils/rosterAuth';
 import { addRosterEntry, deleteRosterEntry } from '../utils/rosterApi';
 import { EditDetailsModal } from './EditDetailsModal';
+import { SpecialDateModal } from './SpecialDateModal';
 import { ScrollingText } from './ScrollingText';
 import { fetchRosterEntries } from '../utils/rosterApi';
+import { updateRosterEntry } from '../utils/rosterApi';
 
 interface RosterTableViewProps {
   entries: RosterEntry[];
@@ -57,13 +59,16 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const [exportAuthError, setExportAuthError] = useState('');
   const [isExporting, setIsExporting] = useState(false);
   const [exportResult, setExportResult] = useState<{success: boolean, message: string} | null>(null);
+  const [showSpecialDateModal, setShowSpecialDateModal] = useState(false);
+  const [selectedSpecialDate, setSelectedSpecialDate] = useState<string | null>(null);
+  const [specialDates, setSpecialDates] = useState<Record<string, { isSpecial: boolean; info: string }>>({});
   
   const tableRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef(false);
 
   // CRITICAL: Prevent body scroll when ANY modal is open
   useEffect(() => {
-    if (showAuthModal || showExportModal || showDetailsModal || (editingDate && selectedShift && authCode && !showAuthModal)) {
+    if (showAuthModal || showExportModal || showDetailsModal || showSpecialDateModal || (editingDate && selectedShift && authCode && !showAuthModal)) {
       // Completely disable body scroll
       document.body.style.overflow = 'hidden';
       document.body.style.position = 'fixed';
@@ -89,7 +94,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       
     
     };
-  }, [showAuthModal, showExportModal, showDetailsModal, editingDate, selectedShift, authCode]);
+  }, [showAuthModal, showExportModal, showDetailsModal, showSpecialDateModal, editingDate, selectedShift, authCode]);
 
   // Track mounted status
   useEffect(() => {
@@ -316,6 +321,13 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     setShowAuthModal(true);
   };
 
+  // Handle date long press for special date marking
+  const handleDateLongPress = (date: string) => {
+    console.log('🔥 Date long press detected:', date);
+    setSelectedSpecialDate(date);
+    setShowAuthModal(true);
+  };
+
   // Handle authentication
   const handleAuthSubmit = () => {
     const editorName = validateAuthCode(authCode);
@@ -327,8 +339,11 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     setShowAuthModal(false);
     setAuthError('');
     
-    // Get current staff for the selected date and shift
-    if (editingDate && selectedShift) {
+    // Check if this is for special date marking or regular editing
+    if (selectedSpecialDate && !editingDate) {
+      setShowSpecialDateModal(true);
+    } else if (editingDate && selectedShift) {
+      // Get current staff for the selected date and shift
       const currentEntries = getEntriesForDateAndShift(editingDate, selectedShift);
       const currentStaff = currentEntries.map(entry => entry.assigned_name);
       setSelectedStaff(currentStaff);
@@ -412,6 +427,62 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     setAuthCode('');
     setAuthError('');
     setShowAuthModal(false);
+  };
+
+  // Handle cancel auth for special dates
+  const handleCancelAuth = () => {
+    setShowAuthModal(false);
+    setAuthCode('');
+    setAuthError('');
+    setSelectedSpecialDate(null);
+  };
+
+  // Handle special date save
+  const handleSpecialDateSave = async (isSpecial: boolean, info: string) => {
+    if (!selectedSpecialDate) return;
+    
+    try {
+      // Update local special dates state
+      setSpecialDates(prev => ({
+        ...prev,
+        [selectedSpecialDate]: { isSpecial, info }
+      }));
+      
+      // If there's info text, update all staff working on this date
+      if (info.trim() && isSpecial) {
+        const dateEntries = entries.filter(entry => entry.date === selectedSpecialDate);
+        const editorName = validateAuthCode(authCode);
+        
+        if (editorName) {
+          for (const entry of dateEntries) {
+            try {
+              await updateRosterEntry(entry.id, {
+                date: entry.date,
+                shiftType: entry.shift_type,
+                assignedName: entry.assigned_name,
+                changeDescription: `Special Date: ${info}`,
+                textColor: entry.text_color
+              }, editorName);
+            } catch (error) {
+              console.error('Failed to update entry remarks:', error);
+            }
+          }
+          
+          // Refresh data
+          if (onRefresh) {
+            await onRefresh();
+          }
+        }
+      }
+      
+      setShowSpecialDateModal(false);
+      setSelectedSpecialDate(null);
+      setAuthCode('');
+      
+    } catch (error) {
+      console.error('Failed to save special date:', error);
+      alert('Failed to save special date. Please try again.');
+    }
   };
   
   // Handle showing details modal
@@ -881,6 +952,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               <tbody className="divide-y divide-gray-200">
                 {sortedDates.map((date) => {
                   const dateEntries = groupedByDate[date] || [];
+                  const specialDateInfo = specialDates[date];
+                  const isSpecialDate = specialDateInfo?.isSpecial || false;
                   
                   // Calculate the maximum number of staff in any shift for this date
                   const maxStaffCount = Math.max(...shiftTypes.map(shiftType => 
@@ -895,10 +968,14 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       key={date} 
                       data-date={date}
                       className={`${
+                        isSpecialDate ? 'bg-red-200' :
                         isToday(date) ? 'bg-green-200' : 
                         isPastDate(date) ? 'bg-red-50' :
                         isFutureDate(date) ? 'bg-green-50' : ''
                       }`}
+                      style={{
+                        animation: isSpecialDate ? 'pulse 2s ease-in-out infinite' : 'none'
+                      }}
                     >
                       {/* Date Column */}
                       <RosterDateCell
@@ -906,10 +983,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         isToday={isToday(date)}
                         isPastDate={isPastDate(date)}
                         isFutureDate={isFutureDate(date)}
-                        onLongPress={() => {
-                          setEditingDate(date);
-                          setShowAuthModal(true);
-                        }}
+                        onLongPress={() => handleDateLongPress(date)}
                         formatTableDate={formatTableDate}
                       />
                       {shiftTypes.map((shiftType) => {
@@ -923,6 +997,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         }
                         return (
                           <td key={shiftType} className={`text-center overflow-hidden align-top relative ${
+                            isSpecialDate ? 'bg-red-200' :
                             isPastDate(date) ? 'bg-red-50' : ''
                           }`} style={{
                             padding: '2px',
@@ -935,7 +1010,12 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             textAlign: 'center',
                             width: 'calc((100vw - 80px) / 4)',
                             minWidth: 'calc((100vw - 80px) / 4)',
-                            maxWidth: 'calc((100vw - 80px) / 4)'
+                            maxWidth: 'calc((100vw - 80px) / 4)',
+                            backgroundColor: isSpecialDate ? '#fecaca' : 
+                                           isToday(date) ? '#bbf7d0' : 
+                                           isPastDate(date) ? '#fef2f2' :
+                                           isFutureDate(date) ? '#f0fdf4' : '#ffffff',
+                            animation: isSpecialDate ? 'pulse 2s ease-in-out infinite' : 'none'
                           }}>
                             
                             <div className="w-full h-full relative" style={{
@@ -1065,7 +1145,11 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           }}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
-              handleCancelEdit();
+              if (selectedSpecialDate && !editingDate) {
+                handleCancelAuth();
+              } else {
+                handleCancelEdit();
+              }
             }
             e.stopPropagation();
           }}
@@ -1082,7 +1166,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               onClick={(e) => e.stopPropagation()}
             >
               <button
-                onClick={handleCancelEdit}
+                onClick={selectedSpecialDate && !editingDate ? handleCancelAuth : handleCancelEdit}
                 className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200"
                 style={{
                   position: 'absolute',
@@ -1095,7 +1179,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               </button>
               
               <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
-                Authentication Required
+                {selectedSpecialDate && !editingDate ? 'Admin Authentication Required' : 'Authentication Required'}
               </h3>
               
               <div className="mb-4">
@@ -1120,33 +1204,35 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 </div>
               )}
               
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Shift Type
-                </label>
-                <select
-                  value={selectedShift}
-                  onChange={(e) => setSelectedShift(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  required
-                >
-                  <option value="">Select shift type</option>
-                  {shiftTypes.map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </div>
+              {!selectedSpecialDate && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Shift Type
+                  </label>
+                  <select
+                    value={selectedShift}
+                    onChange={(e) => setSelectedShift(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    required
+                  >
+                    <option value="">Select shift type</option>
+                    {shiftTypes.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               
               <div className="flex space-x-3">
                 <button
-                  onClick={handleCancelEdit}
+                  onClick={selectedSpecialDate && !editingDate ? handleCancelAuth : handleCancelEdit}
                   className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleAuthSubmit}
-                  disabled={authCode.length < 4 || !selectedShift || !isAdminCode(authCode)}
+                  disabled={authCode.length < 4 || (!selectedSpecialDate && (!selectedShift || !isAdminCode(authCode)))}
                   className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200"
                 >
                   Continue
@@ -1532,6 +1618,19 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         onClose={() => {
           setShowDetailsModal(false);
           setSelectedEntry(null);
+        }}
+      />
+
+      {/* Special Date Modal */}
+      <SpecialDateModal
+        isOpen={showSpecialDateModal}
+        date={selectedSpecialDate}
+        currentSpecialInfo={selectedSpecialDate ? specialDates[selectedSpecialDate] : undefined}
+        onSave={handleSpecialDateSave}
+        onClose={() => {
+          setShowSpecialDateModal(false);
+          setSelectedSpecialDate(null);
+          setAuthCode('');
         }}
       />
       
