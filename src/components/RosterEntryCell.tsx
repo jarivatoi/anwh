@@ -118,11 +118,32 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
   };
 
   const handleStaffSelect = async (newStaffName: string) => {
-    await this.handleStaffSelectWithColor(newStaffName);
+    await handleStaffSelectWithColor(newStaffName);
   };
 
   const handleStaffSelectWithColor = async (newStaffName: string, textColor?: string) => {
+    console.log('🎨 RosterEntryCell: handleStaffSelectWithColor called with:', {
+      newStaffName,
+      textColor,
+      currentAssignedName: entry.assigned_name,
+      entryId: entry.id
+    });
+    
     if (newStaffName === entry.assigned_name) {
+      console.log('🎨 RosterEntryCell: Name unchanged, checking color change...');
+      
+      // For ADMIN: Allow color-only changes even if name is the same
+      if (textColor && textColor !== getTextColor()) {
+        console.log('🎨 RosterEntryCell: Color-only change detected, proceeding with update');
+        // Continue with the update for color change
+      } else {
+        console.log('🎨 RosterEntryCell: No changes detected, closing modal');
+        setShowStaffModal(false);
+        return;
+      }
+    }
+
+    if (newStaffName === entry.assigned_name && !textColor) {
       setShowStaffModal(false);
       return;
     }
@@ -132,6 +153,12 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
       const editorName = validateAuthCode(authCode);
       if (!editorName) return;
 
+      console.log('🎨 RosterEntryCell: Updating entry with:', {
+        newStaffName,
+        textColor,
+        editorName
+      });
+
       const updatedEntry = await updateRosterEntry(entry.id, {
         date: entry.date,
         shiftType: entry.shift_type,
@@ -139,6 +166,8 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
         changeDescription: `Name changed from "${entry.assigned_name}" to "${newStaffName}"`,
         textColor: textColor
       }, editorName);
+
+      console.log('🎨 RosterEntryCell: Entry updated successfully:', updatedEntry);
 
       if (onUpdate) {
         onUpdate(updatedEntry);
