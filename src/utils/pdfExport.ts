@@ -1,10 +1,11 @@
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { RosterEntry } from '../types/roster';
 
 // Extend jsPDF type to include autoTable
 declare module 'jspdf' {
-  interface jsPDF {
+  export class jsPDF {
+    constructor(options?: any);
     autoTable: (options: any) => jsPDF;
   }
 }
