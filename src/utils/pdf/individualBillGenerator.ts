@@ -97,11 +97,11 @@ export class IndividualBillGenerator {
         },
         columnStyles: {
           0: { cellWidth: 35, halign: 'center' }, // Date & Day
-          1: { cellWidth: 20, halign: 'center' }, // Morning (9-4)
-          2: { cellWidth: 20, halign: 'center' }, // Saturday (12-10)
-          3: { cellWidth: 20, halign: 'center' }, // Evening (4-10)
-          4: { cellWidth: 20, halign: 'center' }, // Night Duty
-          5: { cellWidth: 20, halign: 'center' }, // Special (9-4)
+          1: { cellWidth: 20, halign: 'center', fontStyle: 'bold' }, // Morning (9-4)
+          2: { cellWidth: 20, halign: 'center', fontStyle: 'bold' }, // Saturday (12-10)
+          3: { cellWidth: 20, halign: 'center', fontStyle: 'bold' }, // Evening (4-10)
+          4: { cellWidth: 20, halign: 'center', fontStyle: 'bold' }, // Night Duty
+          5: { cellWidth: 20, halign: 'center', fontStyle: 'bold' }, // Special (9-4)
           6: { cellWidth: 20, halign: 'right' },  // Hours
           7: { cellWidth: 30, halign: 'right' }   // Amount
         },
@@ -253,19 +253,19 @@ export class IndividualBillGenerator {
       const dayName = this.getDayName(dateKey);
       
       // Create checkmarks for each shift column
-      const morningCheck = shifts.includes('Morning Shift (9-4)') ? '✓' : '';
-      const saturdayCheck = shifts.includes('Saturday Regular (12-10)') ? '✓' : '';
-      const eveningCheck = shifts.includes('Evening Shift (4-10)') ? '✓' : '';
-      const nightCheck = shifts.includes('Night Duty') ? '✓' : '';
-      const specialCheck = shifts.includes('Sunday/Public Holiday/Special') ? '✓' : '';
+      const morningCheck = shifts.includes('Morning Shift (9-4)') ? '●' : '';
+      const saturdayCheck = shifts.includes('Saturday Regular (12-10)') ? '●' : '';
+      const eveningCheck = shifts.includes('Evening Shift (4-10)') ? '●' : '';
+      const nightCheck = shifts.includes('Night Duty') ? '●' : '';
+      const specialCheck = shifts.includes('Sunday/Public Holiday/Special') ? '●' : '';
       
       rows.push([
         formattedDateDay,
-        morningCheck,
-        saturdayCheck,
-        eveningCheck,
-        nightCheck,
-        specialCheck,
+        morningCheck || '-',
+        saturdayCheck || '-',
+        eveningCheck || '-',
+        nightCheck || '-',
+        specialCheck || '-',
         dayHours.toFixed(1),
         formatMauritianRupees(dayAmount).formatted
       ]);
