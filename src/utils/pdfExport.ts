@@ -183,10 +183,6 @@ export class PDFExporter {
       'Sunday/Public Holiday/Special': 'Special (9-4)'
     };
     return shortNames[shiftType] || shiftType;
-      return `${day}/${month}/${year} ${hour}:${minute}`;
-    } catch (error) {
-      return timestamp;
-    }
   }
 }
 }
