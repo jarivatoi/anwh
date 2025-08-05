@@ -52,37 +52,37 @@ export class IndividualBillGenerator {
     // Header - compact format
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('X-RAY DEPARTMENT - ANWH', doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+    doc.text('X-RAY DEPARTMENT - ANWH', doc.internal.pageSize.getWidth() / 2, 10, { align: 'center' });
     
     doc.setFontSize(12);
-    doc.text(`INDIVIDUAL WORK SUMMARY - ${monthNames[month]} ${year}`, doc.internal.pageSize.getWidth() / 2, 30, { align: 'center' });
+    doc.text(`INDIVIDUAL WORK SUMMARY - ${monthNames[month]} ${year}`, doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
     
     // Staff details section - two-column layout with proper alignment
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     
     // Left column - Name, Month/Year, Employee ID
-    doc.text('Name:', 20, 40);
-    doc.text('Month/Year:', 20, 47);
-    doc.text('Employee ID:', 20, 49);
+    doc.text('Name:', 20, 30);
+    doc.text('Month/Year:', 20, 37);
+    doc.text('Employee ID:', 20, 44);
     
     // Left column values  
     doc.setFont('helvetica', 'normal');
-    doc.text(`${staffInfo?.firstName || ''} ${staffInfo?.surname || staffName}`, 50, 40);
-    doc.text(`${monthNames[month]} ${year}`, 50, 47);
-    doc.text(staffInfo?.employeeId || '', 50, 49);
+    doc.text(`${staffInfo?.firstName || ''} ${staffInfo?.surname || staffName}`, 50, 30);
+    doc.text(`${monthNames[month]} ${year}`, 50, 37);
+    doc.text(staffInfo?.employeeId || '', 50, 44);
     
     // Right column - Title, Salary, Hourly Rate
     doc.setFont('helvetica', 'bold');
     doc.text('Title:', 120, 40);
     doc.text('Salary:', 120, 47);
-    doc.text('Hourly Rate:', 120, 49);
+    doc.text('Hourly Rate:', 120, 54);
     
     // Right column values
     doc.setFont('helvetica', 'normal');
     doc.text(staffInfo?.title || 'MIT', 150, 40);
     doc.text(`Rs ${(staffInfo?.salary || 0).toLocaleString()}`, 150, 47);
-    doc.text(`Rs ${hourlyRate.toFixed(2)}`, 150, 49);
+    doc.text(`Rs ${hourlyRate.toFixed(2)}`, 150, 54);
     
     // Prepare table data for ALL days in the month
     const tableData = this.prepareAllDaysTableData(staffEntries, month, year, hourlyRate, shiftCombinations);
