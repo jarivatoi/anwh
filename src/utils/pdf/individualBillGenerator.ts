@@ -193,8 +193,7 @@ export class IndividualBillGenerator {
     });
     
     // Use autoTable for better formatting
-    const autoTable = (doc as any).autoTable;
-    autoTable({
+    autoTable(doc, {
       startY: yPosition,
       head: [['Date', 'Day', 'Shift Type', 'Hours', 'Amount (Rs)']],
       body: tableData,
