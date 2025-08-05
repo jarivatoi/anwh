@@ -43,21 +43,22 @@ class PDFRosterParser {
 
       // Build final entries
       result.entries = allParsedEntries
-        .filter(entry => {
-          // Filter out entries with invalid dates
-          if (!entry.date || entry.date === '') {
-            console.log(`⚠️ Skipping entry with invalid/empty date:`, entry);
-            result.warnings.push(`Skipped entry for ${entry.assignedName} - ${entry.shiftType}: Invalid date`);
-            return false;
-          }
-          return true;
-        })
         .map(entry => ({
           date: entry.date,
           shiftType: entry.shiftType,
           assignedName: entry.assignedName,
           changeDescription: 'Imported from PDF'
         }));
+      
+      // Add warnings for entries with missing fields
+      result.entries.forEach(entry => {
+        if (!entry.date || entry.date === '') {
+          result.warnings.push(`Entry for ${entry.assignedName} - ${entry.shiftType}: Missing date`);
+        }
+        if (!entry.shiftType || entry.shiftType === '') {
+          result.warnings.push(`Entry for ${entry.assignedName} on ${entry.date || 'unknown date'}: Missing shift type`);
+        }
+      });
       
       // DEBUGGING: Analyze what we found vs what we expected
       console.log('📊 PARSING ANALYSIS:');

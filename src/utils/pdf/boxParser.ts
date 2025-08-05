@@ -28,19 +28,15 @@ export class BoxParser {
       
       // Find date by going UP from this specific staff member
       const date = this.findDateAboveStaff(textItems, staff);
-      if (!date) {
-        continue;
-      }
+      const dateValue = date ? date.date : ''; // Use empty string if no date found
       
       // Find shift by going LEFT from this specific staff member
       const shift = this.findShiftInFirstColumn(textItems, staff);
-      if (!shift) {
-        continue;
-      }
+      const shiftValue = shift || ''; // Use empty string if no shift found
       
       entries.push({
-        date: date,
-        shiftType: shift,
+        date: dateValue,
+        shiftType: shiftValue,
         assignedName: staff.name
       });
     }
@@ -89,7 +85,7 @@ export class BoxParser {
     for (const item of itemsAbove) {
       const dateMatch = this.extractDateFromText(item.text);
       if (dateMatch) {
-        return dateMatch.date;
+        return dateMatch.date || null; // Return null if date is empty
       }
     }
     
@@ -151,8 +147,11 @@ export class BoxParser {
         };
       }
       // Invalid date - return null to skip this entry
-      console.log(`⚠️ Invalid date detected: "${text}" -> ${standardDate}, skipping entry`);
-      return null;
+      console.log(`⚠️ Invalid date detected: "${text}" -> ${standardDate}, clearing date field`);
+      return {
+        date: '',
+        dayOfWeek: 0
+      };
     }
     
     // DD MM format (like "01 07") - assume 2025
@@ -167,8 +166,11 @@ export class BoxParser {
       
       // Validate the date
       if (!this.isValidDate(dateObj, 2025, parseInt(month), parseInt(day))) {
-        console.log(`⚠️ Invalid date detected: "${text}" -> ${standardDate}, skipping entry`);
-        return null;
+        console.log(`⚠️ Invalid date detected: "${text}" -> ${standardDate}, clearing date field`);
+        return {
+          date: '',
+          dayOfWeek: 0
+        };
       }
       
       return { date: standardDate, dayOfWeek: dateObj.getDay() };
@@ -184,8 +186,11 @@ export class BoxParser {
       
       // Validate the date (check if July 2025 has this day)
       if (!this.isValidDate(dateObj, 2025, 7, parseInt(day))) {
-        console.log(`⚠️ Invalid date detected: "${text}" -> ${standardDate}, skipping entry`);
-        return null;
+        console.log(`⚠️ Invalid date detected: "${text}" -> ${standardDate}, clearing date field`);
+        return {
+          date: '',
+          dayOfWeek: 0
+        };
       }
       
       return { date: standardDate, dayOfWeek: dateObj.getDay() };
