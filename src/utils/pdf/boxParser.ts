@@ -144,14 +144,15 @@ export class BoxParser {
       const dateObj = new Date(standardDate);
       
       // Validate the date
-      if (dateObj.getFullYear() === parseInt(year) && 
-          dateObj.getMonth() === parseInt(month) - 1 && 
-          dateObj.getDate() === parseInt(day)) {
+      if (this.isValidDate(dateObj, parseInt(year), parseInt(month), parseInt(day))) {
         return {
           date: standardDate,
           dayOfWeek: dateObj.getDay()
         };
       }
+      // Invalid date - return null to skip this entry
+      console.log(`⚠️ Invalid date detected: "${text}" -> ${standardDate}, skipping entry`);
+      return null;
     }
     
     // DD MM format (like "01 07") - assume 2025
@@ -163,6 +164,13 @@ export class BoxParser {
       const month = dayMonthMatch[2].padStart(2, '0');
       const standardDate = `2025-${month}-${day}`;
       const dateObj = new Date(standardDate);
+      
+      // Validate the date
+      if (!this.isValidDate(dateObj, 2025, parseInt(month), parseInt(day))) {
+        console.log(`⚠️ Invalid date detected: "${text}" -> ${standardDate}, skipping entry`);
+        return null;
+      }
+      
       return { date: standardDate, dayOfWeek: dateObj.getDay() };
     }
     
@@ -173,10 +181,46 @@ export class BoxParser {
       const day = dayMatch[1].padStart(2, '0');
       const standardDate = `2025-07-${day}`;
       const dateObj = new Date(standardDate);
+      
+      // Validate the date (check if July 2025 has this day)
+      if (!this.isValidDate(dateObj, 2025, 7, parseInt(day))) {
+        console.log(`⚠️ Invalid date detected: "${text}" -> ${standardDate}, skipping entry`);
+        return null;
+      }
+      
       return { date: standardDate, dayOfWeek: dateObj.getDay() };
     }
     
     return null;
+  }
+  
+  /**
+   * Validate if a date is actually valid
+   */
+  private isValidDate(dateObj: Date, expectedYear: number, expectedMonth: number, expectedDay: number): boolean {
+    // Check if the date object is valid
+    if (isNaN(dateObj.getTime())) {
+      return false;
+    }
+    
+    // Check if the parsed date matches what we expected
+    const actualYear = dateObj.getFullYear();
+    const actualMonth = dateObj.getMonth() + 1; // getMonth() returns 0-11
+    const actualDay = dateObj.getDate();
+    
+    const isValid = actualYear === expectedYear && 
+                   actualMonth === expectedMonth && 
+                   actualDay === expectedDay;
+    
+    if (!isValid) {
+      console.log(`📅 Date validation failed:`, {
+        expected: { year: expectedYear, month: expectedMonth, day: expectedDay },
+        actual: { year: actualYear, month: actualMonth, day: actualDay },
+        dateString: dateObj.toISOString()
+      });
+    }
+    
+    return isValid;
   }
   
   /**
