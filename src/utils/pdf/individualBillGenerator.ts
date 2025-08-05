@@ -81,10 +81,10 @@ export class IndividualBillGenerator {
       // Create table
       autoTable(doc, {
         startY: 55,
-        head: [['Date', 'Day', 'Shifts', 'Hours', 'Amount']],
+        head: [['Date & Day', 'Morning (9-4)', 'Saturday (12-10)', 'Evening (4-10)', 'Night Duty', 'Special (9-4)', 'Hours', 'Amount']],
         body: tableData.rows,
         styles: {
-          fontSize: 8,
+          fontSize: 7,
           cellPadding: 1.5,
           overflow: 'linebreak',
           halign: 'center'
@@ -93,14 +93,17 @@ export class IndividualBillGenerator {
           fillColor: [240, 240, 240],
           textColor: [0, 0, 0],
           fontStyle: 'bold',
-          fontSize: 9
+          fontSize: 8
         },
         columnStyles: {
-          0: { cellWidth: 25, halign: 'center' }, // Date
-          1: { cellWidth: 20, halign: 'center' }, // Day
-          2: { cellWidth: 25, halign: 'center' }, // Shifts
-          3: { cellWidth: 20, halign: 'right' },  // Hours
-          4: { cellWidth: 35, halign: 'right' }   // Amount
+          0: { cellWidth: 35, halign: 'center' }, // Date & Day
+          1: { cellWidth: 20, halign: 'center' }, // Morning (9-4)
+          2: { cellWidth: 20, halign: 'center' }, // Saturday (12-10)
+          3: { cellWidth: 20, halign: 'center' }, // Evening (4-10)
+          4: { cellWidth: 20, halign: 'center' }, // Night Duty
+          5: { cellWidth: 20, halign: 'center' }, // Special (9-4)
+          6: { cellWidth: 20, halign: 'right' },  // Hours
+          7: { cellWidth: 30, halign: 'right' }   // Amount
         },
         margin: { left: 20, right: 20 },
         pageBreak: 'avoid',
@@ -229,9 +232,7 @@ export class IndividualBillGenerator {
       let dayAmount = 0;
       
       dayEntries.forEach(entry => {
-        // Map shift types to symbols
-        const shiftSymbol = this.getShiftSymbol(entry.shift_type);
-        shifts.push(shiftSymbol);
+        shifts.push(entry.shift_type);
         
         // Count night duties for allowance
         if (entry.shift_type === 'Night Duty') {
@@ -247,15 +248,24 @@ export class IndividualBillGenerator {
       totalHours += dayHours;
       totalAmount += dayAmount;
       
-      // Format date and day
-      const formattedDate = this.formatDate(dateKey);
+      // Format date and day combined
+      const formattedDateDay = this.formatDateWithDay(dateKey);
       const dayName = this.getDayName(dateKey);
-      const shiftsText = shifts.join('+');
+      
+      // Create checkmarks for each shift column
+      const morningCheck = shifts.includes('Morning Shift (9-4)') ? '✓' : '';
+      const saturdayCheck = shifts.includes('Saturday Regular (12-10)') ? '✓' : '';
+      const eveningCheck = shifts.includes('Evening Shift (4-10)') ? '✓' : '';
+      const nightCheck = shifts.includes('Night Duty') ? '✓' : '';
+      const specialCheck = shifts.includes('Sunday/Public Holiday/Special') ? '✓' : '';
       
       rows.push([
-        formattedDate,
-        dayName,
-        shiftsText,
+        formattedDateDay,
+        morningCheck,
+        saturdayCheck,
+        eveningCheck,
+        nightCheck,
+        specialCheck,
         dayHours.toFixed(1),
         formatMauritianRupees(dayAmount).formatted
       ]);
@@ -271,17 +281,16 @@ export class IndividualBillGenerator {
   }
   
   /**
-   * Get shift symbol for display
+   * Format date with day name combined (e.g., "Wed 06/08/2025")
    */
-  private getShiftSymbol(shiftType: string): string {
-    const symbolMap: Record<string, string> = {
-      'Morning Shift (9-4)': 'M',
-      'Evening Shift (4-10)': 'E',
-      'Saturday Regular (12-10)': 'S',
-      'Night Duty': 'N',
-      'Sunday/Public Holiday/Special': 'Sp'
-    };
-    return symbolMap[shiftType] || '?';
+  private formatDateWithDay(dateString: string): string {
+    const date = new Date(dateString);
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayName = dayNames[date.getDay()];
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${dayName} ${day}/${month}/${year}`;
   }
   
   /**
