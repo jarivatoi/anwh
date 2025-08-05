@@ -13,6 +13,7 @@ import { RosterFormData } from '../types/roster';
 import { validateAuthCode, isAdminCode } from '../utils/rosterAuth';
 import { useLongPress } from '../hooks/useLongPress';
 import { pdfExporter } from '../utils/pdfExport';
+import { MonthlyReportsModal } from './MonthlyReportsModal';
 
 interface RosterPanelProps {
   setActiveTab: (tab: 'calendar' | 'settings' | 'data' | 'roster') => void;
@@ -52,6 +53,7 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [adminName, setAdminName] = useState<string | null>(null);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [showMonthlyReports, setShowMonthlyReports] = useState(false);
 
   const { entries: fetchedEntries, loading, error, removeEntry, loadEntries, realtimeStatus } = useRosterData();
 
@@ -308,6 +310,17 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
             <h2 className="text-2xl font-bold text-gray-900">Roster Management</h2>
           </div>
           <div className="flex items-center justify-center">
+            <button
+              onClick={() => {
+                setShowQuickActions(false);
+                setShowMonthlyReports(true);
+              }}
+              className="w-full flex items-center space-x-3 px-4 py-3 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg font-medium transition-colors duration-200"
+            >
+              <FileText className="w-5 h-5" />
+              <span>Monthly Reports</span>
+            </button>
+            
             <button
               onClick={() => setShowPDFImport(true)}
               {...useLongPress({
@@ -792,6 +805,21 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
         </div>
         , document.body
       )}
+      
+      {/* Monthly Reports Modal */}
+      <MonthlyReportsModal
+        isOpen={showMonthlyReports}
+        onClose={() => setShowMonthlyReports(false)}
+        entries={entries}
+        basicSalary={35000} // You can get this from settings if needed
+        hourlyRate={201.92} // You can get this from settings if needed
+        shiftCombinations={[
+          { id: '9-4', combination: '9-4', hours: 6.5 },
+          { id: '4-10', combination: '4-10', hours: 5.5 },
+          { id: '12-10', combination: '12-10', hours: 9.5 },
+          { id: 'N', combination: 'N', hours: 12.5 }
+        ]}
+      />
     </div>
   );
 };
