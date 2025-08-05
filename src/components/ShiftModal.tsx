@@ -21,13 +21,47 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
   onClose
 }) => {
   const [isSpecialDate, setIsSpecialDate] = useState(false);
+  const [localSchedule, setLocalSchedule] = useState<Record<string, string[]>>({});
 
   // Initialize special date state when modal opens
   useEffect(() => {
     if (selectedDate) {
       setIsSpecialDate(specialDates[selectedDate] === true);
+      setLocalSchedule(schedule);
     }
-  }, [selectedDate, specialDates]);
+  }, [selectedDate, specialDates, schedule]);
+
+  // Update local schedule when parent schedule changes
+  useEffect(() => {
+    setLocalSchedule(schedule);
+  }, [schedule]);
+
+  const handleShiftToggle = (shiftId: string) => {
+    if (!selectedDate) return;
+    
+    const currentShifts = localSchedule[selectedDate] || [];
+    
+    // Update local state immediately for instant visual feedback
+    if (currentShifts.includes(shiftId)) {
+      // Remove shift
+      const updatedShifts = currentShifts.filter(id => id !== shiftId);
+      setLocalSchedule(prev => ({
+        ...prev,
+        [selectedDate]: updatedShifts
+      }));
+    } else {
+      // Add shift if allowed
+      if (canSelectShift(shiftId, selectedDate)) {
+        setLocalSchedule(prev => ({
+          ...prev,
+          [selectedDate]: [...currentShifts, shiftId]
+        }));
+      }
+    }
+    
+    // Then call parent handler for persistence
+    onToggleShift(shiftId);
+  };
 
   // Function to scroll back to the edited date when modal closes
   const handleCloseWithFocus = useCallback(() => {
@@ -119,7 +153,7 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
   if (!selectedDate) return null;
 
   const canSelectShift = (shiftId: string, dateKey: string) => {
-    const currentShifts = schedule[dateKey] || [];
+    const currentShifts = localSchedule[dateKey] || [];
     
     // 9-4 and 12-10 cannot overlap
     if (shiftId === '9-4' && currentShifts.includes('12-10')) return false;
@@ -336,14 +370,14 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
           {/* Shift options - ONLY VALID SHIFTS */}
           <div className="space-y-3 mb-6">
             {validShifts.map(shift => {
-              const isSelected = (schedule[selectedDate] || []).includes(shift.id);
+              const isSelected = (localSchedule[selectedDate] || []).includes(shift.id);
               const canSelect = canSelectShift(shift.id, selectedDate);
               const isDisabled = !isSelected && !canSelect;
 
               return (
                 <button
                   key={shift.id}
-                  onClick={() => onToggleShift(shift.id)}
+                  onClick={() => handleShiftToggle(shift.id)}
                   disabled={isDisabled}
                   className={`w-full p-4 rounded-lg border-2 text-center transition-all duration-200 select-none ${
                     isSelected
