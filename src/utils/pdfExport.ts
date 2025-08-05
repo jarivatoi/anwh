@@ -209,7 +209,7 @@ export class PDFExporter {
         
         // Validate the parsed date
         if (isNaN(date.getTime())) {
-          return 'Invalid Date';
+          return '';
         }
         
         // Format as: dd/mm/yyyy hh:mm
@@ -221,7 +221,7 @@ export class PDFExporter {
       // Handle ISO format or other standard formats
       const date = new Date(timestamp);
       if (isNaN(date.getTime())) {
-        return 'Invalid Date';
+        return '';
       }
       
       // Format as dd/mm/yyyy hh:mm
@@ -234,7 +234,7 @@ export class PDFExporter {
       return `${day}/${month}/${year} ${hour}:${minute}`;
     } catch (error) {
       console.warn('Failed to parse timestamp:', timestamp, error);
-      return 'Invalid Date';
+      return '';
     }
   }
 }
