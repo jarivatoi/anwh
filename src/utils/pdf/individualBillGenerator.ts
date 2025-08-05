@@ -57,46 +57,39 @@ export class IndividualBillGenerator {
     doc.setFontSize(12);
     doc.text(`INDIVIDUAL WORK SUMMARY - ${monthNames[month]} ${year}`, doc.internal.pageSize.getWidth() / 2, 30, { align: 'center' });
     
-    // Add images above X-RAY DEPARTMENT
-    // Left image placeholder
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text('[LEFT IMAGE]', 20, 15, { align: 'left' });
-    
-    // Right image placeholder  
-    doc.text('[RIGHT IMAGE]', doc.internal.pageSize.getWidth() - 20, 15, { align: 'right' });
-    
     // Staff details section - two-column layout with proper alignment
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     
-    // Left column - Name, Month, Year
+    // Left column - Name, Month/Year, Employee ID
     doc.text('Name:', 20, 40);
     doc.text('Month/Year:', 20, 47);
+    doc.text('Employee ID:', 20, 49);
     
-    // Left column values
+    // Left column values  
     doc.setFont('helvetica', 'normal');
     doc.text(`${staffInfo?.firstName || ''} ${staffInfo?.surname || staffName}`, 50, 40);
     doc.text(`${monthNames[month]} ${year}`, 50, 47);
+    doc.text(staffInfo?.employeeId || '', 50, 49);
     
-    // Right column - Title, Salary, Employee ID
+    // Right column - Title, Salary, Hourly Rate
     doc.setFont('helvetica', 'bold');
     doc.text('Title:', 120, 40);
     doc.text('Salary:', 120, 47);
-    doc.text('Employee ID:', 120, 54);
+    doc.text('Hourly Rate:', 120, 49);
     
     // Right column values
     doc.setFont('helvetica', 'normal');
     doc.text(staffInfo?.title || 'MIT', 150, 40);
     doc.text(`Rs ${(staffInfo?.salary || 0).toLocaleString()}`, 150, 47);
-    doc.text(staffInfo?.employeeId || '', 150, 54);
+    doc.text(`Rs ${hourlyRate.toFixed(2)}`, 150, 49);
     
     // Prepare table data for ALL days in the month
     const tableData = this.prepareAllDaysTableData(staffEntries, month, year, hourlyRate, shiftCombinations);
     
     // Create table with compact layout
     autoTable(doc, {
-      startY: 60,
+      startY: 55,
       head: [['Day Date', 'Morning\n(9-4)', 'Saturday\n(12-10)', 'Evening\n(4-10)', 'Night\nDuty', 'Hours', 'Remarks']],
       body: tableData.rows,
       styles: {
@@ -136,7 +129,10 @@ export class IndividualBillGenerator {
     
     // Add summary section
     const finalY = (doc as any).lastAutoTable.finalY + 5;
-    this.addSummarySection(doc, tableData.totalDays, tableData.totalHours, tableData.nightDutyCount, hourlyRate, finalY, staffInfo?.salary || 0);
+    this.addSummarySection(doc, tableData.totalDays, tableData.totalHours, tableData.nightDutyCount, hourlyRate, finalY);
+    
+    // Add signature sections
+    this.addSignatureSections(doc, tableData.totalDays, tableData.totalHours, tableData.nightDutyCount, hourlyRate);
     
     // Footer - positioned at absolute bottom
     doc.setFont('helvetica', 'normal');
@@ -155,9 +151,9 @@ export class IndividualBillGenerator {
   }
   
   /**
-   * Add compact summary section with corrected night allowance calculation
+   * Add compact summary section
    */
-  private addSummarySection(doc: jsPDF, totalDays: number, totalHours: number, nightDutyCount: number, hourlyRate: number, startY: number, staffSalary: number): void {
+  private addSummarySection(doc: jsPDF, totalDays: number, totalHours: number, nightDutyCount: number, hourlyRate: number, startY: number): void {
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.text('SUMMARY:', 15, startY);
@@ -171,21 +167,45 @@ export class IndividualBillGenerator {
     // Summary details
     doc.text(`Total Working Days: ${totalDays}`, 15, startY + 8);
     doc.text(`Total Working Hours: ${totalHours.toFixed(1)}`, 15, startY + 14);
-    doc.text(`Hourly Rate: ${formatMauritianRupees(hourlyRate).formatted}`, 15, startY + 20);
-    doc.text(`Subtotal (Hours): ${formatMauritianRupees(totalAmount).formatted}`, 15, startY + 26);
+    doc.text(`Subtotal (Hours): ${formatMauritianRupees(totalAmount).formatted}`, 15, startY + 20);
     
-    // Night duty allowance - corrected calculation: (number of nights) × 6 × 0.25 × hourly_rate
+    // Night duty allowance - calculation: (number of nights) × 6 × 0.25 × hourly_rate
     const nightAllowanceBase = nightDutyCount * 6 * 0.25;
     const nightAllowance = nightAllowanceBase * hourlyRate;
     if (nightDutyCount > 0) {
-      doc.text(`Night Allowance: ${nightDutyCount} × 6 × 0.25 × ${formatMauritianRupees(hourlyRate).formatted} = ${formatMauritianRupees(nightAllowance).formatted}`, 15, startY + 32);
+      doc.text(`Night Allowance: ${nightDutyCount} × 6 × 0.25 × ${formatMauritianRupees(hourlyRate).formatted} = ${formatMauritianRupees(nightAllowance).formatted}`, 15, startY + 26);
     }
     
     // Grand total
     const grandTotal = totalAmount + nightAllowance;
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    doc.text(`TOTAL AMOUNT: ${formatMauritianRupees(grandTotal).formatted}`, 15, startY + (nightDutyCount > 0 ? 40 : 34));
+    doc.text(`TOTAL AMOUNT: ${formatMauritianRupees(grandTotal).formatted}`, 15, startY + (nightDutyCount > 0 ? 34 : 28));
+  }
+  
+  /**
+   * Add signature sections at bottom
+   */
+  private addSignatureSections(doc: jsPDF, totalDays: number, totalHours: number, nightDutyCount: number, hourlyRate: number): void {
+    const totalAmount = totalHours * hourlyRate;
+    const nightAllowanceBase = nightDutyCount * 6 * 0.25;
+    const nightAllowance = nightAllowanceBase * hourlyRate;
+    const grandTotal = totalAmount + nightAllowance;
+    
+    // Calculate position after summary
+    const summaryEndY = (doc as any).lastAutoTable.finalY + 5 + (nightDutyCount > 0 ? 34 : 28) + 10;
+    
+    // Left side - Date and signature
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text('Date and Signature: ________________', 15, summaryEndY);
+    
+    // Right side - Certification
+    const rightX = 120;
+    doc.text('Certified Correct as per Attendance.', rightX, summaryEndY);
+    doc.text('Name: _____________________________', rightX, summaryEndY + 8);
+    doc.text('Grade: Principal Medical Imaging Technologist.', rightX, summaryEndY + 16);
+    doc.text('Signature: ____________________________________', rightX, summaryEndY + 24);
   }
   
   /**
@@ -350,15 +370,6 @@ export class IndividualBillGenerator {
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     return `${dayName} ${day}/${month}`;
-  }
-  
-  /**
-   * Get day name for date
-   */
-  private getDayName(dateString: string): string {
-    const date = new Date(dateString);
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    return dayNames[date.getDay()];
   }
 }
 
