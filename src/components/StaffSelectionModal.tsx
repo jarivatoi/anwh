@@ -386,7 +386,42 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
               </div>
             ) : (
               filteredStaff.map((staffName) => (
-              <button
+                <button
+                  key={staffName}
+                  onClick={() => handleStaffSelect(staffName)}
+                  className={`w-full p-4 rounded-lg border-2 text-left transition-all duration-200 ${
+                    selectedStaff === staffName
+                      ? 'border-blue-500 bg-blue-50 text-blue-900'
+                      : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                  style={{
+                    touchAction: 'manipulation',
+                    WebkitTapHighlightColor: 'transparent'
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <User className={`w-5 h-5 ${
+                        selectedStaff === staffName ? 'text-blue-600' : 'text-gray-400'
+                      }`} />
+                      <div>
+                        <div className="font-medium text-base">{staffName}</div>
+                        {staffName === entry.assigned_name && (
+                          <div className="text-xs text-gray-500">Current assignment</div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {selectedStaff === staffName && (
+                      <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
+                        <Check className="w-4 h-4 text-white" />
+                      </div>
+                    )}
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
                 key={staffName}
                 disabled={!selectedStaff || filteredStaff.length === 0 || (() => {
                   const nameChanged = selectedStaff !== entry.assigned_name;
