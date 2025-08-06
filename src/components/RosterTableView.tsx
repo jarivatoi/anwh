@@ -929,6 +929,34 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 </div>
               )}
               
+              {/* Shift Selection for Add Staff - Show when authenticated but no shift selected */}
+              {actionType === 'addStaff' && !selectedShiftForAdd && authCode.length >= 4 && isAdminCode(authCode) && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Shift Type
+                  </label>
+                  <select
+                    value={selectedShiftForAdd}
+                    onChange={(e) => {
+                      setSelectedShiftForAdd(e.target.value);
+                      // Get current staff for this shift
+                      if (e.target.value && selectedSpecialDate) {
+                        const dateEntries = groupedEntries[selectedSpecialDate] || [];
+                        const currentEntries = dateEntries.filter(entry => entry.shift_type === e.target.value);
+                        const currentStaff = currentEntries.map(entry => entry.assigned_name);
+                        setSelectedStaffForAdd(currentStaff);
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="">Select shift type</option>
+                    {shiftTypes.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              
               <div className="flex space-x-3">
                 <button
                   onClick={handleCloseAuthModal}
