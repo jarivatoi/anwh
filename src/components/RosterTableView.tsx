@@ -54,6 +54,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const [selectedStaffForAdd, setSelectedStaffForAdd] = useState<string[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedShift, setSelectedShift] = useState<string>('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshingDate, setRefreshingDate] = useState<string | null>(null);
   
   const isMountedRef = useRef(true);
 
@@ -183,6 +185,25 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     
     if (onRefresh) {
       onRefresh();
+    }
+  };
+
+  // Handle manual refresh
+  const handleManualRefresh = async (clickedDate?: string) => {
+    setIsRefreshing(true);
+    const refreshDate = clickedDate || new Date().toISOString().split('T')[0];
+    setRefreshingDate(refreshDate);
+    
+    try {
+      console.log('🔄 Manual refresh triggered in table view');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setLastUpdateTime(new Date().toLocaleTimeString());
+      console.log('✅ Manual refresh completed');
+    } catch (error) {
+      console.error('Manual refresh error:', error);
+    } finally {
+      setIsRefreshing(false);
+      setRefreshingDate(null);
     }
   };
 
