@@ -483,7 +483,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   console.log('🔄 ROSTER TABLE: Export to Calendar button clicked');
                   onExportToCalendar();
                 }}
-                className="p-3 rounded-lg hover:bg-green-100 text-green-600 transition-colors duration-200 flex items-center justify-center"
+                className="p-3 rounded-lg text-green-600 flex items-center justify-center"
                 style={{
                   touchAction: 'manipulation',
                   WebkitTapHighlightColor: 'transparent',
@@ -492,7 +492,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 }}
                 title="Export your shifts to calendar"
               >
-                <Download className="w-6 h-6" />
+                <Download className="w-8 h-8" />
               </button>
             </div>
             
@@ -516,7 +516,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   }
                 }}
                 disabled={isRefreshing}
-                className="p-3 rounded-lg hover:bg-blue-100 text-blue-600 transition-colors duration-200 flex items-center justify-center"
+                className="p-3 rounded-lg text-blue-600 flex items-center justify-center"
                 style={{
                   touchAction: 'manipulation',
                   WebkitTapHighlightColor: 'transparent',
@@ -532,12 +532,12 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               >
                 <div className="flex items-center space-x-1">
                   <RotateCcw 
-                    className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`}
+                    className={`w-7 h-7 ${isRefreshing ? 'animate-spin' : ''}`}
                   />
                   
                   {/* Real-time status dot - same level as icon */}
                   <div 
-                    className="w-2 h-2 rounded-full"
+                    className="w-3 h-3 rounded-full"
                     style={{
                       backgroundColor: realtimeStatus === 'connected' ? '#10b981' : 
                                       realtimeStatus === 'connecting' ? '#f59e0b' :
