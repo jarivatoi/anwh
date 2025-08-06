@@ -433,7 +433,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           {/* Left Arrow */}
           <button
             onClick={() => navigateMonth('prev')}
-            className="flex-1 p-3 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors duration-200 flex items-center justify-center"
+            className="flex-1 p-3 rounded-lg text-gray-600 flex items-center justify-center"
             style={{
               touchAction: 'manipulation',
               WebkitTapHighlightColor: 'transparent',
@@ -450,28 +450,15 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               <Calendar className="w-6 h-6 text-indigo-600" />
               
               {/* Month Selector */}
-              <select
-                value={selectedDate.getMonth()}
-                onChange={(e) => {
-                  const newDate = new Date(selectedDate);
-                  newDate.setMonth(Number(e.target.value));
-                  onDateChange(newDate);
-                }}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-semibold text-gray-900 bg-white text-center"
-                style={{
-                  touchAction: 'manipulation',
-                  WebkitTapHighlightColor: 'transparent',
-                  textAlign: 'center',
-                  minWidth: '120px'
-                }}
-              >
-                {[
-                  'January', 'February', 'March', 'April', 'May', 'June',
-                  'July', 'August', 'September', 'October', 'November', 'December'
-                ].map((month, index) => (
-                  <option key={index} value={index}>{month}</option>
-                ))}
-              </select>
+              <div className="text-lg font-semibold text-gray-900">
+                {(() => {
+                  const monthNames = [
+                    'January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'
+                  ];
+                  return `${monthNames[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`;
+                })()}
+              </div>
               
               {/* Export Button */}
               <button
@@ -576,7 +563,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           {/* Right Arrow */}
           <button
             onClick={() => navigateMonth('next')}
-            className="flex-1 p-3 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors duration-200 flex items-center justify-center"
+            className="flex-1 p-3 rounded-lg text-gray-600 flex items-center justify-center"
             style={{
               touchAction: 'manipulation',
               WebkitTapHighlightColor: 'transparent',
