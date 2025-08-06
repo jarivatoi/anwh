@@ -351,14 +351,20 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     if (!editorName || !isAdminCode(authCode)) {
       setAuthError(!editorName ? 'Invalid authentication code' : 'Admin access required for date editing');
       console.log('❌ Authentication failed:', { editorName, isAdmin: isAdminCode(authCode) });
-      return;
+    console.log('🔐 Auth successful, actionType:', actionType, 'selectedSpecialDate:', selectedSpecialDate);
+    
+    // Close auth modal first
+    setShowAuthModal(false);
+    setAuthError('');
+    
+    // Then open the appropriate modal based on action type
+    if (actionType === 'special' && selectedSpecialDate) {
+      console.log('🌟 Opening special date modal for:', selectedSpecialDate);
+      // Add small delay to ensure auth modal closes first
+      setTimeout(() => {
+        setShowSpecialDateModal(true);
+      }, 100);
     }
-    
-    console.log('✅ Authentication successful, editorName:', editorName);
-    console.log('🔄 Processing action type:', actionType);
-    
-    if (actionType === 'special') {
-      console.log('🌟 Opening special date modal for date:', selectedSpecialDate);
       setShowAuthModal(false);
       setShowSpecialDateModal(true);
       setAuthError('');
@@ -470,6 +476,11 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
 
   // Handle special date save
   const handleSpecialDateSave = async (isSpecial: boolean, info: string) => {
+    if (!selectedSpecialDate) {
+      console.error('❌ No selected date for special date save');
+      return;
+    }
+    
     if (!selectedSpecialDate) return;
     
     try {
@@ -664,6 +675,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
 
   const handleCancelStaffEdit = () => {
     setShowStaffEditModal(false);
+    console.log('🚪 Closing special date modal');
     setEditingDate(null);
     setSelectedShift('');
     setSelectedStaff([]);
