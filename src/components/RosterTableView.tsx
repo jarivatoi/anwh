@@ -432,23 +432,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     return getSpecialDateInfo(date) !== null;
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (sortedEntries.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-        <p className="text-gray-500 text-lg font-medium">No roster entries found</p>
-        <p className="text-gray-400 text-sm mt-2">No entries available for this month</p>
-      </div>
-    );
-  }
 
   return (
     <>
@@ -508,176 +491,188 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         </div>
       </div>
 
-      <div className="bg-white" style={{
-        width: '100vw',
-        marginLeft: 'calc(-50vw + 50%)',
-        marginRight: 'calc(-50vw + 50%)',
-        overflowX: 'hidden'
-      }}>
-        <div style={{ 
-          height: window.innerWidth > window.innerHeight ? '60vh' : '70vh',
-          minHeight: '400px',
-          maxHeight: '80vh',
-          WebkitOverflowScrolling: 'touch',
-          overflowX: 'hidden',
-          overflowY: 'auto'
+      {/* Table Content */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+        </div>
+      ) : sortedEntries.length === 0 ? (
+        <div className="text-center py-12">
+          <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-500 text-lg font-medium">No roster entries found</p>
+          <p className="text-gray-400 text-sm mt-2">No entries available for this month</p>
+        </div>
+      ) : (
+        <div className="bg-white" style={{
+          width: '100vw',
+          marginLeft: 'calc(-50vw + 50%)',
+          marginRight: 'calc(-50vw + 50%)',
+          overflowX: 'hidden'
         }}>
-          <table style={{
-            width: '100%',
-            borderCollapse: 'collapse',
-            tableLayout: 'fixed'
+          <div style={{ 
+            height: window.innerWidth > window.innerHeight ? '60vh' : '70vh',
+            minHeight: '400px',
+            maxHeight: '80vh',
+            WebkitOverflowScrolling: 'touch',
+            overflowX: 'hidden',
+            overflowY: 'auto'
           }}>
-            <thead>
-              <tr>
-                <th style={{
-                  position: 'sticky',
-                  top: '80px',
-                  zIndex: 150,
-                  backgroundColor: '#4f46e5',
-                  color: 'white',
-                  padding: '8px',
-                  textAlign: 'center',
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  border: '2px solid #374151',
-                  width: '15%'
-                }}>
-                  Date
-                </th>
-                {shiftTypes.map(shiftType => (
-                  <th key={shiftType} style={{
-                   position: 'sticky',
-                   top: '80px',
-                   zIndex: 150,
+            <table style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+              tableLayout: 'fixed'
+            }}>
+              <thead>
+                <tr>
+                  <th style={{
+                    position: 'sticky',
+                    top: '80px',
+                    zIndex: 150,
                     backgroundColor: '#4f46e5',
                     color: 'white',
                     padding: '8px',
                     textAlign: 'center',
-                    fontSize: '12px',
+                    fontSize: '14px',
                     fontWeight: 'bold',
                     border: '2px solid #374151',
-                    width: '21.25%'
+                    width: '15%'
                   }}>
-                    <ScrollingText text={shiftType} className="text-white font-bold" />
+                    Date
                   </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(groupedEntries).map(([date, dateEntries]) => (
-                <tr key={date}>
-                  <RosterDateCell
-                    date={date}
-                    isToday={isToday(date)}
-                    isPastDate={isPastDate(date)}
-                    isFutureDate={isFutureDate(date)}
-                    onLongPress={() => handleSpecialDateLongPress(date)}
-                    isSpecialDate={isSpecialDate(date)}
-                    specialDateInfo={getSpecialDateInfo(date)}
-                   formatTableDate={formatTableDate}
-                    title={actionType === 'special' ? 'Admin Authentication Required' : 'Authentication Required'}
-                  />
-                  
-                  {shiftTypes.map(shiftType => {
-                    const shiftEntries = dateEntries.filter(entry => entry.shift_type === shiftType);
-                    
-                    return (
-                      <td key={shiftType} style={{
-                        padding: '0',
-                        margin: '0',
-                        textAlign: 'center',
-                        minHeight: '50px',
-                        border: '2px solid #374151',
-                        backgroundColor: '#ffffff',
-                        position: 'relative',
-                        width: '21.25%',
-                        overflow: 'hidden',
-                        cursor: 'pointer'
-                      }}>
-                        <div
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            const timer = setTimeout(() => {
-                              handleAddStaffLongPress(date, shiftType);
-                            }, 1000);
-                            
-                            const cleanup = () => {
-                              clearTimeout(timer);
-                              document.removeEventListener('mouseup', cleanup);
-                              document.removeEventListener('mouseleave', cleanup);
-                            };
-                            
-                            document.addEventListener('mouseup', cleanup);
-                            document.addEventListener('mouseleave', cleanup);
-                          }}
-                          onTouchStart={(e) => {
-                            e.preventDefault();
-                            const timer = setTimeout(() => {
-                              handleAddStaffLongPress(date, shiftType);
-                            }, 1000);
-                            
-                            const cleanup = () => {
-                              clearTimeout(timer);
-                              document.removeEventListener('touchend', cleanup);
-                              document.removeEventListener('touchcancel', cleanup);
-                            };
-                            
-                            document.addEventListener('touchend', cleanup);
-                            document.addEventListener('touchcancel', cleanup);
-                          }}
-                          style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            zIndex: 5,
-                            cursor: 'pointer',
-                            touchAction: 'manipulation',
-                            backgroundColor: 'transparent',
-                            border: 'none',
-                            outline: 'none'
-                          }}
-                          title="Long press to add/remove staff (Admin)"
-                        />
-                        
-                        {isPastDate(date) && (
-                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                            <div className="font-bold select-none" style={{
-                              fontSize: window.innerWidth > window.innerHeight ? 'clamp(2rem, 8vw, 4rem)' : 'clamp(4rem, 12vw, 8rem)',
-                              lineHeight: '1',
-                              color: '#fca5a5',
-                              opacity: 0.15,
-                              transform: 'scale(1.5)'
-                            }}>
-                              X
-                            </div>
-                          </div>
-                        )}
-                        
-                        <div className="space-y-1 relative z-60" style={{ 
-                          minHeight: '50px',
-                          padding: '4px 2px'
-                        }}>
-                          {shiftEntries.map((entry, index) => (
-                            <RosterEntryCell
-                              key={entry.id}
-                              entry={entry}
-                              onShowDetails={handleShowDetails}
-                              onUpdate={handleEntryUpdate}
-                              allEntriesForShift={shiftEntries}
-                            />
-                          ))}
-                        </div>
-                      </td>
-                    );
-                  })}
+                  {shiftTypes.map(shiftType => (
+                    <th key={shiftType} style={{
+                     position: 'sticky',
+                     top: '80px',
+                     zIndex: 150,
+                      backgroundColor: '#4f46e5',
+                      color: 'white',
+                      padding: '8px',
+                      textAlign: 'center',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      border: '2px solid #374151',
+                      width: '21.25%'
+                    }}>
+                      <ScrollingText text={shiftType} className="text-white font-bold" />
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {Object.entries(groupedEntries).map(([date, dateEntries]) => (
+                  <tr key={date}>
+                    <RosterDateCell
+                      date={date}
+                      isToday={isToday(date)}
+                      isPastDate={isPastDate(date)}
+                      isFutureDate={isFutureDate(date)}
+                      onLongPress={() => handleSpecialDateLongPress(date)}
+                      isSpecialDate={isSpecialDate(date)}
+                      specialDateInfo={getSpecialDateInfo(date)}
+                     formatTableDate={formatTableDate}
+                    />
+                    
+                    {shiftTypes.map(shiftType => {
+                      const shiftEntries = dateEntries.filter(entry => entry.shift_type === shiftType);
+                      
+                      return (
+                        <td key={shiftType} style={{
+                          padding: '0',
+                          margin: '0',
+                          textAlign: 'center',
+                          minHeight: '50px',
+                          border: '2px solid #374151',
+                          backgroundColor: '#ffffff',
+                          position: 'relative',
+                          width: '21.25%',
+                          overflow: 'hidden',
+                          cursor: 'pointer'
+                        }}>
+                          <div
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              const timer = setTimeout(() => {
+                                handleAddStaffLongPress(date, shiftType);
+                              }, 1000);
+                              
+                              const cleanup = () => {
+                                clearTimeout(timer);
+                                document.removeEventListener('mouseup', cleanup);
+                                document.removeEventListener('mouseleave', cleanup);
+                              };
+                              
+                              document.addEventListener('mouseup', cleanup);
+                              document.addEventListener('mouseleave', cleanup);
+                            }}
+                            onTouchStart={(e) => {
+                              e.preventDefault();
+                              const timer = setTimeout(() => {
+                                handleAddStaffLongPress(date, shiftType);
+                              }, 1000);
+                              
+                              const cleanup = () => {
+                                clearTimeout(timer);
+                                document.removeEventListener('touchend', cleanup);
+                                document.removeEventListener('touchcancel', cleanup);
+                              };
+                              
+                              document.addEventListener('touchend', cleanup);
+                              document.addEventListener('touchcancel', cleanup);
+                            }}
+                            style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              zIndex: 5,
+                              cursor: 'pointer',
+                              touchAction: 'manipulation',
+                              backgroundColor: 'transparent',
+                              border: 'none',
+                              outline: 'none'
+                            }}
+                            title="Long press to add/remove staff (Admin)"
+                          />
+                          
+                          {isPastDate(date) && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                              <div className="font-bold select-none" style={{
+                                fontSize: window.innerWidth > window.innerHeight ? 'clamp(2rem, 8vw, 4rem)' : 'clamp(4rem, 12vw, 8rem)',
+                                lineHeight: '1',
+                                color: '#fca5a5',
+                                opacity: 0.15,
+                                transform: 'scale(1.5)'
+                              }}>
+                                X
+                              </div>
+                            </div>
+                          )}
+                          
+                          <div className="space-y-1 relative z-60" style={{ 
+                            minHeight: '50px',
+                            padding: '4px 2px'
+                          }}>
+                            {shiftEntries.map((entry, index) => (
+                              <RosterEntryCell
+                                key={entry.id}
+                                entry={entry}
+                                onShowDetails={handleShowDetails}
+                                onUpdate={handleEntryUpdate}
+                                allEntriesForShift={shiftEntries}
+                              />
+                            ))}
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Authentication Modal */}
       {showAuthModal && (
