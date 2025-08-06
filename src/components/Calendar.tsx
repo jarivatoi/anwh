@@ -1089,7 +1089,6 @@ export const Calendar: React.FC<CalendarProps> = ({
                   display: 'flex',
                   flexDirection: 'column',
                   backgroundColor: hasSpecialDate ? '#fecaca' : undefined
-                  backgroundColor: hasSpecialDate ? '#fecaca' : undefined
                 }}
                 onClick={() => day && handleDateClick(day)}
                onMouseDown={(e) => day && handleDateLongPressStart(day, e)}
