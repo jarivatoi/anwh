@@ -970,11 +970,16 @@ export const Calendar: React.FC<CalendarProps> = ({
                 flex: 1, 
                 overflowY: 'auto',
                 WebkitOverflowScrolling: 'touch',
-                touchAction: 'pan-y'
+                touchAction: 'pan-y',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px', textAlign: 'center' }}>Year</label>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px', textAlign: 'center' }}>
+                      Year
+                    </label>
                     <select
                       value={currentYear}
                       onChange={(e) => handleDatePickerChange(Number(e.target.value), currentMonth)}
@@ -994,7 +999,9 @@ export const Calendar: React.FC<CalendarProps> = ({
                     </select>
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px', textAlign: 'center' }}>Month</label>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px', textAlign: 'center' }}>
+                      Month
+                    </label>
                     <select
                       value={currentMonth}
                       onChange={(e) => handleDatePickerChange(currentYear, Number(e.target.value))}
