@@ -1124,6 +1124,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         isPastDate={isPastDate(date)}
                         isFutureDate={isFutureDate(date)}
                         onLongPress={() => {
+                        isSpecialDate={isSpecialDate}
+                        specialDateInfo={specialDateInfo?.info}
                           setSelectedSpecialDate(date);
                           setEditingDate(date);
                           setShowAuthModal(true);

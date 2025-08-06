@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLongPress } from '../hooks/useLongPress';
+import { ScrollingText } from './ScrollingText';
 
 interface RosterDateCellProps {
   date: string;
@@ -8,6 +9,7 @@ interface RosterDateCellProps {
   isFutureDate: boolean;
   onLongPress: () => void;
   isSpecialDate?: boolean;
+  specialDateInfo?: string;
   formatTableDate: (dateString: string) => { dayName: string; dateString: string };
 }
 
@@ -18,6 +20,7 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
   isFutureDate,
   onLongPress,
   isSpecialDate = false,
+  specialDateInfo,
   formatTableDate
 }) => {
   return (
@@ -122,6 +125,25 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
         }}>
           {formatTableDate(date).dateString}
         </div>
+        
+        {/* Special Date Info - Scrolling Text at Bottom */}
+        {isSpecialDate && specialDateInfo && (
+          <div className="absolute bottom-1 left-0 right-0 z-20" style={{
+            height: '12px',
+            overflow: 'hidden',
+            padding: '0 2px'
+          }}>
+            <ScrollingText 
+              text={specialDateInfo}
+              className="text-red-800 font-medium"
+              style={{
+                fontSize: window.innerWidth > window.innerHeight ? '8px' : '9px',
+                lineHeight: '12px',
+                textAlign: 'center'
+              }}
+            />
+          </div>
+        )}
       </button>
     </td>
   );
