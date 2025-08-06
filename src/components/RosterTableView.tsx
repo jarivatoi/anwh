@@ -356,13 +356,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     if (!editorName || !isAdminCode(authCode)) {
       setAuthError(!editorName ? 'Invalid authentication code' : 'Admin access required for date editing');
       return;
-    }
-    
-    setShowAuthModal(false);
-    
-    if (actionType === 'special') {
-      setShowSpecialDateModal(true);
-    } else if (actionType === 'staff') {
+      // Open special date modal
       setShowStaffEditModal(true);
   
       // Get current staff for the selected date and shift
@@ -1524,7 +1518,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   Cancel
                 </button>
                 <button
-                  onClick={handleAuthSubmitWithAction}
+                  onClick={handleAuthSubmit}
                   disabled={authCode.length < 4 || !isAdminCode(authCode)}
                   className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200"
                 >
