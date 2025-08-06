@@ -725,7 +725,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                           textAlign: 'center',
                           minHeight: '50px',
                           border: '2px solid #374151',
-                          backgroundColor: '#ffffff',
                           position: 'relative',
                           width: '21.25%',
                           overflow: 'hidden',
