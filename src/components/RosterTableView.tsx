@@ -1143,7 +1143,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         isToday={isToday(date)}
                         isPastDate={isPastDate(date)}
                         isFutureDate={isFutureDate(date)}
-                        onLongPress={() => handleStaffEditLongPress(date)}
+                        onLongPress={() => handleSpecialDateLongPress(date)}
                         isSpecialDate={isSpecialDate}
                         specialDateInfo={specialDateInfo?.info}
                         formatTableDate={formatTableDate}
