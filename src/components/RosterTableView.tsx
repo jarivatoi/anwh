@@ -476,7 +476,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 onDateChange(newDate);
               }}
               disabled={isRefreshing}
-              className="text-lg font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer hover:bg-gray-100 rounded px-2 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-lg font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-2 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {[
                 'January', 'February', 'March', 'April', 'May', 'June',
@@ -495,7 +495,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 onDateChange(newDate);
               }}
               disabled={isRefreshing}
-              className="text-lg font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer hover:bg-gray-100 rounded px-2 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-lg font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-2 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map(year => (
                 <option key={year} value={year}>{year}</option>
