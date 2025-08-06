@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Star, Calendar, FileText, AlertTriangle } from 'lucide-react';
+import { updateAllStaffRemarksForDate } from '../utils/rosterApi';
+import { validateAuthCode } from '../utils/rosterAuth';
 
 interface SpecialDateModalProps {
   isOpen: boolean;
   date: string | null;
   currentSpecialInfo?: { isSpecial: boolean; info: string };
-  onSave: (isSpecial: boolean, info: string) => void;
+  onSave: (isSpecial: boolean, info: string) => Promise<void>;
   onClose: () => void;
+  authCode?: string;
 }
 
 export const SpecialDateModal: React.FC<SpecialDateModalProps> = ({
@@ -15,10 +18,13 @@ export const SpecialDateModal: React.FC<SpecialDateModalProps> = ({
   date,
   currentSpecialInfo,
   onSave,
-  onClose
+  onClose,
+  authCode
 }) => {
   const [isSpecial, setIsSpecial] = useState(false);
   const [info, setInfo] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Initialize state when modal opens
   useEffect(() => {
@@ -82,7 +88,22 @@ export const SpecialDateModal: React.FC<SpecialDateModalProps> = ({
   };
 
   const handleSave = () => {
-    onSave(isSpecial, info);
+    if (isSaving) return;
+    
+    setIsSaving(true);
+    setSaveError(null);
+    
+    onSave(isSpecial, info)
+      .then(() => {
+        onClose();
+      })
+      .catch((error) => {
+        console.error('Failed to save special date:', error);
+        setSaveError(error instanceof Error ? error.message : 'Failed to save special date');
+      })
+      .finally(() => {
+        setIsSaving(false);
+      });
   };
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -151,6 +172,15 @@ export const SpecialDateModal: React.FC<SpecialDateModalProps> = ({
           }}
         >
           <div className="space-y-6">
+            {saveError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-center space-x-2">
+                  <AlertTriangle className="w-4 h-4 text-red-600" />
+                  <span className="text-sm text-red-700">{saveError}</span>
+                </div>
+              </div>
+            )}
+            
             {/* Special Date Toggle */}
             <div className="flex items-center justify-center space-x-3 p-4 bg-gray-50 rounded-lg">
               <label className="flex items-center space-x-3 cursor-pointer">
@@ -227,18 +257,29 @@ export const SpecialDateModal: React.FC<SpecialDateModalProps> = ({
           <div className="flex space-x-3">
             <button
               onClick={onClose}
-              className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200"
+              disabled={isSaving}
+              className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
+              disabled={isSaving}
               className={`flex-1 px-4 py-3 ${
                 isSpecial ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
-              } text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2`}
+              } text-white rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center justify-center space-x-2`}
             >
-              <Star className="w-4 h-4" />
-              <span>{isSpecial ? 'Mark Special' : 'Remove Special'}</span>
+              {isSaving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <Star className="w-4 h-4" />
+                  <span>{isSpecial ? 'Mark Special' : 'Remove Special'}</span>
+                </>
+              )}
             </button>
           </div>
         </div>

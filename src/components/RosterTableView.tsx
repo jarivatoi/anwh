@@ -62,13 +62,15 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const [showSpecialDateModal, setShowSpecialDateModal] = useState(false);
   const [selectedSpecialDate, setSelectedSpecialDate] = useState<string | null>(null);
   const [specialDates, setSpecialDates] = useState<Record<string, { isSpecial: boolean; info: string }>>({});
+  const [showStaffEditModal, setShowStaffEditModal] = useState(false);
+  const [authModalType, setAuthModalType] = useState<'special' | 'staff'>('special');
   
   const tableRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef(false);
 
   // CRITICAL: Prevent body scroll when ANY modal is open
   useEffect(() => {
-    if (showAuthModal || showExportModal || showDetailsModal || showSpecialDateModal || (editingDate && selectedShift && authCode && !showAuthModal)) {
+    if (showAuthModal || showExportModal || showDetailsModal || showSpecialDateModal || showStaffEditModal || (editingDate && selectedShift && authCode && !showAuthModal)) {
       // Completely disable body scroll
       document.body.style.overflow = 'hidden';
       document.body.style.position = 'fixed';
@@ -94,7 +96,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       
     
     };
-  }, [showAuthModal, showExportModal, showDetailsModal, showSpecialDateModal, editingDate, selectedShift, authCode]);
+  }, [showAuthModal, showExportModal, showDetailsModal, showSpecialDateModal, showStaffEditModal, editingDate, selectedShift, authCode]);
 
   // Track mounted status
   useEffect(() => {
@@ -321,11 +323,20 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     setShowAuthModal(true);
   };
 
-  // Handle date long press for special date marking
-  const handleDateLongPress = (date: string) => {
-    console.log('🔥 Date long press detected:', date);
+  // Handle special date long press
+  const handleSpecialDateLongPress = (date: string) => {
+    console.log('🌟 Special date long press for:', date);
     setSelectedSpecialDate(date);
     setShowAuthModal(true);
+    setAuthModalType('special');
+  };
+
+  // Handle staff edit long press  
+  const handleStaffEditLongPress = (date: string) => {
+    console.log('👥 Staff edit long press for:', date);
+    setEditingDate(date);
+    setShowAuthModal(true);
+    setAuthModalType('staff');
   };
 
   // Handle authentication
@@ -337,17 +348,14 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     }
     
     setShowAuthModal(false);
-    setAuthError('');
     
-    // Check if this is for special date marking or regular editing
-    if (selectedSpecialDate && !editingDate) {
+    if (authModalType === 'special') {
       setShowSpecialDateModal(true);
-    } else if (editingDate && selectedShift) {
-      // Get current staff for the selected date and shift
-      const currentEntries = getEntriesForDateAndShift(editingDate, selectedShift);
-      const currentStaff = currentEntries.map(entry => entry.assigned_name);
-      setSelectedStaff(currentStaff);
+    } else if (authModalType === 'staff') {
+      setShowStaffEditModal(true);
     }
+    
+    setAuthError('');
   };
 
   // Handle staff selection change
@@ -432,9 +440,11 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   // Handle cancel auth for special dates
   const handleCancelAuth = () => {
     setShowAuthModal(false);
+    setSelectedSpecialDate(null);
+    setEditingDate(null);
     setAuthCode('');
     setAuthError('');
-    setSelectedSpecialDate(null);
+    setAuthModalType('special');
   };
 
   // Handle special date save
@@ -483,6 +493,78 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       console.error('Failed to save special date:', error);
       alert('Failed to save special date. Please try again.');
     }
+  };
+
+  // Handle staff edit functions
+  const handleShiftSelect = (shiftType: string) => {
+    setSelectedShift(shiftType);
+    
+    // Get current staff for this date and shift
+    if (editingDate) {
+      const dateEntries = entries.filter(entry => entry.date === editingDate && entry.shift_type === shiftType);
+      const currentStaff = dateEntries.map(entry => entry.assigned_name);
+      setSelectedStaff(currentStaff);
+    }
+  };
+
+  const handleSaveStaffChanges = async () => {
+    if (!editingDate || !selectedShift || !authCode) return;
+    
+    setIsUpdating(true);
+    
+    try {
+      const editorName = validateAuthCode(authCode);
+      if (!editorName) return;
+
+      // Get current entries for this date and shift
+      const currentEntries = entries.filter(entry => 
+        entry.date === editingDate && entry.shift_type === selectedShift
+      );
+      const currentStaff = currentEntries.map(entry => entry.assigned_name);
+      
+      // Find staff to add and remove
+      const staffToAdd = selectedStaff.filter(name => !currentStaff.includes(name));
+      const staffToRemove = currentStaff.filter(name => !selectedStaff.includes(name));
+      
+      // Remove staff
+      for (const entry of currentEntries) {
+        if (staffToRemove.includes(entry.assigned_name)) {
+          await deleteRosterEntry(entry.id);
+        }
+      }
+      
+      // Add new staff
+      for (const staffName of staffToAdd) {
+        await addRosterEntry({
+          date: editingDate,
+          shiftType: selectedShift,
+          assignedName: staffName,
+          changeDescription: `Added by ${editorName}`
+        }, editorName);
+      }
+      
+      // Refresh data
+      if (onRefresh) {
+        await onRefresh();
+      }
+      setRefreshKey(prev => prev + 1);
+      
+      handleCancelStaffEdit();
+      
+    } catch (error) {
+      console.error('Failed to update roster:', error);
+      alert('Failed to update roster. Please try again.');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleCancelStaffEdit = () => {
+    setShowStaffEditModal(false);
+    setEditingDate(null);
+    setSelectedShift('');
+    setSelectedStaff([]);
+    setAuthCode('');
   };
   
   // Handle showing details modal
@@ -983,7 +1065,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         isToday={isToday(date)}
                         isPastDate={isPastDate(date)}
                         isFutureDate={isFutureDate(date)}
-                        onLongPress={() => handleDateLongPress(date)}
+                        onLongPress={() => handleStaffEditLongPress(date)}
                         formatTableDate={formatTableDate}
                       />
                       {shiftTypes.map((shiftType) => {
@@ -1104,6 +1186,128 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
 
       </div>
 
+      {/* Staff Edit Modal */}
+      {showStaffEditModal && editingDate && createPortal(
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 2147483647,
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            display: 'flex',
+            alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
+            justifyContent: 'center',
+            padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
+            paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
+            overflow: 'auto',
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              handleCancelStaffEdit();
+            }
+          }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full flex flex-col" style={{
+            maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
+            maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
+            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0'
+          }}>
+            <div className="border-b border-gray-200 flex-shrink-0" style={{
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
+            }}>
+              <h3 className="text-xl font-bold text-gray-900 mb-2 text-center">
+                Edit Staff Assignment
+              </h3>
+              <p className="text-sm text-gray-600 text-center">
+                {formatTableDate(editingDate).dateString} ({formatTableDate(editingDate).dayName})
+              </p>
+            </div>
+            
+            {/* Shift Selection */}
+            <div className="border-b border-gray-200 flex-shrink-0" style={{
+              padding: window.innerWidth > window.innerHeight ? '12px' : '16px'
+            }}>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Shift Type
+              </label>
+              <select
+                value={selectedShift}
+                onChange={(e) => handleShiftSelect(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                required
+              >
+                <option value="">Select shift type</option>
+                {shiftTypes.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+            
+            {/* Staff Selection - Only show when shift is selected */}
+            {selectedShift && (
+              <div className="flex-1 overflow-y-auto" style={{
+                padding: window.innerWidth > window.innerHeight ? '12px' : '16px',
+                WebkitOverflowScrolling: 'touch',
+                touchAction: 'pan-y'
+              }}>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Select Staff for {selectedShift}
+                </label>
+                <div className="space-y-2">
+                  {availableNames.map(name => (
+                    <label key={name} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedStaff.includes(name)}
+                        onChange={() => handleStaffToggle(name)}
+                        className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      />
+                      <span className="text-sm font-medium text-gray-900">{name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <div className="border-t border-gray-200 flex-shrink-0" style={{
+              padding: window.innerWidth > window.innerHeight ? '12px' : '16px'
+            }}>
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleCancelStaffEdit}
+                  disabled={isUpdating}
+                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveStaffChanges}
+                  disabled={isUpdating || !selectedShift}
+                  className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center justify-center space-x-2"
+                >
+                  {isUpdating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <span>Save Changes</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        , document.body
+      )}
+
       {/* Authentication Modal */}
       {showAuthModal && createPortal(
         <div 
@@ -1145,11 +1349,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           }}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
-              if (selectedSpecialDate && !editingDate) {
-                handleCancelAuth();
-              } else {
-                handleCancelEdit();
-              }
+              handleCancelAuth();
             }
             e.stopPropagation();
           }}
@@ -1166,7 +1366,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               onClick={(e) => e.stopPropagation()}
             >
               <button
-                onClick={selectedSpecialDate && !editingDate ? handleCancelAuth : handleCancelEdit}
+                onClick={handleCancelAuth}
                 className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200"
                 style={{
                   position: 'absolute',
@@ -1179,7 +1379,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               </button>
               
               <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
-                {selectedSpecialDate && !editingDate ? 'Admin Authentication Required' : 'Authentication Required'}
+                Admin Authentication Required
               </h3>
               
               <div className="mb-4">
@@ -1204,35 +1404,16 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 </div>
               )}
               
-              {!selectedSpecialDate && (
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Select Shift Type
-                  </label>
-                  <select
-                    value={selectedShift}
-                    onChange={(e) => setSelectedShift(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    required
-                  >
-                    <option value="">Select shift type</option>
-                    {shiftTypes.map(type => (
-                      <option key={type} value={type}>{type}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              
               <div className="flex space-x-3">
                 <button
-                  onClick={selectedSpecialDate && !editingDate ? handleCancelAuth : handleCancelEdit}
+                  onClick={handleCancelAuth}
                   className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleAuthSubmit}
-                  disabled={authCode.length < 4 || (!selectedSpecialDate && (!selectedShift || !isAdminCode(authCode)))}
+                  disabled={authCode.length < 4 || !isAdminCode(authCode)}
                   className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200"
                 >
                   Continue

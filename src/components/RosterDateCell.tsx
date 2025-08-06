@@ -7,6 +7,7 @@ interface RosterDateCellProps {
   isPastDate: boolean;
   isFutureDate: boolean;
   onLongPress: () => void;
+  isSpecialDate?: boolean;
   formatTableDate: (dateString: string) => { dayName: string; dateString: string };
 }
 
@@ -16,6 +17,7 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
   isPastDate,
   isFutureDate,
   onLongPress,
+  isSpecialDate = false,
   formatTableDate
 }) => {
   return (
@@ -36,7 +38,8 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
         backgroundColor: isToday ? '#bbf7d0' : 
                          isPastDate ? '#fef2f2' :
                          isFutureDate ? '#f0fdf4' : '#ffffff',
-        background: isToday ? '#bbf7d0' : 
+        background: isSpecialDate ? '#fecaca' : 
+                   isToday ? '#bbf7d0' : 
                    isPastDate ? '#fef2f2' :
                    isFutureDate ? '#f0fdf4' : '#ffffff',
         opacity: 1,
@@ -48,7 +51,9 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
         WebkitBackfaceVisibility: 'hidden',
         WebkitTransform: 'translate3d(0,0,0)',
         // iPhone specific
-        WebkitTouchCallout: 'none'
+        WebkitTouchCallout: 'none',
+        // Add pulsating animation for special dates
+        animation: isSpecialDate ? 'pulse 2s ease-in-out infinite' : 'none'
       }}
     >
      <button
@@ -57,6 +62,7 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
           delay: 5000
         })}
         className={`text-center w-full h-full p-1 rounded transition-colors duration-200 ${
+          isSpecialDate ? 'bg-red-300' :
           isToday ? 'bg-green-300' : 'hover:bg-gray-100'
         }`}
         style={{
@@ -97,6 +103,7 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
         }}
       >
         <div className={`font-medium text-[10px] sm:text-[12px] leading-tight relative z-20 ${
+          isSpecialDate ? 'text-red-900' :
           isToday ? 'text-green-900' : 'text-gray-900'
         }`} style={{
           textAlign: 'center',
@@ -107,6 +114,7 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
           {formatTableDate(date).dayName}
         </div>
         <div className={`font-medium text-[10px] sm:text-[12px] leading-tight relative z-20 ${
+          isSpecialDate ? 'text-red-900' :
           isToday ? 'text-green-900' : 'text-gray-900'
         }`} style={{
           textAlign: 'center',

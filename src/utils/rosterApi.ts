@@ -293,3 +293,69 @@ export const clearMonthRosterEntries = async (year: number, month: number): Prom
     throw error;
   }
 };
+
+export const updateAllStaffRemarksForDate = async (date: string, info: string, editorName: string): Promise<void> => {
+  if (!supabase) {
+    throw new Error('Supabase not available. Please configure your Supabase credentials in .env file or src/lib/supabase.ts');
+  }
+
+  try {
+    console.log(`📝 Updating all staff remarks for ${date} with info: "${info}"`);
+    
+    const now = new Date();
+    const timestamp = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+    
+    // Get all entries for this date
+    const { data: dateEntries, error: fetchError } = await supabase
+      .from('roster_entries')
+      .select('*')
+      .eq('date', date);
+
+    if (fetchError) {
+      console.error('❌ Error fetching entries for date:', fetchError);
+      throw new Error(`Failed to fetch entries for date: ${fetchError.message}`);
+    }
+
+    if (!dateEntries || dateEntries.length === 0) {
+      console.log(`ℹ️ No entries found for date ${date}`);
+      return;
+    }
+
+    console.log(`📝 Found ${dateEntries.length} entries to update for ${date}`);
+
+    // Update each entry's change_description to include special date info
+    for (const entry of dateEntries) {
+      let newChangeDescription = entry.change_description || '';
+      
+      // Remove any existing special date info
+      newChangeDescription = newChangeDescription.replace(/Special Date: [^;]*;?\s*/g, '');
+      
+      // Add new special date info if provided
+      if (info.trim()) {
+        const specialInfo = `Special Date: ${info.trim()}`;
+        newChangeDescription = newChangeDescription ? 
+          `${specialInfo}; ${newChangeDescription}` : 
+          specialInfo;
+      }
+      
+      const { error: updateError } = await supabase
+        .from('roster_entries')
+        .update({
+          change_description: newChangeDescription || null,
+          last_edited_by: editorName,
+          last_edited_at: timestamp
+        })
+        .eq('id', entry.id);
+
+      if (updateError) {
+        console.error(`❌ Error updating entry ${entry.id}:`, updateError);
+        throw new Error(`Failed to update entry: ${updateError.message}`);
+      }
+    }
+
+    console.log(`✅ Successfully updated ${dateEntries.length} entries for ${date}`);
+  } catch (error) {
+    console.error('❌ Network error updating staff remarks:', error);
+    throw error;
+  }
+};
