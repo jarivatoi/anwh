@@ -516,7 +516,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   }
                 }}
                 disabled={isRefreshing}
-                className="p-3 rounded-lg hover:bg-blue-100 text-blue-600 transition-colors duration-200 flex items-center justify-center relative"
+                className="p-3 rounded-lg hover:bg-blue-100 text-blue-600 transition-colors duration-200 flex items-center justify-center"
                 style={{
                   touchAction: 'manipulation',
                   WebkitTapHighlightColor: 'transparent',
@@ -530,21 +530,23 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   'Manual refresh (Real-time disconnected)'
                 }
               >
-                <RotateCcw 
-                  className={`w-6 h-6 ${isRefreshing ? 'animate-spin' : ''}`}
-                />
-                
-                {/* Real-time status dot */}
-                <div 
-                  className="absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-white"
-                  style={{
-                    backgroundColor: realtimeStatus === 'connected' ? '#10b981' : 
-                                    realtimeStatus === 'connecting' ? '#f59e0b' :
-                                    realtimeStatus === 'error' ? '#ef4444' : '#6b7280',
-                    animation: realtimeStatus === 'connecting' ? 'pulse 1.5s ease-in-out infinite' : 'none',
-                    boxShadow: realtimeStatus === 'connected' ? '0 0 8px rgba(16, 185, 129, 0.8)' : 'none'
-                  }}
-                />
+                <div className="flex items-center space-x-1">
+                  <RotateCcw 
+                    className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`}
+                  />
+                  
+                  {/* Real-time status dot - same level as icon */}
+                  <div 
+                    className="w-2 h-2 rounded-full"
+                    style={{
+                      backgroundColor: realtimeStatus === 'connected' ? '#10b981' : 
+                                      realtimeStatus === 'connecting' ? '#f59e0b' :
+                                      realtimeStatus === 'error' ? '#ef4444' : '#6b7280',
+                      animation: realtimeStatus === 'connecting' ? 'pulse 1.5s ease-in-out infinite' : 'none',
+                      boxShadow: realtimeStatus === 'connected' ? '0 0 6px rgba(16, 185, 129, 0.8)' : 'none'
+                    }}
+                  />
+                </div>
               </button>
             </div>
           </div>
