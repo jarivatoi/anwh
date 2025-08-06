@@ -804,6 +804,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                 fontSize={window.innerWidth > window.innerHeight ? '10px' : '12px'}
                                 lineHeight={window.innerWidth > window.innerHeight ? '12px' : '14px'}
                                 isSpecialDate={isSpecialDate(date)}
+                                specialDateInfo={getSpecialDateInfo(date)}
                               />
                             ))}
                           </div>

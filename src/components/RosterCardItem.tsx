@@ -13,6 +13,7 @@ interface RosterCardItemProps {
   onShowDetails?: (entry: RosterEntry) => void;
   allEntriesForShift?: RosterEntry[];
   isSpecialDate?: boolean;
+  specialDateInfo?: string;
 }
 
 export const RosterCardItem: React.FC<RosterCardItemProps> = ({
@@ -20,7 +21,8 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
   onUpdate,
   onShowDetails,
   allEntriesForShift = [],
-  isSpecialDate = false
+  isSpecialDate = false,
+  specialDateInfo
 }) => {
   const [showStaffModal, setShowStaffModal] = useState(false);
   const [authCode, setAuthCode] = useState('');
@@ -194,7 +196,7 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
           position: 'relative',
           zIndex: 60,
           // Add pulsing animation only for special dates with actual info
-          animation: (isSpecialDate && getSpecialDateInfo && getSpecialDateInfo()) ? 'pulse 2s ease-in-out infinite' : 'none'
+          animation: (isSpecialDate && specialDateInfo) ? 'pulse 2s ease-in-out infinite' : 'none'
         }}
       >
         <ScrollingText 

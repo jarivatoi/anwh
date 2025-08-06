@@ -13,6 +13,7 @@ interface RosterEntryCellProps {
   onShowDetails?: (entry: RosterEntry) => void;
   allEntriesForShift?: RosterEntry[];
   isSpecialDate?: boolean;
+  specialDateInfo?: string;
 }
 
 export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
@@ -20,7 +21,8 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
   onUpdate,
   onShowDetails,
   allEntriesForShift = [],
-  isSpecialDate = false
+  isSpecialDate = false,
+  specialDateInfo
 }) => {
   const [showStaffModal, setShowStaffModal] = useState(false);
   const [authCode, setAuthCode] = useState('');
@@ -223,7 +225,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
           position: 'relative',
           zIndex: 60,
           // Add pulsing animation only for special dates with actual info
-          animation: (isSpecialDate && getSpecialDateInfo && getSpecialDateInfo()) ? 'pulse 2s ease-in-out infinite' : 'none'
+          animation: (isSpecialDate && specialDateInfo) ? 'pulse 2s ease-in-out infinite' : 'none'
         }}
       >
         <ScrollingText 
