@@ -446,7 +446,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           </button>
           
           <div className="flex items-center space-x-3">
-            <Calendar className="w-5 h-5 text-indigo-600" />
             <button
               onClick={onExportToCalendar}
               className="p-1 bg-green-600 hover:bg-green-700 text-white rounded transition-colors duration-200"
@@ -454,6 +453,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             >
               <Download className="w-3 h-3" />
             </button>
+            <Calendar className="w-5 h-5 text-indigo-600" />
             <h3 className="text-lg font-semibold text-gray-900">
               {formatMonthYear()}
             </h3>
