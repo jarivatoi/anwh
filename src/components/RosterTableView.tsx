@@ -53,6 +53,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const [selectedShiftForAdd, setSelectedShiftForAdd] = useState<string>('');
   const [selectedStaffForAdd, setSelectedStaffForAdd] = useState<string[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [selectedShift, setSelectedShift] = useState<string>('');
   
   const isMountedRef = useRef(true);
 
@@ -441,55 +442,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     <>
       {/* Month Navigation Header */}
       <div className="bg-white rounded-lg mb-4 p-4 shadow-sm sticky top-0 z-50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={() => navigateMonth('prev')}
-              className="p-2 rounded-lg text-gray-600 transition-colors duration-200"
-              title="Previous month"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-          </div>
-          
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={onExportToCalendar}
-              className="p-1 bg-green-600 hover:bg-green-700 text-white rounded transition-colors duration-200"
-              title="Export to Calendar"
-            >
-              <Download className="w-3 h-3" />
-            </button>
-            <Calendar className="w-5 h-5 text-indigo-600" />
-            
-            {/* Month selector */}
-            <select
-              value={selectedDate.getMonth()}
-              onChange={(e) => {
-                const newDate = new Date(selectedDate);
-                newDate.setMonth(parseInt(e.target.value));
-                onDateChange(newDate);
-              }}
-              disabled={isRefreshing}
-              className="text-lg font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-2 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {[
-                'January', 'February', 'March', 'April', 'May', 'June',
-                'July', 'August', 'September', 'October', 'November', 'December'
-              ].map((month, index) => (
-                <option key={index} value={index}>{month}</option>
-              ))}
-            </select>
-            
-            {/* Year selector */}
-            <select
-              value={selectedDate.getFullYear()}
-              onChange={(e) => {
-                const newDate = new Date(selectedDate);
-                newDate.setFullYear(parseInt(e.target.value));
-                onDateChange(newDate);
-              }}
-              disabled={isRefreshing}
         <div className="grid grid-cols-5 gap-2 items-center w-full">
           {/* Left Arrow - Grid Column 1 */}
           <div className="flex justify-center">
@@ -888,23 +840,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 </div>
               )}
               
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Shift Type
-                </label>
-                <select
-                  value={selectedShift}
-                  onChange={(e) => setSelectedShift(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  required
-                >
-                  <option value="">Select shift type</option>
-                  {shiftTypes.map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </div>
-              
               {/* Shift Selection - Show when admin code is valid and action is addStaff */}
               {actionType === 'addStaff' && (
                 <div className="mb-4">
@@ -944,7 +879,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 </button>
                 <button
                   onClick={actionType === 'special' ? handleAuthSubmit : handleAuthSubmit}
-                  disabled={authCode.length < 4 || !selectedShift || !isAdminCode(authCode)}
+                  disabled={authCode.length < 4 || (actionType === 'addStaff' && !selectedShiftForAdd) || !isAdminCode(authCode)}
                   className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200"
                 >
                   {actionType === 'special' ? 'Continue' : 'Continue'}
