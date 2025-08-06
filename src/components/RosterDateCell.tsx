@@ -40,6 +40,7 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
                    isFutureDate ? '#f0fdf4' : '#ffffff',
         opacity: 1,
         border: '2px solid #374151',
+        width: '15%',
         // Force proper rendering after orientation change
         transform: 'translate3d(0,0,0)',
         backfaceVisibility: 'hidden',

@@ -503,20 +503,24 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         </div>
       </div>
 
-      <div className="bg-white overflow-hidden" style={{
+      <div className="bg-white" style={{
         width: '100vw',
         marginLeft: 'calc(-50vw + 50%)',
-        marginRight: 'calc(-50vw + 50%)'
+        marginRight: 'calc(-50vw + 50%)',
+        overflowX: 'hidden'
       }}>
-        <div className="overflow-x-auto" style={{ 
+        <div style={{ 
           height: window.innerWidth > window.innerHeight ? '60vh' : '70vh',
           minHeight: '400px',
           maxHeight: '80vh',
-          WebkitOverflowScrolling: 'touch'
+          WebkitOverflowScrolling: 'touch',
+          overflowX: 'hidden',
+          overflowY: 'auto'
         }}>
           <table style={{
             width: '100%',
-            borderCollapse: 'collapse'
+            borderCollapse: 'collapse',
+            tableLayout: 'fixed'
           }}>
             <thead>
               <tr>
@@ -530,7 +534,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   textAlign: 'center',
                   fontSize: '14px',
                   fontWeight: 'bold',
-                  border: '2px solid #374151'
+                  border: '2px solid #374151',
+                  width: '15%'
                 }}>
                   Date
                 </th>
@@ -545,8 +550,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     textAlign: 'center',
                     fontSize: '12px',
                     fontWeight: 'bold',
-                    minWidth: '120px',
-                    border: '2px solid #374151'
+                    border: '2px solid #374151',
+                    width: '21.25%'
                   }}>
                     <ScrollingText text={shiftType} className="text-white font-bold" />
                   </th>
@@ -580,8 +585,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         border: '2px solid #374151',
                         backgroundColor: '#ffffff',
                         position: 'relative',
-                        minWidth: '120px',
-                        maxWidth: '120px',
+                        width: '21.25%',
                         overflow: 'hidden',
                         cursor: 'pointer'
                       }}>
