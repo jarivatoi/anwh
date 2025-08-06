@@ -1174,29 +1174,6 @@ export const Calendar: React.FC<CalendarProps> = ({
                       </div>
                     </div>
                     
-                    {/* Content container - grows to fill available space */}
-                    <div className={`flex flex-col items-center justify-start space-y-0.5 sm:space-y-1 px-0.5 select-none min-w-0 flex-1 ${isPastDate(day) ? 'z-30' : ''}`}>
-                      {/* Special date indicator */}
-                      {hasSpecialDate && (
-                        <div 
-                          className="special-text text-[9px] sm:text-[11px] text-red-500 font-bold leading-tight mt-0.5 flex justify-center select-none w-full"
-                          style={{
-                            minHeight: '12px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            padding: '1px 2px',
-                            borderRadius: '2px',
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                            border: '1px solid rgba(239, 68, 68, 0.3)'
-                          }}
-                        >
-                          <div className="text-center select-none whitespace-nowrap overflow-hidden text-ellipsis w-full">
-                            SPECIAL
-                          </div>
-                        </div>
-                      )}
-                      
                       {/* All shifts displayed */}
                       {dayShifts.map((shiftId, idx) => {
                         const shift = getShiftDisplay(shiftId);
