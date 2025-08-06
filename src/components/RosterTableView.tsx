@@ -727,36 +727,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                           cursor: 'pointer'
                         }}>
                           <div
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              const timer = setTimeout(() => {
-                                handleShiftCellLongPress(date, shiftType);
-                              }, 1000);
-                              
-                              const cleanup = () => {
-                                clearTimeout(timer);
-                                document.removeEventListener('mouseup', cleanup);
-                                document.removeEventListener('mouseleave', cleanup);
-                              };
-                              
-                              document.addEventListener('mouseup', cleanup);
-                              document.addEventListener('mouseleave', cleanup);
-                            }}
-                            onTouchStart={(e) => {
-                              e.preventDefault();
-                              const timer = setTimeout(() => {
-                                handleShiftCellLongPress(date, shiftType);
-                              }, 1000);
-                              
-                              const cleanup = () => {
-                                clearTimeout(timer);
-                                document.removeEventListener('touchend', cleanup);
-                                document.removeEventListener('touchcancel', cleanup);
-                              };
-                              
-                              document.addEventListener('touchend', cleanup);
-                              document.addEventListener('touchcancel', cleanup);
-                            }}
                             style={{
                               position: 'absolute',
                               top: 0,
@@ -770,7 +740,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                               border: 'none',
                               outline: 'none'
                             }}
-                            title="Long press to add/remove staff (Admin)"
                           />
                           
                           {isPastDate(date) && (
