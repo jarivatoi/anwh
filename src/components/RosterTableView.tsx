@@ -37,6 +37,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const [hasAutoScrolled, setHasAutoScrolled] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isReloading, setIsReloading] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState('');
   const [refreshingDate, setRefreshingDate] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -478,58 +479,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   console.log('🔄 ROSTER TABLE: Export to Calendar button clicked');
                   onExportToCalendar();
                 }}
-      {/* Month Navigation Header */}
-      <div className="bg-white rounded-lg mb-4 p-4 shadow-sm sticky top-0 z-50">
-        <div className="flex items-center w-full">
-          {/* Left Arrow */}
-          <button
-            onClick={() => navigateMonth('prev')}
-            className="flex-1 p-3 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors duration-200 flex items-center justify-center"
-            style={{
-              touchAction: 'manipulation',
-              WebkitTapHighlightColor: 'transparent',
-              height: '44px'
-            }}
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          
-          {/* Center Content - Equally distributed and centered */}
-          <div className="flex-1 flex items-center justify-center">
-            <div className="flex items-center justify-center space-x-6">
-              {/* Calendar Icon */}
-              <Calendar className="w-6 h-6 text-indigo-600" />
-              
-              {/* Month Selector */}
-              <select
-                value={selectedDate.getMonth()}
-                onChange={(e) => {
-                  const newDate = new Date(selectedDate);
-                  newDate.setMonth(Number(e.target.value));
-                  onDateChange(newDate);
-                }}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-semibold text-gray-900 bg-white text-center"
-                style={{
-                  touchAction: 'manipulation',
-                  WebkitTapHighlightColor: 'transparent',
-                  textAlign: 'center',
-                  minWidth: '120px'
-                }}
-              >
-                {[
-                  'January', 'February', 'March', 'April', 'May', 'June',
-                  'July', 'August', 'September', 'October', 'November', 'December'
-                ].map((month, index) => (
-                  <option key={index} value={index}>{month}</option>
-                ))}
-              </select>
-              
-              {/* Export Button */}
-              <button
-                onClick={() => {
-                  console.log('🔄 ROSTER TABLE: Export to Calendar button clicked');
-                  onExportToCalendar();
-                }}
                 className="p-3 rounded-lg text-green-600 flex items-center justify-center"
                 style={{
                   touchAction: 'manipulation',
@@ -639,7 +588,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         </div>
       </div>
 
-      {/* Table Content */}
       {/* Table Content */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
