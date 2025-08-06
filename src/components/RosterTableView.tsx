@@ -352,34 +352,26 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
 
   // Handle authentication
   const handleAuthSubmit = () => {
-    console.log('🔐 handleAuthSubmit called with:', { authCode, actionType, selectedSpecialDate, editingDate });
+    console.log('🔐 handleAuthSubmit called with:', { authCode, actionType, editingDate, selectedSpecialDate });
     
     const editorName = validateAuthCode(authCode);
     if (!editorName || !isAdminCode(authCode)) {
       setAuthError(!editorName ? 'Invalid authentication code' : 'Admin access required for date editing');
       return;
     }
-    
+
     console.log('✅ Authentication successful, actionType:', actionType);
     
     if (actionType === 'special') {
       console.log('🌟 Opening special date modal for:', selectedSpecialDate);
       setShowAuthModal(false);
-      setShowSpecialDateModal(true);
       setAuthError('');
+      setShowSpecialDateModal(true);
     } else if (actionType === 'staff') {
       console.log('👥 Opening staff edit modal for:', editingDate);
       setShowAuthModal(false);
-      setShowStaffEditModal(true);
       setAuthError('');
-      
-      // Get current staff for the selected date and shift
-      if (editingDate && selectedShift) {
-        const dateEntries = groupedByDate[editingDate] || [];
-        const currentEntries = dateEntries.filter(entry => entry.shift_type === selectedShift);
-        const currentStaff = currentEntries.map(entry => entry.assigned_name);
-        setSelectedStaff(currentStaff);
-      }
+      setShowStaffEditModal(true);
     }
   };
 
@@ -1143,7 +1135,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         isToday={isToday(date)}
                         isPastDate={isPastDate(date)}
                         isFutureDate={isFutureDate(date)}
-                        onLongPress={() => handleSpecialDateLongPress(date)}
+                        onLongPress={() => handleStaffEditLongPress(date)}
                         isSpecialDate={isSpecialDate}
                         specialDateInfo={specialDateInfo?.info}
                         formatTableDate={formatTableDate}
