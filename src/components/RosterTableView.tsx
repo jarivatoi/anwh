@@ -503,7 +503,11 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         </div>
       </div>
 
-      <div className="bg-white overflow-hidden">
+      <div className="bg-white overflow-hidden" style={{
+        width: '100vw',
+        marginLeft: 'calc(-50vw + 50%)',
+        marginRight: 'calc(-50vw + 50%)'
+      }}>
         <div className="overflow-x-auto" style={{ 
           height: window.innerWidth > window.innerHeight ? '60vh' : '70vh',
           minHeight: '400px',
@@ -512,8 +516,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         }}>
           <table style={{
             width: '100%',
-            borderCollapse: 'collapse',
-            tableLayout: 'fixed'
+            borderCollapse: 'collapse'
           }}>
             <thead>
               <tr>
