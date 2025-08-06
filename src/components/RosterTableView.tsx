@@ -865,6 +865,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     onChange={(e) => setAuthCode(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     placeholder="Enter your code"
+                   maxLength={4}
                     autoFocus
                   />
                   {authError && (
