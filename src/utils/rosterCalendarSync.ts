@@ -432,18 +432,26 @@ export const syncRosterToCalendar = (
  * Check if a date is marked as special in the roster entries
  */
 const checkIfRosterDateIsSpecial = (date: string, entries: RosterEntry[]): boolean => {
+  console.log(`🌟 Checking if ${date} is special in roster entries...`);
+  
   // Get all entries for this date
   const dateEntries = entries.filter(entry => entry.date === date);
+  console.log(`🌟 Found ${dateEntries.length} entries for ${date}`);
   
   // Check if any entry has special date info in change_description
   for (const entry of dateEntries) {
+    console.log(`🌟 Checking entry: ${entry.assigned_name} - ${entry.shift_type}`);
+    console.log(`🌟 Change description: "${entry.change_description}"`);
+    
     if (entry.change_description && entry.change_description.includes('Special Date:')) {
       const match = entry.change_description.match(/Special Date:\s*([^;]+)/);
       if (match && match[1].trim()) {
+        console.log(`🌟 Found special date info: "${match[1].trim()}"`);
         return true;
       }
     }
   }
   
+  console.log(`🌟 No special date info found for ${date}`);
   return false;
 };

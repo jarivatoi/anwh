@@ -139,6 +139,18 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
       const calendarUpdates: Record<string, string[]> = {};
       const specialDateUpdates: Record<string, boolean> = {};
       
+      // First, check for special dates in ALL entries (not just staff entries)
+      console.log('🌟 Checking for special dates in all entries...');
+      allEntries.forEach(entry => {
+        if (entry.change_description && entry.change_description.includes('Special Date:')) {
+          const match = entry.change_description.match(/Special Date:\s*([^;]+)/);
+          if (match && match[1].trim()) {
+            specialDateUpdates[entry.date] = true;
+            console.log(`🌟 Found special date: ${entry.date} - "${match[1].trim()}"`);
+          }
+        }
+      });
+      
       staffEntries.forEach(entry => {
         const date = entry.date;
         
@@ -182,7 +194,7 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
           specialDateUpdates,
           editorName: authenticatedStaffName,
           source: 'calendar_export',
-          entries: staffEntries // Pass the entries for special date checking
+          entries: allEntries // Pass ALL entries for special date checking
         }
       }));
       
