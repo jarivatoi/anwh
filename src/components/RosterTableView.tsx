@@ -327,9 +327,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const handleSpecialDateLongPress = (date: string) => {
     console.log('🌟 Special date long press for:', date);
     
-    // Set the selected special date FIRST
-    setSelectedSpecialDate(date);
-    
     // Get existing special info before setting selected date
     const existingInfo = getExistingSpecialInfo(date);
     console.log('🌟 Existing special info for', date, ':', existingInfo);
@@ -340,9 +337,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       [date]: existingInfo
     }));
     
-    // Set action type and show auth modal
-    setActionType('special');
+    setSelectedSpecialDate(date);
     setShowAuthModal(true);
+    setActionType('special');
   };
 
   // Handle staff edit long press  
@@ -355,26 +352,36 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
 
   // Handle authentication
   const handleAuthSubmit = () => {
-    console.log('🔐 handleAuthSubmit called with:', { authCode, actionType, editingDate, selectedSpecialDate });
+    console.log('🔐 handleAuthSubmit called with:', { authCode, actionType, selectedSpecialDate, editingDate });
     
     const editorName = validateAuthCode(authCode);
     if (!editorName || !isAdminCode(authCode)) {
       setAuthError(!editorName ? 'Invalid authentication code' : 'Admin access required for date editing');
+      console.log('❌ Authentication failed:', { editorName, isAdmin: isAdminCode(authCode) });
       return;
     }
-
-    console.log('✅ Authentication successful, actionType:', actionType);
+    
+    console.log('✅ Authentication successful, editorName:', editorName);
+    console.log('🔄 Processing action type:', actionType);
     
     if (actionType === 'special') {
-      console.log('🌟 Opening special date modal for:', selectedSpecialDate);
+      console.log('🌟 Opening special date modal for date:', selectedSpecialDate);
       setShowAuthModal(false);
-      setAuthError('');
       setShowSpecialDateModal(true);
-    } else if (actionType === 'staff') {
-      console.log('👥 Opening staff edit modal for:', editingDate);
-      setShowAuthModal(false);
       setAuthError('');
+    } else if (actionType === 'staff') {
+      console.log('👥 Opening staff edit modal for date:', editingDate);
+      setShowAuthModal(false);
       setShowStaffEditModal(true);
+      setAuthError('');
+      
+      // Get current staff for the selected date and shift
+      if (editingDate && selectedShift) {
+        const dateEntries = groupedByDate[editingDate] || [];
+        const currentEntries = dateEntries.filter(entry => entry.shift_type === selectedShift);
+        const currentStaff = currentEntries.map(entry => entry.assigned_name);
+        setSelectedStaff(currentStaff);
+      }
     }
   };
 
@@ -1138,7 +1145,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         isToday={isToday(date)}
                         isPastDate={isPastDate(date)}
                         isFutureDate={isFutureDate(date)}
-                        onLongPress={() => handleSpecialDateLongPress(date)}
+                        onLongPress={() => handleStaffEditLongPress(date)}
                         isSpecialDate={isSpecialDate}
                         specialDateInfo={specialDateInfo?.info}
                         formatTableDate={formatTableDate}
