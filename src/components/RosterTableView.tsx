@@ -696,7 +696,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       onDoublePress={() => handleSpecialDateDoublePress(date)}
                       onLongPress={() => handleDateCellLongPress(date)}
                       isSpecialDate={isSpecialDate(date) && getSpecialDateInfo(date) !== null}
-                      specialDateInfo={getSpecialDateInfo(date)}
+                     className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`}
                     />
                     
                     {shiftTypes.map(shiftType => {
