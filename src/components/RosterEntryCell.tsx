@@ -228,7 +228,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
       >
         <ScrollingText 
           text={entry.assigned_name}
-          className={`text-center w-full ${isSpecialDate ? 'animate-pulse' : ''}`}
+          className="text-center w-full"
           style={{
             color: getTextColor(),
             fontWeight: '500',

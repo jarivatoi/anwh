@@ -106,20 +106,22 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
           textAlign: 'center',
           width: '100%',
           display: 'block',
-          fontSize: window.innerWidth > window.innerHeight ? '10px' : '12px'
+          fontSize: window.innerWidth > window.innerHeight ? '10px' : '12px',
+          animation: isSpecialDate ? 'pulse 2s ease-in-out infinite' : 'none'
         }}>
-          {formatTableDate(date).dayName}
-        </div>
-        <div className={`font-medium text-[10px] sm:text-[12px] leading-tight relative z-20 ${
-          isSpecialDate ? 'text-red-900' :
-          isToday ? 'text-green-900' : 'text-gray-900'
-        }`} style={{
-          textAlign: 'center',
-          width: '100%',
-          display: 'block',
-          fontSize: window.innerWidth > window.innerHeight ? '10px' : '12px'
-        }}>
-          {formatTableDate(date).dateString}
+          <div style={{ textAlign: 'center' }}>
+            {formatTableDate(date).dateString.split('-')[0]}
+          </div>
+          <div style={{ textAlign: 'center', fontSize: '8px' }}>
+            {(() => {
+              const dateObj = new Date(date);
+              const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+              return monthNames[dateObj.getMonth()];
+            })()}
+          </div>
+          <div style={{ textAlign: 'center', fontSize: '8px' }}>
+            {new Date(date).getFullYear()}
+          </div>
         </div>
         
         {/* Special Date Info - Scrolling Text at Bottom */}
