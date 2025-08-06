@@ -118,6 +118,15 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
 
   // Auto-scroll to today's date when component first loads
   useEffect(() => {
+    console.log('🔍 TABLE AUTO-SCROLL: Effect triggered', {
+      loading,
+      entriesLength: filteredEntries.length,
+      selectedMonth: selectedDate.getMonth(),
+      selectedYear: selectedDate.getFullYear(),
+      currentMonth: new Date().getMonth(),
+      currentYear: new Date().getFullYear()
+    });
+    
     const today = new Date();
     const isCurrentMonth = selectedDate.getMonth() === today.getMonth() && 
                            selectedDate.getFullYear() === today.getFullYear();
@@ -125,34 +134,64 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             filteredEntries.length > 0 && 
                             isCurrentMonth;
     
+    console.log('🔍 TABLE AUTO-SCROLL: Should auto-scroll?', {
+      shouldAutoScroll,
+      isCurrentMonth,
+      loading,
+      entriesLength: filteredEntries.length
+    });
+    
     if (shouldAutoScroll) {
       const todayString = today.toISOString().split('T')[0];
-      console.log(`📍 Attempting auto-scroll to today: ${todayString}`);
+      console.log(`📍 TABLE AUTO-SCROLL: Attempting auto-scroll to today: ${todayString}`);
       
       const todayEntry = filteredEntries.find(entry => entry.date === todayString);
       
+      console.log('🔍 TABLE AUTO-SCROLL: Today entry found?', {
+        todayEntry: !!todayEntry,
+        todayString,
+        firstFewEntries: filteredEntries.slice(0, 3).map(e => e.date)
+      });
+      
       if (todayEntry) {
-        console.log(`📍 Found today's entry, scrolling to: ${todayString}`);
+        console.log(`📍 TABLE AUTO-SCROLL: Found today's entry, scrolling to: ${todayString}`);
         setTimeout(() => {
-          const todaySection = document.querySelector(`[data-date="${todayString}"]`);
+          // Try multiple selectors to find today's row
+          const todaySection = document.querySelector(`[data-date="${todayString}"]`) ||
+                              document.querySelector(`tr[data-date="${todayString}"]`) ||
+                              document.querySelector(`*[data-date="${todayString}"]`);
+          
+          console.log('🔍 TABLE AUTO-SCROLL: DOM element search result:', {
+            todayString,
+            elementFound: !!todaySection,
+            elementType: todaySection?.tagName,
+            allDataDateElements: document.querySelectorAll('[data-date]').length
+          });
+          
           if (todaySection) {
             todaySection.scrollIntoView({ 
               behavior: 'smooth', 
               block: 'center' 
             });
-            console.log(`📍 Auto-scrolled to today's date: ${todayString}`);
+            console.log(`📍 TABLE AUTO-SCROLL: Successfully scrolled to today's date: ${todayString}`);
           } else {
-            console.log(`❌ Could not find element with data-date="${todayString}"`);
+            console.log(`❌ TABLE AUTO-SCROLL: Could not find element with data-date="${todayString}"`);
+            
+            // Debug: List all data-date elements
+            const allDataDateElements = document.querySelectorAll('[data-date]');
+            console.log('🔍 TABLE AUTO-SCROLL: All data-date elements found:', 
+              Array.from(allDataDateElements).map(el => el.getAttribute('data-date')));
           }
-        }, 500); // Longer delay to ensure DOM is ready
+        }, 800); // Even longer delay to ensure DOM is ready
       } else {
-        console.log(`❌ No entry found for today: ${todayString}`);
+        console.log(`❌ TABLE AUTO-SCROLL: No entry found for today: ${todayString}`);
       }
     }
   }, [loading, filteredEntries, selectedDate]);
 
   // Track when component mounts (tab switch) and trigger auto-scroll
   useEffect(() => {
+    console.log('🔍 TABLE AUTO-SCROLL: Tab switch effect triggered');
     setLastTabSwitch(Date.now());
     
     // Force auto-scroll on tab switch with delay
@@ -161,22 +200,39 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       const isCurrentMonth = selectedDate.getMonth() === today.getMonth() && 
                              selectedDate.getFullYear() === today.getFullYear();
       
+      console.log('🔍 TABLE AUTO-SCROLL: Tab switch auto-scroll check:', {
+        loading,
+        entriesLength: filteredEntries.length,
+        isCurrentMonth
+      });
+      
       if (isCurrentMonth) {
         const todayString = today.toISOString().split('T')[0];
         const todayEntry = filteredEntries.find(entry => entry.date === todayString);
         
         if (todayEntry) {
-          console.log(`📍 Tab switch auto-scroll to: ${todayString}`);
+          console.log(`📍 TABLE AUTO-SCROLL: Tab switch - scrolling to: ${todayString}`);
           setTimeout(() => {
-            const todaySection = document.querySelector(`[data-date="${todayString}"]`);
+            const todaySection = document.querySelector(`[data-date="${todayString}"]`) ||
+                                document.querySelector(`tr[data-date="${todayString}"]`);
+            
+            console.log('🔍 TABLE AUTO-SCROLL: Tab switch DOM search:', {
+              elementFound: !!todaySection,
+              selector: `[data-date="${todayString}"]`
+            });
+            
             if (todaySection) {
               todaySection.scrollIntoView({ 
                 behavior: 'smooth', 
                 block: 'center' 
               });
-              console.log(`📍 Tab switch scrolled to today's date: ${todayString}`);
+              console.log(`📍 TABLE AUTO-SCROLL: Tab switch successfully scrolled to: ${todayString}`);
+            } else {
+              console.log(`❌ TABLE AUTO-SCROLL: Tab switch - element not found for: ${todayString}`);
             }
-          }, 800); // Even longer delay for tab switch
+          }, 1000); // Even longer delay for tab switch
+        } else {
+          console.log(`❌ TABLE AUTO-SCROLL: Tab switch - no entry for today: ${todayString}`);
         }
       }
     }
@@ -732,7 +788,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               </thead>
               <tbody>
                 {Object.entries(groupedEntries).map(([date, dateEntries]) => (
-                  <tr key={date} style={{
+                  <tr key={date} data-date={date} style={{
                     backgroundColor: isToday(date) ? '#bbf7d0' : 
                                    isPastDate(date) ? '#fef2f2' :
                                    isFutureDate(date) ? '#f0fdf4' : '#ffffff',
