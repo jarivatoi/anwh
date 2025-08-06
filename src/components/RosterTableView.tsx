@@ -206,9 +206,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     setActionType('addStaff');
     setSelectedShiftForAdd(''); // Reset shift selection
     setSelectedStaffForAdd([]);
+    setAuthCode(''); // Reset auth code
+    setAuthError(''); // Reset auth error
     setShowAuthModal(true);
-    setAuthCode('');
-    setAuthError('');
   };
 
   // Handle add staff long press
@@ -224,9 +224,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     const currentStaff = currentEntries.map(entry => entry.assigned_name);
     setSelectedStaffForAdd(currentStaff);
     
+    setAuthCode(''); // Reset auth code
+    setAuthError(''); // Reset auth error
     setShowAuthModal(true);
-    setAuthCode('');
-    setAuthError('');
   };
 
   // Handle authentication submit
@@ -257,10 +257,11 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         setShowSpecialDateModal(true);
         console.log('🌟 AUTH: Special date modal opened after auth modal closed');
       }, 100);
-    } else {
+    } else if (actionType === 'addStaff') {
       // For addStaff action, close auth modal and let the separate staff modal handle it
       setShowAuthModal(false);
       setAuthError('');
+      // The staff selection UI is handled within the auth modal itself
     }
   };
 
