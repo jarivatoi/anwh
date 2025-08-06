@@ -1424,6 +1424,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   placeholder="Enter admin code"
                   maxLength={4}
                   autoComplete="off"
+                  isSpecialDate={specialDates[date] === true}
                   autoFocus
                 />
               </div>
@@ -1877,6 +1878,10 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       <SpecialDateModal
         isOpen={showSpecialDateModal}
         date={selectedSpecialDate}
+        currentSpecialInfo={{
+          isSpecial: editingDate ? specialDates[editingDate] === true : false,
+          info: '' // You can extract this from existing entries if needed
+        }}
         currentSpecialInfo={selectedSpecialDate ? specialDates[selectedSpecialDate] : undefined}
         onSave={handleSpecialDateSave}
         onClose={() => {
