@@ -42,6 +42,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const [lastTabSwitch, setLastTabSwitch] = useState(0);
   
   // Special date modal states
   const [showSpecialDateModal, setShowSpecialDateModal] = useState(false);
@@ -117,7 +118,13 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
 
   // Auto-scroll to today's date when component first loads
   useEffect(() => {
-    if (!loading && !hasAutoScrolled && filteredEntries.length > 0 && selectedDate.getMonth() === new Date().getMonth() && selectedDate.getFullYear() === new Date().getFullYear()) {
+    const shouldAutoScroll = !loading && 
+                            filteredEntries.length > 0 && 
+                            selectedDate.getMonth() === new Date().getMonth() && 
+                            selectedDate.getFullYear() === new Date().getFullYear() &&
+                            (!hasAutoScrolled || Date.now() - lastTabSwitch < 1000);
+    
+    if (shouldAutoScroll) {
       const today = new Date();
       const todayString = today.toISOString().split('T')[0];
       
@@ -138,7 +145,13 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       
       setHasAutoScrolled(true);
     }
-  }, [loading, filteredEntries, hasAutoScrolled, selectedDate]);
+  }, [loading, filteredEntries, hasAutoScrolled, selectedDate, lastTabSwitch]);
+
+  // Reset auto-scroll when component mounts (tab switch)
+  useEffect(() => {
+    setLastTabSwitch(Date.now());
+    setHasAutoScrolled(false);
+  }, []);
 
   // Listen for roster updates
   useEffect(() => {
