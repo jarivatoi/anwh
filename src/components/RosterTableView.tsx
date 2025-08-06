@@ -554,6 +554,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     onLongPress={() => handleSpecialDateLongPress(date)}
                     isSpecialDate={isSpecialDate(date)}
                     specialDateInfo={getSpecialDateInfo(date)}
+                   formatTableDate={formatTableDate}
                     title={actionType === 'special' ? 'Admin Authentication Required' : 'Authentication Required'}
                   />
                   
