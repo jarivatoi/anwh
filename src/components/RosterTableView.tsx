@@ -13,7 +13,6 @@ import { isAdminCode } from '../utils/rosterAuth';
 import { sortByGroup } from '../utils/rosterAuth';
 import { addRosterEntry, deleteRosterEntry } from '../utils/rosterApi';
 import { EditDetailsModal } from './EditDetailsModal';
-import { SpecialDateModal } from './SpecialDateModal';
 import { ScrollingText } from './ScrollingText';
 import { fetchRosterEntries } from '../utils/rosterApi';
 import { updateRosterEntry } from '../utils/rosterApi';
