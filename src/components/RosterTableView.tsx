@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Calendar, Edit, FileText, Download, RefreshCw, Star, AlertTriangle, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { Calendar, Edit, FileText, Download, RefreshCw, Star, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { RosterEntry, ShiftFilterType } from '../types/roster';
 import { EditDetailsModal } from './EditDetailsModal';
 import { SpecialDateModal } from './SpecialDateModal';
@@ -37,7 +37,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const [hasAutoScrolled, setHasAutoScrolled] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isReloading, setIsReloading] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState('');
   const [refreshingDate, setRefreshingDate] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -54,7 +53,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const [selectedShiftForAdd, setSelectedShiftForAdd] = useState<string>('');
   const [selectedStaffForAdd, setSelectedStaffForAdd] = useState<string[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [selectedShift, setSelectedShift] = useState<string>('');
   
   const isMountedRef = useRef(true);
 
@@ -206,9 +204,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     setActionType('addStaff');
     setSelectedShiftForAdd(''); // Reset shift selection
     setSelectedStaffForAdd([]);
-    setAuthCode(''); // Reset auth code
-    setAuthError(''); // Reset auth error
     setShowAuthModal(true);
+    setAuthCode('');
+    setAuthError('');
   };
 
   // Handle add staff long press
@@ -224,9 +222,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     const currentStaff = currentEntries.map(entry => entry.assigned_name);
     setSelectedStaffForAdd(currentStaff);
     
-    setAuthCode(''); // Reset auth code
-    setAuthError(''); // Reset auth error
     setShowAuthModal(true);
+    setAuthCode('');
+    setAuthError('');
   };
 
   // Handle authentication submit
@@ -250,18 +248,18 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       
       // Close auth modal first
       setShowAuthModal(false);
+      setAuthCode('');
       setAuthError('');
       
-      // Open special date modal with a small delay to ensure auth modal closes
+      // Open special date modal with delay
       setTimeout(() => {
+        console.log('🌟 AUTH: Actually opening special date modal now');
         setShowSpecialDateModal(true);
-        console.log('🌟 AUTH: Special date modal opened after auth modal closed');
       }, 100);
-    } else if (actionType === 'addStaff') {
+    } else {
       // For addStaff action, close auth modal and let the separate staff modal handle it
       setShowAuthModal(false);
       setAuthError('');
-      // The staff selection UI is handled within the auth modal itself
     }
   };
 
@@ -404,122 +402,125 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     return dateString > today;
   };
 
-  // Check if date is special
-  const isSpecialDate = (dateString: string) => {
-    const dateEntries = groupedEntries[dateString] || [];
-    return dateEntries.some(entry => entry.staff_remarks && entry.staff_remarks.trim() !== '');
-  };
-
-  // Get special date info
-  const getSpecialDateInfo = (dateString: string) => {
-    const dateEntries = groupedEntries[dateString] || [];
-    const specialEntry = dateEntries.find(entry => entry.staff_remarks && entry.staff_remarks.trim() !== '');
-    return specialEntry?.staff_remarks || null;
-  };
-
   // Format date for table display
   const formatTableDate = (dateString: string) => {
     const date = new Date(dateString);
-    const day = date.getDate();
-    const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
-    return { day, dayName };
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayName = dayNames[date.getDay()];
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear().toString().slice(-2);
+    
+    return {
+      dayName,
+      dateString: `${day}-${month}-${year}`
+    };
   };
 
+  // Check if date has special info
+  const getSpecialDateInfo = (date: string) => {
+    const dateEntries = groupedEntries[date] || [];
+    for (const entry of dateEntries) {
+      if (entry.change_description && entry.change_description.includes('Special Date:')) {
+        const match = entry.change_description.match(/Special Date:\s*([^;]+)/);
+        if (match && match[1].trim()) {
+          return match[1].trim();
+        }
+      }
+    }
+    return null;
+  };
+
+  // Check if date is marked as special
+  const isSpecialDate = (date: string) => {
+    return getSpecialDateInfo(date) !== null;
+  };
+
+
   return (
-    <div className="space-y-4">
+    <>
       {/* Month Navigation Header */}
       <div className="bg-white rounded-lg mb-4 p-4 shadow-sm sticky top-0 z-50">
-        <div className="flex items-center w-full">
-          {/* Left Arrow */}
-          <button
-            onClick={() => navigateMonth('prev')}
-            className="flex-1 p-3 rounded-lg text-gray-600 flex items-center justify-center"
-            style={{
-              touchAction: 'manipulation',
-              WebkitTapHighlightColor: 'transparent',
-              height: '44px'
-            }}
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => navigateMonth('prev')}
+              className="p-2 rounded-lg text-gray-600 transition-colors duration-200"
+              title="Previous month"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+          </div>
           
-          {/* Center Content - Equally distributed and centered */}
-          <div className="flex-1 flex items-center justify-center">
-            <div className="flex items-center justify-between w-full max-w-md">
-              {/* Export Button */}
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={onExportToCalendar}
+              className="p-1 bg-green-600 hover:bg-green-700 text-white rounded transition-colors duration-200"
+              title="Export to Calendar"
+            >
+              <Download className="w-3 h-3" />
+            </button>
+            <Calendar className="w-5 h-5 text-indigo-600" />
+            
+            {/* Month selector */}
+            <select
+              value={selectedDate.getMonth()}
+              onChange={(e) => {
+                const newDate = new Date(selectedDate);
+                newDate.setMonth(parseInt(e.target.value));
+                onDateChange(newDate);
+              }}
+              disabled={isRefreshing}
+              className="text-lg font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-2 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {[
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'
+              ].map((month, index) => (
+                <option key={index} value={index}>{month}</option>
+              ))}
+            </select>
+            
+            {/* Year selector */}
+            <select
+              value={selectedDate.getFullYear()}
+              onChange={(e) => {
+                const newDate = new Date(selectedDate);
+                newDate.setFullYear(parseInt(e.target.value));
+                onDateChange(newDate);
+              }}
+              disabled={isRefreshing}
+              className="text-lg font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-2 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+            
+            {/* Status indicators right next to the month text */}
+            <div className="flex items-center space-x-2 ml-2">
               <button
-                onClick={() => {
-                  console.log('🔄 ROSTER TABLE: Export to Calendar button clicked');
-                  onExportToCalendar();
-                }}
-                className="p-3 rounded-lg text-green-600 flex items-center justify-center"
+                onClick={() => handleManualRefresh()}
+                disabled={isRefreshing}
+                className="p-2 rounded-lg text-gray-600 transition-colors duration-200"
+                title="Manual refresh"
                 style={{
-                  touchAction: 'manipulation',
-                  WebkitTapHighlightColor: 'transparent',
-                  width: '44px',
-                  height: '44px'
-                }}
-                title="Export your shifts to calendar"
-              >
-                <Download className="w-8 h-8" />
-              </button>
-              
-              {/* Calendar Icon */}
-              <Calendar className="w-6 h-6 text-indigo-600" />
-              
-              {/* Month Selector */}
-              <div className="text-lg font-semibold text-gray-900">
-                {`${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][selectedDate.getMonth()]} ${selectedDate.getFullYear()}`}
-              </div>
-              
-              {/* Refresh Button with Spinner and Dot */}
-              <button
-                onClick={async () => {
-                  setIsReloading(true);
-                  try {
-                    console.log('🔄 Manual refresh triggered from month selector');
-                    if (onRefresh) {
-                      await onRefresh();
-                    }
-                    setRefreshKey(prev => prev + 1);
-                    setLastUpdateTime(new Date().toLocaleTimeString());
-                    console.log('✅ Manual refresh completed');
-                  } catch (error) {
-                    console.error('Manual refresh failed:', error);
-                  } finally {
-                    setIsReloading(false);
-                  }
-                }}
-                disabled={isReloading}
-                className="p-3 rounded-lg text-blue-600 flex items-center justify-center"
-                style={{
-                  touchAction: 'manipulation',
-                  WebkitTapHighlightColor: 'transparent',
-                  width: '44px',
-                  height: '44px'
-                }}
-                title={
-                  realtimeStatus === 'connected' ? 'Manual refresh (Real-time active)' :
-                  realtimeStatus === 'connecting' ? 'Manual refresh (Connecting...)' :
-                  realtimeStatus === 'error' ? 'Manual refresh (Real-time failed)' :
-                  'Manual refresh (Real-time disconnected)'
-                }
-              >
-                {/* Spinner Container */}
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
                   justifyContent: 'center',
-                  width: '20px',
-                  height: '20px',
-                  position: 'relative'
-                }}>
-                  {/* Refresh icon with rotation animation when loading */}
+                  opacity: isRefreshing ? 1 : 0.7,
+                  visibility: 'visible'
+                }}
+              >
+                {isRefreshing ? (
                   <svg 
                     style={{
                       width: '18px',
                       height: '18px',
-                      animation: isReloading ? 'spin 1s linear infinite' : 'none',
+                      animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
+                      // Prevent icon from causing shifts
                       transform: 'translate3d(0,0,0)',
                       backfaceVisibility: 'hidden'
                     }}
@@ -534,46 +535,46 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
                     />
                   </svg>
-                </div>
-                
-                {/* Status Dot Container */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '12px',
-                  height: '12px',
-                  position: 'relative'
-                }}>
-                  {/* Real-time status indicator */}
-                  <div style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    backgroundColor: realtimeStatus === 'connected' ? '#10b981' : 
-                                    realtimeStatus === 'connecting' ? '#f59e0b' :
-                                    realtimeStatus === 'error' ? '#ef4444' : '#6b7280',
-                    animation: realtimeStatus === 'connecting' ? 'pulse 1.5s ease-in-out infinite' : 'none',
-                    boxShadow: realtimeStatus === 'connected' ? '0 0 8px rgba(16, 185, 129, 0.8)' : 'none',
-                    backfaceVisibility: 'hidden'
-                  }} />
-                </div>
+                ) : (
+                  <svg 
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
+                      // Prevent icon from causing shifts
+                      transform: 'translate3d(0,0,0)',
+                      backfaceVisibility: 'hidden'
+                    }}
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+                    />
+                  </svg>
+                )}
               </button>
+              <div className={`w-2 h-2 rounded-full ${
+                realtimeStatus === 'connected' ? 'bg-green-500 animate-pulse' : 
+                realtimeStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
+                realtimeStatus === 'error' ? 'bg-red-500' : 'bg-gray-400'
+              }`} />
             </div>
           </div>
           
-          {/* Right Arrow */}
-          <button
-            onClick={() => navigateMonth('next')}
-            className="flex-1 p-3 rounded-lg text-gray-600 flex items-center justify-center"
-            style={{
-              touchAction: 'manipulation',
-              WebkitTapHighlightColor: 'transparent',
-              height: '44px'
-            }}
-          >
-            <ChevronRight className="w-6 h-6" />
-          </button>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => navigateMonth('next')}
+              className="p-2 rounded-lg text-gray-600 transition-colors duration-200"
+              title="Next month"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -706,7 +707,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       onDoublePress={() => handleSpecialDateDoublePress(date)}
                       onLongPress={() => handleDateCellLongPress(date)}
                       isSpecialDate={isSpecialDate(date) && getSpecialDateInfo(date) !== null}
-                      className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`}
+                      specialDateInfo={getSpecialDateInfo(date)}
+                      formatTableDate={formatTableDate}
                     />
                     
                     {shiftTypes.map(shiftType => {
@@ -721,60 +723,86 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                           border: '2px solid #374151',
                           position: 'relative',
                           width: '21.25%',
-                          backgroundColor: isSpecialDate(date) ? '#fecaca' : 
-                                         isToday(date) ? '#bbf7d0' : 
-                                         isPastDate(date) ? '#fef2f2' :
-                                         isFutureDate(date) ? '#f0fdf4' : '#ffffff'
-                        }}
-                        onTouchStart={() => {
-                          const timer = setTimeout(() => {
-                            handleShiftCellLongPress(date, shiftType);
-                          }, 800);
-                          setLongPressTimer(timer);
-                        }}
-                        onTouchEnd={() => {
-                          if (longPressTimer) {
-                            clearTimeout(longPressTimer);
-                            setLongPressTimer(null);
-                          }
-                        }}
-                        onTouchCancel={() => {
-                          if (longPressTimer) {
-                            clearTimeout(longPressTimer);
-                            setLongPressTimer(null);
-                          }
-                        }}
-                        >
-                          {shiftEntries.length === 0 ? (
-                            <div style={{
-                              padding: '8px',
-                              minHeight: '50px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: '#9ca3af',
-                              fontSize: '12px'
-                            }}>
-                              -
-                            </div>
-                          ) : (
-                            <div style={{
-                              padding: '4px',
-                              minHeight: '50px',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '2px'
-                            }}>
-                              {shiftEntries.map((entry, index) => (
-                                <RosterEntryCell
-                                  key={entry.id}
-                                  entry={entry}
-                                  onClick={() => handleShowDetails(entry)}
-                                  isRefreshing={refreshingDate === entry.date}
-                                />
-                              ))}
+                          overflow: 'hidden',
+                          cursor: 'pointer'
+                        }}>
+                          <div
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              const timer = setTimeout(() => {
+                                handleShiftCellLongPress(date, shiftType);
+                              }, 1000);
+                              
+                              const cleanup = () => {
+                                clearTimeout(timer);
+                                document.removeEventListener('mouseup', cleanup);
+                                document.removeEventListener('mouseleave', cleanup);
+                              };
+                              
+                              document.addEventListener('mouseup', cleanup);
+                              document.addEventListener('mouseleave', cleanup);
+                            }}
+                            onTouchStart={(e) => {
+                              e.preventDefault();
+                              const timer = setTimeout(() => {
+                                handleShiftCellLongPress(date, shiftType);
+                              }, 1000);
+                              
+                              const cleanup = () => {
+                                clearTimeout(timer);
+                                document.removeEventListener('touchend', cleanup);
+                                document.removeEventListener('touchcancel', cleanup);
+                              };
+                              
+                              document.addEventListener('touchend', cleanup);
+                              document.addEventListener('touchcancel', cleanup);
+                            }}
+                            style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              zIndex: 5,
+                              cursor: 'pointer',
+                              touchAction: 'manipulation',
+                              backgroundColor: 'transparent',
+                              border: 'none',
+                              outline: 'none'
+                            }}
+                            title="Long press to add/remove staff (Admin)"
+                          />
+                          
+                          {isPastDate(date) && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                              <div className="font-bold select-none" style={{
+                                fontSize: window.innerWidth > window.innerHeight ? 'clamp(2rem, 8vw, 4rem)' : 'clamp(4rem, 12vw, 8rem)',
+                                lineHeight: '1',
+                                color: '#fca5a5',
+                                opacity: 0.15,
+                                transform: 'scale(1.5)'
+                              }}>
+                                X
+                              </div>
                             </div>
                           )}
+                          
+                          <div className="space-y-1 relative z-60" style={{ 
+                            minHeight: '50px',
+                            padding: '4px 2px'
+                          }}>
+                            {shiftEntries.map((entry, index) => (
+                              <RosterEntryCell
+                                key={entry.id}
+                                entry={entry}
+                                onUpdate={handleEntryUpdate}
+                                onShowDetails={handleShowDetails}
+                                allEntriesForShift={shiftEntries}
+                                isSpecialDate={isSpecialDate(date)}
+                                specialDateInfo={getSpecialDateInfo(date)}
+                              />
+                            ))}
+                          </div>
                         </td>
                       );
                     })}
@@ -786,120 +814,258 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         </div>
       )}
 
-      {/* Edit Details Modal */}
-      {showModal && selectedEntry && (
-        <EditDetailsModal
-          entry={selectedEntry}
-          onClose={() => {
-            setShowModal(false);
-            setSelectedEntry(null);
-          }}
-          onUpdate={handleEntryUpdate}
-        />
-      )}
-
-      {/* Special Date Modal */}
-      {showSpecialDateModal && selectedSpecialDate && (
-        <SpecialDateModal
-          date={selectedSpecialDate}
-          currentInfo={getSpecialDateInfo(selectedSpecialDate)}
-          onSave={handleSpecialDateSave}
-          onClose={handleCloseSpecialDateModal}
-        />
-      )}
-
       {/* Authentication Modal */}
-      {showAuthModal && (
-        createPortal(
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]" style={{ touchAction: 'none' }}>
-            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-              <h3 className="text-lg font-semibold mb-4">
-                {actionType === 'special' ? 'Mark Special Date' : 'Modify Staff Assignment'}
+      {showAuthModal && createPortal(
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 2147483647, // Maximum z-index value
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'center',
+            padding: window.innerWidth > window.innerHeight ? '4px' : '16px',
+            paddingTop: window.innerWidth > window.innerHeight ? '2px' : '16px',
+            // CRITICAL: Prevent all scrolling
+            overflow: 'auto',
+            overflowY: 'auto',
+            touchAction: 'pan-y',
+            WebkitOverflowScrolling: 'touch',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              handleCloseAuthModal();
+            }
+          }}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl w-full"
+            style={{
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
+              maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
+              display: 'flex',
+              flexDirection: 'column',
+              backgroundColor: '#ffffff',
+              zIndex: 2147483647,
+              // Enable touch interactions within modal
+              touchAction: 'auto',
+              overflow: 'hidden',
+              margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
+            }}>
+              <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
+                Authentication Required
               </h3>
               
-              {actionType === 'special' ? (
-                <p className="text-gray-600 mb-4">
-                  Enter your authentication code to mark this date as special:
-                </p>
-              ) : (
-                <div className="space-y-4 mb-4">
-                  <p className="text-gray-600">
-                    Enter your authentication code to modify staff assignments:
-                  </p>
-                  
-                  {selectedSpecialDate && (
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <p className="font-medium">Date: {new Date(selectedSpecialDate).toLocaleDateString()}</p>
-                      {selectedShiftForAdd && (
-                        <p className="text-sm text-gray-600">Shift: {selectedShiftForAdd}</p>
-                      )}
-                    </div>
-                  )}
-                  
-                  {selectedShiftForAdd && (
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700">
-                        Select Staff for {selectedShiftForAdd} shift:
-                      </label>
-                      <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-2">
-                        {availableNames.map(name => (
-                          <label key={name} className="flex items-center space-x-2 p-1 hover:bg-gray-50 rounded">
-                            <input
-                              type="checkbox"
-                              checked={selectedStaffForAdd.includes(name)}
-                              onChange={() => handleStaffToggle(name)}
-                              className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                            />
-                            <span className="text-sm">{name}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Authentication Code
+                </label>
+                <input
+                  type="text"
+                  value={authCode}
+                  onChange={(e) => setAuthCode(e.target.value.toUpperCase())}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center font-mono text-lg"
+                  placeholder="Enter admin code"
+                  maxLength={4}
+                  autoComplete="off"
+                  autoFocus
+                />
+              </div>
+              
+              {authError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-700 text-center">{authError}</p>
                 </div>
               )}
               
-              <div className="space-y-4">
-                <div>
+              {/* Shift Selection - Show when admin code is valid and action is addStaff */}
+              {actionType === 'addStaff' && (
+                <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Authentication Code
+                    Select Shift Type
                   </label>
-                  <input
-                    type="password"
-                    value={authCode}
-                    onChange={(e) => setAuthCode(e.target.value)}
+                  <select
+                    value={selectedShiftForAdd}
+                    onChange={(e) => {
+                      setSelectedShiftForAdd(e.target.value);
+                      // Get current staff for this shift when selection changes
+                      if (e.target.value && selectedSpecialDate) {
+                        const dateEntries = groupedEntries[selectedSpecialDate] || [];
+                        const currentEntries = dateEntries.filter(entry => entry.shift_type === e.target.value);
+                        const currentStaff = currentEntries.map(entry => entry.assigned_name);
+                        setSelectedStaffForAdd(currentStaff);
+                      }
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="Enter your code"
-                   maxLength={4}
-                    autoFocus
-                  />
-                  {authError && (
-                    <p className="text-red-600 text-sm mt-1">{authError}</p>
-                  )}
-                </div>
-                
-                <div className="flex space-x-3">
-                  <button
-                    onClick={actionType === 'special' ? handleAuthSubmit : handleSaveStaffChanges}
-                    disabled={!authCode.trim() || isUpdating}
-                    className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    required
                   >
-                    {isUpdating ? 'Updating...' : actionType === 'special' ? 'Continue' : 'Save Changes'}
-                  </button>
-                  <button
-                    onClick={handleCloseAuthModal}
-                    disabled={isUpdating}
-                    className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
+                    <option value="">Select shift type</option>
+                    {shiftTypes.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
                 </div>
+              )}
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleCloseAuthModal}
+                  disabled={isUpdating}
+                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={actionType === 'special' ? handleAuthSubmit : handleAuthSubmit}
+                  disabled={authCode.length < 4 || !isAdminCode(authCode) || isUpdating || (actionType === 'addStaff' && !selectedShiftForAdd)}
+                  className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200"
+                >
+                  {actionType === 'special' ? 'Continue' : 'Continue'}
+                </button>
               </div>
             </div>
-          </div>,
-          document.body
-        )
+          </div>
+        </div>
+        , document.body
       )}
-    </div>
+
+      {/* Staff Selection Modal - Show after shift is selected */}
+      {actionType === 'addStaff' && selectedSpecialDate && selectedShiftForAdd && authCode && !showAuthModal && createPortal(
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 2147483647, // Maximum z-index value
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            display: 'flex',
+            alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
+            justifyContent: 'center',
+            padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
+            paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
+            overflow: 'auto',
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y',
+            userSelect: 'none',
+            WebkitUserSelect: 'none'
+          }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full flex flex-col" style={{
+            maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
+            maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
+            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
+            userSelect: 'none',
+            WebkitUserSelect: 'none'
+          }}>
+            <div className="border-b border-gray-200 flex-shrink-0" style={{
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
+              userSelect: 'none',
+              WebkitUserSelect: 'none'
+            }}>
+              <h3 className="text-xl font-bold text-gray-900 mb-2 text-center select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
+                Edit Staff Assignment
+              </h3>
+              <p className="text-sm text-gray-600 text-center select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
+                {formatTableDate(selectedSpecialDate).dateString} ({new Date(selectedSpecialDate).toLocaleDateString('en-US', { weekday: 'long' })}) - {selectedShiftForAdd}
+              </p>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto" style={{
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
+              WebkitOverflowScrolling: 'touch',
+              touchAction: 'pan-y',
+              userSelect: 'none',
+              WebkitUserSelect: 'none'
+            }}>
+              <div className="space-y-3">
+                {availableNames.map(name => (
+                  <label key={name} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedStaffForAdd.includes(name)}
+                      onChange={() => handleStaffToggle(name)}
+                      className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    />
+                    <span className="text-sm font-medium text-gray-900 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            
+            <div className="border-t border-gray-200 flex-shrink-0" style={{
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
+              userSelect: 'none',
+              WebkitUserSelect: 'none'
+            }}>
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleCloseAuthModal}
+                  disabled={isUpdating}
+                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 select-none"
+                  style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveStaffChanges}
+                  disabled={isUpdating}
+                  className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center justify-center space-x-2 select-none"
+                  style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
+                >
+                  {isUpdating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span className="select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>Saving...</span>
+                    </>
+                  ) : (
+                    <span className="select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>Save Changes</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        , document.body
+      )}
+
+      {/* Special Date Modal */}
+      <SpecialDateModal
+        isOpen={showSpecialDateModal}
+        date={selectedSpecialDate}
+        currentSpecialInfo={{
+          isSpecial: selectedSpecialDate ? isSpecialDate(selectedSpecialDate) : false,
+          info: selectedSpecialDate ? (getSpecialDateInfo(selectedSpecialDate) || '') : ''
+        }}
+        onSave={handleSpecialDateSave}
+        onClose={handleCloseSpecialDateModal}
+        authCode={authCode}
+      />
+
+      {/* Edit Details Modal */}
+      <EditDetailsModal
+        isOpen={showModal}
+        entry={selectedEntry}
+        onClose={() => {
+          setShowModal(false);
+          setSelectedEntry(null);
+        }}
+      />
+    </>
   );
 };
