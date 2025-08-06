@@ -471,6 +471,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center'
+                  opacity: 0,
+                  visibility: 'hidden'
                 }}
               >
                 {isRefreshing ? (
