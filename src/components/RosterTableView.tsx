@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calendar, Edit, FileText, Download, RefreshCw, Star, AlertTriangle } from 'lucide-react';
+import { Calendar, Edit, FileText, Download, RefreshCw, Star, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { RosterEntry, ShiftFilterType } from '../types/roster';
 import { EditDetailsModal } from './EditDetailsModal';
 import { SpecialDateModal } from './SpecialDateModal';
 import { RosterEntryCell } from './RosterEntryCell';
 import { RosterDateCell } from './RosterDateCell';
 import { ScrollingText } from './ScrollingText';
-import { availableNames, validateAuthCode, shiftTypes, isAdminCode } from '../utils/rosterAuth';
+import { availableNames, validateAuthCode, shiftTypes, isAdminCode, sortByGroup } from '../utils/rosterAuth';
 import { addRosterEntry, deleteRosterEntry, updateAllStaffRemarksForDate } from '../utils/rosterApi';
 
 interface RosterTableViewProps {
@@ -45,9 +45,27 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authCode, setAuthCode] = useState('');
   const [authError, setAuthError] = useState('');
-  const [actionType, setActionType] = useState<'special' | null>(null);
+  const [actionType, setActionType] = useState<'special' | 'addStaff' | null>(null);
+  const [selectedShiftForAdd, setSelectedShiftForAdd] = useState<string>('');
+  const [selectedStaffForAdd, setSelectedStaffForAdd] = useState<string[]>([]);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const isMountedRef = useRef(true);
+
+  // Month navigation
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    const newDate = new Date(selectedDate);
+    newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
+    onDateChange(newDate);
+  };
+
+  const formatMonthYear = () => {
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return `${monthNames[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`;
+  };
 
   // Track mounted status
   useEffect(() => {
@@ -168,6 +186,26 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     console.log('🌟 SPECIAL DATE: Long press detected on date:', date);
     setSelectedSpecialDate(date);
     setActionType('special');
+    setSelectedShiftForAdd('');
+    setSelectedStaffForAdd([]);
+    setShowAuthModal(true);
+    setAuthCode('');
+    setAuthError('');
+  };
+
+  // Handle add staff long press
+  const handleAddStaffLongPress = (date: string, shiftType: string) => {
+    console.log('👥 ADD STAFF: Long press detected on shift:', { date, shiftType });
+    setSelectedSpecialDate(date);
+    setSelectedShiftForAdd(shiftType);
+    setActionType('addStaff');
+    
+    // Get current staff for this shift
+    const dateEntries = groupedEntries[date] || [];
+    const currentEntries = dateEntries.filter(entry => entry.shift_type === shiftType);
+    const currentStaff = currentEntries.map(entry => entry.assigned_name);
+    setSelectedStaffForAdd(currentStaff);
+    
     setShowAuthModal(true);
     setAuthCode('');
     setAuthError('');
@@ -202,6 +240,17 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         console.log('🌟 AUTH: Actually opening special date modal now');
         setShowSpecialDateModal(true);
       }, 100);
+    } else if (actionType === 'addStaff' && selectedSpecialDate && selectedShiftForAdd) {
+      console.log('👥 AUTH: Opening staff selection for add staff');
+      
+      // Close auth modal first
+      setShowAuthModal(false);
+      setAuthCode('');
+      setAuthError('');
+      
+      // Show staff selection interface (we'll handle this in the auth modal itself)
+      // For now, just log that we're ready for staff selection
+      console.log('👥 AUTH: Ready for staff selection');
     } else {
       console.error('❌ AUTH: Missing actionType or selectedSpecialDate:', {
         actionType,
@@ -249,6 +298,67 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     setActionType(null);
   };
 
+  // Handle staff toggle for add staff
+  const handleStaffToggle = (staffName: string) => {
+    setSelectedStaffForAdd(prev => 
+      prev.includes(staffName) 
+        ? prev.filter(name => name !== staffName)
+        : [...prev, staffName]
+    );
+  };
+
+  // Handle save staff changes
+  const handleSaveStaffChanges = async () => {
+    if (!selectedSpecialDate || !selectedShiftForAdd || !authCode) return;
+    
+    setIsUpdating(true);
+    
+    try {
+      const editorName = validateAuthCode(authCode);
+      if (!editorName) return;
+
+      // Get current entries for this date and shift
+      const dateEntries = groupedEntries[selectedSpecialDate] || [];
+      const currentEntries = dateEntries.filter(entry => entry.shift_type === selectedShiftForAdd);
+      const currentStaff = currentEntries.map(entry => entry.assigned_name);
+      
+      // Find staff to add and remove
+      const staffToAdd = selectedStaffForAdd.filter(name => !currentStaff.includes(name));
+      const staffToRemove = currentStaff.filter(name => !selectedStaffForAdd.includes(name));
+      
+      // Remove staff
+      for (const entry of currentEntries) {
+        if (staffToRemove.includes(entry.assigned_name)) {
+          await deleteRosterEntry(entry.id);
+        }
+      }
+      
+      // Add new staff
+      for (const staffName of staffToAdd) {
+        await addRosterEntry({
+          date: selectedSpecialDate,
+          shiftType: selectedShiftForAdd,
+          assignedName: staffName,
+          changeDescription: `Added by ${editorName}`
+        }, editorName);
+      }
+      
+      // Force immediate refresh
+      if (onRefresh) {
+        await onRefresh();
+      }
+      
+      // Close modal and reset states
+      handleCloseAuthModal();
+      
+    } catch (error) {
+      console.error('Failed to update roster:', error);
+      alert('Failed to update roster. Please try again.');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   // Handle closing auth modal
   const handleCloseAuthModal = () => {
     console.log('🔐 AUTH: Closing modal');
@@ -257,6 +367,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     setAuthError('');
     setActionType(null);
     setSelectedSpecialDate(null);
+    setSelectedShiftForAdd('');
+    setSelectedStaffForAdd([]);
   };
 
   // Check if date is today
@@ -340,6 +452,48 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
 
   return (
     <>
+      {/* Month Navigation Header */}
+      <div className="bg-white rounded-lg mb-4 p-4 shadow-sm">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => navigateMonth('prev')}
+            className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors duration-200"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          
+          <div className="flex items-center space-x-3">
+            <Calendar className="w-5 h-5 text-indigo-600" />
+            <h3 className="text-lg font-semibold text-gray-900">
+              {formatMonthYear()}
+            </h3>
+          </div>
+          
+          <button
+            onClick={() => navigateMonth('next')}
+            className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors duration-200"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+        
+        {/* Real-time status indicator */}
+        <div className="flex items-center justify-center mt-2">
+          <div className="flex items-center space-x-2">
+            <div className={`w-2 h-2 rounded-full ${
+              realtimeStatus === 'connected' ? 'bg-green-500 animate-pulse' : 
+              realtimeStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
+              realtimeStatus === 'error' ? 'bg-red-500' : 'bg-gray-400'
+            }`} />
+            <span className="text-xs text-gray-600">
+              {realtimeStatus === 'connected' ? 'Real-time connected' :
+               realtimeStatus === 'connecting' ? 'Connecting...' :
+               realtimeStatus === 'error' ? 'Connection error' : 'Offline'}
+            </span>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-white rounded-lg overflow-hidden">
         <div className="overflow-x-auto" style={{ 
           height: window.innerWidth > window.innerHeight ? '60vh' : '70vh',
@@ -400,7 +554,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     onLongPress={() => handleSpecialDateLongPress(date)}
                     isSpecialDate={isSpecialDate(date)}
                     specialDateInfo={getSpecialDateInfo(date)}
-                    formatTableDate={formatTableDate}
+                    {actionType === 'special' ? 'Admin Authentication Required' : 'Authentication Required'}
                   />
                   
                   {shiftTypes.map(shiftType => {
@@ -417,8 +571,52 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         position: 'relative',
                         minWidth: '120px',
                         maxWidth: '120px',
-                        overflow: 'hidden'
+                        overflow: 'hidden',
+                        cursor: 'pointer'
                       }}>
+                        <div
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            const timer = setTimeout(() => {
+                              handleAddStaffLongPress(date, shiftType);
+                            }, 1000);
+                            
+                            const cleanup = () => {
+                              clearTimeout(timer);
+                              document.removeEventListener('mouseup', cleanup);
+                              document.removeEventListener('mouseleave', cleanup);
+                            };
+                            
+                            document.addEventListener('mouseup', cleanup);
+                            document.addEventListener('mouseleave', cleanup);
+                          }}
+                          onTouchStart={(e) => {
+                            e.preventDefault();
+                            const timer = setTimeout(() => {
+                              handleAddStaffLongPress(date, shiftType);
+                            }, 1000);
+                            
+                            const cleanup = () => {
+                              clearTimeout(timer);
+                              document.removeEventListener('touchend', cleanup);
+                              document.removeEventListener('touchcancel', cleanup);
+                            };
+                            
+                            document.addEventListener('touchend', cleanup);
+                            document.addEventListener('touchcancel', cleanup);
+                          }}
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            zIndex: 5,
+                            cursor: 'pointer',
+                            touchAction: 'manipulation'
+                          }}
+                        />
+                        
                         {isPastDate(date) && (
                           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
                             <div className="font-bold select-none" style={{
@@ -486,6 +684,28 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             <div className="p-6">
               <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
                 Admin Authentication Required
+                  {/* Staff Selection for Add Staff */}
+                  {actionType === 'addStaff' && selectedShiftForAdd && (
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Staff for {selectedShiftForAdd}
+                      </label>
+                      <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-2">
+                        {sortByGroup(availableNames).map(name => (
+                          <label key={name} className="flex items-center space-x-2 p-2 hover:bg-gray-50 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={selectedStaffForAdd.includes(name)}
+                              onChange={() => handleStaffToggle(name)}
+                              className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                            />
+                            <span className="text-sm text-gray-900">{name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
               </h3>
               
               <div className="mb-4">
@@ -495,16 +715,22 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 <input
                   type="text"
                   value={authCode}
+                      disabled={isUpdating}
                   onChange={(e) => setAuthCode(e.target.value.toUpperCase())}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center font-mono text-lg"
                   placeholder="Enter admin code"
                   maxLength={4}
                   autoComplete="off"
-                  autoFocus
-                />
+                      onClick={actionType === 'addStaff' ? handleSaveStaffChanges : handleAuthSubmit}
+                      disabled={authCode.length < 4 || isUpdating}
               </div>
               
-              {authError && (
+                      {isUpdating ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                          Saving...
+                        </>
+                      ) : actionType === 'addStaff' ? 'Save Changes' : 'Continue'}
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                   <p className="text-sm text-red-700 text-center">{authError}</p>
                 </div>
