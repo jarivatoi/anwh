@@ -433,7 +433,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           {/* Left Arrow */}
           <button
             onClick={() => navigateMonth('prev')}
-            className="flex-1 p-3 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors duration-200 flex items-center justify-center"
+            className="flex-1 p-3 rounded-lg text-gray-600 flex items-center justify-center"
             style={{
               touchAction: 'manipulation',
               WebkitTapHighlightColor: 'transparent',
@@ -530,14 +530,14 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   width: '100%',
                   position: 'relative',
                   // Prevent content shifting
-                  minHeight: window.innerWidth > window.innerHeight ? '20px' : '24px',
+                  minHeight: '24px',
                   overflow: 'hidden'
                 }}>
                   {/* Refresh icon with rotation animation when loading */}
                   <svg 
                     style={{
-                      width: '18px',
-                      height: '18px',
+                      width: '24px',
+                      height: '24px',
                       animation: isReloading ? 'spin 1s linear infinite' : 'none',
                       // Prevent icon from causing shifts
                       transform: 'translate3d(0,0,0)',
@@ -557,8 +557,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   
                   {/* Real-time status indicator inside the button */}
                   <div style={{
-                    width: '8px',
-                    height: '8px',
+                    width: '24px',
+                    height: '24px',
                     borderRadius: '50%',
                     backgroundColor: realtimeStatus === 'connected' ? '#10b981' : 
                                     realtimeStatus === 'connecting' ? '#f59e0b' :
@@ -576,7 +576,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           {/* Right Arrow */}
           <button
             onClick={() => navigateMonth('next')}
-            className="flex-1 p-3 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors duration-200 flex items-center justify-center"
+            className="flex-1 p-3 rounded-lg text-gray-600 flex items-center justify-center"
             style={{
               touchAction: 'manipulation',
               WebkitTapHighlightColor: 'transparent',
