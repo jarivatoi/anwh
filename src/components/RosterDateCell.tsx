@@ -128,7 +128,7 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
         {/* Special Date Info - Scrolling Text at Bottom */}
         {isSpecialDate && specialDateInfo && (
           <div className="relative mt-1 left-0 right-0 z-20" style={{
-            height: '12px',
+            height: '20px',
             overflow: 'hidden',
             padding: '0 2px',
             width: '100%'
@@ -138,7 +138,7 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
               className="text-red-800 font-medium"
               style={{
                 fontSize: window.innerWidth > window.innerHeight ? '10px' : '12px',
-                lineHeight: window.innerWidth > window.innerHeight ? '12px' : '14px',
+                lineHeight: window.innerWidth > window.innerHeight ? '14px' : '16px',
                 textAlign: 'center'
               }}
             />
