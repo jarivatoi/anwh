@@ -1142,12 +1142,12 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         isPastDate={isPastDate(date)}
                         isFutureDate={isFutureDate(date)}
                         onLongPress={() => {
-                        isSpecialDate={false}
                           setSelectedSpecialDate(date);
                           setEditingDate(date);
                           setShowAuthModal(true);
                           setActionType('staff'); // Default to staff editing
                         }}
+                        isSpecialDate={specialDates[date]?.isSpecial || false}
                         formatTableDate={formatTableDate}
                       />
                       {shiftTypes.map((shiftType) => {
