@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { Calendar, User, ChevronLeft, ChevronRight, Edit, RotateCcw, FileText, X, CheckCircle, AlertTriangle, Download } from 'lucide-react';
+import { Calendar, User, ChevronLeft, ChevronRight, Edit, RotateCcw, FileText, X, CheckCircle, AlertTriangle, Download, Star } from 'lucide-react';
 import { RosterEntry, ShiftFilterType } from '../types/roster';
 import { formatDisplayDate } from '../utils/rosterFilters';
 import { RosterEntryCell } from './RosterEntryCell';
@@ -497,6 +497,26 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     }
   };
 
+  const handleShiftSelect = (shiftType: string) => {
+    setSelectedShift(shiftType);
+    
+    if (shiftType && editingDate) {
+      // Get current staff for the selected date and shift
+      const currentEntries = entries.filter(entry => 
+        entry.date === editingDate && entry.shift_type === shiftType
+      );
+      const currentStaff = currentEntries.map(entry => entry.assigned_name);
+      setSelectedStaff(currentStaff);
+    }
+  };
+
+  const handleAuthSubmitWithAction = () => {
+    const editorName = validateAuthCode(authCode);
+    if (!editorName || !isAdminCode(authCode)) {
+      setAuthError(!editorName ? 'Invalid authentication code' : 'Admin access required for date editing');
+      return;
+    }
+
     if (actionType === 'special') {
       // Open special date modal
       setShowAuthModal(false);
@@ -509,7 +529,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       
       // Get current staff for the selected date and shift
       if (editingDate && selectedShift) {
-        const dateEntries = groupedEntries[editingDate] || [];
+        const dateEntries = groupedByDate[editingDate] || [];
         const currentEntries = dateEntries.filter(entry => entry.shift_type === selectedShift);
         const currentStaff = currentEntries.map(entry => entry.assigned_name);
         setSelectedStaff(currentStaff);
@@ -1550,8 +1570,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   setExportResult(null);
                 }}
                 disabled={isExporting}
-              {actionType === 'staff' && (
-                <div className="mb-4">
+                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200"
                 style={{
                   position: 'absolute',
                   top: '16px',
@@ -1567,7 +1586,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   <Download className="w-6 h-6 text-green-600" />
                 </div>
               </div>
-              )}
               
               <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
                 Export to Calendar
@@ -1823,7 +1841,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 >
                   Cancel
                 </button>
-                  disabled={authCode.length < 4 || (actionType === 'staff' && !selectedShift) || !isAdminCode(authCode)}
+                <button
                   onClick={handleSaveChanges}
                   disabled={isUpdating}
                   className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center justify-center space-x-2 select-none"
