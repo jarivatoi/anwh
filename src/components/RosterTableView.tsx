@@ -503,7 +503,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         </div>
       </div>
 
-      <div className="bg-white rounded-lg overflow-hidden">
+      <div className="bg-white overflow-hidden">
         <div className="overflow-x-auto" style={{ 
           height: window.innerWidth > window.innerHeight ? '60vh' : '70vh',
           minHeight: '400px',
