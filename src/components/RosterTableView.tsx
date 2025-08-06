@@ -1424,7 +1424,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   placeholder="Enter admin code"
                   maxLength={4}
                   autoComplete="off"
-                  isSpecialDate={specialDates[date] === true}
                   autoFocus
                 />
               </div>
