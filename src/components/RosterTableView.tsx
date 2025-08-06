@@ -118,19 +118,22 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
 
   // Auto-scroll to today's date when component first loads
   useEffect(() => {
+    const today = new Date();
+    const isCurrentMonth = selectedDate.getMonth() === today.getMonth() && 
+                           selectedDate.getFullYear() === today.getFullYear();
     const shouldAutoScroll = !loading && 
                             filteredEntries.length > 0 && 
-                            selectedDate.getMonth() === new Date().getMonth() && 
-                            selectedDate.getFullYear() === new Date().getFullYear() &&
-                            (!hasAutoScrolled || Date.now() - lastTabSwitch < 1000);
+                            isCurrentMonth &&
+                            Date.now() - lastTabSwitch < 2000; // Allow 2 seconds after tab switch
     
     if (shouldAutoScroll) {
-      const today = new Date();
       const todayString = today.toISOString().split('T')[0];
+      console.log(`📍 Attempting auto-scroll to today: ${todayString}`);
       
       const todayEntry = filteredEntries.find(entry => entry.date === todayString);
       
       if (todayEntry) {
+        console.log(`📍 Found today's entry, scrolling to: ${todayString}`);
         setTimeout(() => {
           const todaySection = document.querySelector(`[data-date="${todayString}"]`);
           if (todaySection) {
@@ -139,18 +142,19 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               block: 'center' 
             });
             console.log(`📍 Auto-scrolled to today's date: ${todayString}`);
+          } else {
+            console.log(`❌ Could not find element with data-date="${todayString}"`);
           }
-        }, 100);
+        }, 300); // Slightly longer delay to ensure DOM is ready
+      } else {
+        console.log(`❌ No entry found for today: ${todayString}`);
       }
-      
-      setHasAutoScrolled(true);
     }
-  }, [loading, filteredEntries, hasAutoScrolled, selectedDate, lastTabSwitch]);
+  }, [loading, filteredEntries, selectedDate, lastTabSwitch]);
 
   // Reset auto-scroll when component mounts (tab switch)
   useEffect(() => {
     setLastTabSwitch(Date.now());
-    setHasAutoScrolled(false);
   }, []);
 
   // Listen for roster updates
