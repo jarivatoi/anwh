@@ -362,7 +362,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     
     if (actionType === 'special') {
       // Ensure we have the latest special info before opening modal
-      if (selectedSpecialDate) {
+     setShowSpecialDateModal(true);
         const existingInfo = getExistingSpecialInfo(selectedSpecialDate);
         setSpecialDates(prev => ({
           ...prev,
