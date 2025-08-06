@@ -326,6 +326,17 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   // Handle special date long press
   const handleSpecialDateLongPress = (date: string) => {
     console.log('🌟 Special date long press for:', date);
+    
+    // Get existing special info before setting selected date
+    const existingInfo = getExistingSpecialInfo(date);
+    console.log('🌟 Existing special info for', date, ':', existingInfo);
+    
+    // Update local state with existing info
+    setSpecialDates(prev => ({
+      ...prev,
+      [date]: existingInfo
+    }));
+    
     setSelectedSpecialDate(date);
     setShowAuthModal(true);
     setActionType('special');
@@ -350,6 +361,14 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     setShowAuthModal(false);
     
     if (actionType === 'special') {
+      // Ensure we have the latest special info before opening modal
+      if (selectedSpecialDate) {
+        const existingInfo = getExistingSpecialInfo(selectedSpecialDate);
+        setSpecialDates(prev => ({
+          ...prev,
+          [selectedSpecialDate]: existingInfo
+        }));
+      }
       setShowSpecialDateModal(true);
     } else if (actionType === 'staff') {
       setShowStaffEditModal(true);
