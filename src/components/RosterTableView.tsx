@@ -453,7 +453,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   return (
     <>
       {/* Month Navigation Header */}
-      <div className="bg-white rounded-lg mb-4 p-4 shadow-sm">
+      <div className="bg-white rounded-lg mb-4 p-4 shadow-sm sticky top-0 z-50">
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigateMonth('prev')}
@@ -531,7 +531,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               <tr>
                 <th style={{
                   position: 'sticky',
-                  top: 0,
+                  top: '80px',
                   zIndex: 150,
                   backgroundColor: '#4f46e5',
                   color: 'white',
@@ -547,7 +547,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 {shiftTypes.map(shiftType => (
                   <th key={shiftType} style={{
                    position: 'sticky',
-                   top: 0,
+                   top: '80px',
                    zIndex: 150,
                     backgroundColor: '#4f46e5',
                     color: 'white',
