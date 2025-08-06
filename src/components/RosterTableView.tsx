@@ -467,27 +467,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           {/* Month Selector - Grid Column 3 */}
           <div className="flex justify-center">
             <select
-              value={selectedDate.getMonth()}
-              onChange={(e) => {
-                const newDate = new Date(selectedDate);
-                newDate.setMonth(Number(e.target.value));
-                onDateChange(newDate);
-              }}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-semibold text-gray-900 bg-white text-center min-w-0"
-              style={{
-                touchAction: 'manipulation',
-                WebkitTapHighlightColor: 'transparent',
-                textAlign: 'center',
-                maxWidth: '120px'
-              }}
-            >
-              {[
-                'January', 'February', 'March', 'April', 'May', 'June',
-                'July', 'August', 'September', 'October', 'November', 'December'
-              ].map((month, index) => (
-                <option key={index} value={index}>{month}</option>
-              ))}
-            </select>
+            <div className="text-lg font-bold text-gray-900 text-center px-3 py-2">
+              {formatMonthYear(selectedDate).toUpperCase()}
+            </div>
           </div>
           
           {/* Export Button - Grid Column 4 */}
