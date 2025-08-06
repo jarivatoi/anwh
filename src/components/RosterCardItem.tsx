@@ -196,7 +196,7 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
           position: 'relative',
           zIndex: 60,
           // Add pulsing animation only for special dates with actual info
-          animation: (isSpecialDate && specialDateInfo) ? 'pulse 2s ease-in-out infinite' : 'none'
+         animation: (isSpecialDate && specialDateInfo && specialDateInfo.trim()) ? 'pulse 2s ease-in-out infinite' : 'none'
         }}
       >
         <ScrollingText 

@@ -505,6 +505,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
                                   entry={entry}
                                   onShowDetails={handleShowDetails}
                                   onUpdate={handleEntryUpdate}
+                                 allEntriesForShift={shiftEntries}
                                   isSpecialDate={isSpecialDate(date)}
                                   specialDateInfo={getSpecialDateInfo(date)}
                                 />

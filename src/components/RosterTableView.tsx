@@ -800,9 +800,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                               <RosterEntryCell
                                 key={entry.id}
                                 entry={entry}
+                               onUpdate={handleEntryUpdate}
                                 onShowDetails={handleShowDetails}
-                                fontSize={window.innerWidth > window.innerHeight ? '10px' : '12px'}
-                                lineHeight={window.innerWidth > window.innerHeight ? '12px' : '14px'}
+                               allEntriesForShift={shiftEntries}
                                 isSpecialDate={isSpecialDate(date)}
                                 specialDateInfo={getSpecialDateInfo(date)}
                               />
