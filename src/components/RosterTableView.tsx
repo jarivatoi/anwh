@@ -890,8 +890,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 </div>
               )}
               
-              {/* Shift Selection - Show when admin code is valid (exactly like card view) */}
-              {authCode.length >= 4 && isAdminCode(authCode) && actionType === 'addStaff' && (
+              {/* Shift Selection - Show when admin code is valid and action is addStaff */}
+              {actionType === 'addStaff' && (
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Select Shift Type
@@ -928,16 +928,11 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   Cancel
                 </button>
                 <button
-                  onClick={actionType === 'special' ? handleAuthSubmit : (selectedShiftForAdd ? handleSaveStaffChanges : handleAuthSubmit)}
+                  onClick={actionType === 'special' ? handleAuthSubmit : handleAuthSubmit}
                   disabled={authCode.length < 4 || !isAdminCode(authCode) || isUpdating || (actionType === 'addStaff' && !selectedShiftForAdd)}
                   className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200"
                 >
-                  {isUpdating ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                      Saving...
-                    </>
-                  ) : actionType === 'special' ? 'Continue' : (selectedShiftForAdd ? 'Save Changes' : 'Continue')}
+                  {actionType === 'special' ? 'Continue' : 'Continue'}
                 </button>
               </div>
             </div>
