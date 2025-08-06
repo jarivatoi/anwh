@@ -467,11 +467,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             <h3 className="text-lg font-semibold text-gray-900">
               {formatMonthYear()}
             </h3>
-          </div>
-          
-          <div className="flex items-center space-x-3">
-            {/* Real-time status indicator and manual refresh */}
-            <div className="flex items-center space-x-2">
+            
+            {/* Status indicators right next to the month text */}
+            <div className="flex items-center space-x-2 ml-2">
               <div className={`w-2 h-2 rounded-full ${
                 realtimeStatus === 'connected' ? 'bg-green-500 animate-pulse' : 
                 realtimeStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
@@ -490,7 +488,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 )}
               </button>
             </div>
-            
+          </div>
+          
+          <div className="flex items-center space-x-3">
             <button
               onClick={onExportToCalendar}
               className="p-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200"
