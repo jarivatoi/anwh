@@ -5,6 +5,7 @@ import { RosterEntry, ShiftFilterType } from '../types/roster';
 import { formatDisplayDate } from '../utils/rosterFilters';
 import { RosterEntryCell } from './RosterEntryCell';
 import { RosterDateCell } from './RosterDateCell';
+import { SpecialDateModal } from './SpecialDateModal';
 import { useState, useEffect, useRef } from 'react';
 import { useRosterData } from '../hooks/useRosterData';
 import { availableNames, validateAuthCode, shiftTypes } from '../utils/rosterAuth';
@@ -1943,6 +1944,19 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           setShowDetailsModal(false);
           setSelectedEntry(null);
         }}
+      />
+
+      {/* Special Date Modal */}
+      <SpecialDateModal
+        isOpen={showSpecialDateModal}
+        date={selectedSpecialDate}
+        currentSpecialInfo={selectedSpecialDate ? getExistingSpecialInfo(selectedSpecialDate) : undefined}
+        onSave={handleSpecialDateSave}
+        onClose={() => {
+          setShowSpecialDateModal(false);
+          setSelectedSpecialDate(null);
+        }}
+        authCode={authCode}
       />
 
       {/* Special Date Modal */}
