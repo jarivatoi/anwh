@@ -280,6 +280,7 @@ export class IndividualBillGenerator {
         // Combine shifts for the same date
         const shifts: string[] = [];
         let dayHours = 0;
+        let remarks = '';
         
         dayEntries.forEach(entry => {
           shifts.push(entry.shift_type);
@@ -292,6 +293,14 @@ export class IndividualBillGenerator {
           // Calculate hours for this shift
           const shiftHours = this.getShiftHours(entry.shift_type, shiftCombinations);
           dayHours += shiftHours;
+          
+          // Extract special date info from change_description
+          if (entry.change_description && entry.change_description.includes('Special Date:')) {
+            const specialMatch = entry.change_description.match(/Special Date:\s*([^;]+)/);
+            if (specialMatch && specialMatch[1].trim()) {
+              remarks = specialMatch[1].trim();
+            }
+          }
         });
         
         totalHours += dayHours;
@@ -309,7 +318,7 @@ export class IndividualBillGenerator {
           eveningCheck,
           nightCheck,
           dayHours.toFixed(1),
-          '' // Blank remarks column
+          remarks // Special date info or blank
         ]);
       } else {
         // This day has no shifts - show empty row
