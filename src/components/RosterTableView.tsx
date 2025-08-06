@@ -638,23 +638,66 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   }}>
                     Date
                   </th>
-                  {shiftTypes.map(shiftType => (
-                    <th key={shiftType} style={{
-                     position: 'sticky',
-                     top: '-2px',
-                     zIndex: 150,
-                      backgroundColor: '#4f46e5',
-                      color: 'white',
-                      padding: '8px',
-                      textAlign: 'center',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
-                      border: '2px solid #374151',
-                      width: '21.25%'
-                    }}>
-                      <ScrollingText text={shiftType} className="text-white font-bold" />
-                    </th>
-                  ))}
+                  <th style={{
+                    position: 'sticky',
+                    top: '-2px',
+                    zIndex: 150,
+                    backgroundColor: '#4f46e5',
+                    color: 'white',
+                    padding: '8px',
+                    textAlign: 'center',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    border: '2px solid #374151',
+                    width: '21.25%'
+                  }}>
+                    9-4
+                  </th>
+                  <th style={{
+                    position: 'sticky',
+                    top: '-2px',
+                    zIndex: 150,
+                    backgroundColor: '#4f46e5',
+                    color: 'white',
+                    padding: '8px',
+                    textAlign: 'center',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    border: '2px solid #374151',
+                    width: '21.25%'
+                  }}>
+                    12-10
+                  </th>
+                  <th style={{
+                    position: 'sticky',
+                    top: '-2px',
+                    zIndex: 150,
+                    backgroundColor: '#4f46e5',
+                    color: 'white',
+                    padding: '8px',
+                    textAlign: 'center',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    border: '2px solid #374151',
+                    width: '21.25%'
+                  }}>
+                    4-10
+                  </th>
+                  <th style={{
+                    position: 'sticky',
+                    top: '-2px',
+                    zIndex: 150,
+                    backgroundColor: '#4f46e5',
+                    color: 'white',
+                    padding: '8px',
+                    textAlign: 'center',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    border: '2px solid #374151',
+                    width: '21.25%'
+                  }}>
+                    Night
+                  </th>
                 </tr>
               </thead>
               <tbody>
