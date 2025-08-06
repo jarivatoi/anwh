@@ -358,11 +358,13 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       return;
       // Open special date modal
       setShowStaffEditModal(true);
-  
-      // Get current staff for the selected date and shift
-      if (editingDate && selectedShift) {
-        const dateEntries = groupedByDate[editingDate] || [];
-        const currentEntries = dateEntries.filter(entry => entry.shift_type === selectedShift);
+    if (actionType === 'special') {
+      // Open special date modal
+      setShowAuthModal(false);
+      setShowSpecialDateModal(true);
+      setAuthError('');
+    } else if (actionType === 'staff') {
+      setShowAuthModal(false);
         const currentStaff = currentEntries.map(entry => entry.assigned_name);
         setSelectedStaff(currentStaff);
       }
@@ -561,6 +563,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     } else {
       // Continue with staff editing
       setShowAuthModal(false);
+      setAuthError('');
       setAuthError('');
       
       // Get current staff for the selected date and shift
