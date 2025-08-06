@@ -169,17 +169,16 @@ export const RosterDateHeaderButton: React.FC<RosterDateHeaderButtonProps> = ({
               
               {/* Real-time status indicator inside the button */}
               <div style={{
-                width: '10px',
-                height: '10px',
+            width: '12px',
+            height: '12px',
                 borderRadius: '50%',
                 backgroundColor: realtimeStatus === 'connected' ? '#10b981' : 
                                 realtimeStatus === 'connecting' ? '#f59e0b' :
                                 realtimeStatus === 'error' ? '#ef4444' : '#6b7280',
                 animation: realtimeStatus === 'connecting' ? 'pulse 1.5s ease-in-out infinite' : 'none',
                 boxShadow: realtimeStatus === 'connected' ? '0 0 8px rgba(16, 185, 129, 0.8)' : 'none',
-                // Prevent dot from causing shifts
-            width: '8px',
-            height: '8px',
+            border: '2px solid white',
+            marginLeft: '4px',
                 backfaceVisibility: 'hidden'
               }} />
             </button>
