@@ -6,6 +6,7 @@ export interface RosterCalendarSyncOptions {
   specialDates: SpecialDates;
   setSchedule: (schedule: DaySchedule | ((prev: DaySchedule) => DaySchedule)) => void;
   setSpecialDates: (specialDates: SpecialDates | ((prev: SpecialDates) => SpecialDates)) => void;
+  entries?: RosterEntry[]; // Add entries to check for special date status
 }
 
 export interface RosterChangeEvent {
@@ -305,6 +306,16 @@ export const syncRosterToCalendar = (
     return handleRemovalSync(date, shiftType, assignedName, { calendarLabel, schedule, specialDates, setSchedule, setSpecialDates });
   }
   
+  // Get all entries to check for special date status
+  const allEntries = options.entries || [];
+  // Check if this date is marked as special in the roster
+  const isRosterSpecialDate = checkIfRosterDateIsSpecial(date, allEntries);
+  console.log('🌟 ROSTER SYNC: Checking if roster date is special:', {
+    date,
+    isRosterSpecialDate,
+    currentCalendarSpecial: specialDates[date]
+  });
+  
   // Check if this date needs special marking for the shift to be valid
   const needsSpecial = requiresSpecialDate(date, shiftType);
   const currentIsSpecial = specialDates[date] === true;
@@ -314,11 +325,12 @@ export const syncRosterToCalendar = (
     shiftType,
     needsSpecial,
     currentIsSpecial,
+    isRosterSpecialDate,
     dayOfWeek: new Date(date).getDay()
   });
   
   // Determine final special date status
-  const finalSpecialStatus = needsSpecial || currentIsSpecial;
+  const finalSpecialStatus = needsSpecial || currentIsSpecial || isRosterSpecialDate;
   
   // Validate the shift for this date
   const shiftMapping: Record<string, string> = {
@@ -350,7 +362,8 @@ export const syncRosterToCalendar = (
   // Apply changes to calendar
   let calendarUpdated = false;
   
-  if (needsSpecial && !currentIsSpecial) {
+  // Mark as special if roster date is special OR if shift requires special marking
+  if ((needsSpecial || isRosterSpecialDate) && !currentIsSpecial) {
     console.log(`✅ ROSTER SYNC: Marking ${date} as special date`);
     setSpecialDates(prev => ({
       ...prev,
@@ -394,7 +407,7 @@ export const syncRosterToCalendar = (
     
     notification.innerHTML = `
       📅 Calendar updated: ${shiftType} added to ${date}
-      ${needsSpecial ? '<br>📌 Date marked as special' : ''}
+      ${(needsSpecial || isRosterSpecialDate) ? '<br>📌 Date marked as special' : ''}
     `;
     
     document.body.appendChild(notification);
@@ -413,4 +426,24 @@ export const syncRosterToCalendar = (
   }
   
   return calendarUpdated;
+};
+
+/**
+ * Check if a date is marked as special in the roster entries
+ */
+const checkIfRosterDateIsSpecial = (date: string, entries: RosterEntry[]): boolean => {
+  // Get all entries for this date
+  const dateEntries = entries.filter(entry => entry.date === date);
+  
+  // Check if any entry has special date info in change_description
+  for (const entry of dateEntries) {
+    if (entry.change_description && entry.change_description.includes('Special Date:')) {
+      const match = entry.change_description.match(/Special Date:\s*([^;]+)/);
+      if (match && match[1].trim()) {
+        return true;
+      }
+    }
+  }
+  
+  return false;
 };

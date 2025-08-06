@@ -181,7 +181,8 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
           calendarUpdates,
           specialDateUpdates,
           editorName: authenticatedStaffName,
-          source: 'calendar_export'
+          source: 'calendar_export',
+          entries: staffEntries // Pass the entries for special date checking
         }
       }));
       

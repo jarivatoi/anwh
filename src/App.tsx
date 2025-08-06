@@ -349,7 +349,8 @@ function App() {
       schedule,
       specialDates,
       setSchedule,
-      setSpecialDates
+      setSpecialDates,
+      entries: [] // Pass empty array since we don't have roster entries in App.tsx
     });
     
     console.log('🔄 APP: Sync result:', syncResult);
