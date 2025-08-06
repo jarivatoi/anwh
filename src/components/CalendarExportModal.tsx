@@ -296,20 +296,6 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
         >
           {step === 'auth' && (
             <div className="space-y-6">
-              {/* Info Section */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-start space-x-3">
-                  <Calendar className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <h4 className="font-medium text-blue-800 mb-2">Calendar Export</h4>
-                    <ul className="text-sm text-blue-700 space-y-1">
-                    <li>• Only exports shifts for {formatMonthYear()}</li>
-                      <li>• Includes shift times and locations</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
               {/* Authentication */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -336,12 +322,19 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
                 </div>
               )}
 
-              {/* Instructions */}
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <h4 className="font-medium text-gray-800 mb-2">Info:</h4>
-                <ol className="text-sm text-gray-700 space-y-1 list-decimal list-inside">
-                <li>Your shifts will automatically appear in your calendar tab</li>
-                </ol>
+              {/* Info Section */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start space-x-3">
+                  <Calendar className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-medium text-blue-800 mb-2">What happens next:</h4>
+                    <ul className="text-sm text-blue-700 space-y-1">
+                      <li>• Enter your authentication code</li>
+                      <li>• Your shifts for {formatMonthYear()} will be found</li>
+                      <li>• They will automatically appear in your calendar tab</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -479,11 +472,11 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
             </button>
             <button
               onClick={handleExport}
-              disabled={isExporting || authCode.length < 4}
+              disabled={isExporting || authCode.length < 4 || step !== 'auth'}
               className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
             >
               <Download className="w-4 h-4" />
-              <span>Export Calendar</span>
+              <span>Find My Shifts</span>
             </button>
           </div>
         </div>
