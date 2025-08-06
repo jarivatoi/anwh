@@ -554,8 +554,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 
                 {/* Real-time status indicator inside the button */}
                 <div style={{
-                  width: '12px',
-                  height: '12px',
+                  width: '32px',
+                  height: '32px',
                   borderRadius: '50%',
                   backgroundColor: realtimeStatus === 'connected' ? '#10b981' : 
                                   realtimeStatus === 'connecting' ? '#f59e0b' :
