@@ -466,7 +466,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           
           {/* Month Selector - Grid Column 3 */}
           <div className="flex justify-center">
-            <select
             <div className="text-lg font-bold text-gray-900 text-center px-3 py-2">
               {formatMonthYear(selectedDate).toUpperCase()}
             </div>
