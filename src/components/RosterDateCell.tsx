@@ -126,7 +126,7 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
         </div>
         
         {/* Special Date Info - Scrolling Text at Bottom */}
-        {isSpecialDate && specialDateInfo && (
+        {isSpecialDate && specialDateInfo && specialDateInfo.trim() && (
           <div className="relative mt-1 left-0 right-0 z-20" style={{
             height: '20px',
             overflow: 'hidden',

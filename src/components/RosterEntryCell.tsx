@@ -222,8 +222,8 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
           minHeight: '32px',
           position: 'relative',
           zIndex: 60,
-          // Add pulsing animation for special dates
-          animation: isSpecialDate ? 'pulse 2s ease-in-out infinite' : 'none'
+          // Add pulsing animation only for special dates with actual info
+          animation: (isSpecialDate && getSpecialDateInfo && getSpecialDateInfo()) ? 'pulse 2s ease-in-out infinite' : 'none'
         }}
       >
         <ScrollingText 
