@@ -194,7 +194,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   };
   
   // Handle add staff long press (admin only)
-  const handleAddStaffLongPress = (date: string) => {
+  const handleDateCellLongPress = (date: string) => {
     console.log('👥 ADD STAFF: Long press detected on date:', date);
     setSelectedSpecialDate(date);
     setActionType('addStaff');
@@ -206,7 +206,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   };
 
   // Handle add staff long press
-  const handleAddStaffLongPress = (date: string, shiftType: string) => {
+  const handleShiftCellLongPress = (date: string, shiftType: string) => {
     console.log('👥 ADD STAFF: Long press detected on shift:', { date, shiftType });
     setSelectedSpecialDate(date);
     setSelectedShiftForAdd(shiftType);
@@ -626,7 +626,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       isPastDate={isPastDate(date)}
                       isFutureDate={isFutureDate(date)}
                       onDoublePress={() => handleSpecialDateDoublePress(date)}
-                      onLongPress={() => handleAddStaffLongPress(date)}
+                      onLongPress={() => handleDateCellLongPress(date)}
                       isSpecialDate={isSpecialDate(date)}
                       specialDateInfo={getSpecialDateInfo(date)}
                      formatTableDate={formatTableDate}
@@ -652,7 +652,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             onMouseDown={(e) => {
                               e.preventDefault();
                               const timer = setTimeout(() => {
-                                handleAddStaffLongPress(date, shiftType);
+                                handleShiftCellLongPress(date, shiftType);
                               }, 1000);
                               
                               const cleanup = () => {
@@ -667,7 +667,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             onTouchStart={(e) => {
                               e.preventDefault();
                               const timer = setTimeout(() => {
-                                handleAddStaffLongPress(date, shiftType);
+                                handleShiftCellLongPress(date, shiftType);
                               }, 1000);
                               
                               const cleanup = () => {
