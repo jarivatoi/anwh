@@ -352,24 +352,26 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
 
   // Handle authentication
   const handleAuthSubmit = () => {
+    console.log('🔐 handleAuthSubmit called with:', { authCode, actionType, selectedSpecialDate, editingDate });
+    
     const editorName = validateAuthCode(authCode);
     if (!editorName || !isAdminCode(authCode)) {
       setAuthError(!editorName ? 'Invalid authentication code' : 'Admin access required for date editing');
       return;
     }
     
-    console.log('🔐 Authentication successful, actionType:', actionType);
+    console.log('✅ Authentication successful, actionType:', actionType);
     
     if (actionType === 'special') {
       console.log('🌟 Opening special date modal for:', selectedSpecialDate);
       setShowAuthModal(false);
-      setAuthError('');
       setShowSpecialDateModal(true);
+      setAuthError('');
     } else if (actionType === 'staff') {
       console.log('👥 Opening staff edit modal for:', editingDate);
       setShowAuthModal(false);
-      setAuthError('');
       setShowStaffEditModal(true);
+      setAuthError('');
       
       // Get current staff for the selected date and shift
       if (editingDate && selectedShift) {
