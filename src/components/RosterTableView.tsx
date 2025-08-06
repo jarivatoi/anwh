@@ -587,7 +587,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           </button>
         </div>
       </div>
-
       {/* Table Content */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
