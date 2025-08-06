@@ -248,16 +248,11 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     if (actionType === 'special' && selectedSpecialDate) {
       console.log('🌟 AUTH: Opening special date modal for:', selectedSpecialDate);
       
-      // Close auth modal first
+      // Close auth modal and open special date modal immediately
       setShowAuthModal(false);
-      setAuthCode('');
       setAuthError('');
-      
-      // Open special date modal with delay
-      setTimeout(() => {
-        console.log('🌟 AUTH: Actually opening special date modal now');
-        setShowSpecialDateModal(true);
-      }, 100);
+      setShowSpecialDateModal(true);
+      console.log('🌟 AUTH: Special date modal opened immediately');
     } else {
       // For addStaff action, close auth modal and let the separate staff modal handle it
       setShowAuthModal(false);
