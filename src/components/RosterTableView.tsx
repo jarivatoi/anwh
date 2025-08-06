@@ -786,7 +786,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                 onShowDetails={handleShowDetails}
                                 onUpdate={handleEntryUpdate}
                                 allEntriesForShift={shiftEntries}
-                                isSpecialDate={isSpecialDate(date)}
+                   shiftType === 'Sunday/Public Holiday/Special' ? 'Sp 9-4' : shiftType}
                               />
                             ))}
                           </div>
