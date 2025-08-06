@@ -470,7 +470,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   height: '32px',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
                   opacity: 0,
                   visibility: 'hidden'
                 }}
