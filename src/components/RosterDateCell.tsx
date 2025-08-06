@@ -107,19 +107,20 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
           width: '100%',
           display: 'block',
           fontSize: window.innerWidth > window.innerHeight ? '10px' : '12px',
+          fontWeight: '500',
           animation: isSpecialDate ? 'pulse 2s ease-in-out infinite' : 'none'
         }}>
           <div style={{ textAlign: 'center' }}>
             {formatTableDate(date).dateString.split('-')[0]}
           </div>
-          <div style={{ textAlign: 'center', fontSize: '8px' }}>
+          <div style={{ textAlign: 'center', fontSize: window.innerWidth > window.innerHeight ? '8px' : '10px', fontWeight: '500' }}>
             {(() => {
               const dateObj = new Date(date);
               const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
               return monthNames[dateObj.getMonth()];
             })()}
           </div>
-          <div style={{ textAlign: 'center', fontSize: '8px' }}>
+          <div style={{ textAlign: 'center', fontSize: window.innerWidth > window.innerHeight ? '8px' : '10px', fontWeight: '500' }}>
             {new Date(date).getFullYear()}
           </div>
         </div>

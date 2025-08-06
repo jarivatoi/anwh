@@ -38,6 +38,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState('');
   const [refreshingDate, setRefreshingDate] = useState<string | null>(null);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [showQuickActions, setShowQuickActions] = useState(false);
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   
   // Special date modal states
   const [showSpecialDateModal, setShowSpecialDateModal] = useState(false);
@@ -443,12 +446,27 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       {/* Month Navigation Header */}
       <div className="bg-white rounded-lg mb-4 p-4 shadow-sm sticky top-0 z-50">
         <div className="flex items-center justify-between">
-          <button
-            onClick={() => navigateMonth('prev')}
-            className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors duration-200"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => {
+                const newDate = new Date(selectedDate);
+                newDate.setFullYear(newDate.getFullYear() - 1);
+                onDateChange(newDate);
+              }}
+              className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors duration-200"
+              title="Previous year"
+            >
+              <span className="text-sm font-bold">‹‹</span>
+            </button>
+            
+            <button
+              onClick={() => navigateMonth('prev')}
+              className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors duration-200"
+              title="Previous month"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+          </div>
           
           <div className="flex items-center space-x-3">
             <button
@@ -459,8 +477,24 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               <Download className="w-3 h-3" />
             </button>
             <Calendar className="w-5 h-5 text-indigo-600" />
+            
+            {/* Year selector */}
+            <select
+              value={selectedDate.getFullYear()}
+              onChange={(e) => {
+                const newDate = new Date(selectedDate);
+                newDate.setFullYear(parseInt(e.target.value));
+                onDateChange(newDate);
+              }}
+              className="text-lg font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer hover:bg-gray-100 rounded px-2 py-1"
+            >
+              {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+            
             <h3 className="text-lg font-semibold text-gray-900">
-              {formatMonthYear()}
+              {formatMonthYear().split(' ')[0]}
             </h3>
             
             {/* Status indicators right next to the month text */}
@@ -534,10 +568,23 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           
           <div className="flex items-center space-x-3">
             <button
-            onClick={() => navigateMonth('next')}
-            className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors duration-200"
+              onClick={() => navigateMonth('next')}
+              className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors duration-200"
+              title="Next month"
             >
-            <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-5 h-5" />
+            </button>
+            
+            <button
+              onClick={() => {
+                const newDate = new Date(selectedDate);
+                newDate.setFullYear(newDate.getFullYear() + 1);
+                onDateChange(newDate);
+              }}
+              className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors duration-200"
+              title="Next year"
+            >
+              <span className="text-sm font-bold">››</span>
             </button>
           </div>
         </div>
