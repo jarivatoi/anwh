@@ -513,27 +513,21 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           <table style={{
             width: '100%',
             borderCollapse: 'collapse',
-            tableLayout: 'fixed',
-            minWidth: '800px'
+            tableLayout: 'fixed'
           }}>
             <thead>
               <tr>
                 <th style={{
                   position: 'sticky',
-                 top: 0,
-                  left: 0,
-                 zIndex: 200,
+                  top: 0,
+                  zIndex: 150,
                   backgroundColor: '#4f46e5',
                   color: 'white',
                   padding: '8px',
                   textAlign: 'center',
                   fontSize: '14px',
                   fontWeight: 'bold',
-                  width: '80px',
-                  minWidth: '80px',
-                  maxWidth: '80px',
-                  border: '2px solid #374151',
-                  borderRight: '3px solid #374151'
+                  border: '2px solid #374151'
                 }}>
                   Date
                 </th>

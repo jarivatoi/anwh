@@ -26,18 +26,11 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
   return (
     <td 
       style={{ 
-        position: 'sticky',
-        left: 0,
-        zIndex: 75,
         padding: '4px',
         textAlign: 'center',
         minHeight: '50px',
         border: 'none',
         margin: 0,
-        width: '80px', // Fixed width instead of percentage
-        minWidth: '80px', // Ensure minimum width
-        maxWidth: '80px', // Prevent expansion
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
         backgroundColor: isToday ? '#bbf7d0' : 
                          isPastDate ? '#fef2f2' :
                          isFutureDate ? '#f0fdf4' : '#ffffff',
@@ -47,7 +40,6 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
                    isFutureDate ? '#f0fdf4' : '#ffffff',
         opacity: 1,
         border: '2px solid #374151',
-        borderRight: '3px solid #374151',
         // Force proper rendering after orientation change
         transform: 'translate3d(0,0,0)',
         backfaceVisibility: 'hidden',
