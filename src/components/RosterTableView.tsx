@@ -474,9 +474,47 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 }}
               >
                 {isRefreshing ? (
-                  <div className="w-5 h-5 border-2 border-gray-400 border-t-gray-600 rounded-full animate-spin" />
+                  <svg 
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
+                      // Prevent icon from causing shifts
+                      transform: 'translate3d(0,0,0)',
+                      backfaceVisibility: 'hidden'
+                    }}
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+                    />
+                  </svg>
                 ) : (
-                  <RefreshCw className="w-5 h-5" />
+                  <svg 
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
+                      // Prevent icon from causing shifts
+                      transform: 'translate3d(0,0,0)',
+                      backfaceVisibility: 'hidden'
+                    }}
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+                    />
+                  </svg>
                 )}
               </button>
               <div className={`w-2 h-2 rounded-full ${
