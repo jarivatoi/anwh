@@ -353,17 +353,22 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       console.log('❌ Authentication failed:', { editorName, isAdmin: isAdminCode(authCode) });
     console.log('🔐 Auth successful, actionType:', actionType, 'selectedSpecialDate:', selectedSpecialDate);
     
-    // Close auth modal first
-    setShowAuthModal(false);
-    setAuthError('');
-    
-    // Then open the appropriate modal based on action type
     if (actionType === 'special' && selectedSpecialDate) {
-      console.log('🌟 Opening special date modal for:', selectedSpecialDate);
-      // Add small delay to ensure auth modal closes first
+      console.log('✅ AUTH: Opening special date modal for date:', selectedSpecialDate);
+      
+      // Close auth modal and open special date modal
+      setShowAuthModal(false);
+      setAuthError('');
+      setAuthCode('');
+      
+      // Small delay to ensure auth modal closes first
       setTimeout(() => {
+        console.log('✅ AUTH: Actually opening special date modal now...');
         setShowSpecialDateModal(true);
       }, 100);
+    } else {
+      console.log('❌ AUTH: Cannot proceed - missing actionType or selectedSpecialDate');
+      setAuthError('Invalid action or missing date selection');
     }
       setShowAuthModal(false);
       setShowSpecialDateModal(true);
