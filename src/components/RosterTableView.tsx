@@ -505,14 +505,14 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   'Manual refresh (Real-time disconnected)'
                 }
               >
+                {/* Spinner Container */}
                 <div style={{ 
                   display: 'flex', 
                   alignItems: 'center', 
-                  width: '100%',
-                  position: 'relative',
-                  // Prevent content shifting
-                  minHeight: window.innerWidth > window.innerHeight ? '20px' : '24px',
-                  overflow: 'hidden'
+                  justifyContent: 'center',
+                  width: '20px',
+                  height: '20px',
+                  position: 'relative'
                 }}>
                   {/* Refresh icon with rotation animation when loading */}
                   <svg 
@@ -520,7 +520,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       width: '18px',
                       height: '18px',
                       animation: isReloading ? 'spin 1s linear infinite' : 'none',
-                      // Prevent icon from causing shifts
                       transform: 'translate3d(0,0,0)',
                       backfaceVisibility: 'hidden'
                     }}
@@ -535,8 +534,18 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
                     />
                   </svg>
-                  
-                  {/* Real-time status indicator inside the button */}
+                </div>
+                
+                {/* Status Dot Container */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '12px',
+                  height: '12px',
+                  position: 'relative'
+                }}>
+                  {/* Real-time status indicator */}
                   <div style={{
                     width: '8px',
                     height: '8px',
@@ -546,7 +555,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                     realtimeStatus === 'error' ? '#ef4444' : '#6b7280',
                     animation: realtimeStatus === 'connecting' ? 'pulse 1.5s ease-in-out infinite' : 'none',
                     boxShadow: realtimeStatus === 'connected' ? '0 0 8px rgba(16, 185, 129, 0.8)' : 'none',
-                    // Prevent dot from causing shifts
                     backfaceVisibility: 'hidden'
                   }} />
                 </div>
