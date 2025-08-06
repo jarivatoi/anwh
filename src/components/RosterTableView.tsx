@@ -186,7 +186,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     }
   };
 
-  // Handle special date long press
+  // Handle special date double press
   const handleSpecialDateDoublePress = (date: string) => {
     console.log('🌟 SPECIAL DATE: Double tap detected on date:', date);
     setSelectedSpecialDate(date);
@@ -440,30 +440,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
 
   return (
     <>
-      {/* Add CSS for refresh animation */}
-      <style jsx>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes pulse {
-          0%, 100% {
-            opacity: 0.8;
-            transform: scale(1);
-          }
-          50% {
-            opacity: 1;
-            transform: scale(1.1);
-          }
-        }
-        @keyframes scroll-text {
-          0% { transform: translateX(0%); }
-          25% { transform: translateX(0%); }
-          75% { transform: translateX(-100%); }
-          100% { transform: translateX(-100%); }
-        }
-      `}</style>
-
       {/* Month Navigation Header */}
       <div className="bg-white rounded-lg mb-4 p-4 shadow-sm sticky top-0 z-50">
         <div className="grid grid-cols-5 gap-2 items-center w-full">
@@ -683,6 +659,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       isSpecialDate={isSpecialDate(date) && getSpecialDateInfo(date) !== null}
                       specialDateInfo={getSpecialDateInfo(date)}
                       formatTableDate={formatTableDate}
+                      realtimeStatus={realtimeStatus}
+                      onManualRefresh={handleManualRefresh}
+                      isRefreshing={isRefreshing && refreshingDate === date}
                     />
                     
                     {shiftTypes.map(shiftType => {
