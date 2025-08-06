@@ -93,7 +93,7 @@ export const SpecialDateModal: React.FC<SpecialDateModalProps> = ({
     setIsSaving(true);
     setSaveError(null);
     
-    onSave(isSpecial, info)
+    onSave(isSpecial, isSpecial ? info : '') // Clear info when removing special status
       .then(() => {
         onClose();
       })

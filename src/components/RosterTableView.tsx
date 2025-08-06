@@ -282,10 +282,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     try {
       const editorName = validateAuthCode(authCode) || 'ADMIN';
       
-      if (isSpecial && info.trim()) {
-        // Update all staff remarks for this date
-        await updateAllStaffRemarksForDate(selectedSpecialDate, info.trim(), editorName);
-      }
+      // Always update staff remarks - either with new info or empty string to clear
+      await updateAllStaffRemarksForDate(selectedSpecialDate, isSpecial ? info.trim() : '', editorName);
       
       // Refresh data
       if (onRefresh) {
