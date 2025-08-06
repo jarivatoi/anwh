@@ -134,6 +134,15 @@ export const Calendar: React.FC<CalendarProps> = ({
         force3D: true
       });
 
+      // Set initial state for special text (avoid interfering with ScrollingText)
+      const specialTexts = calendarGridRef.current.querySelectorAll('.special-text');
+      gsap.set(specialTexts, {
+        opacity: 0,
+        scale: 0.9,
+        x: 15,  // Slide from right
+        force3D: true
+      });
+
       // Create master timeline with smooth TweenMax-style easing
       const masterTl = gsap.timeline({
         defaults: {
@@ -146,6 +155,7 @@ export const Calendar: React.FC<CalendarProps> = ({
       dayBoxes.forEach((box, index) => {
         const dayNumber = parseInt(box.getAttribute('data-day') || '0');
         const shiftElements = box.querySelectorAll('.shift-text');
+        const specialElements = box.querySelectorAll('.special-text');
         
         // Add to animated elements tracking
         animatedElementsRef.current.add(box as HTMLElement);
@@ -174,6 +184,18 @@ export const Calendar: React.FC<CalendarProps> = ({
             stagger: 0.06,
             ease: "power2.out"
           }, delay + 0.1);
+        }
+
+        // Animate special texts (without interfering with ScrollingText)
+        if (specialElements.length > 0) {
+          specialElements.forEach(el => animatedElementsRef.current.add(el as HTMLElement));
+          masterTl.to(specialElements, {
+            opacity: 1,
+            x: 0,  // Slide to final position
+            scale: 1,
+            duration: 0.4,
+            ease: "elastic.out(1, 0.5)" // Gentle elastic effect
+          }, delay + 0.15);
         }
       });
       
@@ -676,11 +698,14 @@ export const Calendar: React.FC<CalendarProps> = ({
           const day = calendarDays[dayIndex];
           if (day) {
             const dayShifts = getDayShifts(day);
+            const hasSpecial = isSpecialDate(day);
             
-            // Count content lines: only shifts (no special text)
+            // Count content lines: shifts + special text (if present)
+            // Maximum possible: SPECIAL (1 line) + 3 shifts (3 lines) = 4 total
             let contentLines = dayShifts.length;
+            if (hasSpecial) contentLines += 1; // Add 1 line for "SPECIAL" text
             
-            // Cap at maximum possible content
+            // Cap at maximum possible content (should never exceed 4)
             contentLines = Math.min(contentLines, 4);
             
             maxContentLines = Math.max(maxContentLines, contentLines);
@@ -690,11 +715,11 @@ export const Calendar: React.FC<CalendarProps> = ({
       
       // Calculate height based on maximum content lines in the row
       const baseHeight = window.innerWidth >= 640 ? 60 : 50; // Base height for date number
-      const lineHeight = window.innerWidth >= 640 ? 16 : 12; // Height per content line
+      const lineHeight = window.innerWidth >= 640 ? 16 : 12; // Reduced height per content line
       const padding = window.innerWidth >= 640 ? 16 : 12; // Top/bottom padding
       
       const calculatedHeight = baseHeight + (maxContentLines * lineHeight) + padding;
-      const minHeight = window.innerWidth >= 640 ? 70 : 55; // Minimum height
+      const minHeight = window.innerWidth >= 640 ? 70 : 55; // Reduced minimum height
       
       const finalHeight = Math.max(calculatedHeight, minHeight);
       rowHeights.push(`${finalHeight}px`);
@@ -825,10 +850,11 @@ export const Calendar: React.FC<CalendarProps> = ({
               height: '100vh',
               backgroundColor: 'rgba(0, 0, 0, 0.5)',
               display: 'flex',
-              alignItems: 'center',
+              alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
               justifyContent: 'center',
               zIndex: 99999,
-              padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
+              padding: window.innerWidth > window.innerHeight ? '8px' : '16px', // Less padding in landscape
+              paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px', // Minimal top padding in landscape
               overflow: 'auto',
               overflowY: 'auto',
               WebkitOverflowScrolling: 'touch',
@@ -854,9 +880,9 @@ export const Calendar: React.FC<CalendarProps> = ({
                 backgroundColor: 'white',
                 borderRadius: '16px',
                 boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-                maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '400px',
+                maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '400px', // Use more width in landscape
                 width: '100%',
-                maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
+                maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh', // Use more height in landscape
                 display: 'flex',
                 flexDirection: 'column',
                 userSelect: 'none',
@@ -864,7 +890,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                 // Critical: Prevent Android touch issues
                 touchAction: 'manipulation',
                 WebkitTapHighlightColor: 'transparent',
-                margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0'
+                margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0' // Less margin in landscape
               }}
               onClick={(e) => {
                 // Prevent modal from closing when clicking inside
@@ -883,7 +909,7 @@ export const Calendar: React.FC<CalendarProps> = ({
               {/* Header with close button */}
               <div style={{ 
                 position: 'relative', 
-                padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
+                padding: window.innerWidth > window.innerHeight ? '12px' : '24px', // Less padding in landscape
                 paddingBottom: window.innerWidth > window.innerHeight ? '8px' : '16px', 
                 borderBottom: '1px solid #e5e7eb', 
                 flexShrink: 0 
@@ -941,16 +967,13 @@ export const Calendar: React.FC<CalendarProps> = ({
 
               {/* Content */}
               <div style={{ 
-                padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
+                padding: window.innerWidth > window.innerHeight ? '12px' : '24px', // Less padding in landscape
                 flex: 1, 
                 overflowY: 'auto',
                 WebkitOverflowScrolling: 'touch',
-                touchAction: 'pan-y',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
+                touchAction: 'pan-y'
               }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', width: '100%', maxWidth: '300px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px', textAlign: 'center' }}>Year</label>
                     <select
@@ -996,7 +1019,7 @@ export const Calendar: React.FC<CalendarProps> = ({
               
               {/* Footer with close button */}
               <div style={{ 
-                padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
+                padding: window.innerWidth > window.innerHeight ? '12px' : '24px', // Less padding in landscape
                 paddingTop: 0, 
                 flexShrink: 0 
               }}>
@@ -1079,7 +1102,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                   day 
                     ? todayDate
                       ? `cursor-pointer border-indigo-400 shadow-lg bg-yellow-100 hover:bg-yellow-200 active:bg-yellow-200` // TODAY: Permanent hover state
-                      : `cursor-pointer hover:border-indigo-400 hover:shadow-lg bg-yellow-50 border-yellow-200 hover:bg-yellow-100 active:bg-yellow-200 ${hasSpecialDate ? 'animate-pulse' : ''}`
+                      : `cursor-pointer hover:border-indigo-400 hover:shadow-lg bg-yellow-50 border-yellow-200 hover:bg-yellow-100 active:bg-yellow-200`
                     : 'border-transparent'
                 }`}
                 style={{
@@ -1087,8 +1110,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                   userSelect: 'none',
                   WebkitUserSelect: 'none',
                   display: 'flex',
-                  flexDirection: 'column',
-                  backgroundColor: hasSpecialDate ? '#fecaca' : undefined
+                  flexDirection: 'column'
                 }}
                 onClick={() => day && handleDateClick(day)}
                onMouseDown={(e) => day && handleDateLongPressStart(day, e)}
@@ -1099,13 +1121,6 @@ export const Calendar: React.FC<CalendarProps> = ({
               >
                 {day && (
                   <div className="flex flex-col select-none h-full">
-                    {/* SPECIAL text at top - simple style */}
-                    {hasSpecialDate && (
-                      <div className="text-[8px] sm:text-[10px] font-bold text-red-600 text-center mb-1 select-none">
-                        SPECIAL
-                      </div>
-                    )}
-                    
                     {/* BIG X WATERMARK for past dates */}
                     {isPastDate(day) && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
@@ -1115,18 +1130,11 @@ export const Calendar: React.FC<CalendarProps> = ({
                       </div>
                     )}
                     
+   
+                    
                     {/* Date header with special indicator and TODAY CIRCLE */}
-                    <div className={`flex-shrink-0 mb-1.5 sm:mb-2 relative ${isPastDate(day) ? 'z-30' : ''} ${hasSpecialDate ? 'mt-0' : ''}`}>
-                      {/* SPECIAL text indicator */}
-                      {hasSpecialDate && (
-                        <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 z-20">
-                          <div className="bg-red-600 text-white text-[8px] sm:text-[10px] font-bold px-1 py-0.5 rounded-sm animate-pulse">
-                            SPECIAL
-                          </div>
-                        </div>
-                      )}
-                      
-                      <div className={`text-sm sm:text-base text-center font-semibold ${getDateTextColor(day)} relative select-none`} style={{ color: hasSpecialDate ? '#991b1b' : undefined }}>
+                    <div className={`flex-shrink-0 mb-1.5 sm:mb-2 relative ${isPastDate(day) ? 'z-30' : ''}`}>
+                      <div className={`text-sm sm:text-base text-center font-semibold ${getDateTextColor(day)} relative select-none`}>
                         {/* TODAY CIRCLE - PERFECT SIZE FOR 2-DIGIT DATES */}
                         {todayDate && (
                           <div className="absolute inset-0 flex items-center justify-center">
@@ -1139,7 +1147,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                             />
                           </div>
                         )}
-                        <span className={`relative z-10 select-none ${hasSpecialDate ? 'mt-3' : ''}`}>{day}</span>
+                        <span className="relative z-10 select-none">{day}</span>
                         
                         {/* TICK INDICATOR for dates with shifts */}
                         {dayShifts.length > 0 && dayShifts.some(shiftId => shiftId.trim() !== '') && (
