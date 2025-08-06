@@ -1110,6 +1110,15 @@ export const Calendar: React.FC<CalendarProps> = ({
                     
                     {/* Date header with special indicator and TODAY CIRCLE */}
                     <div className={`flex-shrink-0 mb-1.5 sm:mb-2 relative ${isPastDate(day) ? 'z-30' : ''}`}>
+                      {/* SPECIAL text indicator */}
+                      {hasSpecialDate && (
+                        <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 z-20">
+                          <div className="bg-red-600 text-white text-[8px] sm:text-[10px] font-bold px-1 py-0.5 rounded-sm animate-pulse">
+                            SPECIAL
+                          </div>
+                        </div>
+                      )}
+                      
                       <div className={`text-sm sm:text-base text-center font-semibold ${getDateTextColor(day)} relative select-none`} style={{ color: hasSpecialDate ? '#991b1b' : undefined }}>
                         {/* TODAY CIRCLE - PERFECT SIZE FOR 2-DIGIT DATES */}
                         {todayDate && (
@@ -1123,7 +1132,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                             />
                           </div>
                         )}
-                        <span className="relative z-10 select-none">{day}</span>
+                        <span className={`relative z-10 select-none ${hasSpecialDate ? 'mt-3' : ''}`}>{day}</span>
                         
                         {/* TICK INDICATOR for dates with shifts */}
                         {dayShifts.length > 0 && dayShifts.some(shiftId => shiftId.trim() !== '') && (
