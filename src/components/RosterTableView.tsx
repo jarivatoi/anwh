@@ -654,11 +654,15 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       isToday={isToday(date)}
                       isPastDate={isPastDate(date)}
                       isFutureDate={isFutureDate(date)}
+                     onDoublePress={() => handleSpecialDateDoublePress(date)}
                       onDoublePress={() => handleSpecialDateDoublePress(date)}
                       onLongPress={() => handleDateCellLongPress(date)}
                       isSpecialDate={isSpecialDate(date) && getSpecialDateInfo(date) !== null}
                       specialDateInfo={getSpecialDateInfo(date)}
                       formatTableDate={formatTableDate}
+                     realtimeStatus={realtimeStatus}
+                     onManualRefresh={handleManualRefresh}
+                     isRefreshing={isRefreshing && refreshingDate === date}
                     />
                     
                     {shiftTypes.map(shiftType => {
