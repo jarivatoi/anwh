@@ -554,7 +554,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     onLongPress={() => handleSpecialDateLongPress(date)}
                     isSpecialDate={isSpecialDate(date)}
                     specialDateInfo={getSpecialDateInfo(date)}
-                    {actionType === 'special' ? 'Admin Authentication Required' : 'Authentication Required'}
+                    title={actionType === 'special' ? 'Admin Authentication Required' : 'Authentication Required'}
                   />
                   
                   {shiftTypes.map(shiftType => {
@@ -683,30 +683,30 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           >
             <div className="p-6">
               <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
-                Admin Authentication Required
-                  {/* Staff Selection for Add Staff */}
-                  {actionType === 'addStaff' && selectedShiftForAdd && (
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Select Staff for {selectedShiftForAdd}
-                      </label>
-                      <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-2">
-                        {sortByGroup(availableNames).map(name => (
-                          <label key={name} className="flex items-center space-x-2 p-2 hover:bg-gray-50 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={selectedStaffForAdd.includes(name)}
-                              onChange={() => handleStaffToggle(name)}
-                              className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                            />
-                            <span className="text-sm text-gray-900">{name}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
+                {actionType === 'special' ? 'Admin Authentication Required' : 'Authentication Required'}
               </h3>
+              
+              {/* Staff Selection for Add Staff */}
+              {actionType === 'addStaff' && selectedShiftForAdd && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Staff for {selectedShiftForAdd}
+                  </label>
+                  <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-2">
+                    {sortByGroup(availableNames).map(name => (
+                      <label key={name} className="flex items-center space-x-2 p-2 hover:bg-gray-50 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedStaffForAdd.includes(name)}
+                          onChange={() => handleStaffToggle(name)}
+                          className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        />
+                        <span className="text-sm text-gray-900">{name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
               
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -715,22 +715,16 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 <input
                   type="text"
                   value={authCode}
-                      disabled={isUpdating}
+                  disabled={isUpdating}
                   onChange={(e) => setAuthCode(e.target.value.toUpperCase())}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center font-mono text-lg"
                   placeholder="Enter admin code"
                   maxLength={4}
                   autoComplete="off"
-                      onClick={actionType === 'addStaff' ? handleSaveStaffChanges : handleAuthSubmit}
-                      disabled={authCode.length < 4 || isUpdating}
+                />
               </div>
               
-                      {isUpdating ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                          Saving...
-                        </>
-                      ) : actionType === 'addStaff' ? 'Save Changes' : 'Continue'}
+              {authError && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                   <p className="text-sm text-red-700 text-center">{authError}</p>
                 </div>
@@ -744,11 +738,16 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   Cancel
                 </button>
                 <button
-                  onClick={handleAuthSubmit}
-                  disabled={authCode.length < 4}
+                  onClick={actionType === 'addStaff' ? handleSaveStaffChanges : handleAuthSubmit}
+                  disabled={authCode.length < 4 || isUpdating}
                   className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200"
                 >
-                  Continue
+                  {isUpdating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      Saving...
+                    </>
+                  ) : actionType === 'addStaff' ? 'Save Changes' : 'Continue'}
                 </button>
               </div>
             </div>
