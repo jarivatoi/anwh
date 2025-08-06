@@ -53,6 +53,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const [hasInitialLoad, setHasInitialLoad] = useState(false);
   const [isReloading, setIsReloading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [actionType, setActionType] = useState<'staff' | 'special'>('staff');
   const [lastUpdateTime, setLastUpdateTime] = useState<string>('');
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportAuthCode, setExportAuthCode] = useState('');
@@ -435,6 +436,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     setAuthCode('');
     setAuthError('');
     setShowAuthModal(false);
+    setActionType('staff');
   };
 
   // Handle cancel auth for special dates
@@ -495,15 +497,23 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     }
   };
 
-  // Handle staff edit functions
-  const handleShiftSelect = (shiftType: string) => {
-    setSelectedShift(shiftType);
-    
-    // Get current staff for this date and shift
-    if (editingDate) {
-      const dateEntries = entries.filter(entry => entry.date === editingDate && entry.shift_type === shiftType);
-      const currentStaff = dateEntries.map(entry => entry.assigned_name);
-      setSelectedStaff(currentStaff);
+    if (actionType === 'special') {
+      // Open special date modal
+      setShowAuthModal(false);
+      setShowSpecialDateModal(true);
+      setAuthError('');
+    } else {
+      // Continue with staff editing
+      setShowAuthModal(false);
+      setAuthError('');
+      
+      // Get current staff for the selected date and shift
+      if (editingDate && selectedShift) {
+        const dateEntries = groupedEntries[editingDate] || [];
+        const currentEntries = dateEntries.filter(entry => entry.shift_type === selectedShift);
+        const currentStaff = currentEntries.map(entry => entry.assigned_name);
+        setSelectedStaff(currentStaff);
+      }
     }
   };
 
@@ -1404,6 +1414,47 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 </div>
               )}
               
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Action
+                </label>
+                <div className="space-y-3">
+                  <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                    <input
+                      type="radio"
+                      value="staff"
+                      checked={actionType === 'staff'}
+                      onChange={(e) => setActionType(e.target.value as 'staff' | 'special')}
+                      className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div className="flex items-center space-x-2">
+                      <User className="w-5 h-5 text-blue-600" />
+                      <div>
+                        <div className="font-medium text-gray-900">Edit Staff Assignment</div>
+                        <div className="text-sm text-gray-600">Add or remove staff from shifts</div>
+                      </div>
+                    </div>
+                  </label>
+                  
+                  <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                    <input
+                      type="radio"
+                      value="special"
+                      checked={actionType === 'special'}
+                      onChange={(e) => setActionType(e.target.value as 'staff' | 'special')}
+                      className="w-4 h-4 text-red-600 focus:ring-red-500"
+                    />
+                    <div className="flex items-center space-x-2">
+                      <Star className="w-5 h-5 text-red-600" />
+                      <div>
+                        <div className="font-medium text-gray-900">Mark Special Date</div>
+                        <div className="text-sm text-gray-600">Mark date as special with info</div>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+              
               <div className="flex space-x-3">
                 <button
                   onClick={handleCancelAuth}
@@ -1499,7 +1550,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   setExportResult(null);
                 }}
                 disabled={isExporting}
-                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200 disabled:opacity-50"
+              {actionType === 'staff' && (
+                <div className="mb-4">
                 style={{
                   position: 'absolute',
                   top: '16px',
@@ -1515,6 +1567,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   <Download className="w-6 h-6 text-green-600" />
                 </div>
               </div>
+              )}
               
               <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
                 Export to Calendar
@@ -1648,7 +1701,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       )}
       
       {/* Staff Selection Modal */}
-      {editingDate && selectedShift && authCode && !showAuthModal && createPortal(
+      {editingDate && selectedShift && authCode && !showAuthModal && actionType === 'staff' && createPortal(
         <div 
           className="fixed inset-0 bg-black bg-opacity-50"
           style={{
@@ -1770,7 +1823,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 >
                   Cancel
                 </button>
-                <button
+                  disabled={authCode.length < 4 || (actionType === 'staff' && !selectedShift) || !isAdminCode(authCode)}
                   onClick={handleSaveChanges}
                   disabled={isUpdating}
                   className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center justify-center space-x-2 select-none"
