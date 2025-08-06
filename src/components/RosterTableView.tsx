@@ -1178,7 +1178,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             backgroundColor: !isSpecialDate ? (
                                            isToday(date) ? '#bbf7d0' : 
                                            isPastDate(date) ? '#fef2f2' :
-                                           isFutureDate(date) ? '#f0fdf4' : '#ffffff'
+                                           isFutureDate(date) ? '#f0fdf4' : '#ffffff',
                             animation: isSpecialDate && specialDateEffect === 'bounce' ? 'subtle-bounce 2s ease-in-out infinite' :
                                       isSpecialDate && specialDateEffect === 'glow' ? 'glow 2s ease-in-out infinite' :
                                       isSpecialDate && specialDateEffect === 'border-flash' ? 'border-flash 1.5s ease-in-out infinite' :
