@@ -880,7 +880,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               )}
               
               {/* Shift Selection - Show for both special and addStaff actions when authenticated */}
-              {(actionType === 'addStaff' || actionType === 'special') && authCode.length >= 4 && isAdminCode(authCode) && (
+              {authCode.length >= 4 && isAdminCode(authCode) && (
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Select Shift Type
@@ -908,7 +908,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               )}
               
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              {selectedShiftForAdd && authCode.length >= 4 && isAdminCode(authCode) && (
                   Authentication Code
                 </label>
                 <input
