@@ -364,15 +364,15 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
                 <div className="w-8 h-8 border-4 border-green-200 border-t-green-600 rounded-full animate-spin" />
               </div>
               <h4 className="text-lg font-medium text-gray-900 mb-2">
-                Exporting Your Shifts
+                Exporting to Calendar
               </h4>
               <p className="text-gray-600 mb-4">
-                Generating calendar file for {formatMonthYear()}...
+                Converting roster data for {formatMonthYear()}...
               </p>
               <div className="space-y-2 text-sm text-gray-500">
                 <p>• Fetching your roster entries</p>
                 <p>• Converting to calendar format</p>
-                <p>• Preparing download</p>
+                <p>• Updating calendar view</p>
               </div>
             </div>
           )}
