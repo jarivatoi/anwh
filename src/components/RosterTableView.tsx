@@ -72,25 +72,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     return `${monthNames[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`;
   };
 
-  // Handle manual refresh
-  const handleManualRefresh = async (clickedDate?: string) => {
-    setIsRefreshing(true);
-    const refreshDate = clickedDate || new Date().toISOString().split('T')[0];
-    setRefreshingDate(refreshDate);
-    
-    try {
-      console.log('🔄 Manual refresh triggered in table view');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setLastUpdateTime(new Date().toLocaleTimeString());
-      console.log('✅ Manual refresh completed');
-    } catch (error) {
-      console.error('Manual refresh error:', error);
-    } finally {
-      setIsRefreshing(false);
-      setRefreshingDate(null);
-    }
-  };
-
   // Track mounted status
   useEffect(() => {
     isMountedRef.current = true;
@@ -673,15 +654,11 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       isToday={isToday(date)}
                       isPastDate={isPastDate(date)}
                       isFutureDate={isFutureDate(date)}
-                     onDoublePress={() => handleSpecialDateDoublePress(date)}
                       onDoublePress={() => handleSpecialDateDoublePress(date)}
                       onLongPress={() => handleDateCellLongPress(date)}
                       isSpecialDate={isSpecialDate(date) && getSpecialDateInfo(date) !== null}
                       specialDateInfo={getSpecialDateInfo(date)}
                       formatTableDate={formatTableDate}
-                     realtimeStatus={realtimeStatus}
-                     onManualRefresh={handleManualRefresh}
-                     isRefreshing={isRefreshing && refreshingDate === date}
                     />
                     
                     {shiftTypes.map(shiftType => {
