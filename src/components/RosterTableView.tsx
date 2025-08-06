@@ -64,7 +64,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const [selectedSpecialDate, setSelectedSpecialDate] = useState<string | null>(null);
   const [specialDates, setSpecialDates] = useState<Record<string, { isSpecial: boolean; info: string }>>({});
   const [showStaffEditModal, setShowStaffEditModal] = useState(false);
-  const [authModalType, setAuthModalType] = useState<'special' | 'staff'>('special');
   
   const tableRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef(false);
@@ -329,7 +328,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     console.log('🌟 Special date long press for:', date);
     setSelectedSpecialDate(date);
     setShowAuthModal(true);
-    setAuthModalType('special');
+    setActionType('special');
   };
 
   // Handle staff edit long press  
@@ -337,7 +336,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     console.log('👥 Staff edit long press for:', date);
     setEditingDate(date);
     setShowAuthModal(true);
-    setAuthModalType('staff');
+    setActionType('staff');
   };
 
   // Handle authentication
@@ -350,13 +349,19 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     
     setShowAuthModal(false);
     
-    if (authModalType === 'special') {
+    if (actionType === 'special') {
       setShowSpecialDateModal(true);
-    } else if (authModalType === 'staff') {
+    } else if (actionType === 'staff') {
       setShowStaffEditModal(true);
+      
+      // Get current staff for the selected date and shift
+      if (editingDate && selectedShift) {
+        const dateEntries = groupedByDate[editingDate] || [];
+        const currentEntries = dateEntries.filter(entry => entry.shift_type === selectedShift);
+        const currentStaff = currentEntries.map(entry => entry.assigned_name);
+        setSelectedStaff(currentStaff);
+      }
     }
-    
-    setAuthError('');
   };
 
   // Handle staff selection change
@@ -446,7 +451,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     setEditingDate(null);
     setAuthCode('');
     setAuthError('');
-    setAuthModalType('special');
+    setActionType('staff');
   };
 
   // Handle special date save
@@ -1095,7 +1100,12 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         isToday={isToday(date)}
                         isPastDate={isPastDate(date)}
                         isFutureDate={isFutureDate(date)}
-                        onLongPress={() => handleStaffEditLongPress(date)}
+                        onLongPress={() => {
+                          setSelectedSpecialDate(date);
+                          setEditingDate(date);
+                          setShowAuthModal(true);
+                          setActionType('staff'); // Default to staff editing
+                        }}
                         formatTableDate={formatTableDate}
                       />
                       {shiftTypes.map((shiftType) => {
