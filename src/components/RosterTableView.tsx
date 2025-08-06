@@ -502,6 +502,32 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     }
   };
 
+  // Get existing special date info for a date
+  const getExistingSpecialInfo = (date: string): { isSpecial: boolean; info: string } => {
+    // Check if we have it in local state first
+    if (specialDates[date]) {
+      return specialDates[date];
+    }
+    
+    // Otherwise, extract from roster entries
+    const dateEntries = entries.filter(entry => entry.date === date);
+    
+    // Look for special date info in any entry's change_description
+    for (const entry of dateEntries) {
+      if (entry.change_description && entry.change_description.includes('Special Date:')) {
+        const specialMatch = entry.change_description.match(/Special Date:\s*([^;]+)/);
+        if (specialMatch && specialMatch[1].trim()) {
+          return {
+            isSpecial: true,
+            info: specialMatch[1].trim()
+          };
+        }
+      }
+    }
+    
+    return { isSpecial: false, info: '' };
+  };
+
   const handleShiftSelect = (shiftType: string) => {
     setSelectedShift(shiftType);
     
@@ -1884,17 +1910,14 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       <SpecialDateModal
         isOpen={showSpecialDateModal}
         date={selectedSpecialDate}
-        currentSpecialInfo={{
-          isSpecial: editingDate ? specialDates[editingDate] === true : false,
-          info: '' // You can extract this from existing entries if needed
-        }}
-        currentSpecialInfo={selectedSpecialDate ? specialDates[selectedSpecialDate] : undefined}
+        currentSpecialInfo={selectedSpecialDate ? getExistingSpecialInfo(selectedSpecialDate) : undefined}
         onSave={handleSpecialDateSave}
         onClose={() => {
           setShowSpecialDateModal(false);
           setSelectedSpecialDate(null);
           setAuthCode('');
         }}
+        authCode={authCode}
       />
       
     </div>
