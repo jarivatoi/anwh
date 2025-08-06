@@ -12,7 +12,6 @@ import { availableNames, validateAuthCode, shiftTypes } from '../utils/rosterAut
 import { isAdminCode } from '../utils/rosterAuth';
 import { sortByGroup } from '../utils/rosterAuth';
 import { addRosterEntry, deleteRosterEntry } from '../utils/rosterApi';
-import { EditDetailsModal } from './EditDetailsModal';
 import { ScrollingText } from './ScrollingText';
 import { fetchRosterEntries } from '../utils/rosterApi';
 import { updateRosterEntry } from '../utils/rosterApi';
