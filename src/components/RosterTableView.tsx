@@ -532,12 +532,12 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               >
                 <div className="flex items-center space-x-1">
                   <RotateCcw 
-                    className={`w-7 h-7 ${isRefreshing ? 'animate-spin' : ''}`}
+                    className={`w-6 h-6 ${isRefreshing ? 'animate-spin' : ''}`}
                   />
                   
                   {/* Real-time status dot - same level as icon */}
                   <div 
-                    className="w-3 h-3 rounded-full"
+                    className="w-2 h-2 rounded-full"
                     style={{
                       backgroundColor: realtimeStatus === 'connected' ? '#10b981' : 
                                       realtimeStatus === 'connecting' ? '#f59e0b' :
