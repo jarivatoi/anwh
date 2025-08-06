@@ -355,14 +355,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     const editorName = validateAuthCode(authCode);
     if (!editorName || !isAdminCode(authCode)) {
       setAuthError(!editorName ? 'Invalid authentication code' : 'Admin access required for date editing');
-      return;
-      // Open special date modal
+      console.log('🌟 Opening special date modal for:', selectedSpecialDate);
       setShowStaffEditModal(true);
-    if (actionType === 'special') {
-      // Open special date modal
-      setShowAuthModal(false);
-      setShowSpecialDateModal(true);
-      setAuthError('');
     } else if (actionType === 'staff') {
       setShowAuthModal(false);
         const currentStaff = currentEntries.map(entry => entry.assigned_name);
@@ -564,8 +558,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       // Continue with staff editing
       setShowAuthModal(false);
       setAuthError('');
-      setAuthError('');
-      
+      console.log('👥 Opening staff edit modal for:', editingDate);
       // Get current staff for the selected date and shift
       if (editingDate && selectedShift) {
         const dateEntries = groupedByDate[editingDate] || [];
@@ -573,6 +566,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         const currentStaff = currentEntries.map(entry => entry.assigned_name);
         setSelectedStaff(currentStaff);
       }
+      setShowStaffEditModal(true);
     }
   };
 
