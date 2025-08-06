@@ -123,8 +123,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                            selectedDate.getFullYear() === today.getFullYear();
     const shouldAutoScroll = !loading && 
                             filteredEntries.length > 0 && 
-                            isCurrentMonth &&
-                            Date.now() - lastTabSwitch < 2000; // Allow 2 seconds after tab switch
+                            isCurrentMonth;
     
     if (shouldAutoScroll) {
       const todayString = today.toISOString().split('T')[0];
@@ -145,16 +144,42 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           } else {
             console.log(`❌ Could not find element with data-date="${todayString}"`);
           }
-        }, 300); // Slightly longer delay to ensure DOM is ready
+        }, 500); // Longer delay to ensure DOM is ready
       } else {
         console.log(`❌ No entry found for today: ${todayString}`);
       }
     }
-  }, [loading, filteredEntries, selectedDate, lastTabSwitch]);
+  }, [loading, filteredEntries, selectedDate]);
 
-  // Reset auto-scroll when component mounts (tab switch)
+  // Track when component mounts (tab switch) and trigger auto-scroll
   useEffect(() => {
     setLastTabSwitch(Date.now());
+    
+    // Force auto-scroll on tab switch with delay
+    if (!loading && filteredEntries.length > 0) {
+      const today = new Date();
+      const isCurrentMonth = selectedDate.getMonth() === today.getMonth() && 
+                             selectedDate.getFullYear() === today.getFullYear();
+      
+      if (isCurrentMonth) {
+        const todayString = today.toISOString().split('T')[0];
+        const todayEntry = filteredEntries.find(entry => entry.date === todayString);
+        
+        if (todayEntry) {
+          console.log(`📍 Tab switch auto-scroll to: ${todayString}`);
+          setTimeout(() => {
+            const todaySection = document.querySelector(`[data-date="${todayString}"]`);
+            if (todaySection) {
+              todaySection.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+              });
+              console.log(`📍 Tab switch scrolled to today's date: ${todayString}`);
+            }
+          }, 800); // Even longer delay for tab switch
+        }
+      }
+    }
   }, []);
 
   // Listen for roster updates
