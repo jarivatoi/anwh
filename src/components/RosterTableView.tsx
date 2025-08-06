@@ -450,7 +450,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           <div className="flex items-center space-x-3">
             <button
               onClick={() => navigateMonth('prev')}
-              className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors duration-200"
+              className="p-2 rounded-lg text-gray-600 transition-colors duration-200"
               title="Previous month"
             >
               <ChevronLeft className="w-5 h-5" />
@@ -507,7 +507,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               <button
                 onClick={() => handleManualRefresh()}
                 disabled={isRefreshing}
-                className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors duration-200"
+                className="p-2 rounded-lg text-gray-600 transition-colors duration-200"
                 title="Manual refresh"
                 style={{
                   width: '32px',
@@ -574,7 +574,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           <div className="flex items-center space-x-3">
             <button
               onClick={() => navigateMonth('next')}
-              className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors duration-200"
+              className="p-2 rounded-lg text-gray-600 transition-colors duration-200"
               title="Next month"
             >
               <ChevronRight className="w-5 h-5" />
