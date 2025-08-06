@@ -1172,9 +1172,21 @@ export const Calendar: React.FC<CalendarProps> = ({
                       {/* Special date indicator */}
                       {hasSpecialDate && (
                         <div 
-                          className="special-text text-[8px] sm:text-[9px] text-red-500 font-bold leading-none mt-0.5 flex justify-center select-none"
+                          className="special-text text-[9px] sm:text-[11px] text-red-500 font-bold leading-tight mt-0.5 flex justify-center select-none w-full"
+                          style={{
+                            minHeight: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '1px 2px',
+                            borderRadius: '2px',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            border: '1px solid rgba(239, 68, 68, 0.3)'
+                          }}
                         >
-                          <div className="text-center select-none">SPECIAL</div>
+                          <div className="text-center select-none whitespace-nowrap overflow-hidden text-ellipsis w-full">
+                            SPECIAL
+                          </div>
                         </div>
                       )}
                       
