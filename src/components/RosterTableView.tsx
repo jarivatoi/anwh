@@ -840,20 +840,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             }}
                           />
                           
-                          {isPastDate(date) && (
-                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                              <div className="font-bold select-none" style={{
-                                fontSize: window.innerWidth > window.innerHeight ? 'clamp(2rem, 8vw, 4rem)' : 'clamp(4rem, 12vw, 8rem)',
-                                lineHeight: '1',
-                                color: '#fca5a5',
-                                opacity: 0.15,
-                                transform: 'scale(1.5)'
-                              }}>
-                                X
-                              </div>
-                            </div>
-                          )}
-                          
                           <div className="space-y-1 relative z-60" style={{ 
                             minHeight: '50px',
                             padding: '4px 2px'
