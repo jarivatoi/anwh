@@ -369,7 +369,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           [selectedSpecialDate]: existingInfo
         }));
       }
-      setShowSpecialDateModal(true);
+      setShowSpecialDateModal(true)
     } else if (actionType === 'staff') {
       setShowStaffEditModal(true);
   
