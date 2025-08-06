@@ -516,7 +516,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   }
                 }}
                 disabled={isRefreshing}
-                className="p-3 rounded-lg text-blue-600 flex items-center justify-center"
+                className="p-3 rounded-lg text-blue-600 flex items-center justify-center space-x-1"
                 style={{
                   touchAction: 'manipulation',
                   WebkitTapHighlightColor: 'transparent',
@@ -533,8 +533,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 {/* Refresh icon with rotation animation when loading */}
                 <svg 
                   style={{
-                    width: '18px',
-                    height: '18px',
+                    width: '32px',
+                    height: '32px',
                     animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
                     // Prevent icon from causing shifts
                     transform: 'translate3d(0,0,0)',
@@ -554,8 +554,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 
                 {/* Real-time status indicator inside the button */}
                 <div style={{
-                  width: '8px',
-                  height: '8px',
+                  width: '12px',
+                  height: '12px',
                   borderRadius: '50%',
                   backgroundColor: realtimeStatus === 'connected' ? '#10b981' : 
                                   realtimeStatus === 'connecting' ? '#f59e0b' :
