@@ -1079,7 +1079,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                   day 
                     ? todayDate
                       ? `cursor-pointer border-indigo-400 shadow-lg bg-yellow-100 hover:bg-yellow-200 active:bg-yellow-200` // TODAY: Permanent hover state
-                      : `cursor-pointer hover:border-indigo-400 hover:shadow-lg bg-yellow-50 border-yellow-200 hover:bg-yellow-100 active:bg-yellow-200`
+                      : `cursor-pointer hover:border-indigo-400 hover:shadow-lg bg-yellow-50 border-yellow-200 hover:bg-yellow-100 active:bg-yellow-200 ${hasSpecialDate ? 'animate-pulse' : ''}`
                     : 'border-transparent'
                 }`}
                 style={{
@@ -1087,7 +1087,8 @@ export const Calendar: React.FC<CalendarProps> = ({
                   userSelect: 'none',
                   WebkitUserSelect: 'none',
                   display: 'flex',
-                  flexDirection: 'column'
+                  flexDirection: 'column',
+                  backgroundColor: hasSpecialDate ? '#fecaca' : undefined
                 }}
                 onClick={() => day && handleDateClick(day)}
                onMouseDown={(e) => day && handleDateLongPressStart(day, e)}
@@ -1109,7 +1110,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                     
                     {/* Date header with special indicator and TODAY CIRCLE */}
                     <div className={`flex-shrink-0 mb-1.5 sm:mb-2 relative ${isPastDate(day) ? 'z-30' : ''}`}>
-                      <div className={`text-sm sm:text-base text-center font-semibold ${getDateTextColor(day)} relative select-none`}>
+                      <div className={`text-sm sm:text-base text-center font-semibold ${getDateTextColor(day)} relative select-none`} style={{ color: hasSpecialDate ? '#991b1b' : undefined }}>
                         {/* TODAY CIRCLE - PERFECT SIZE FOR 2-DIGIT DATES */}
                         {todayDate && (
                           <div className="absolute inset-0 flex items-center justify-center">
