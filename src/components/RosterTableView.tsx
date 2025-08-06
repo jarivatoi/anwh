@@ -626,10 +626,14 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             left: 0,
                             right: 0,
                             bottom: 0,
-                            zIndex: 5,
+                            zIndex: 100,
                             cursor: 'pointer',
-                            touchAction: 'manipulation'
+                            touchAction: 'manipulation',
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            outline: 'none'
                           }}
+                          title="Long press to add/remove staff (Admin)"
                         />
                         
                         {isPastDate(date) && (
