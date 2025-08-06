@@ -469,13 +469,34 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             </h3>
           </div>
           
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
+            {/* Real-time status indicator and manual refresh */}
+            <div className="flex items-center space-x-2">
+              <div className={`w-2 h-2 rounded-full ${
+                realtimeStatus === 'connected' ? 'bg-green-500 animate-pulse' : 
+                realtimeStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
+                realtimeStatus === 'error' ? 'bg-red-500' : 'bg-gray-400'
+              }`} />
+              <button
+                onClick={() => handleManualRefresh()}
+                disabled={isRefreshing}
+                className="p-1 rounded hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors duration-200"
+                title="Manual refresh"
+              >
+                {isRefreshing ? (
+                  <div className="w-4 h-4 border-2 border-gray-400 border-t-gray-600 rounded-full animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+            
             <button
               onClick={onExportToCalendar}
-              className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 text-sm"
+              className="p-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200"
+              title="Export to Calendar"
             >
-              <Download className="w-4 h-4" />
-              <span>Export to Calendar</span>
+              <Download className="w-5 h-5" />
             </button>
             <button
             onClick={() => navigateMonth('next')}
@@ -483,22 +504,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             >
             <ChevronRight className="w-5 h-5" />
             </button>
-          </div>
-        </div>
-        
-        {/* Real-time status indicator */}
-        <div className="flex items-center justify-center mt-2">
-          <div className="flex items-center space-x-2">
-            <div className={`w-2 h-2 rounded-full ${
-              realtimeStatus === 'connected' ? 'bg-green-500 animate-pulse' : 
-              realtimeStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
-              realtimeStatus === 'error' ? 'bg-red-500' : 'bg-gray-400'
-            }`} />
-            <span className="text-xs text-gray-600">
-              {realtimeStatus === 'connected' ? 'Real-time connected' :
-               realtimeStatus === 'connecting' ? 'Connecting...' :
-               realtimeStatus === 'error' ? 'Connection error' : 'Offline'}
-            </span>
           </div>
         </div>
       </div>
