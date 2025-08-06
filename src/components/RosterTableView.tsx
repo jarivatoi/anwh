@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Calendar, Edit, FileText, Download, RefreshCw, Star, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Edit, FileText, Download, RefreshCw, Star, AlertTriangle, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { RosterEntry, ShiftFilterType } from '../types/roster';
 import { EditDetailsModal } from './EditDetailsModal';
 import { SpecialDateModal } from './SpecialDateModal';
@@ -710,3 +710,184 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                           border: '2px solid #374151',
                           position: 'relative',
                           width: '21.25%',
+                          backgroundColor: isSpecialDate(date) ? '#fecaca' : 
+                                         isToday(date) ? '#bbf7d0' : 
+                                         isPastDate(date) ? '#fef2f2' :
+                                         isFutureDate(date) ? '#f0fdf4' : '#ffffff'
+                        }}
+                        onTouchStart={() => {
+                          const timer = setTimeout(() => {
+                            handleShiftCellLongPress(date, shiftType);
+                          }, 800);
+                          setLongPressTimer(timer);
+                        }}
+                        onTouchEnd={() => {
+                          if (longPressTimer) {
+                            clearTimeout(longPressTimer);
+                            setLongPressTimer(null);
+                          }
+                        }}
+                        onTouchCancel={() => {
+                          if (longPressTimer) {
+                            clearTimeout(longPressTimer);
+                            setLongPressTimer(null);
+                          }
+                        }}
+                        >
+                          {shiftEntries.length === 0 ? (
+                            <div style={{
+                              padding: '8px',
+                              minHeight: '50px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: '#9ca3af',
+                              fontSize: '12px'
+                            }}>
+                              -
+                            </div>
+                          ) : (
+                            <div style={{
+                              padding: '4px',
+                              minHeight: '50px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '2px'
+                            }}>
+                              {shiftEntries.map((entry, index) => (
+                                <RosterEntryCell
+                                  key={entry.id}
+                                  entry={entry}
+                                  onClick={() => handleShowDetails(entry)}
+                                  isRefreshing={refreshingDate === entry.date}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Details Modal */}
+      {showModal && selectedEntry && (
+        <EditDetailsModal
+          entry={selectedEntry}
+          onClose={() => {
+            setShowModal(false);
+            setSelectedEntry(null);
+          }}
+          onUpdate={handleEntryUpdate}
+        />
+      )}
+
+      {/* Special Date Modal */}
+      {showSpecialDateModal && selectedSpecialDate && (
+        <SpecialDateModal
+          date={selectedSpecialDate}
+          currentInfo={getSpecialDateInfo(selectedSpecialDate)}
+          onSave={handleSpecialDateSave}
+          onClose={handleCloseSpecialDateModal}
+        />
+      )}
+
+      {/* Authentication Modal */}
+      {showAuthModal && (
+        createPortal(
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]" style={{ touchAction: 'none' }}>
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+              <h3 className="text-lg font-semibold mb-4">
+                {actionType === 'special' ? 'Mark Special Date' : 'Modify Staff Assignment'}
+              </h3>
+              
+              {actionType === 'special' ? (
+                <p className="text-gray-600 mb-4">
+                  Enter your authentication code to mark this date as special:
+                </p>
+              ) : (
+                <div className="space-y-4 mb-4">
+                  <p className="text-gray-600">
+                    Enter your authentication code to modify staff assignments:
+                  </p>
+                  
+                  {selectedSpecialDate && (
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <p className="font-medium">Date: {new Date(selectedSpecialDate).toLocaleDateString()}</p>
+                      {selectedShiftForAdd && (
+                        <p className="text-sm text-gray-600">Shift: {selectedShiftForAdd}</p>
+                      )}
+                    </div>
+                  )}
+                  
+                  {selectedShiftForAdd && (
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Select Staff for {selectedShiftForAdd} shift:
+                      </label>
+                      <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                        {availableNames.map(name => (
+                          <label key={name} className="flex items-center space-x-2 p-1 hover:bg-gray-50 rounded">
+                            <input
+                              type="checkbox"
+                              checked={selectedStaffForAdd.includes(name)}
+                              onChange={() => handleStaffToggle(name)}
+                              className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <span className="text-sm">{name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Authentication Code
+                  </label>
+                  <input
+                    type="password"
+                    value={authCode}
+                    onChange={(e) => setAuthCode(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="Enter your code"
+                    autoFocus
+                  />
+                  {authError && (
+                    <p className="text-red-600 text-sm mt-1">{authError}</p>
+                  )}
+                </div>
+                
+                <div className="flex space-x-3">
+                  <button
+                    onClick={actionType === 'special' ? handleAuthSubmit : handleSaveStaffChanges}
+                    disabled={!authCode.trim() || isUpdating}
+                    className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isUpdating ? 'Updating...' : actionType === 'special' ? 'Continue' : 'Save Changes'}
+                  </button>
+                  <button
+                    onClick={handleCloseAuthModal}
+                    disabled={isUpdating}
+                    className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )
+      )}
+    </div>
+  );
+};
