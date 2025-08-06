@@ -526,7 +526,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 <tr>
                   <th style={{
                     position: 'sticky',
-                    top: 0,
+                    top: '-2px',
                     zIndex: 150,
                     backgroundColor: '#4f46e5',
                     color: 'white',
@@ -542,7 +542,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   {shiftTypes.map(shiftType => (
                     <th key={shiftType} style={{
                      position: 'sticky',
-                     top: 0,
+                     top: '-2px',
                      zIndex: 150,
                       backgroundColor: '#4f46e5',
                       color: 'white',
