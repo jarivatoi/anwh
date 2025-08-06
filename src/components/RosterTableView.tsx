@@ -50,10 +50,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const [selectedStaffForAdd, setSelectedStaffForAdd] = useState<string[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
   
-  // Special date modal states
-  const [showSpecialDateModal, setShowSpecialDateModal] = useState(false);
-  const [selectedSpecialDate, setSelectedSpecialDate] = useState<string | null>(null);
-
   const isMountedRef = useRef(true);
 
   // Month navigation
