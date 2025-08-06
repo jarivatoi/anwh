@@ -825,16 +825,15 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 z-[99999]"
           style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 99999,
             display: 'flex',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             justifyContent: 'center',
-            padding: '16px'
+            padding: window.innerWidth > window.innerHeight ? '4px' : '16px',
+            paddingTop: window.innerWidth > window.innerHeight ? '2px' : '16px',
+            overflow: 'auto',
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y'
           }}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
@@ -843,10 +842,17 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           }}
         >
           <div 
-            className="bg-white rounded-2xl shadow-2xl max-w-md w-full"
+            className="bg-white rounded-2xl shadow-2xl w-full"
+            style={{
+              maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
+              maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
+              margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0'
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-6">
+            <div style={{
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
+            }}>
               <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
                 {actionType === 'special' ? 'Admin Authentication Required' : 'Authentication Required'}
               </h3>
