@@ -7,6 +7,7 @@ interface RosterDateCellProps {
   isToday: boolean;
   isPastDate: boolean;
   isFutureDate: boolean;
+  onDoublePress: () => void;
   onLongPress: () => void;
   isSpecialDate?: boolean;
   specialDateInfo?: string;
@@ -18,6 +19,7 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
   isToday,
   isPastDate,
   isFutureDate,
+  onDoublePress,
   onLongPress,
   isSpecialDate = false,
   specialDateInfo,
@@ -53,6 +55,7 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
      <button
         {...useLongPress({
           onLongPress,
+          onDoublePress,
           delay: 5000
         })}
         className={`text-center w-full h-full p-1 rounded transition-colors duration-200 ${

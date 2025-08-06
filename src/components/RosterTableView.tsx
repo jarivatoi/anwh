@@ -49,6 +49,10 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const [selectedShiftForAdd, setSelectedShiftForAdd] = useState<string>('');
   const [selectedStaffForAdd, setSelectedStaffForAdd] = useState<string[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
+  
+  // Special date modal states
+  const [showSpecialDateModal, setShowSpecialDateModal] = useState(false);
+  const [selectedSpecialDate, setSelectedSpecialDate] = useState<string | null>(null);
 
   const isMountedRef = useRef(true);
 
@@ -182,10 +186,22 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   };
 
   // Handle special date long press
-  const handleSpecialDateLongPress = (date: string) => {
-    console.log('🌟 SPECIAL DATE: Long press detected on date:', date);
+  const handleSpecialDateDoublePress = (date: string) => {
+    console.log('🌟 SPECIAL DATE: Double tap detected on date:', date);
     setSelectedSpecialDate(date);
     setActionType('special');
+    setSelectedShiftForAdd('');
+    setSelectedStaffForAdd([]);
+    setShowAuthModal(true);
+    setAuthCode('');
+    setAuthError('');
+  };
+  
+  // Handle add staff long press (admin only)
+  const handleAddStaffLongPress = (date: string) => {
+    console.log('👥 ADD STAFF: Long press detected on date:', date);
+    setSelectedSpecialDate(date);
+    setActionType('addStaff');
     setSelectedShiftForAdd('');
     setSelectedStaffForAdd([]);
     setShowAuthModal(true);
@@ -613,7 +629,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       isToday={isToday(date)}
                       isPastDate={isPastDate(date)}
                       isFutureDate={isFutureDate(date)}
-                      onLongPress={() => handleSpecialDateLongPress(date)}
+                      onDoublePress={() => handleSpecialDateDoublePress(date)}
+                      onLongPress={() => handleAddStaffLongPress(date)}
                       isSpecialDate={isSpecialDate(date)}
                       specialDateInfo={getSpecialDateInfo(date)}
                      formatTableDate={formatTableDate}
