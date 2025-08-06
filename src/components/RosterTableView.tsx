@@ -570,7 +570,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 </div>
               </button>
             </div>
-            </div>
           </div>
           
           {/* Right Arrow */}
@@ -585,6 +584,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           >
             <ChevronRight className="w-6 h-6" />
           </button>
+        </div>
+      </div>
+
       {/* Table Content */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
@@ -714,7 +716,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       onDoublePress={() => handleSpecialDateDoublePress(date)}
                       onLongPress={() => handleDateCellLongPress(date)}
                       isSpecialDate={isSpecialDate(date) && getSpecialDateInfo(date) !== null}
-                     className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`}
+                      className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`}
                     />
                     
                     {shiftTypes.map(shiftType => {
