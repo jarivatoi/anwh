@@ -1,101 +1,53 @@
-import React from 'react';
-import { createPortal } from 'react-dom';
-import { Calendar, User, ChevronLeft, ChevronRight, Edit, RotateCcw, FileText, X, CheckCircle, AlertTriangle, Download, Star } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Calendar, Edit, FileText, Download, RefreshCw, Star, AlertTriangle } from 'lucide-react';
 import { RosterEntry, ShiftFilterType } from '../types/roster';
-import { formatDisplayDate } from '../utils/rosterFilters';
+import { EditDetailsModal } from './EditDetailsModal';
+import { SpecialDateModal } from './SpecialDateModal';
 import { RosterEntryCell } from './RosterEntryCell';
 import { RosterDateCell } from './RosterDateCell';
-import { SpecialDateModal } from './SpecialDateModal';
-import { useState, useEffect, useRef } from 'react';
-import { useRosterData } from '../hooks/useRosterData';
-import { availableNames, validateAuthCode, shiftTypes } from '../utils/rosterAuth';
-import { isAdminCode } from '../utils/rosterAuth';
-import { sortByGroup } from '../utils/rosterAuth';
-import { addRosterEntry, deleteRosterEntry } from '../utils/rosterApi';
-import { EditDetailsModal } from './EditDetailsModal';
 import { ScrollingText } from './ScrollingText';
-import { fetchRosterEntries } from '../utils/rosterApi';
-import { updateRosterEntry } from '../utils/rosterApi';
+import { availableNames, validateAuthCode, shiftTypes, isAdminCode } from '../utils/rosterAuth';
+import { addRosterEntry, deleteRosterEntry, updateAllStaffRemarksForDate } from '../utils/rosterApi';
 
 interface RosterTableViewProps {
   entries: RosterEntry[];
   loading: boolean;
   realtimeStatus: 'connecting' | 'connected' | 'error' | 'disconnected';
-  onRefresh?: () => Promise<void>;
+  onRefresh: () => Promise<void>;
   selectedDate: Date;
   onDateChange: (date: Date) => void;
   onExportToCalendar: () => void;
   setActiveTab: (tab: 'calendar' | 'settings' | 'data' | 'roster') => void;
-  setActiveTab?: (tab: 'calendar' | 'settings' | 'data' | 'roster') => void;
 }
 
 export const RosterTableView: React.FC<RosterTableViewProps> = ({
   entries,
   loading,
-  realtimeStatus,
+  realtimeStatus = 'disconnected',
   onRefresh,
   selectedDate,
   onDateChange,
   onExportToCalendar,
-  setActiveTab,
+  setActiveTab
 }) => {
-  // All hooks must be declared at the top level before any conditional returns
-  const [refreshKey, setRefreshKey] = useState(0);
+  // All state declarations
+  const [selectedEntry, setSelectedEntry] = useState<RosterEntry | null>(null);
+  const [showModal, setShowModal] = useState(false);
   const [hasAutoScrolled, setHasAutoScrolled] = useState(false);
-  const [editingDate, setEditingDate] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastUpdateTime, setLastUpdateTime] = useState('');
+  const [refreshingDate, setRefreshingDate] = useState<string | null>(null);
+  
+  // Special date modal states
+  const [showSpecialDateModal, setShowSpecialDateModal] = useState(false);
+  const [selectedSpecialDate, setSelectedSpecialDate] = useState<string | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authCode, setAuthCode] = useState('');
   const [authError, setAuthError] = useState('');
-  const [selectedShift, setSelectedShift] = useState<string>('');
-  const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedEntry, setSelectedEntry] = useState<RosterEntry | null>(null);
-  const [hasInitialLoad, setHasInitialLoad] = useState(false);
-  const [isReloading, setIsReloading] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [actionType, setActionType] = useState<'staff' | 'special'>('staff');
-  const [lastUpdateTime, setLastUpdateTime] = useState<string>('');
-  const [showExportModal, setShowExportModal] = useState(false);
-  const [exportAuthCode, setExportAuthCode] = useState('');
-  const [exportAuthError, setExportAuthError] = useState('');
-  const [isExporting, setIsExporting] = useState(false);
-  const [exportResult, setExportResult] = useState<{success: boolean, message: string} | null>(null);
-  const [showSpecialDateModal, setShowSpecialDateModal] = useState(false);
-  const [selectedSpecialDate, setSelectedSpecialDate] = useState<string | null>(null);
-  const [showStaffEditModal, setShowStaffEditModal] = useState(false);
-  
-  const tableRef = useRef<HTMLDivElement>(null);
-  const isMountedRef = useRef(false);
+  const [actionType, setActionType] = useState<'special' | null>(null);
 
-  // CRITICAL: Prevent body scroll when ANY modal is open
-  useEffect(() => {
-    if (showAuthModal || showExportModal || showDetailsModal || showSpecialDateModal || showStaffEditModal || (editingDate && selectedShift && authCode && !showAuthModal)) {
-      // Completely disable body scroll
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.top = '0';
-      document.body.style.left = '0';
-      document.body.style.right = '0';
-      document.body.style.bottom = '0';
-      document.body.style.width = '100%';
-      document.body.style.height = '100%';
-      
-     }
-
-    return () => {
-      // Re-enable body scroll when modals close
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.left = '';
-      document.body.style.right = '';
-      document.body.style.bottom = '';
-      document.body.style.width = '';
-      document.body.style.height = '';
-      
-    
-    };
-  }, [showAuthModal, showExportModal, showDetailsModal, showSpecialDateModal, showStaffEditModal, editingDate, selectedShift, authCode]);
+  const isMountedRef = useRef(true);
 
   // Track mounted status
   useEffect(() => {
@@ -104,1399 +56,434 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       isMountedRef.current = false;
     };
   }, []);
-  
-  // iPhone orientation change handler
-  useEffect(() => {
-    const handleOrientationChange = () => {
-      console.log('📱 Orientation change detected, fixing roster table...');
-      
-      // Fix UI issues without database calls
-      setTimeout(() => {
-        // Only fix UI elements, no database operations
-        document.body.style.overflow = '';
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.left = '';
-        document.body.style.right = '';
-        document.body.style.bottom = '';
-        
-        // Ensure table container maintains proper scrolling
-        if (tableRef.current) {
-          const container = tableRef.current;
-          // Force reset scrolling properties
-          container.style.overflow = 'hidden';
-          container.style.overflowX = 'hidden';
-          container.style.overflowY = 'auto';
-          container.style.WebkitOverflowScrolling = 'touch';
-          container.style.touchAction = 'auto';
-          container.style.pointerEvents = 'auto';
-          
-          // Force reflow
-          container.offsetHeight;
-          console.log('📱 Table container scrolling restored');
-        }
-        
-        // Ensure all roster containers can scroll
-        const rosterContainers = document.querySelectorAll('[style*="height: 70vh"], [style*="height: 60vh"]');
-        rosterContainers.forEach(container => {
-          const el = container as HTMLElement;
-          el.style.overflow = 'auto';
-          el.style.overflowY = 'auto';
-          el.style.WebkitOverflowScrolling = 'touch';
-          el.style.touchAction = 'auto';
-          el.style.pointerEvents = 'auto';
-        });
-        
-        // Force repaint of all interactive elements
-        const interactiveElements = document.querySelectorAll('button, [role="button"], input, select');
-        interactiveElements.forEach(element => {
-          const el = element as HTMLElement;
-          // Reset any disabled touch actions
-          el.style.touchAction = 'manipulation';
-          el.style.pointerEvents = 'auto';
-          el.style.transform = 'translateZ(0)';
-          el.style.backfaceVisibility = 'hidden';
-          el.style.WebkitBackfaceVisibility = 'hidden';
-          el.style.WebkitTransform = 'translateZ(0)';
-        });
-        
-        // Force repaint of sticky headers
-        const stickyHeaders = document.querySelectorAll('[style*="position: sticky"]');
-        stickyHeaders.forEach(header => {
-          const el = header as HTMLElement;
-          el.style.pointerEvents = 'auto';
-          el.style.transform = 'translateZ(0)';
-          el.style.backfaceVisibility = 'hidden';
-          el.style.WebkitBackfaceVisibility = 'hidden';
-          el.style.WebkitTransform = 'translateZ(0)';
-        });
-        
-        console.log('📱 All interactive elements restored');
-        
-      }, 100);
-    };
 
-    // Listen for orientation changes
-    window.addEventListener('orientationchange', handleOrientationChange);
-    window.addEventListener('resize', handleOrientationChange);
-    
-    return () => {
-      window.removeEventListener('orientationchange', handleOrientationChange);
-      window.removeEventListener('resize', handleOrientationChange);
-    };
-  }, []);
-
-  // Escape key handler for modals
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (showAuthModal && !isUpdating) {
-          handleCancelEdit();
-        } else if (showExportModal && !isExporting) {
-          setShowExportModal(false);
-          setExportAuthCode('');
-          setExportAuthError('');
-          setExportResult(null);
-        }
-      }
-    };
-
-    if (showAuthModal || showExportModal) {
-      document.addEventListener('keydown', handleEscape);
-      return () => document.removeEventListener('keydown', handleEscape);
-    }
-  }, [showAuthModal, showExportModal, isUpdating, isExporting]);
-
-  // Auto-scroll to today's date ONLY on initial component mount
-  useEffect(() => {
-    if (!loading && !hasAutoScrolled && entries.length > 0 && selectedDate.getMonth() === new Date().getMonth() && selectedDate.getFullYear() === new Date().getFullYear()) {
-      const today = new Date();
-      const todayString = today.toISOString().split('T')[0]; // YYYY-MM-DD format
-      
-      // Check if today's date exists in the entries
-      const todayEntry = entries.find(entry => entry.date === todayString);
-      
-      // Only auto-scroll if today's date actually exists in the roster
-      if (todayEntry && tableRef.current) {
-        // Scroll to today's row after a brief delay to ensure DOM is ready
-        setTimeout(() => {
-          const todayRow = document.querySelector(`[data-date="${todayString}"]`);
-          if (todayRow) {
-            todayRow.scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'center' 
-            });
-            console.log(`📍 Auto-scrolled to today's date: ${todayString}`);
-          }
-        }, 100);
-      } else {
-        console.log(`📍 Today's date (${todayString}) not found in roster entries - no auto-scroll`);
-      }
-      
-      setHasAutoScrolled(true);
-    }
-  }, [loading, hasAutoScrolled, entries, selectedDate]);
-
-  // Group entries by shift type for each date
-  const groupEntriesByShift = (dateEntries: RosterEntry[]) => {
-    const shiftGroups: Record<string, RosterEntry[]> = {};
-    
-    dateEntries.forEach(entry => {
-      if (!shiftGroups[entry.shift_type]) {
-        shiftGroups[entry.shift_type] = [];
-      }
-      shiftGroups[entry.shift_type].push(entry);
-    });
-    
-    // Sort each shift group to prioritize (R) names first
-    Object.keys(shiftGroups).forEach(shiftType => {
-      shiftGroups[shiftType] = sortStaffNames(shiftGroups[shiftType]);
-    });
-    
-    return shiftGroups;
-  };
-
-  // Filter entries based on selected date (show entries for the selected month)
+  // Filter entries based on selected date
   const filteredEntries = entries.filter(entry => {
     const entryDate = new Date(entry.date);
     return entryDate.getMonth() === selectedDate.getMonth() && 
            entryDate.getFullYear() === selectedDate.getFullYear();
   });
 
-  // Group entries by date
-  const groupedByDate = filteredEntries.reduce((groups, entry) => {
+  // Listen for real-time updates
+  useEffect(() => {
+    const handleRealtimeUpdate = (event: CustomEvent) => {
+      console.log('📡 Table view received real-time update:', event.detail);
+    };
+
+    window.addEventListener('rosterRealtimeUpdate', handleRealtimeUpdate as EventListener);
+    return () => window.removeEventListener('rosterRealtimeUpdate', handleRealtimeUpdate as EventListener);
+  }, []);
+
+  // Handle manual refresh
+  const handleManualRefresh = async (clickedDate?: string) => {
+    setIsRefreshing(true);
+    const refreshDate = clickedDate || new Date().toISOString().split('T')[0];
+    setRefreshingDate(refreshDate);
+    
+    try {
+      console.log('🔄 Manual refresh triggered in table view');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setLastUpdateTime(new Date().toLocaleTimeString());
+      console.log('✅ Manual refresh completed');
+    } catch (error) {
+      console.error('Manual refresh error:', error);
+    } finally {
+      setIsRefreshing(false);
+      setRefreshingDate(null);
+    }
+  };
+
+  // Auto-scroll to today's date when component first loads
+  useEffect(() => {
+    if (!loading && !hasAutoScrolled && filteredEntries.length > 0 && selectedDate.getMonth() === new Date().getMonth() && selectedDate.getFullYear() === new Date().getFullYear()) {
+      const today = new Date();
+      const todayString = today.toISOString().split('T')[0];
+      
+      const todayEntry = filteredEntries.find(entry => entry.date === todayString);
+      
+      if (todayEntry) {
+        setTimeout(() => {
+          const todaySection = document.querySelector(`[data-date="${todayString}"]`);
+          if (todaySection) {
+            todaySection.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center' 
+            });
+            console.log(`📍 Auto-scrolled to today's date: ${todayString}`);
+          }
+        }, 100);
+      }
+      
+      setHasAutoScrolled(true);
+    }
+  }, [loading, filteredEntries, hasAutoScrolled, selectedDate]);
+
+  // Listen for roster updates
+  useEffect(() => {
+    const handleRosterUpdate = (event: CustomEvent) => {
+      console.log('🔄 Table view: Roster updated, refreshing data...');
+      if (onRefresh) {
+        onRefresh();
+      }
+    };
+
+    window.addEventListener('rosterUpdated', handleRosterUpdate as EventListener);
+    return () => window.removeEventListener('rosterUpdated', handleRosterUpdate as EventListener);
+  }, [onRefresh]);
+
+  // Sort entries by date in ascending order
+  const sortedEntries = [...filteredEntries].sort((a, b) => 
+    new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+
+  // Group entries by date for sticky headers
+  const groupedEntries = sortedEntries.reduce((groups, entry) => {
     const date = entry.date;
     if (!groups[date]) {
       groups[date] = [];
     }
     groups[date].push(entry);
     return groups;
-  }, {} as Record<string, RosterEntry[]>);
+  }, {} as Record<string, typeof sortedEntries>);
 
-  // Format date for display in table (Tue 01-03-25)
-  const formatTableDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const dayName = dayNames[date.getDay()];
-    const day = date.getDate();
-    const monthName = monthNames[date.getMonth()];
-    return { dayName, dateString: `${day} ${monthName}` };
-  };
-
-  // Navigate months
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    const newDate = new Date(selectedDate);
-    newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
-    onDateChange(newDate);
-  };
-
-  // Format month/year for display
-  const formatMonthYear = (date: Date) => {
-    const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+  // Handle showing details modal
+  const handleShowDetails = (entry: RosterEntry) => {
+    setSelectedEntry(entry);
+    setShowModal(true);
   };
 
   const handleEntryUpdate = (updatedEntry: RosterEntry) => {
-    // Check if component is still mounted before calling loadEntries
     if (!isMountedRef.current) {
       console.warn('Component unmounted, skipping loadEntries call');
       return;
     }
     
-    // Force component re-render
-    setRefreshKey(prev => prev + 1);
-    
-    // Also trigger a data refresh
-    if (onRefresh && isMountedRef.current) {
+    if (onRefresh) {
       onRefresh();
     }
   };
 
-  // Handle edit button click
-  const handleEditClick = (date: string) => {
-    setEditingDate(date);
-    setShowAuthModal(true);
-  };
-
   // Handle special date long press
   const handleSpecialDateLongPress = (date: string) => {
-    console.log('🌟 Special date long press for:', date);
-    
-    // Get existing special info before setting selected date
-    const existingInfo = getExistingSpecialInfo(date);
-    console.log('🌟 Existing special info for', date, ':', existingInfo);
-    
+    console.log('🌟 SPECIAL DATE: Long press detected on date:', date);
     setSelectedSpecialDate(date);
-    setShowAuthModal(true);
     setActionType('special');
-  };
-
-  // Handle staff edit long press  
-  const handleStaffEditLongPress = (date: string) => {
-    console.log('👥 Staff edit long press for:', date);
-    setEditingDate(date);
     setShowAuthModal(true);
-    setActionType('staff');
+    setAuthCode('');
+    setAuthError('');
   };
 
-  // Handle authentication
+  // Handle authentication submit
   const handleAuthSubmit = () => {
-    console.log('🔐 handleAuthSubmit called with:', { authCode, actionType, selectedSpecialDate, editingDate });
-    
+    console.log('🔐 AUTH: Submit clicked with:', {
+      authCode,
+      actionType,
+      selectedSpecialDate
+    });
+
     const editorName = validateAuthCode(authCode);
     if (!editorName || !isAdminCode(authCode)) {
-      setAuthError(!editorName ? 'Invalid authentication code' : 'Admin access required for date editing');
-      console.log('❌ Authentication failed:', { editorName, isAdmin: isAdminCode(authCode) });
-    console.log('🔐 Auth successful, actionType:', actionType, 'selectedSpecialDate:', selectedSpecialDate);
-    
+      setAuthError(!editorName ? 'Invalid authentication code' : 'Admin access required for special date marking');
+      return;
+    }
+
+    console.log('✅ AUTH: Validation successful, editor:', editorName);
+
     if (actionType === 'special' && selectedSpecialDate) {
-      console.log('✅ AUTH: Opening special date modal for date:', selectedSpecialDate);
+      console.log('🌟 AUTH: Opening special date modal for:', selectedSpecialDate);
       
-      // Close auth modal and open special date modal
+      // Close auth modal first
       setShowAuthModal(false);
-      setAuthError('');
       setAuthCode('');
+      setAuthError('');
       
-      // Small delay to ensure auth modal closes first
+      // Open special date modal with delay
       setTimeout(() => {
-        console.log('✅ AUTH: Actually opening special date modal now...');
+        console.log('🌟 AUTH: Actually opening special date modal now');
         setShowSpecialDateModal(true);
       }, 100);
     } else {
-      console.log('❌ AUTH: Cannot proceed - missing actionType or selectedSpecialDate');
-      setAuthError('Invalid action or missing date selection');
+      console.error('❌ AUTH: Missing actionType or selectedSpecialDate:', {
+        actionType,
+        selectedSpecialDate
+      });
+      setAuthError('Invalid action or date selection');
     }
-      setShowAuthModal(false);
-      setShowSpecialDateModal(true);
-      setAuthError('');
-    } else if (actionType === 'staff') {
-      console.log('👥 Opening staff edit modal for date:', editingDate);
-      setShowAuthModal(false);
-      setShowStaffEditModal(true);
-      setAuthError('');
-      
-      // Get current staff for the selected date and shift
-      if (editingDate && selectedShift) {
-        const dateEntries = groupedByDate[editingDate] || [];
-        const currentEntries = dateEntries.filter(entry => entry.shift_type === selectedShift);
-        const currentStaff = currentEntries.map(entry => entry.assigned_name);
-        setSelectedStaff(currentStaff);
-      }
-    }
-  };
-
-  // Handle staff selection change
-  const handleStaffToggle = (staffName: string) => {
-    setSelectedStaff(prev => 
-      prev.includes(staffName) 
-        ? prev.filter(name => name !== staffName)
-        : [...prev, staffName]
-    );
-  };
-
-  // Handle save changes
-  const handleSaveChanges = async () => {
-    if (!editingDate || !selectedShift || !authCode) return;
-    
-    setIsUpdating(true);
-    
-    try {
-      console.log('🔄 Manual refresh triggered in table view');
-      const editorName = validateAuthCode(authCode);
-      if (!editorName) return;
-
-      const currentEntries = getEntriesForDateAndShift(editingDate, selectedShift);
-      const currentStaff = currentEntries.map(entry => entry.assigned_name);
-      
-      // Find staff to add and remove
-      const staffToAdd = selectedStaff.filter(name => !currentStaff.includes(name));
-      const staffToRemove = currentStaff.filter(name => !selectedStaff.includes(name));
-      
-      // Remove staff
-      for (const entry of currentEntries) {
-        if (staffToRemove.includes(entry.assigned_name)) {
-          await deleteRosterEntry(entry.id);
-        }
-      }
-      
-      // Add new staff
-      for (const staffName of staffToAdd) {
-        await addRosterEntry({
-          date: editingDate,
-          shiftType: selectedShift,
-          assignedName: staffName,
-          changeDescription: `Added by ${editorName}`
-        }, editorName);
-      }
-      
-      // Don't auto-refresh from server to prevent position jumping
-      setRefreshKey(prev => prev + 1);
-      console.log('✅ Manual refresh completed');
-      
-      // Dispatch custom event to notify other components
-      window.dispatchEvent(new CustomEvent('rosterUpdated', { 
-        detail: { 
-          type: 'bulk_edit',
-          date: editingDate,
-          shift: selectedShift,
-          staffAdded: staffToAdd,
-          staffRemoved: staffToRemove
-        }
-      }));
-      
-      handleCancelEdit();
-      
-    } catch (error) {
-      console.error('Failed to update roster:', error);
-      alert('Failed to update roster. Please try again.');
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  // Handle cancel edit
-  const handleCancelEdit = () => {
-    setEditingDate(null);
-    setSelectedShift('');
-    setSelectedStaff([]);
-    setAuthCode('');
-    setAuthError('');
-    setShowAuthModal(false);
-    setActionType('staff');
-  };
-
-  // Handle cancel auth for special dates
-  const handleCancelAuth = () => {
-    setShowAuthModal(false);
-    setSelectedSpecialDate(null);
-    setEditingDate(null);
-    setAuthCode('');
-    setAuthError('');
-    setActionType('staff');
   };
 
   // Handle special date save
   const handleSpecialDateSave = async (isSpecial: boolean, info: string) => {
-    if (!selectedSpecialDate) {
-      console.error('❌ No selected date for special date save');
-      return;
-    }
-    
     if (!selectedSpecialDate) return;
-    
+
+    console.log('💾 SPECIAL DATE: Saving special date:', {
+      date: selectedSpecialDate,
+      isSpecial,
+      info
+    });
+
     try {
-      const editorName = validateAuthCode(authCode);
-      if (!editorName) {
-        alert('Authentication required to save special date');
-        return;
-      }
-
-      // If there's info text, update all staff working on this date
-      if (info.trim() && isSpecial) {
-        const dateEntries = entries.filter(entry => entry.date === selectedSpecialDate);
-        
-        for (const entry of dateEntries) {
-          try {
-            // Get existing change description and update it
-            let newChangeDescription = entry.change_description || '';
-            
-            // Remove any existing special date info
-            newChangeDescription = newChangeDescription.replace(/Special Date: [^;]*;?\s*/g, '');
-            
-            // Add new special date info
-            const specialInfo = `Special Date: ${info.trim()}`;
-            newChangeDescription = newChangeDescription ? 
-              `${specialInfo}; ${newChangeDescription}` : 
-              specialInfo;
-            
-            await updateRosterEntry(entry.id, {
-              date: entry.date,
-              shiftType: entry.shift_type,
-              assignedName: entry.assigned_name,
-              changeDescription: newChangeDescription,
-              textColor: entry.text_color
-            }, editorName);
-          } catch (error) {
-            console.error('Failed to update entry remarks:', error);
-          }
-        }
-      } else if (!isSpecial) {
-        // Remove special date info from all entries for this date
-        const dateEntries = entries.filter(entry => entry.date === selectedSpecialDate);
-        
-        for (const entry of dateEntries) {
-          if (entry.change_description && entry.change_description.includes('Special Date:')) {
-            try {
-              // Remove special date info from change description
-              let newChangeDescription = entry.change_description.replace(/Special Date: [^;]*;?\s*/g, '');
-              newChangeDescription = newChangeDescription.trim();
-              
-              await updateRosterEntry(entry.id, {
-                date: entry.date,
-                shiftType: entry.shift_type,
-                assignedName: entry.assigned_name,
-                changeDescription: newChangeDescription || null,
-                textColor: entry.text_color
-              }, editorName);
-            } catch (error) {
-              console.error('Failed to remove special date info:', error);
-            }
-          }
-        }
-      }
+      const editorName = validateAuthCode(authCode) || 'ADMIN';
       
-      // Refresh data to show changes
-      if (onRefresh) {
-        await onRefresh();
-      }
-      
-      setShowSpecialDateModal(false);
-      setSelectedSpecialDate(null);
-      setAuthCode('');
-      
-    } catch (error) {
-      console.error('Failed to save special date:', error);
-      alert('Failed to save special date. Please try again.');
-    }
-  };
-
-  // Get existing special date info for a date
-  const getExistingSpecialInfo = (date: string): { isSpecial: boolean; info: string } => {    
-    // Otherwise, extract from roster entries
-    const dateEntries = entries.filter(entry => entry.date === date);
-    
-    // Look for special date info in any entry's change_description
-    for (const entry of dateEntries) {
-      if (entry.change_description && entry.change_description.includes('Special Date:')) {
-        const specialMatch = entry.change_description.match(/Special Date:\s*([^;]+)/);
-        if (specialMatch && specialMatch[1].trim()) {
-          return {
-            isSpecial: true,
-            info: specialMatch[1].trim()
-          };
-        }
-      }
-    }
-    
-    return { isSpecial: false, info: '' };
-  };
-
-  const handleShiftSelect = (shiftType: string) => {
-    setSelectedShift(shiftType);
-    
-    if (shiftType && editingDate) {
-      // Get current staff for the selected date and shift
-      const currentEntries = entries.filter(entry => 
-        entry.date === editingDate && entry.shift_type === shiftType
-      );
-      const currentStaff = currentEntries.map(entry => entry.assigned_name);
-      setSelectedStaff(currentStaff);
-    }
-  };
-
-  const handleAuthSubmitWithAction = () => {
-    const editorName = validateAuthCode(authCode);
-    if (!editorName || !isAdminCode(authCode)) {
-      setAuthError(!editorName ? 'Invalid authentication code' : 'Admin access required for date editing');
-      return;
-    }
-
-    if (actionType === 'special') {
-      // Open special date modal
-      setShowAuthModal(false);
-      setShowSpecialDateModal(true);
-      setAuthError('');
-    } else {
-      // Continue with staff editing
-      setShowAuthModal(false);
-      setAuthError('');
-      console.log('👥 Opening staff edit modal for:', editingDate);
-      // Get current staff for the selected date and shift
-      if (editingDate && selectedShift) {
-        const dateEntries = groupedByDate[editingDate] || [];
-        const currentEntries = dateEntries.filter(entry => entry.shift_type === selectedShift);
-        const currentStaff = currentEntries.map(entry => entry.assigned_name);
-        setSelectedStaff(currentStaff);
-      }
-      setShowStaffEditModal(true);
-    }
-  };
-
-  const handleSaveStaffChanges = async () => {
-    if (!editingDate || !selectedShift || !authCode) return;
-    
-    setIsUpdating(true);
-    
-    try {
-      const editorName = validateAuthCode(authCode);
-      if (!editorName) return;
-
-      // Get current entries for this date and shift
-      const currentEntries = entries.filter(entry => 
-        entry.date === editingDate && entry.shift_type === selectedShift
-      );
-      const currentStaff = currentEntries.map(entry => entry.assigned_name);
-      
-      // Find staff to add and remove
-      const staffToAdd = selectedStaff.filter(name => !currentStaff.includes(name));
-      const staffToRemove = currentStaff.filter(name => !selectedStaff.includes(name));
-      
-      // Remove staff
-      for (const entry of currentEntries) {
-        if (staffToRemove.includes(entry.assigned_name)) {
-          await deleteRosterEntry(entry.id);
-        }
-      }
-      
-      // Add new staff
-      for (const staffName of staffToAdd) {
-        await addRosterEntry({
-          date: editingDate,
-          shiftType: selectedShift,
-          assignedName: staffName,
-          changeDescription: `Added by ${editorName}`
-        }, editorName);
+      if (isSpecial && info.trim()) {
+        // Update all staff remarks for this date
+        await updateAllStaffRemarksForDate(selectedSpecialDate, info.trim(), editorName);
       }
       
       // Refresh data
       if (onRefresh) {
         await onRefresh();
       }
-      setRefreshKey(prev => prev + 1);
       
-      handleCancelStaffEdit();
-      
+      console.log('✅ SPECIAL DATE: Saved successfully');
     } catch (error) {
-      console.error('Failed to update roster:', error);
-      alert('Failed to update roster. Please try again.');
-    } finally {
-      setIsUpdating(false);
+      console.error('❌ SPECIAL DATE: Save failed:', error);
+      throw error;
     }
   };
 
-  const handleCancelStaffEdit = () => {
-    setShowStaffEditModal(false);
-    console.log('🚪 Closing special date modal');
-    setEditingDate(null);
-    setSelectedShift('');
-    setSelectedStaff([]);
+  // Handle closing special date modal
+  const handleCloseSpecialDateModal = () => {
+    console.log('🌟 SPECIAL DATE: Closing modal');
+    setShowSpecialDateModal(false);
+    setSelectedSpecialDate(null);
+    setActionType(null);
+  };
+
+  // Handle closing auth modal
+  const handleCloseAuthModal = () => {
+    console.log('🔐 AUTH: Closing modal');
+    setShowAuthModal(false);
     setAuthCode('');
-  };
-  
-  // Handle showing details modal
-  const handleShowDetails = (entry: RosterEntry) => {
-    console.log('🔍 RosterTableView: handleShowDetails called with entry:', entry.id);
-    setSelectedEntry(entry);
-    setShowDetailsModal(true);
-  };
-  
-  const getEntriesForDateAndShift = (date: string, shiftType: string) => {
-    const dateEntries = groupedByDate[date] || [];
-    return dateEntries.filter(entry => entry.shift_type === shiftType);
+    setAuthError('');
+    setActionType(null);
+    setSelectedSpecialDate(null);
   };
 
   // Check if date is today
   const isToday = (dateString: string) => {
     const now = new Date();
-    // Force local timezone calculation
-    const todayString = now.getFullYear() + '-' + 
-                       String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                       String(now.getDate()).padStart(2, '0');
-    return dateString === todayString;
+    const today = now.getFullYear() + '-' + 
+                  String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                  String(now.getDate()).padStart(2, '0');
+    return dateString === today;
   };
   
   // Check if date is in the past
   const isPastDate = (dateString: string) => {
     const now = new Date();
-    // Force local timezone calculation
-    const todayString = now.getFullYear() + '-' + 
-                       String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                       String(now.getDate()).padStart(2, '0');
-    return dateString < todayString;
-  };
-
-  // Custom sorting function to prioritize (R) names first
-  const sortStaffNames = (entries: RosterEntry[]): RosterEntry[] => {
-    // Extract names, sort them using group sorting, then reorder entries
-    const names = entries.map(entry => entry.assigned_name);
-    const sortedNames = sortByGroup(names);
-    
-    // Create a map for quick lookup of original entries
-    const entryMap = new Map<string, RosterEntry[]>();
-    entries.forEach(entry => {
-      if (!entryMap.has(entry.assigned_name)) {
-        entryMap.set(entry.assigned_name, []);
-      }
-      entryMap.get(entry.assigned_name)!.push(entry);
-    });
-    
-    // Rebuild entries array in sorted order
-    const sortedEntries: RosterEntry[] = [];
-    sortedNames.forEach(name => {
-      const nameEntries = entryMap.get(name) || [];
-      sortedEntries.push(...nameEntries);
-    });
-    
-    return sortedEntries;
+    const today = now.getFullYear() + '-' + 
+                  String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                  String(now.getDate()).padStart(2, '0');
+    return dateString < today;
   };
 
   // Check if date is in the future
   const isFutureDate = (dateString: string) => {
     const now = new Date();
-    // Force local timezone calculation
-    const todayString = now.getFullYear() + '-' + 
-                       String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                       String(now.getDate()).padStart(2, '0');
-    return dateString > todayString;
+    const today = now.getFullYear() + '-' + 
+                  String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                  String(now.getDate()).padStart(2, '0');
+    return dateString > today;
   };
-  
-  // Sort dates in ascending order (oldest first)
-  const sortedDates = Object.keys(groupedByDate).sort((a, b) => 
-    new Date(a).getTime() - new Date(b).getTime()
-  );
 
-  // Calculate max staff count for each date to align columns
-  const getMaxStaffCountForDate = (date: string) => {
-    const dateEntries = groupedByDate[date] || [];
-    const shiftGroups = shiftTypes.reduce((groups, shiftType) => {
-      const shiftEntries = dateEntries.filter(entry => entry.shift_type === shiftType);
-      groups[shiftType] = sortStaffNames(shiftEntries);
-      return groups;
-    }, {} as Record<string, RosterEntry[]>);
+  // Format date for table display
+  const formatTableDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayName = dayNames[date.getDay()];
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear().toString().slice(-2);
     
-    return Math.max(...Object.values(shiftGroups).map(entries => entries.length), 1);
+    return {
+      dayName,
+      dateString: `${day}-${month}-${year}`
+    };
   };
 
-  const handleExportToCalendar = async () => {
-    const editorName = validateAuthCode(exportAuthCode);
-    if (!editorName) {
-      setExportAuthError('Invalid authentication code');
-      return;
+  // Check if date has special info
+  const getSpecialDateInfo = (date: string) => {
+    const dateEntries = groupedEntries[date] || [];
+    for (const entry of dateEntries) {
+      if (entry.change_description && entry.change_description.includes('Special Date:')) {
+        const match = entry.change_description.match(/Special Date:\s*([^;]+)/);
+        if (match && match[1].trim()) {
+          return match[1].trim();
+        }
+      }
     }
-    
-    setIsExporting(true);
-    setExportAuthError('');
-    
-    try {
-      // Call the parent's export function
-      await onExportToCalendar();
-      setExportResult({
-        success: true,
-        message: `Successfully exported your shifts for ${formatMonthYear(selectedDate)} to your personal calendar.`
-      });
-    } catch (error) {
-      console.error('Export failed:', error);
-      setExportResult({
-        success: false,
-        message: 'Failed to export shifts. Please try again.'
-      });
-    } finally {
-      setIsExporting(false);
-    }
+    return null;
   };
 
-  // Helper function to get shift display name
-  const getShiftDisplayName = (shiftType: string) => {
-    if (shiftType === 'Morning Shift (9-4)') return '9-4';
-    if (shiftType === 'Saturday Regular (12-10)') return '12-10';
-    if (shiftType === 'Evening Shift (4-10)') return '4-10';
-    if (shiftType === 'Night Duty') return 'N';
-    return shiftType;
+  // Check if date is marked as special
+  const isSpecialDate = (date: string) => {
+    return getSpecialDateInfo(date) !== null;
   };
 
-  // Shift types in order
-  const shiftTypes = [
-    'Morning Shift (9-4)',
-    'Saturday Regular (12-10)', 
-    'Evening Shift (4-10)',
-    'Night Duty'
-  ];
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (sortedEntries.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+        <p className="text-gray-500 text-lg font-medium">No roster entries found</p>
+        <p className="text-gray-400 text-sm mt-2">No entries available for this month</p>
+      </div>
+    );
+  }
+
   return (
-    <div>
-      {/* Date Picker */}
-      <div className="mb-6 bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex items-center justify-center w-full">
-          <div className="flex items-center justify-center space-x-4 w-full max-w-lg mx-auto">
-            {/* Left Arrow - Centered */}
-          <button
-            onClick={() => navigateMonth('prev')}
-            className="p-3 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors duration-200 flex items-center justify-center"
-            style={{
-              touchAction: 'manipulation',
-              WebkitTapHighlightColor: 'transparent',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '44px',
-              height: '44px'
-            }}
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          
-            {/* Center Content - Month/Year Selectors */}
-            <div className="flex items-center justify-center space-x-3 flex-1">
-              <Calendar className="w-5 h-5 text-indigo-600" />
-              <div className="flex items-center justify-center space-x-2">
-              <select
-                value={selectedDate.getMonth()}
-                onChange={(e) => {
-                  const newDate = new Date(selectedDate);
-                  newDate.setMonth(Number(e.target.value));
-                  onDateChange(newDate);
-                }}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-semibold text-gray-900 bg-white text-center"
-                style={{
-                  touchAction: 'manipulation',
-                  WebkitTapHighlightColor: 'transparent',
-                  textAlign: 'center'
-                }}
-              >
-                {[
-                  'January', 'February', 'March', 'April', 'May', 'June',
-                  'July', 'August', 'September', 'October', 'November', 'December'
-                ].map((month, index) => (
-                  <option key={index} value={index}>{month}</option>
-                ))}
-              </select>
-              
-              <select
-                value={selectedDate.getFullYear()}
-                onChange={(e) => {
-                  const newDate = new Date(selectedDate);
-                  newDate.setFullYear(Number(e.target.value));
-                  onDateChange(newDate);
-                }}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-semibold text-gray-900 bg-white text-center"
-                style={{
-                  touchAction: 'manipulation',
-                  WebkitTapHighlightColor: 'transparent',
-                  textAlign: 'center'
-                }}
-              >
-                {Array.from({ length: 10 }, (_, i) => selectedDate.getFullYear() - 5 + i).map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
-              </div>
-            
-              {/* Export to Calendar Button - Centered */}
-            <button
-              onClick={() => {
-                console.log('🔄 ROSTER TABLE: Export to Calendar button clicked');
-                onExportToCalendar();
-              }}
-              className="p-3 rounded-lg hover:bg-green-100 text-green-600 transition-colors duration-200 flex items-center justify-center"
-              style={{
-                touchAction: 'manipulation',
-                WebkitTapHighlightColor: 'transparent',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '44px',
-                height: '44px'
-              }}
-              title="Export your shifts to calendar"
-            >
-              <Download className="w-6 h-6" />
-            </button>
-            </div>
-          
-            {/* Right Arrow - Centered */}
-          <button
-            onClick={() => navigateMonth('next')}
-            className="p-3 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors duration-200 flex items-center justify-center"
-            style={{
-              touchAction: 'manipulation',
-              WebkitTapHighlightColor: 'transparent',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '44px',
-              height: '44px'
-            }}
-          >
-            <ChevronRight className="w-6 h-6" />
-          </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white overflow-hidden w-full" style={{ 
-        height: window.innerWidth > window.innerHeight ? '60vh' : '70vh', // Shorter in landscape
-        minHeight: '400px',
-        maxHeight: '80vh',
-        width: '100vw',
-        marginLeft: 'calc(-50vw + 50%)',
-        marginRight: 'calc(-50vw + 50%)'
-      }}>
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-          </div>
-        ) : sortedDates.length === 0 ? (
-          <div className="text-center py-12">
-            <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg font-medium">
-              No roster entries found
-            </p>
-            <p className="text-gray-400 text-sm mt-2">
-              No entries available for {formatMonthYear(selectedDate)}
-            </p>
-          </div>
-        ) : (
-          <div ref={tableRef} style={{ 
-            height: '100%', 
-            overflow: 'hidden',
-            overflowX: 'hidden',
-            overflowY: 'auto',
-            position: 'relative', 
+    <>
+      <div className="bg-white rounded-lg overflow-hidden">
+        <div className="overflow-x-auto" style={{ 
+          height: window.innerWidth > window.innerHeight ? '60vh' : '70vh',
+          minHeight: '400px',
+          maxHeight: '80vh',
+          WebkitOverflowScrolling: 'touch'
+        }}>
+          <table style={{
             width: '100%',
-            // Better mobile landscape handling
-            WebkitOverflowScrolling: 'touch',
-            // Force proper scrolling after orientation change
-            transform: 'translate3d(0,0,0)',
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden',
-            WebkitTransform: 'translate3d(0,0,0)',
-            // iPhone specific fixes
-            WebkitTouchCallout: 'none',
-            WebkitUserSelect: 'none',
-            userSelect: 'none'
+            borderCollapse: 'collapse',
+            tableLayout: 'fixed',
+            minWidth: '800px'
           }}>
-            {/* Separate Sticky Header for Roster Title */}
-            <div 
-              style={{ 
-                position: 'sticky',
-                top: 0,
-                zIndex: 90,
-                width: '100vw',
-                padding: '12px 16px',
-                fontSize: '18px',
-                fontWeight: 'bold',
-                color: 'white',
-                border: 'none',
-                margin: 0,
-                height: window.innerWidth > window.innerHeight ? '40px' : '56px', // Shorter header in landscape
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: '#4b5563',
-                background: '#4b5563',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-                opacity: 1,
-                // Force proper rendering after orientation change
-                transform: 'translate3d(0,0,0)',
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden',
-                WebkitTransform: 'translate3d(0,0,0)',
-                // iPhone specific
-                WebkitTouchCallout: 'none'
-              }}
-            >
-              {/* Centered title with reload button */}
-              <div style={{ 
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: window.innerWidth > window.innerHeight ? '16px' : '18px',
-                gap: '8px'
-              }}>
-                <span>Roster for {formatMonthYear(selectedDate)}</span>
-                {/* Manual refresh button with real-time status */}
-                <button
-                  onClick={async () => {
-                    setIsReloading(true);
-                    try {
-                      console.log('🔄 Manual refresh triggered in table view');
-                      if (onRefresh) {
-                        await onRefresh();
-                      }
-                      setRefreshKey(prev => prev + 1);
-                      setLastUpdateTime(new Date().toLocaleTimeString());
-                      console.log('✅ Manual refresh completed');
-                    } catch (error) {
-                      console.error('Manual refresh failed in table view:', error);
-                    } finally {
-                      setIsReloading(false);
-                    }
-                  }}
-                  disabled={isReloading}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    padding: '4px',
+            <thead>
+              <tr>
+                <th style={{
+                  position: 'sticky',
+                  left: 0,
+                  zIndex: 100,
+                  backgroundColor: '#4f46e5',
+                  color: 'white',
+                  padding: '8px',
+                  textAlign: 'center',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  width: '80px',
+                  minWidth: '80px',
+                  maxWidth: '80px',
+                  border: '2px solid #374151',
+                  borderRight: '3px solid #374151'
+                }}>
+                  Date
+                </th>
+                {shiftTypes.map(shiftType => (
+                  <th key={shiftType} style={{
+                    backgroundColor: '#4f46e5',
                     color: 'white',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    borderRight: '3px solid #374151',
-                    WebkitTapHighlightColor: 'transparent',
-                    outline: 'none',
-                    boxShadow: 'none',
-                    borderRadius: '0',
-                    borderWidth: '0',
-                    borderStyle: 'none'
-                  }}
-                  title={
-                    realtimeStatus === 'connected' ? 'Manual refresh (Real-time active)' :
-                    realtimeStatus === 'connecting' ? 'Manual refresh (Connecting...)' :
-                    realtimeStatus === 'error' ? 'Manual refresh (Real-time failed)' :
-                    'Manual refresh (Real-time disconnected)'
-                  }
-                >
-                  {/* Refresh icon with rotation animation when loading */}
-                  <svg 
-                    style={{
-                      width: '20px',
-                      height: '20px',
-                      animation: isReloading ? 'spin 1s linear infinite' : 'none',
-                      border: 'none',
-                      outline: 'none'
-                    }}
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
-                    />
-                  </svg>
-                  
-                  {/* Real-time status indicator inside the button */}
-                  <div style={{
-                    width: '12px',
-                    height: '12px',
-                    borderRadius: '50%',
-                    backgroundColor: realtimeStatus === 'connected' ? '#10b981' : 
-                                    realtimeStatus === 'connecting' ? '#f59e0b' :
-                                    realtimeStatus === 'error' ? '#ef4444' : '#6b7280',
-                    animation: realtimeStatus === 'connecting' ? 'pulse 1.5s ease-in-out infinite' : 'none',
-                    boxShadow: realtimeStatus === 'connected' ? '0 0 8px rgba(16, 185, 129, 0.8)' : 'none',
-                    border: 'none',
-                    outline: 'none',
-                    borderWidth: '0',
-                    borderStyle: 'none'
-                  }} />
-                </button>
-              </div>
-            </div>
-            
-            <table className="border-collapse table-fixed" style={{ width: '100vw', minWidth: '100vw' }}>
-              <thead>
-                <tr>
-                  <th 
-                    style={{ 
-                      position: 'sticky',
-                      top: window.innerWidth > window.innerHeight ? 40 : 56, // Adjust for shorter header
-                      zIndex: 80,
-                      fontWeight: '600',
-                      textAlign: 'center',
-                      fontSize: window.innerWidth > window.innerHeight ? '10px' : (window.innerWidth >= 640 ? '14px' : '12px'),
-                      color: 'white',
-                      border: '2px solid #000000',
-                      backgroundColor: '#6b7280',
-                      background: '#6b7280',
-                      margin: 0,
-                      width: '80px',
-                      minWidth: '80px',
-                      maxWidth: '80px',
-                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-                      opacity: 1,
-                      // Force proper rendering after orientation change
-                      transform: 'translateZ(0)',
-                      backfaceVisibility: 'hidden'
-                    }}
-                  >
-                    Date
+                    padding: '8px',
+                    textAlign: 'center',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    minWidth: '120px',
+                    border: '2px solid #374151'
+                  }}>
+                    <ScrollingText text={shiftType} className="text-white font-bold" />
                   </th>
-                  {shiftTypes.map((shiftType, index) => (
-                    <th
-                      key={shiftType}
-                      style={{ 
-                        position: 'sticky',
-                        top: window.innerWidth > window.innerHeight ? 40 : 56,
-                        zIndex: 80,
-                        textAlign: 'center',
-                        fontSize: window.innerWidth > window.innerHeight ? '10px' : (window.innerWidth >= 640 ? '14px' : '12px'),
-                        color: 'white',
-                        border: '2px solid #000000',
-                        backgroundColor: '#6b7280',
-                        background: '#6b7280',
-                        margin: '0',
-                        marginLeft: index === 0 ? '0' : '-2px', // Overlap borders to remove gaps
-                        padding: window.innerWidth > window.innerHeight ? '8px 4px' : '12px 8px',
-                        opacity: 1,
-                        width: 'calc((100vw - 80px) / 4)',
-                        minWidth: 'calc((100vw - 80px) / 4)',
-                        // Force proper rendering after orientation change
-                        transform: 'translate3d(0,0,0)',
-                        backfaceVisibility: 'hidden',
-                        WebkitBackfaceVisibility: 'hidden',
-                        WebkitTransform: 'translate3d(0,0,0)'
-                      }}
-                    >
-                      {getShiftDisplayName(shiftType)}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-
-              {/* Table Body */}
-              <tbody className="divide-y divide-gray-200">
-                {sortedDates.map((date) => {
-                  const dateEntries = groupedByDate[date] || [];
-                  const specialDateInfo = getExistingSpecialInfo(date);
-                  const isSpecialDate = specialDateInfo.isSpecial;
-                  
-                  // Calculate the maximum number of staff in any shift for this date
-                  const maxStaffCount = Math.max(...shiftTypes.map(shiftType => 
-                    (dateEntries.filter(entry => entry.shift_type === shiftType) || []).length
-                  ));
-                  
-                  // Calculate dynamic height based on max staff count (minimum 60px, 40px per staff member)
-                  const dynamicHeight = Math.max(60, maxStaffCount * 40);
-
-                  return (
-                    <tr 
-                      key={date} 
-                      data-date={date}
-                      className={`${
-                        isSpecialDate ? 'bg-red-200' :
-                        isToday(date) ? 'bg-green-200' : 
-                        isPastDate(date) ? 'bg-red-50' :
-                        isFutureDate(date) ? 'bg-green-50' : ''
-                      }`}
-                    >
-                      {/* Date Column */}
-                      <RosterDateCell
-                        date={date}
-                        isToday={isToday(date)}
-                        isPastDate={isPastDate(date)}
-                        isFutureDate={isFutureDate(date)}
-                        onLongPress={() => handleStaffEditLongPress(date)}
-                        isSpecialDate={isSpecialDate}
-                        specialDateInfo={specialDateInfo.info}
-                        formatTableDate={formatTableDate}
-                      />
-                      {shiftTypes.map((shiftType) => {
-                        const shiftEntries = sortStaffNames(getEntriesForDateAndShift(date, shiftType));
-                        const maxStaffForThisDate = getMaxStaffCountForDate(date);
-                        
-                        // Create aligned array with consistent row count for this date
-                        const alignedEntries = [];
-                        for (let rowIndex = 0; rowIndex < maxStaffForThisDate; rowIndex++) {
-                          alignedEntries.push(shiftEntries[rowIndex] || null);
-                        }
-                        return (
-                          <td key={shiftType} className={`text-center overflow-hidden align-top relative ${
-                            isSpecialDate ? 'bg-red-200' :
-                            isPastDate(date) ? 'bg-red-50' : ''
-                          }`} style={{
-                            padding: '2px',
-                            border: '2px solid #374151',
-                            borderRadius: '4px',
-                            minHeight: `${dynamicHeight}px`,
-                            height: `${dynamicHeight}px`,
-                            position: 'relative',
-                            overflow: 'hidden',
-                            textAlign: 'center',
-                            width: 'calc((100vw - 80px) / 4)',
-                            minWidth: 'calc((100vw - 80px) / 4)',
-                            maxWidth: 'calc((100vw - 80px) / 4)',
-                            backgroundColor: isSpecialDate ? '#fecaca' : 
-                                           isToday(date) ? '#bbf7d0' : 
-                                           isPastDate(date) ? '#fef2f2' :
-                                           isFutureDate(date) ? '#f0fdf4' : '#ffffff',
-                            animation: isSpecialDate ? 'pulse 2s ease-in-out infinite' : 'none'
-                          }}>
-                            
-                            <div className="w-full h-full relative" style={{
-                              overflow: 'hidden',
-                              padding: '4px',
-                              margin: 0,
-                              textAlign: 'center',
-                              width: '100%',
-                              height: '100%',
-                              minWidth: '0',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center'
-                            }}>
-                              {shiftEntries.length > 0 ? (
-                                <div style={{
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  justifyContent: 'center',
-                                  alignItems: 'center',
-                                  gap: '2px',
-                                  minHeight: 'inherit',
-                                  width: '100%',
-                                  position: 'relative'
-                                }}>
-                                  {/* X watermark - centered over names area only */}
-                                  {isPastDate(date) && (
-                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                                      <div className="font-bold select-none" style={{
-                                        fontSize: window.innerWidth > window.innerHeight ? 'clamp(1.5rem, 6vw, 3rem)' : 'clamp(3rem, 10vw, 6rem)',
-                                        lineHeight: '1',
-                                        color: '#fca5a5',
-                                        opacity: 0.2,
-                                        transform: 'scale(1.5)'
-                                      }}>
-                                        X
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {sortStaffNames(shiftEntries).map((entry, index) => (
-                                    <div key={entry.id} className="relative" style={{ 
-                                      padding: 0, 
-                                      margin: 0, 
-                                      textAlign: 'center',
-                                      width: '100%',
-                                      fontSize: window.innerWidth > window.innerHeight ? '10px' : '12px',
-                                      lineHeight: '1.2',
-                                      fontWeight: '500',
-                                      backgroundColor: 'transparent',
-                                      border: 'none',
-                                      borderRadius: '2px',
-                                      overflow: 'hidden',
-                                      textOverflow: 'ellipsis',
-                                      whiteSpace: 'nowrap',
-                                      minHeight: '16px',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center'
-                                    }}>
-                                      <RosterEntryCell
-                                        entry={entry}
-                                        onUpdate={handleEntryUpdate}
-                                        onShowDetails={handleShowDetails}
-                                      />
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <div className="flex items-center justify-center h-full">
-                                  {/* Empty cell - no content */}
-                                  {/* Empty cell - no content */}
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-      </div>
-
-      {/* Staff Edit Modal */}
-      {showStaffEditModal && editingDate && createPortal(
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 2147483647,
-            backgroundColor: 'rgba(0, 0, 0, 0.95)',
-            display: 'flex',
-            alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
-            justifyContent: 'center',
-            padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
-            paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
-            overflow: 'auto',
-            overflowY: 'auto',
-            WebkitOverflowScrolling: 'touch',
-            touchAction: 'pan-y'
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              handleCancelStaffEdit();
-            }
-          }}
-        >
-          <div className="bg-white rounded-2xl shadow-2xl w-full flex flex-col" style={{
-            maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
-            maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
-            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0'
-          }}>
-            <div className="border-b border-gray-200 flex-shrink-0" style={{
-              padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
-            }}>
-              <h3 className="text-xl font-bold text-gray-900 mb-2 text-center">
-                Edit Staff Assignment
-              </h3>
-              <p className="text-sm text-gray-600 text-center">
-                {formatTableDate(editingDate).dateString} ({formatTableDate(editingDate).dayName})
-              </p>
-            </div>
-            
-            {/* Shift Selection */}
-            <div className="border-b border-gray-200 flex-shrink-0" style={{
-              padding: window.innerWidth > window.innerHeight ? '12px' : '16px'
-            }}>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Shift Type
-              </label>
-              <select
-                value={selectedShift}
-                onChange={(e) => handleShiftSelect(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                required
-              >
-                <option value="">Select shift type</option>
-                {shiftTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
                 ))}
-              </select>
-            </div>
-            
-            {/* Staff Selection - Only show when shift is selected */}
-            {selectedShift && (
-              <div className="flex-1 overflow-y-auto" style={{
-                padding: window.innerWidth > window.innerHeight ? '12px' : '16px',
-                WebkitOverflowScrolling: 'touch',
-                touchAction: 'pan-y'
-              }}>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Select Staff for {selectedShift}
-                </label>
-                <div className="space-y-2">
-                  {availableNames.map(name => (
-                    <label key={name} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedStaff.includes(name)}
-                        onChange={() => handleStaffToggle(name)}
-                        className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <span className="text-sm font-medium text-gray-900">{name}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            <div className="border-t border-gray-200 flex-shrink-0" style={{
-              padding: window.innerWidth > window.innerHeight ? '12px' : '16px'
-            }}>
-              <div className="flex space-x-3">
-                <button
-                  onClick={handleCancelStaffEdit}
-                  disabled={isUpdating}
-                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSaveStaffChanges}
-                  disabled={isUpdating || !selectedShift}
-                  className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center justify-center space-x-2"
-                >
-                  {isUpdating ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <span>Save Changes</span>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(groupedEntries).map(([date, dateEntries]) => (
+                <tr key={date}>
+                  <RosterDateCell
+                    date={date}
+                    isToday={isToday(date)}
+                    isPastDate={isPastDate(date)}
+                    isFutureDate={isFutureDate(date)}
+                    onLongPress={() => handleSpecialDateLongPress(date)}
+                    isSpecialDate={isSpecialDate(date)}
+                    specialDateInfo={getSpecialDateInfo(date)}
+                    formatTableDate={formatTableDate}
+                  />
+                  
+                  {shiftTypes.map(shiftType => {
+                    const shiftEntries = dateEntries.filter(entry => entry.shift_type === shiftType);
+                    
+                    return (
+                      <td key={shiftType} style={{
+                        padding: '0',
+                        margin: '0',
+                        textAlign: 'center',
+                        minHeight: '50px',
+                        border: '2px solid #374151',
+                        backgroundColor: '#ffffff',
+                        position: 'relative',
+                        minWidth: '120px',
+                        maxWidth: '120px',
+                        overflow: 'hidden'
+                      }}>
+                        {isPastDate(date) && (
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                            <div className="font-bold select-none" style={{
+                              fontSize: window.innerWidth > window.innerHeight ? 'clamp(2rem, 8vw, 4rem)' : 'clamp(4rem, 12vw, 8rem)',
+                              lineHeight: '1',
+                              color: '#fca5a5',
+                              opacity: 0.15,
+                              transform: 'scale(1.5)'
+                            }}>
+                              X
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="space-y-1 relative z-30" style={{ 
+                          minHeight: '50px',
+                          padding: '4px 2px'
+                        }}>
+                          {shiftEntries.map((entry, index) => (
+                            <RosterEntryCell
+                              key={entry.id}
+                              entry={entry}
+                              onShowDetails={handleShowDetails}
+                              onUpdate={handleEntryUpdate}
+                              allEntriesForShift={shiftEntries}
+                            />
+                          ))}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-        , document.body
-      )}
+      </div>
 
       {/* Authentication Modal */}
-      {showAuthModal && createPortal(
+      {showAuthModal && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50"
+          className="fixed inset-0 bg-black bg-opacity-50 z-[99999]"
           style={{
             position: 'fixed',
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            zIndex: 2147483647,
-            backgroundColor: 'rgba(0, 0, 0, 0.98)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-           display: 'flex',
-           alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
-           justifyContent: 'center',
-           padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
-           paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
-            overflow: 'hidden',
-            overflowY: 'hidden',
-            touchAction: 'none',
-            pointerEvents: 'auto'
-          }}
-          onWheel={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onScroll={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onTouchStart={(e) => {
-            e.stopPropagation();
-          }}
-          onTouchMove={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px'
           }}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
-              handleCancelAuth();
+              handleCloseAuthModal();
             }
-            e.stopPropagation();
           }}
         >
-          <div className="bg-white rounded-2xl shadow-2xl w-full" style={{
-            maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
-            maxHeight: window.innerWidth > window.innerHeight ? '95vh' : 'none',
-            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0'
-          }}>
-            <div 
-              style={{
-              padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={handleCancelAuth}
-                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200"
-                style={{
-                  position: 'absolute',
-                  top: '16px',
-                  right: '16px',
-                  zIndex: 10
-                }}
-              >
-                <X className="w-5 h-5" />
-              </button>
-              
+          <div 
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
               <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
                 Admin Authentication Required
               </h3>
@@ -1523,57 +510,16 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 </div>
               )}
               
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Action
-                </label>
-                <div className="space-y-3">
-                  <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
-                    <input
-                      type="radio"
-                      value="staff"
-                      checked={actionType === 'staff'}
-                      onChange={(e) => setActionType(e.target.value as 'staff' | 'special')}
-                      className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                    />
-                    <div className="flex items-center space-x-2">
-                      <User className="w-5 h-5 text-blue-600" />
-                      <div>
-                        <div className="font-medium text-gray-900">Edit Staff Assignment</div>
-                        <div className="text-sm text-gray-600">Add or remove staff from shifts</div>
-                      </div>
-                    </div>
-                  </label>
-                  
-                  <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
-                    <input
-                      type="radio"
-                      value="special"
-                      checked={actionType === 'special'}
-                      onChange={(e) => setActionType(e.target.value as 'staff' | 'special')}
-                      className="w-4 h-4 text-red-600 focus:ring-red-500"
-                    />
-                    <div className="flex items-center space-x-2">
-                      <Star className="w-5 h-5 text-red-600" />
-                      <div>
-                        <div className="font-medium text-gray-900">Mark Special Date</div>
-                        <div className="text-sm text-gray-600">Mark date as special with info</div>
-                      </div>
-                    </div>
-                  </label>
-                </div>
-              </div>
-              
               <div className="flex space-x-3">
                 <button
-                  onClick={handleCancelAuth}
+                  onClick={handleCloseAuthModal}
                   className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleAuthSubmit}
-                  disabled={authCode.length < 4 || !isAdminCode(authCode)}
+                  disabled={authCode.length < 4}
                   className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200"
                 >
                   Continue
@@ -1582,413 +528,30 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             </div>
           </div>
         </div>
-        , document.body
       )}
 
-      {/* Staff Selection Modal */}
-      {showExportModal && createPortal(
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 999999999, // Ultra-high z-index - higher than any sticky header
-            backgroundColor: 'rgba(0, 0, 0, 0.95)',
-            display: 'flex',
-            alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
-            justifyContent: 'center',
-            padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
-            paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
-            overflow: 'hidden', // Prevent any scrolling
-            overflowY: 'hidden',
-            touchAction: 'none' // Disable all touch actions
-          }}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (e.target === e.currentTarget && !isExporting) {
-              setShowExportModal(false);
-              setExportAuthCode('');
-              setExportAuthError('');
-              setExportResult(null);
-            }
-          }}
-          onTouchStart={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onTouchMove={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onTouchEnd={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-        >
-          <div className="bg-white rounded-2xl shadow-2xl w-full" style={{
-            maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
-            maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
-            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
-            pointerEvents: 'auto'
-          }}
-          onTouchStart={(e) => e.stopPropagation()}
-          onTouchMove={(e) => e.stopPropagation()}
-          onTouchEnd={(e) => e.stopPropagation()}
-          onWheel={(e) => e.stopPropagation()}
-          onScroll={(e) => e.stopPropagation()}
-          >
-            <div 
-              className="flex-shrink-0" 
-              style={{
-              padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={() => {
-                  setShowExportModal(false);
-                  setExportAuthCode('');
-                  setExportAuthError('');
-                  setExportResult(null);
-                }}
-                disabled={isExporting}
-                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200"
-                style={{
-                  position: 'absolute',
-                  top: '16px',
-                  right: '16px',
-                  zIndex: 10
-                }}
-              >
-                <X className="w-5 h-5" />
-              </button>
-              
-              <div className="flex items-center justify-center space-x-3 mb-4">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                  <Download className="w-6 h-6 text-green-600" />
-                </div>
-              </div>
-              
-              <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
-                Export to Calendar
-               </h3>
-               
-               {!exportResult ? (
-                 <>
-                  <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="flex items-start space-x-3">
-                      <Calendar className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <h4 className="font-medium text-blue-800 mb-2">Export Your Shifts</h4>
-                        <ul className="text-sm text-blue-700 space-y-1">
-                          <li>• Exports only YOUR shifts for {formatMonthYear(selectedDate)}</li>
-                          <li>• Skips dates that already have shifts</li>
-                          <li>• Automatically marks special dates when needed</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Your Authentication Code
-                    </label>
-                    <input
-                      type="text"
-                      value={exportAuthCode}
-                      onChange={(e) => setExportAuthCode(e.target.value.toUpperCase())}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-center font-mono text-lg"
-                      placeholder="Enter your code"
-                      maxLength={4}
-                      autoComplete="off"
-                      autoFocus
-                      disabled={isExporting}
-                    />
-                  </div>
-                  
-                  {exportAuthError && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-sm text-red-700 text-center">{exportAuthError}</p>
-                    </div>
-                  )}
-                  
-                  <div className="flex space-x-3">
-                    <button
-                      onClick={() => {
-                        setShowExportModal(false);
-                        setExportAuthCode('');
-                        setExportAuthError('');
-                        setExportResult(null);
-                      }}
-                      disabled={isExporting}
-                      className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleExportToCalendar}
-                      disabled={isExporting || exportAuthCode.length < 4}
-                      className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
-                    >
-                      {isExporting ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          <span>Exporting...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Download className="w-4 h-4" />
-                          <span>Export to Calendar</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="text-center mb-6">
-                    <div className={`w-16 h-16 ${exportResult.success ? 'bg-green-100' : 'bg-red-100'} rounded-full flex items-center justify-center mx-auto mb-4`}>
-                      {exportResult.success ? (
-                        <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      ) : (
-                        <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      )}
-                    </div>
-                    <h4 className="text-lg font-medium text-gray-900 mb-2">
-                      {exportResult.success ? 'Export Successful!' : 'Export Failed'}
-                    </h4>
-                    <p className="text-gray-600">
-                      {exportResult.message}
-                    </p>
-                  </div>
-                  
-                  <button
-                    onClick={() => {
-                      setShowExportModal(false);
-                      setExportAuthCode('');
-                      setExportAuthError('');
-                      setExportResult(null);
-                      
-                      setActiveTab('calendar');
-                      
-                      // Dispatch event to navigate calendar to imported month
-                      window.dispatchEvent(new CustomEvent('navigateToMonth', {
-                        detail: { 
-                          month: selectedDate.getMonth(),
-                          year: selectedDate.getFullYear()
-                        }
-                      }));
-                      
-                      if (exportResult.success) {
-                        // Switch to calendar tab to show the exported data
-                        window.dispatchEvent(new CustomEvent('switchToCalendarTab'));
-                      }
-                    }}
-                    className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200"
-                  >
-                    {exportResult.success ? 'View in Calendar' : 'Close'}
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-        , document.body
-      )}
-      
-      {/* Staff Selection Modal */}
-      {editingDate && selectedShift && authCode && !showAuthModal && actionType === 'staff' && createPortal(
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 999999999, // Ultra-high z-index
-            backgroundColor: 'rgba(0, 0, 0, 0.95)',
-            display: 'flex',
-            alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
-            justifyContent: 'center',
-            padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
-            paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
-            overflow: 'hidden', // Prevent any scrolling
-            overflowY: 'hidden',
-            touchAction: 'none', // Disable all touch actions
-            userSelect: 'none',
-            WebkitUserSelect: 'none'
-          }}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (e.target === e.currentTarget) {
-              handleCancelEdit();
-            }
-          }}
-          onTouchStart={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onTouchMove={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onTouchEnd={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-        >
-          <div className="bg-white rounded-2xl shadow-2xl w-full flex flex-col" style={{
-            maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
-            maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
-            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
-            overflow: 'hidden',
-            pointerEvents: 'auto'
-          }}
-          onTouchStart={(e) => e.stopPropagation()}
-          onTouchMove={(e) => e.stopPropagation()}
-          onTouchEnd={(e) => e.stopPropagation()}
-          onWheel={(e) => e.stopPropagation()}
-          onScroll={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
-            {/* Header */}
-            <div className="border-b border-gray-200 flex-shrink-0 relative" style={{
-              padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
-              userSelect: 'none',
-              WebkitUserSelect: 'none'
-            }}>
-              <button
-                onClick={handleCancelEdit}
-                disabled={isUpdating}
-                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200"
-                style={{
-                  position: 'absolute',
-                  top: '16px',
-                  right: '16px',
-                  zIndex: 10
-                }}
-              >
-                <X className="w-5 h-5" />
-              </button>
-              
-              <h3 className="text-xl font-bold text-gray-900 mb-2 text-center select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
-                Edit Staff Assignment
-              </h3>
-              <p className="text-sm text-gray-600 text-center select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
-                {editingDate && formatTableDate(editingDate).dayName} {editingDate && formatTableDate(editingDate).dateString} - {selectedShift}
-              </p>
-            </div>
-            
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto" style={{
-              padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
-              WebkitOverflowScrolling: 'touch',
-              touchAction: 'pan-y', // Only allow vertical scrolling within modal
-              userSelect: 'none',
-              WebkitUserSelect: 'none'
-            }}>
-              <div className="space-y-3">
-                {sortByGroup(availableNames).map(name => (
-                  <label key={name} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
-                    <input
-                      type="checkbox"
-                      checked={selectedStaff.includes(name)}
-                      onChange={() => handleStaffToggle(name)}
-                      className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                    />
-                    <span className="text-sm font-medium text-gray-900 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{name}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            
-            {/* Footer */}
-            <div className="border-t border-gray-200 flex-shrink-0" style={{
-              padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
-              userSelect: 'none',
-              WebkitUserSelect: 'none'
-            }}>
-              <div className="flex space-x-3">
-                <button
-                  onClick={handleCancelEdit}
-                  disabled={isUpdating}
-                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 select-none"
-                  style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSaveChanges}
-                  disabled={isUpdating}
-                  className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center justify-center space-x-2 select-none"
-                  style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
-                >
-                  {isUpdating ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span className="select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>Saving...</span>
-                    </>
-                  ) : (
-                    <span className="select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>Save Changes</span>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        , document.body
-      )}
-      
+      {/* Special Date Modal */}
+      <SpecialDateModal
+        isOpen={showSpecialDateModal}
+        date={selectedSpecialDate}
+        currentSpecialInfo={{
+          isSpecial: selectedSpecialDate ? isSpecialDate(selectedSpecialDate) : false,
+          info: selectedSpecialDate ? (getSpecialDateInfo(selectedSpecialDate) || '') : ''
+        }}
+        onSave={handleSpecialDateSave}
+        onClose={handleCloseSpecialDateModal}
+        authCode={authCode}
+      />
+
       {/* Edit Details Modal */}
       <EditDetailsModal
-        isOpen={showDetailsModal}
+        isOpen={showModal}
         entry={selectedEntry}
         onClose={() => {
-          setShowDetailsModal(false);
+          setShowModal(false);
           setSelectedEntry(null);
         }}
       />
-
-      {/* Special Date Modal */}
-      <SpecialDateModal
-        isOpen={showSpecialDateModal}
-        date={selectedSpecialDate}
-        currentSpecialInfo={selectedSpecialDate ? getExistingSpecialInfo(selectedSpecialDate) : undefined}
-        onSave={handleSpecialDateSave}
-        onClose={() => {
-          setShowSpecialDateModal(false);
-          setSelectedSpecialDate(null);
-        }}
-        authCode={authCode}
-      />
-
-      {/* Special Date Modal */}
-      <SpecialDateModal
-        isOpen={showSpecialDateModal}
-        date={selectedSpecialDate}
-        currentSpecialInfo={selectedSpecialDate ? getExistingSpecialInfo(selectedSpecialDate) : undefined}
-        onSave={handleSpecialDateSave}
-        onClose={() => {
-          setShowSpecialDateModal(false);
-          setSelectedSpecialDate(null);
-          setAuthCode('');
-        }}
-        authCode={authCode}
-      />
-      
-    </div>
+    </>
   );
 };
