@@ -448,18 +448,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <button
-              onClick={() => {
-                const newDate = new Date(selectedDate);
-                newDate.setFullYear(newDate.getFullYear() - 1);
-                onDateChange(newDate);
-              }}
-              className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors duration-200"
-              title="Previous year"
-            >
-              <span className="text-sm font-bold">‹‹</span>
-            </button>
-            
-            <button
               onClick={() => navigateMonth('prev')}
               className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors duration-200"
               title="Previous month"
@@ -573,18 +561,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               title="Next month"
             >
               <ChevronRight className="w-5 h-5" />
-            </button>
-            
-            <button
-              onClick={() => {
-                const newDate = new Date(selectedDate);
-                newDate.setFullYear(newDate.getFullYear() + 1);
-                onDateChange(newDate);
-              }}
-              className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors duration-200"
-              title="Next year"
-            >
-              <span className="text-sm font-bold">››</span>
             </button>
           </div>
         </div>
