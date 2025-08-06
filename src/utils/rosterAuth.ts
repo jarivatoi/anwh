@@ -118,10 +118,11 @@ export const getNamesByTitle = (title: string): string[] => {
 // Shift types for the roster system
 export const shiftTypes = [
   'Morning Shift (9-4)',
+  'Saturday Regular (12-10)',
   'Evening Shift (4-10)',
-  'Saturday (12-10)',
   'Night Duty',
-  ];
+  'Sunday/Public Holiday/Special'
+];
 
 // Admin code constant
 export const ADMIN_CODE = '5274';
