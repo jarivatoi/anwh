@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Calendar, Edit, FileText, Download, RefreshCw, Star, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { RosterEntry, ShiftFilterType } from '../types/roster';
 import { EditDetailsModal } from './EditDetailsModal';
@@ -802,7 +803,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       )}
 
       {/* Authentication Modal */}
-      {showAuthModal && (
+      {showAuthModal && createPortal(
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 z-[99999]"
           style={{
@@ -927,6 +928,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             </div>
           </div>
         </div>
+        , document.body
       )}
 
       {/* Special Date Modal */}
