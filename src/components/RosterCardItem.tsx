@@ -12,13 +12,15 @@ interface RosterCardItemProps {
   onUpdate?: (updatedEntry: RosterEntry) => void;
   onShowDetails?: (entry: RosterEntry) => void;
   allEntriesForShift?: RosterEntry[];
+  isSpecialDate?: boolean;
 }
 
 export const RosterCardItem: React.FC<RosterCardItemProps> = ({
   entry,
   onUpdate,
   onShowDetails,
-  allEntriesForShift = []
+  allEntriesForShift = [],
+  isSpecialDate = false
 }) => {
   const [showStaffModal, setShowStaffModal] = useState(false);
   const [authCode, setAuthCode] = useState('');
@@ -190,12 +192,14 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
           justifyContent: 'center',
           minHeight: '32px',
           position: 'relative',
-          zIndex: 60
+          zIndex: 60,
+          // Add pulsing animation for special dates
+          animation: isSpecialDate ? 'pulse 2s ease-in-out infinite' : 'none'
         }}
       >
         <ScrollingText 
           text={entry.assigned_name}
-          className="text-center w-full"
+          className={`text-center w-full ${isSpecialDate ? 'animate-pulse' : ''}`}
           style={{
             color: getTextColor(),
             fontWeight: '500',

@@ -713,6 +713,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                 onShowDetails={handleShowDetails}
                                 onUpdate={handleEntryUpdate}
                                 allEntriesForShift={shiftEntries}
+                                isSpecialDate={isSpecialDate(date)}
                               />
                             ))}
                           </div>

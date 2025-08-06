@@ -390,6 +390,24 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
     return dateString < today;
   };
 
+  // Check if date has special info
+  const getSpecialDateInfo = (date: string) => {
+    const dateEntries = groupedEntries[date] || [];
+    for (const entry of dateEntries) {
+      if (entry.change_description && entry.change_description.includes('Special Date:')) {
+        const match = entry.change_description.match(/Special Date:\s*([^;]+)/);
+        if (match && match[1].trim()) {
+          return match[1].trim();
+        }
+      }
+    }
+    return null;
+  };
+
+  // Check if date is marked as special
+  const isSpecialDate = (date: string) => {
+    return getSpecialDateInfo(date) !== null;
+  };
   return (
     <div className="bg-white rounded-lg overflow-hidden" style={{ 
       height: window.innerWidth > window.innerHeight ? '60vh' : '70vh', // Shorter in landscape
@@ -487,6 +505,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
                                   entry={entry}
                                   onShowDetails={handleShowDetails}
                                   onUpdate={handleEntryUpdate}
+                                  isSpecialDate={isSpecialDate(date)}
                                 />
                               </div>
                             ))}
