@@ -696,7 +696,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       onLongPress={() => handleDateCellLongPress(date)}
                       isSpecialDate={isSpecialDate(date)}
                       specialDateInfo={getSpecialDateInfo(date)}
-                      formatTableDate={formatTableDate}
+                     formatTableDate={formatTableDate}
                     />
                     
                     {shiftTypes.map(shiftType => {
@@ -786,7 +786,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                 onShowDetails={handleShowDetails}
                                 onUpdate={handleEntryUpdate}
                                 allEntriesForShift={shiftEntries}
-                                shiftDisplayName={shiftType === 'Sunday/Public Holiday/Special' ? 'Sp 9-4' : shiftType}
+                                isSpecialDate={isSpecialDate(date)}
                               />
                             ))}
                           </div>
