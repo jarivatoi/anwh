@@ -451,13 +451,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               
               {/* Month Selector */}
               <div className="text-lg font-semibold text-gray-900">
-                {(() => {
-                  const monthNames = [
-                    'January', 'February', 'March', 'April', 'May', 'June',
-                    'July', 'August', 'September', 'October', 'November', 'December'
-                  ];
-                  return `${monthNames[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`;
-                })()}
+                {`${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][selectedDate.getMonth()]} ${selectedDate.getFullYear()}`}
               </div>
               
               {/* Export Button */}
