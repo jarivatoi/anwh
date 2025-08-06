@@ -1099,6 +1099,13 @@ export const Calendar: React.FC<CalendarProps> = ({
               >
                 {day && (
                   <div className="flex flex-col select-none h-full">
+                    {/* SPECIAL text at top - simple style */}
+                    {hasSpecialDate && (
+                      <div className="text-[8px] sm:text-[10px] font-bold text-red-600 text-center mb-1 select-none">
+                        SPECIAL
+                      </div>
+                    )}
+                    
                     {/* BIG X WATERMARK for past dates */}
                     {isPastDate(day) && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
@@ -1109,7 +1116,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                     )}
                     
                     {/* Date header with special indicator and TODAY CIRCLE */}
-                    <div className={`flex-shrink-0 mb-1.5 sm:mb-2 relative ${isPastDate(day) ? 'z-30' : ''}`}>
+                    <div className={`flex-shrink-0 mb-1.5 sm:mb-2 relative ${isPastDate(day) ? 'z-30' : ''} ${hasSpecialDate ? 'mt-0' : ''}`}>
                       {/* SPECIAL text indicator */}
                       {hasSpecialDate && (
                         <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 z-20">
