@@ -467,6 +467,25 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             </button>
             <Calendar className="w-5 h-5 text-indigo-600" />
             
+            {/* Month selector */}
+            <select
+              value={selectedDate.getMonth()}
+              onChange={(e) => {
+                const newDate = new Date(selectedDate);
+                newDate.setMonth(parseInt(e.target.value));
+                onDateChange(newDate);
+              }}
+              disabled={isRefreshing}
+              className="text-lg font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer hover:bg-gray-100 rounded px-2 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {[
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'
+              ].map((month, index) => (
+                <option key={index} value={index}>{month}</option>
+              ))}
+            </select>
+            
             {/* Year selector */}
             <select
               value={selectedDate.getFullYear()}
@@ -475,16 +494,13 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 newDate.setFullYear(parseInt(e.target.value));
                 onDateChange(newDate);
               }}
-              className="text-lg font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer hover:bg-gray-100 rounded px-2 py-1"
+              disabled={isRefreshing}
+              className="text-lg font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer hover:bg-gray-100 rounded px-2 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map(year => (
                 <option key={year} value={year}>{year}</option>
               ))}
             </select>
-            
-            <h3 className="text-lg font-semibold text-gray-900">
-              {formatMonthYear().split(' ')[0]}
-            </h3>
             
             {/* Status indicators right next to the month text */}
             <div className="flex items-center space-x-2 ml-2">
@@ -499,8 +515,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  opacity: 0,
-                  visibility: 'hidden'
+                  opacity: isRefreshing ? 1 : 0.7,
+                  visibility: 'visible'
                 }}
               >
                 {isRefreshing ? (
