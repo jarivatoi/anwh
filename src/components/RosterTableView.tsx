@@ -801,9 +801,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                               <RosterEntryCell
                                 key={entry.id}
                                 entry={entry}
-                               onUpdate={handleEntryUpdate}
+                                onUpdate={handleEntryUpdate}
                                 onShowDetails={handleShowDetails}
-                               allEntriesForShift={shiftEntries}
+                                allEntriesForShift={shiftEntries}
                                 isSpecialDate={isSpecialDate(date)}
                                 specialDateInfo={getSpecialDateInfo(date)}
                               />
@@ -908,7 +908,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               )}
               
               <div className="mb-4">
-              {selectedShiftForAdd && authCode.length >= 4 && isAdminCode(authCode) && (
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {selectedShiftForAdd && authCode.length >= 4 && isAdminCode(authCode) ? 'Staff Selection Complete - ' : ''}
                   Authentication Code
                 </label>
                 <input
