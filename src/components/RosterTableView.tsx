@@ -626,7 +626,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             left: 0,
                             right: 0,
                             bottom: 0,
-                            zIndex: 100,
+                            zIndex: 5,
                             cursor: 'pointer',
                             touchAction: 'manipulation',
                             backgroundColor: 'transparent',
@@ -650,7 +650,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                           </div>
                         )}
                         
-                        <div className="space-y-1 relative z-30" style={{ 
+                        <div className="space-y-1 relative z-60" style={{ 
                           minHeight: '50px',
                           padding: '4px 2px'
                         }}>
