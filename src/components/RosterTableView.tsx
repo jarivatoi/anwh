@@ -702,7 +702,15 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               </thead>
               <tbody>
                 {Object.entries(groupedEntries).map(([date, dateEntries]) => (
-                  <tr key={date}>
+                  <tr key={date} style={{
+                    backgroundColor: isToday(date) ? '#bbf7d0' : 
+                                   isPastDate(date) ? '#fef2f2' :
+                                   isFutureDate(date) ? '#f0fdf4' : '#ffffff',
+                    background: isSpecialDate(date) ? '#fecaca' : 
+                               isToday(date) ? '#bbf7d0' : 
+                               isPastDate(date) ? '#fef2f2' :
+                               isFutureDate(date) ? '#f0fdf4' : '#ffffff'
+                  }}>
                     <RosterDateCell
                       date={date}
                       isToday={isToday(date)}
