@@ -11,7 +11,6 @@ interface RosterDateCellProps {
   onLongPress: () => void;
   isSpecialDate?: boolean;
   specialDateInfo?: string;
-  formatTableDate: (dateString: string) => { dayName: string; dateString: string };
 }
 
 export const RosterDateCell: React.FC<RosterDateCellProps> = ({
@@ -23,7 +22,6 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
   onLongPress,
   isSpecialDate = false,
   specialDateInfo,
-  formatTableDate
 }) => {
   return (
     <td 
@@ -111,7 +109,7 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
           animation: isSpecialDate ? 'pulse 2s ease-in-out infinite' : 'none'
         }}>
           <div style={{ textAlign: 'center' }}>
-            {formatTableDate(date).dateString.split('-')[0]}
+            {new Date(date).getDate()}
           </div>
           <div style={{ textAlign: 'center', fontSize: window.innerWidth > window.innerHeight ? '10px' : '12px', fontWeight: '500' }}>
             {(() => {

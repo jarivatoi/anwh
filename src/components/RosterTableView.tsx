@@ -695,7 +695,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       onLongPress={() => handleDateCellLongPress(date)}
                       isSpecialDate={isSpecialDate(date) && getSpecialDateInfo(date) !== null}
                       specialDateInfo={getSpecialDateInfo(date)}
-                      formatTableDate={formatTableDate}
                     />
                     
                     {shiftTypes.map(shiftType => {
