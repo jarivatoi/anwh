@@ -1532,7 +1532,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   Cancel
                 </button>
                 <button
-                  onClick={handleAuthSubmit}
+                  onClick={handleAuthSubmitWithAction}
                   disabled={authCode.length < 4 || !isAdminCode(authCode)}
                   className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200"
                 >
