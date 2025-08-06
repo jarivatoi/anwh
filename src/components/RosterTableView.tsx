@@ -774,7 +774,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                               </div>
                             </div>
                           )}
-                            height: '14px',
+                          
                           <div className="space-y-1 relative z-60" style={{ 
                             minHeight: '50px',
                             padding: '4px 2px'
@@ -784,8 +784,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                 key={entry.id}
                                 entry={entry}
                                 onShowDetails={handleShowDetails}
-                                fontSize: window.innerWidth > window.innerHeight ? '10px' : '12px',
-                                lineHeight: window.innerWidth > window.innerHeight ? '12px' : '14px',
+                                fontSize={window.innerWidth > window.innerHeight ? '10px' : '12px'}
+                                lineHeight={window.innerWidth > window.innerHeight ? '12px' : '14px'}
                                 isSpecialDate={isSpecialDate(date)}
                               />
                             ))}
