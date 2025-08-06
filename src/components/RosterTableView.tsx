@@ -585,8 +585,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           >
             <ChevronRight className="w-6 h-6" />
           </button>
-        </div>
-      </div>
       {/* Table Content */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
