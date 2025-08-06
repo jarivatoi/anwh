@@ -389,6 +389,44 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const isPastDate = (dateString: string) => {
     const now = new Date();
     const today = now.getFullYear() + '-' + 
+                  String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                  String(now.getDate()).padStart(2, '0');
+    return dateString < today;
+  };
+
+  // Check if date is in the future
+  const isFutureDate = (dateString: string) => {
+    const now = new Date();
+    const today = now.getFullYear() + '-' + 
+                  String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                  String(now.getDate()).padStart(2, '0');
+    return dateString > today;
+  };
+
+  // Check if date is special
+  const isSpecialDate = (dateString: string) => {
+    const dateEntries = groupedEntries[dateString] || [];
+    return dateEntries.some(entry => entry.staff_remarks && entry.staff_remarks.trim() !== '');
+  };
+
+  // Get special date info
+  const getSpecialDateInfo = (dateString: string) => {
+    const dateEntries = groupedEntries[dateString] || [];
+    const specialEntry = dateEntries.find(entry => entry.staff_remarks && entry.staff_remarks.trim() !== '');
+    return specialEntry?.staff_remarks || null;
+  };
+
+  // Format date for table display
+  const formatTableDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const day = date.getDate();
+    const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+    return { day, dayName };
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Month Navigation Header */}
       <div className="bg-white rounded-lg mb-4 p-4 shadow-sm sticky top-0 z-50">
         <div className="flex items-center justify-between w-full">
           {/* Left Arrow */}
