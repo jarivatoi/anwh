@@ -369,8 +369,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           [selectedSpecialDate]: existingInfo
         }));
       }
-      setShowSpecialDateModal(true)
-    } else if (actionType === 'staff') {
+      setShowSpecialDateModal(true);
+    } else if (actionType === 'staff'); {
       setShowStaffEditModal(true);
   
       // Get current staff for the selected date and shift
