@@ -290,6 +290,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         await onRefresh();
       }
       
+      // Force refresh key to trigger re-render
+      setRefreshKey(prev => prev + 1);
+      
       console.log('✅ SPECIAL DATE: Saved successfully');
     } catch (error) {
       console.error('❌ SPECIAL DATE: Save failed:', error);
