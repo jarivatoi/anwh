@@ -62,7 +62,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const [exportResult, setExportResult] = useState<{success: boolean, message: string} | null>(null);
   const [showSpecialDateModal, setShowSpecialDateModal] = useState(false);
   const [selectedSpecialDate, setSelectedSpecialDate] = useState<string | null>(null);
-  const [specialDates, setSpecialDates] = useState<Record<string, { isSpecial: boolean; info: string }>>({});
   const [showStaffEditModal, setShowStaffEditModal] = useState(false);
   
   const tableRef = useRef<HTMLDivElement>(null);
@@ -331,12 +330,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     const existingInfo = getExistingSpecialInfo(date);
     console.log('🌟 Existing special info for', date, ':', existingInfo);
     
-    // Update local state with existing info
-    setSpecialDates(prev => ({
-      ...prev,
-      [date]: existingInfo
-    }));
-    
     setSelectedSpecialDate(date);
     setShowAuthModal(true);
     setActionType('special');
@@ -480,37 +473,69 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     if (!selectedSpecialDate) return;
     
     try {
-      // Update local special dates state
-      setSpecialDates(prev => ({
-        ...prev,
-        [selectedSpecialDate]: { isSpecial, info }
-      }));
-      
+      const editorName = validateAuthCode(authCode);
+      if (!editorName) {
+        alert('Authentication required to save special date');
+        return;
+      }
+
       // If there's info text, update all staff working on this date
       if (info.trim() && isSpecial) {
         const dateEntries = entries.filter(entry => entry.date === selectedSpecialDate);
-        const editorName = validateAuthCode(authCode);
         
-        if (editorName) {
-          for (const entry of dateEntries) {
+        for (const entry of dateEntries) {
+          try {
+            // Get existing change description and update it
+            let newChangeDescription = entry.change_description || '';
+            
+            // Remove any existing special date info
+            newChangeDescription = newChangeDescription.replace(/Special Date: [^;]*;?\s*/g, '');
+            
+            // Add new special date info
+            const specialInfo = `Special Date: ${info.trim()}`;
+            newChangeDescription = newChangeDescription ? 
+              `${specialInfo}; ${newChangeDescription}` : 
+              specialInfo;
+            
+            await updateRosterEntry(entry.id, {
+              date: entry.date,
+              shiftType: entry.shift_type,
+              assignedName: entry.assigned_name,
+              changeDescription: newChangeDescription,
+              textColor: entry.text_color
+            }, editorName);
+          } catch (error) {
+            console.error('Failed to update entry remarks:', error);
+          }
+        }
+      } else if (!isSpecial) {
+        // Remove special date info from all entries for this date
+        const dateEntries = entries.filter(entry => entry.date === selectedSpecialDate);
+        
+        for (const entry of dateEntries) {
+          if (entry.change_description && entry.change_description.includes('Special Date:')) {
             try {
+              // Remove special date info from change description
+              let newChangeDescription = entry.change_description.replace(/Special Date: [^;]*;?\s*/g, '');
+              newChangeDescription = newChangeDescription.trim();
+              
               await updateRosterEntry(entry.id, {
                 date: entry.date,
                 shiftType: entry.shift_type,
                 assignedName: entry.assigned_name,
-                changeDescription: `Special Date: ${info}`,
+                changeDescription: newChangeDescription || null,
                 textColor: entry.text_color
               }, editorName);
             } catch (error) {
-              console.error('Failed to update entry remarks:', error);
+              console.error('Failed to remove special date info:', error);
             }
           }
-          
-          // Refresh data
-          if (onRefresh) {
-            await onRefresh();
-          }
         }
+      }
+      
+      // Refresh data to show changes
+      if (onRefresh) {
+        await onRefresh();
       }
       
       setShowSpecialDateModal(false);
@@ -524,12 +549,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   };
 
   // Get existing special date info for a date
-  const getExistingSpecialInfo = (date: string): { isSpecial: boolean; info: string } => {
-    // Check if we have it in local state first
-    if (specialDates[date]) {
-      return specialDates[date];
-    }
-    
+  const getExistingSpecialInfo = (date: string): { isSpecial: boolean; info: string } => {    
     // Otherwise, extract from roster entries
     const dateEntries = entries.filter(entry => entry.date === date);
     
@@ -1117,8 +1137,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               <tbody className="divide-y divide-gray-200">
                 {sortedDates.map((date) => {
                   const dateEntries = groupedByDate[date] || [];
-                  const specialDateInfo = specialDates[date];
-                  const isSpecialDate = specialDateInfo?.isSpecial || false;
+                  const specialDateInfo = getExistingSpecialInfo(date);
+                  const isSpecialDate = specialDateInfo.isSpecial;
                   
                   // Calculate the maximum number of staff in any shift for this date
                   const maxStaffCount = Math.max(...shiftTypes.map(shiftType => 
@@ -1147,7 +1167,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         isFutureDate={isFutureDate(date)}
                         onLongPress={() => handleStaffEditLongPress(date)}
                         isSpecialDate={isSpecialDate}
-                        specialDateInfo={specialDateInfo?.info}
+                        specialDateInfo={specialDateInfo.info}
                         formatTableDate={formatTableDate}
                       />
                       {shiftTypes.map((shiftType) => {
