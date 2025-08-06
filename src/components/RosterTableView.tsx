@@ -890,6 +890,23 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 </div>
               )}
               
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Shift Type
+                </label>
+                <select
+                  value={selectedShift}
+                  onChange={(e) => setSelectedShift(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  required
+                >
+                  <option value="">Select shift type</option>
+                  {shiftTypes.map(type => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+              
               {/* Shift Selection - Show when admin code is valid and action is addStaff */}
               {actionType === 'addStaff' && (
                 <div className="mb-4">
@@ -929,7 +946,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 </button>
                 <button
                   onClick={actionType === 'special' ? handleAuthSubmit : handleAuthSubmit}
-                  disabled={authCode.length < 4 || !isAdminCode(authCode) || isUpdating || (actionType === 'addStaff' && !selectedShiftForAdd)}
+                  disabled={authCode.length < 4 || !selectedShift || !isAdminCode(authCode)}
                   className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200"
                 >
                   {actionType === 'special' ? 'Continue' : 'Continue'}
