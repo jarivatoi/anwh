@@ -469,12 +469,21 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             </h3>
           </div>
           
-          <button
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={onExportToCalendar}
+              className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 text-sm"
+            >
+              <Download className="w-4 h-4" />
+              <span>Export to Calendar</span>
+            </button>
+            <button
             onClick={() => navigateMonth('next')}
             className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors duration-200"
-          >
+            >
             <ChevronRight className="w-5 h-5" />
-          </button>
+            </button>
+          </div>
         </div>
         
         {/* Real-time status indicator */}
