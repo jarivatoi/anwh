@@ -23,6 +23,79 @@
   }
 }
 
+/* Alternative animations for special dates */
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(239, 68, 68, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.8), 0 0 30px rgba(239, 68, 68, 0.6);
+  }
+}
+
+@keyframes border-flash {
+  0%, 100% {
+    border-color: #ef4444;
+  }
+  50% {
+    border-color: #fbbf24;
+  }
+}
+
+@keyframes subtle-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes gradient-shift {
+  0% {
+    background: linear-gradient(45deg, #fecaca, #fed7d7);
+  }
+  50% {
+    background: linear-gradient(45deg, #fed7d7, #fef2f2);
+  }
+  100% {
+    background: linear-gradient(45deg, #fecaca, #fed7d7);
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+/* Special date effect classes */
+.special-date-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+.special-date-border-flash {
+  animation: border-flash 1.5s ease-in-out infinite;
+}
+
+.special-date-bounce {
+  animation: subtle-bounce 2s ease-in-out infinite;
+}
+
+.special-date-gradient {
+  animation: gradient-shift 3s ease-in-out infinite;
+}
+
+.special-date-shake {
+  animation: shake 0.5s ease-in-out infinite;
+}
+
+.special-date-static {
+  background: linear-gradient(135deg, #fecaca 0%, #fed7d7 50%, #fef2f2 100%) !important;
+  border: 3px solid #ef4444 !important;
+  font-weight: bold !important;
+}
+
 .animate-pulse-subtle {
   animation: pulse-subtle 2s ease-in-out infinite;
 }

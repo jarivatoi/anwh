@@ -64,7 +64,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const [selectedSpecialDate, setSelectedSpecialDate] = useState<string | null>(null);
   const [specialDates, setSpecialDates] = useState<Record<string, { isSpecial: boolean; info: string }>>({});
   const [showStaffEditModal, setShowStaffEditModal] = useState(false);
-  
+  const [specialDateEffect, setSpecialDateEffect] = useState<'glow' | 'border-flash' | 'bounce' | 'gradient' | 'shake' | 'static'>('static');
   const tableRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef(false);
 
@@ -328,7 +328,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     console.log('🌟 Special date long press for:', date);
     setSelectedSpecialDate(date);
     setShowAuthModal(true);
-    setActionType('special');
   };
 
   // Handle staff edit long press  
@@ -336,7 +335,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     console.log('👥 Staff edit long press for:', date);
     setEditingDate(date);
     setShowAuthModal(true);
-    setActionType('staff');
   };
 
   // Handle authentication
@@ -451,7 +449,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     setEditingDate(null);
     setAuthCode('');
     setAuthError('');
-    setActionType('staff');
   };
 
   // Handle special date save
@@ -730,10 +727,57 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     'Evening Shift (4-10)',
     'Night Duty'
   ];
+  // Get special date CSS class based on selected effect
+  const getSpecialDateClass = (isSpecial: boolean) => {
+    if (!isSpecial) return '';
+    
+    switch (specialDateEffect) {
+      case 'glow': return 'special-date-glow';
+      case 'border-flash': return 'special-date-border-flash';
+      case 'bounce': return 'special-date-bounce';
+      case 'gradient': return 'special-date-gradient';
+      case 'shake': return 'special-date-shake';
+      case 'static': return 'special-date-static';
+      default: return 'special-date-static';
+    }
+  };
+
   return (
     <div>
       {/* Date Picker */}
       <div className="mb-6 bg-white rounded-lg border border-gray-200 p-4">
+        {/* Special Date Effect Selector */}
+        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+          <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
+            Special Date Visual Effect
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { value: 'static', label: 'Static (No Animation)', preview: '🔴' },
+              { value: 'glow', label: 'Glow Effect', preview: '✨' },
+              { value: 'border-flash', label: 'Border Flash', preview: '⚡' },
+              { value: 'bounce', label: 'Subtle Bounce', preview: '⬆️' },
+              { value: 'gradient', label: 'Gradient Shift', preview: '🌈' },
+              { value: 'shake', label: 'Shake', preview: '📳' }
+            ].map(effect => (
+              <button
+                key={effect.value}
+                onClick={() => setSpecialDateEffect(effect.value as any)}
+                className={`p-2 text-xs rounded-lg border-2 transition-all duration-200 ${
+                  specialDateEffect === effect.value
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                    : 'border-gray-300 bg-white text-gray-600 hover:border-gray-400'
+                }`}
+              >
+                <div className="text-center">
+                  <div className="text-lg mb-1">{effect.preview}</div>
+                  <div className="font-medium">{effect.label}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+        
         <div className="flex items-center justify-center w-full">
           <div className="flex items-center justify-center space-x-4 w-full max-w-lg mx-auto">
             {/* Left Arrow - Centered */}
@@ -1085,14 +1129,11 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       key={date} 
                       data-date={date}
                       className={`${
-                        isSpecialDate ? 'bg-red-200' :
+                        isSpecialDate ? getSpecialDateClass(true) :
                         isToday(date) ? 'bg-green-200' : 
                         isPastDate(date) ? 'bg-red-50' :
                         isFutureDate(date) ? 'bg-green-50' : ''
                       }`}
-                      style={{
-                        animation: isSpecialDate ? 'pulse 2s ease-in-out infinite' : 'none'
-                      }}
                     >
                       {/* Date Column */}
                       <RosterDateCell
@@ -1119,7 +1160,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         }
                         return (
                           <td key={shiftType} className={`text-center overflow-hidden align-top relative ${
-                            isSpecialDate ? 'bg-red-200' :
+                            isSpecialDate ? getSpecialDateClass(true) :
                             isPastDate(date) ? 'bg-red-50' : ''
                           }`} style={{
                             padding: '2px',
@@ -1133,11 +1174,11 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             width: 'calc((100vw - 80px) / 4)',
                             minWidth: 'calc((100vw - 80px) / 4)',
                             maxWidth: 'calc((100vw - 80px) / 4)',
-                            backgroundColor: isSpecialDate ? '#fecaca' : 
+                            backgroundColor: !isSpecialDate ? (
                                            isToday(date) ? '#bbf7d0' : 
                                            isPastDate(date) ? '#fef2f2' :
-                                           isFutureDate(date) ? '#f0fdf4' : '#ffffff',
-                            animation: isSpecialDate ? 'pulse 2s ease-in-out infinite' : 'none'
+                                           isFutureDate(date) ? '#f0fdf4' : '#ffffff'
+                            ) : undefined
                           }}>
                             
                             <div className="w-full h-full relative" style={{
