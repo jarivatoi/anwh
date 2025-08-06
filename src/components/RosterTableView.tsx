@@ -844,6 +844,21 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             minHeight: '50px',
                             padding: '4px 2px'
                           }}>
+                            {/* X watermark - only show for past dates AND when there are entries */}
+                            {isPastDate(date) && shiftEntries.length > 0 && (
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                                <div className="font-bold select-none" style={{
+                                  fontSize: window.innerWidth > window.innerHeight ? 'clamp(1.5rem, 6vw, 3rem)' : 'clamp(3rem, 10vw, 6rem)',
+                                  lineHeight: '1',
+                                  color: '#fca5a5',
+                                  opacity: 0.2,
+                                  transform: 'scale(1.5)'
+                                }}>
+                                  X
+                                </div>
+                              </div>
+                            )}
+                            
                             {shiftEntries.map((entry, index) => (
                               <RosterEntryCell
                                 key={entry.id}
