@@ -1142,6 +1142,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         isPastDate={isPastDate(date)}
                         isFutureDate={isFutureDate(date)}
                         onLongPress={() => {
+                        isSpecialDate={false}
                           setSelectedSpecialDate(date);
                           setEditingDate(date);
                           setShowAuthModal(true);
@@ -1178,7 +1179,12 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                            isToday(date) ? '#bbf7d0' : 
                                            isPastDate(date) ? '#fef2f2' :
                                            isFutureDate(date) ? '#f0fdf4' : '#ffffff'
-                            ) : undefined
+                            animation: isSpecialDate && specialDateEffect === 'bounce' ? 'subtle-bounce 2s ease-in-out infinite' :
+                                      isSpecialDate && specialDateEffect === 'glow' ? 'glow 2s ease-in-out infinite' :
+                                      isSpecialDate && specialDateEffect === 'border-flash' ? 'border-flash 1.5s ease-in-out infinite' :
+                                      isSpecialDate && specialDateEffect === 'gradient' ? 'gradient-shift 3s ease-in-out infinite' :
+                                      isSpecialDate && specialDateEffect === 'shake' ? 'shake 0.5s ease-in-out infinite' :
+                                      'none'
                           }}>
                             
                             <div className="w-full h-full relative" style={{

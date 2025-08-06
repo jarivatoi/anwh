@@ -38,8 +38,7 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
         backgroundColor: isToday ? '#bbf7d0' : 
                          isPastDate ? '#fef2f2' :
                          isFutureDate ? '#f0fdf4' : '#ffffff',
-        background: isSpecialDate ? '#fecaca' : 
-                   isToday ? '#bbf7d0' : 
+        background: isToday ? '#bbf7d0' : 
                    isPastDate ? '#fef2f2' :
                    isFutureDate ? '#f0fdf4' : '#ffffff',
         opacity: 1,
@@ -52,8 +51,8 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
         WebkitTransform: 'translate3d(0,0,0)',
         // iPhone specific
         WebkitTouchCallout: 'none',
-        // Add pulsating animation for special dates
-        animation: isSpecialDate ? 'pulse 2s ease-in-out infinite' : 'none'
+        // No animation for date column - keep it stable
+        animation: 'none'
       }}
     >
      <button
@@ -61,10 +60,7 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
           onLongPress,
           delay: 5000
         })}
-        className={`text-center w-full h-full p-1 rounded transition-colors duration-200 ${
-          isSpecialDate ? 'bg-red-300' :
-          isToday ? 'bg-green-300' : 'hover:bg-gray-100'
-        }`}
+        className={`text-center w-full h-full p-1 rounded transition-colors duration-200 hover:bg-gray-100`}
         style={{
           border: 'none',
           background: 'transparent',
@@ -103,7 +99,6 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
         }}
       >
         <div className={`font-medium text-[10px] sm:text-[12px] leading-tight relative z-20 ${
-          isSpecialDate ? 'text-red-900' :
           isToday ? 'text-green-900' : 'text-gray-900'
         }`} style={{
           textAlign: 'center',
@@ -114,7 +109,6 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
           {formatTableDate(date).dayName}
         </div>
         <div className={`font-medium text-[10px] sm:text-[12px] leading-tight relative z-20 ${
-          isSpecialDate ? 'text-red-900' :
           isToday ? 'text-green-900' : 'text-gray-900'
         }`} style={{
           textAlign: 'center',
