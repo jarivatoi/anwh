@@ -666,7 +666,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     border: '2px solid #374151',
                     width: '21.25%'
                   }}>
-                    12-10
+                    4-10
                   </th>
                   <th style={{
                     position: 'sticky',
@@ -681,7 +681,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     border: '2px solid #374151',
                     width: '21.25%'
                   }}>
-                    4-10
+                    12-10
                   </th>
                   <th style={{
                     position: 'sticky',
