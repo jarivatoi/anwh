@@ -446,14 +446,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           {/* Center Content - Equally distributed and centered */}
           <div className="flex-1 flex items-center justify-center">
             <div className="flex items-center justify-center space-x-6">
-              {/* Calendar Icon */}
-              <Calendar className="w-6 h-6 text-indigo-600" />
-              
-              {/* Month Selector */}
-              <div className="text-lg font-semibold text-gray-900">
-                {`${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][selectedDate.getMonth()]} ${selectedDate.getFullYear()}`}
-              </div>
-              
               {/* Export Button */}
               <button
                 onClick={() => {
@@ -471,6 +463,14 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               >
                 <Download className="w-8 h-8" />
               </button>
+              
+              {/* Calendar Icon */}
+              <Calendar className="w-6 h-6 text-indigo-600" />
+              
+              {/* Month Selector */}
+              <div className="text-lg font-semibold text-gray-900">
+                {`${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][selectedDate.getMonth()]} ${selectedDate.getFullYear()}`}
+              </div>
               
               {/* Refresh Button with Spinner and Dot */}
               <button
