@@ -51,9 +51,7 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
         WebkitBackfaceVisibility: 'hidden',
         WebkitTransform: 'translate3d(0,0,0)',
         // iPhone specific
-        WebkitTouchCallout: 'none',
-        // Add pulsating animation for special dates
-        animation: isSpecialDate ? 'pulse 2s ease-in-out infinite' : 'none'
+        WebkitTouchCallout: 'none'
       }}
     >
      <button

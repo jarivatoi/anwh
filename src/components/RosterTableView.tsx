@@ -1090,9 +1090,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                         isPastDate(date) ? 'bg-red-50' :
                         isFutureDate(date) ? 'bg-green-50' : ''
                       }`}
-                      style={{
-                        animation: isSpecialDate ? 'pulse 2s ease-in-out infinite' : 'none'
-                      }}
                     >
                       {/* Date Column */}
                       <RosterDateCell
