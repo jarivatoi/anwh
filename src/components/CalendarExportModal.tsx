@@ -102,16 +102,22 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
       const allEntries = await fetchRosterEntries();
       console.log(`📊 Total entries: ${allEntries.length}`);
       
-      // Filter entries - ONLY currently assigned to you
+      // Filter entries - For ADMIN, show all entries; for others, only their own
       const staffEntries = allEntries.filter(entry => {
+        const entryDate = new Date(entry.date);
+        const isCorrectMonth = entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
+        
+        if (!isCorrectMonth) return false;
+        
+        // If user is ADMIN, include all entries
+        if (authenticatedStaffName === 'ADMIN') {
+          return true;
+        }
+        
+        // For regular users, only include entries assigned to them
         const currentBaseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
         const authBaseName = authenticatedStaffName.replace(/\(R\)$/, '').trim().toUpperCase();
-        const nameMatch = currentBaseName === authBaseName;
-        
-        if (!nameMatch) return false;
-
-        const entryDate = new Date(entry.date);
-        return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
+        return currentBaseName === authBaseName;
       });
       
       console.log(`📊 Found ${staffEntries.length} entries for ${authenticatedStaffName}`);
