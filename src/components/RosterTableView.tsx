@@ -490,89 +490,87 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 onDateChange(newDate);
               }}
               disabled={isRefreshing}
-              className="text-lg font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-2 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
+        <div className="grid grid-cols-5 gap-2 items-center w-full">
+          {/* Left Arrow - Grid Column 1 */}
+          <div className="flex justify-center">
+            <button
+              onClick={() => navigateMonth('prev')}
+              className="p-3 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors duration-200 flex items-center justify-center"
+              style={{
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
+                width: '44px',
+                height: '44px'
+              }}
             >
-              {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
-            
-            {/* Status indicators right next to the month text */}
-            <div className="flex items-center space-x-2 ml-2">
-              <button
-                onClick={() => handleManualRefresh()}
-                disabled={isRefreshing}
-                className="p-2 rounded-lg text-gray-600 transition-colors duration-200"
-                title="Manual refresh"
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  opacity: isRefreshing ? 1 : 0.7,
-                  visibility: 'visible'
-                }}
-              >
-                {isRefreshing ? (
-                  <svg 
-                    style={{
-                      width: '18px',
-                      height: '18px',
-                      animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
-                      // Prevent icon from causing shifts
-                      transform: 'translate3d(0,0,0)',
-                      backfaceVisibility: 'hidden'
-                    }}
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
-                    />
-                  </svg>
-                ) : (
-                  <svg 
-                    style={{
-                      width: '18px',
-                      height: '18px',
-                      animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
-                      // Prevent icon from causing shifts
-                      transform: 'translate3d(0,0,0)',
-                      backfaceVisibility: 'hidden'
-                    }}
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
-                    />
-                  </svg>
-                )}
-              </button>
-              <div className={`w-2 h-2 rounded-full ${
-                realtimeStatus === 'connected' ? 'bg-green-500 animate-pulse' : 
-                realtimeStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
-                realtimeStatus === 'error' ? 'bg-red-500' : 'bg-gray-400'
-              }`} />
-            </div>
+              <ChevronLeft className="w-6 h-6" />
+            </button>
           </div>
           
-          <div className="flex items-center space-x-3">
+          {/* Calendar Icon - Grid Column 2 */}
+          <div className="flex justify-center">
+            <Calendar className="w-6 h-6 text-indigo-600" />
+          </div>
+          
+          {/* Month Selector - Grid Column 3 */}
+          <div className="flex justify-center">
+            <select
+              value={selectedDate.getMonth()}
+              onChange={(e) => {
+                const newDate = new Date(selectedDate);
+                newDate.setMonth(Number(e.target.value));
+                onDateChange(newDate);
+              }}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-semibold text-gray-900 bg-white text-center min-w-0"
+              style={{
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
+                textAlign: 'center',
+                maxWidth: '120px'
+              }}
+            >
+              {[
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'
+              ].map((month, index) => (
+                <option key={index} value={index}>{month}</option>
+              ))}
+            </select>
+          </div>
+          
+          {/* Export Button - Grid Column 4 */}
+          <div className="flex justify-center">
+            <button
+              onClick={() => {
+                console.log('🔄 ROSTER TABLE: Export to Calendar button clicked');
+                onExportToCalendar();
+              }}
+              className="p-3 rounded-lg hover:bg-green-100 text-green-600 transition-colors duration-200 flex items-center justify-center"
+              style={{
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
+                width: '44px',
+                height: '44px'
+              }}
+              title="Export your shifts to calendar"
+            >
+              <Download className="w-6 h-6" />
+            </button>
+          </div>
+          
+          {/* Right Arrow - Grid Column 5 */}
+          <div className="flex justify-center">
             <button
               onClick={() => navigateMonth('next')}
-              className="p-2 rounded-lg text-gray-600 transition-colors duration-200"
-              title="Next month"
+              className="p-3 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors duration-200 flex items-center justify-center"
+              style={{
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
+                width: '44px',
+                height: '44px'
+              }}
             >
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-6 h-6" />
             </button>
           </div>
         </div>
