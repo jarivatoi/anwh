@@ -445,7 +445,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           
           {/* Center Content - Equally distributed and centered */}
           <div className="flex-1 flex items-center justify-center">
-            <div className="flex items-center justify-center space-x-6">
+            <div className="flex items-center justify-between w-full max-w-md">
               {/* Export Button */}
               <button
                 onClick={() => {
