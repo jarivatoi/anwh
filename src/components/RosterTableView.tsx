@@ -256,16 +256,10 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         console.log('🌟 AUTH: Actually opening special date modal now');
         setShowSpecialDateModal(true);
       }, 100);
-    } else if (actionType === 'addStaff' && selectedSpecialDate) {
-      console.log('👥 AUTH: Authentication successful for add staff, staying in modal for shift selection');
-      // Don't close the auth modal yet - we need to show shift selection first
-      setAuthError(''); // Clear any auth errors
     } else {
-      console.error('❌ AUTH: Missing actionType or selectedSpecialDate:', {
-        actionType,
-        selectedSpecialDate
-      });
-      setAuthError('Invalid action or date selection');
+      // For addStaff action, close auth modal and let the separate staff modal handle it
+      setShowAuthModal(false);
+      setAuthError('');
     }
   };
 
@@ -823,17 +817,25 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       {/* Authentication Modal */}
       {showAuthModal && createPortal(
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-[99999]"
+          className="fixed inset-0 bg-black bg-opacity-50"
           style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 2147483647, // Maximum z-index value
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
             display: 'flex',
             alignItems: 'flex-start',
             justifyContent: 'center',
             padding: window.innerWidth > window.innerHeight ? '4px' : '16px',
             paddingTop: window.innerWidth > window.innerHeight ? '2px' : '16px',
+            // CRITICAL: Prevent all scrolling
             overflow: 'auto',
             overflowY: 'auto',
+            touchAction: 'pan-y',
             WebkitOverflowScrolling: 'touch',
-            touchAction: 'pan-y'
           }}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
@@ -844,8 +846,17 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           <div 
             className="bg-white rounded-2xl shadow-2xl w-full"
             style={{
-              maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
               maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
+              maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
+              display: 'flex',
+              flexDirection: 'column',
+              backgroundColor: '#ffffff',
+              zIndex: 2147483647,
+              // Enable touch interactions within modal
+              touchAction: 'auto',
+              overflow: 'hidden',
               margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0'
             }}
             onClick={(e) => e.stopPropagation()}
@@ -854,68 +865,16 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
             }}>
               <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
-                {actionType === 'special' ? 'Admin Authentication Required' : 'Authentication Required'}
+                Authentication Required
               </h3>
-              
-              {/* Staff Selection for Add Staff */}
-              {actionType === 'addStaff' && selectedShiftForAdd && (
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Select Staff for {selectedShiftForAdd}
-                  </label>
-                  <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-2">
-                    {sortByGroup(availableNames).map(name => (
-                      <label key={name} className="flex items-center space-x-2 p-2 hover:bg-gray-50 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={selectedStaffForAdd.includes(name)}
-                          onChange={() => handleStaffToggle(name)}
-                          className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                        />
-                        <span className="text-sm text-gray-900">{name}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {/* Shift Selection - Show for both special and addStaff actions when authenticated */}
-              {authCode.length >= 4 && isAdminCode(authCode) && (
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Select Shift Type
-                  </label>
-                  <select
-                    value={selectedShiftForAdd}
-                    onChange={(e) => {
-                      setSelectedShiftForAdd(e.target.value);
-                      // Get current staff for this shift
-                      if (e.target.value && selectedSpecialDate) {
-                        const dateEntries = groupedEntries[selectedSpecialDate] || [];
-                        const currentEntries = dateEntries.filter(entry => entry.shift_type === e.target.value);
-                        const currentStaff = currentEntries.map(entry => entry.assigned_name);
-                        setSelectedStaffForAdd(currentStaff);
-                      }
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    <option value="">Select shift type</option>
-                    {shiftTypes.map(type => (
-                      <option key={type} value={type}>{type}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
               
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {selectedShiftForAdd && authCode.length >= 4 && isAdminCode(authCode) ? 'Staff Selection Complete - ' : ''}
                   Authentication Code
                 </label>
                 <input
                   type="text"
                   value={authCode}
-                  disabled={isUpdating}
                   onChange={(e) => setAuthCode(e.target.value.toUpperCase())}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center font-mono text-lg"
                   placeholder="Enter admin code"
@@ -931,16 +890,46 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 </div>
               )}
               
+              {/* Shift Selection - Show when admin code is valid (exactly like card view) */}
+              {authCode.length >= 4 && isAdminCode(authCode) && actionType === 'addStaff' && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Shift Type
+                  </label>
+                  <select
+                    value={selectedShiftForAdd}
+                    onChange={(e) => {
+                      setSelectedShiftForAdd(e.target.value);
+                      // Get current staff for this shift when selection changes
+                      if (e.target.value && selectedSpecialDate) {
+                        const dateEntries = groupedEntries[selectedSpecialDate] || [];
+                        const currentEntries = dateEntries.filter(entry => entry.shift_type === e.target.value);
+                        const currentStaff = currentEntries.map(entry => entry.assigned_name);
+                        setSelectedStaffForAdd(currentStaff);
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    required
+                  >
+                    <option value="">Select shift type</option>
+                    {shiftTypes.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              
               <div className="flex space-x-3">
                 <button
                   onClick={handleCloseAuthModal}
+                  disabled={isUpdating}
                   className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={selectedShiftForAdd ? handleSaveStaffChanges : handleAuthSubmit}
-                  disabled={authCode.length < 4 || !isAdminCode(authCode) || isUpdating}
+                  onClick={actionType === 'special' ? handleAuthSubmit : (selectedShiftForAdd ? handleSaveStaffChanges : handleAuthSubmit)}
+                  disabled={authCode.length < 4 || !isAdminCode(authCode) || isUpdating || (actionType === 'addStaff' && !selectedShiftForAdd)}
                   className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200"
                 >
                   {isUpdating ? (
@@ -948,7 +937,110 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
                       Saving...
                     </>
-                  ) : selectedShiftForAdd ? 'Save Changes' : 'Continue'}
+                  ) : actionType === 'special' ? 'Continue' : (selectedShiftForAdd ? 'Save Changes' : 'Continue')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        , document.body
+      )}
+
+      {/* Staff Selection Modal - Show after shift is selected */}
+      {actionType === 'addStaff' && selectedSpecialDate && selectedShiftForAdd && authCode && !showAuthModal && createPortal(
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 2147483647, // Maximum z-index value
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            display: 'flex',
+            alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
+            justifyContent: 'center',
+            padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
+            paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
+            overflow: 'auto',
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y',
+            userSelect: 'none',
+            WebkitUserSelect: 'none'
+          }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full flex flex-col" style={{
+            maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
+            maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
+            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
+            userSelect: 'none',
+            WebkitUserSelect: 'none'
+          }}>
+            <div className="border-b border-gray-200 flex-shrink-0" style={{
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
+              userSelect: 'none',
+              WebkitUserSelect: 'none'
+            }}>
+              <h3 className="text-xl font-bold text-gray-900 mb-2 text-center select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
+                Edit Staff Assignment
+              </h3>
+              <p className="text-sm text-gray-600 text-center select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
+                {formatTableDate(selectedSpecialDate).dateString} ({new Date(selectedSpecialDate).toLocaleDateString('en-US', { weekday: 'long' })}) - {selectedShiftForAdd}
+              </p>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto" style={{
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
+              WebkitOverflowScrolling: 'touch',
+              touchAction: 'pan-y',
+              userSelect: 'none',
+              WebkitUserSelect: 'none'
+            }}>
+              <div className="space-y-3">
+                {availableNames.map(name => (
+                  <label key={name} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedStaffForAdd.includes(name)}
+                      onChange={() => handleStaffToggle(name)}
+                      className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    />
+                    <span className="text-sm font-medium text-gray-900 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            
+            <div className="border-t border-gray-200 flex-shrink-0" style={{
+              padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
+              userSelect: 'none',
+              WebkitUserSelect: 'none'
+            }}>
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleCloseAuthModal}
+                  disabled={isUpdating}
+                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 select-none"
+                  style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveStaffChanges}
+                  disabled={isUpdating}
+                  className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center justify-center space-x-2 select-none"
+                  style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
+                >
+                  {isUpdating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span className="select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>Saving...</span>
+                    </>
+                  ) : (
+                    <span className="select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>Save Changes</span>
+                  )}
                 </button>
               </div>
             </div>
