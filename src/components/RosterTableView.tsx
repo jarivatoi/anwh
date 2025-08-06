@@ -530,23 +530,41 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   'Manual refresh (Real-time disconnected)'
                 }
               >
-                <div className="flex items-center space-x-1">
-                  <RotateCcw 
-                    className={`w-6 h-6 ${isRefreshing ? 'animate-spin' : ''}`}
+                {/* Refresh icon with rotation animation when loading */}
+                <svg 
+                  style={{
+                    width: '18px',
+                    height: '18px',
+                    animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
+                    // Prevent icon from causing shifts
+                    transform: 'translate3d(0,0,0)',
+                    backfaceVisibility: 'hidden'
+                  }}
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
                   />
-                  
-                  {/* Real-time status dot - same level as icon */}
-                  <div 
-                    className="w-2 h-2 rounded-full"
-                    style={{
-                      backgroundColor: realtimeStatus === 'connected' ? '#10b981' : 
-                                      realtimeStatus === 'connecting' ? '#f59e0b' :
-                                      realtimeStatus === 'error' ? '#ef4444' : '#6b7280',
-                      animation: realtimeStatus === 'connecting' ? 'pulse 1.5s ease-in-out infinite' : 'none',
-                      boxShadow: realtimeStatus === 'connected' ? '0 0 6px rgba(16, 185, 129, 0.8)' : 'none'
-                    }}
-                  />
-                </div>
+                </svg>
+                
+                {/* Real-time status indicator inside the button */}
+                <div style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: realtimeStatus === 'connected' ? '#10b981' : 
+                                  realtimeStatus === 'connecting' ? '#f59e0b' :
+                                  realtimeStatus === 'error' ? '#ef4444' : '#6b7280',
+                  animation: realtimeStatus === 'connecting' ? 'pulse 1.5s ease-in-out infinite' : 'none',
+                  boxShadow: realtimeStatus === 'connected' ? '0 0 8px rgba(16, 185, 129, 0.8)' : 'none',
+                  // Prevent dot from causing shifts
+                  backfaceVisibility: 'hidden'
+                }} />
               </button>
             </div>
           </div>
