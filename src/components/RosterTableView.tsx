@@ -570,9 +570,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 ];
                 const currentMonthName = monthNames[selectedDate.getMonth()];
                 // Shorter months get more gap, longer months get less gap
-                return currentMonthName.length <= 4 ? '16px' : 
-                       currentMonthName.length <= 6 ? '12px' : 
-                       currentMonthName.length <= 8 ? '8px' : '4px';
+                return currentMonthName.length <= 4 ? '8px' : 
+                       currentMonthName.length <= 6 ? '6px' : 
+                       currentMonthName.length <= 8 ? '4px' : '2px';
               })()
             }}>
               {/* Month selector */}
