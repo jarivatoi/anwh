@@ -55,6 +55,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const [selectedShiftForAdd, setSelectedShiftForAdd] = useState<string>('');
   const [selectedStaffForAdd, setSelectedStaffForAdd] = useState<string[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   const isMountedRef = useRef(true);
 
