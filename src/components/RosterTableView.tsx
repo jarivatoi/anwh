@@ -906,10 +906,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             zIndex: 2147483647, // Maximum z-index value
             backgroundColor: 'rgba(0, 0, 0, 0.95)',
             display: 'flex',
-            alignItems: 'flex-start',
+            alignItems: 'center',
             justifyContent: 'center',
-            padding: window.innerWidth > window.innerHeight ? '4px' : '16px',
-            paddingTop: window.innerWidth > window.innerHeight ? '2px' : '16px',
+            padding: '16px',
             // CRITICAL: Prevent all scrolling
             overflow: 'auto',
             overflowY: 'auto',
@@ -927,8 +926,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             style={{
               userSelect: 'none',
               WebkitUserSelect: 'none',
-              maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
-              maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
+              maxHeight: '90vh',
+              maxWidth: '28rem',
               display: 'flex',
               flexDirection: 'column',
               backgroundColor: '#ffffff',
@@ -936,12 +935,12 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               // Enable touch interactions within modal
               touchAction: 'auto',
               overflow: 'hidden',
-              margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0'
+              margin: '0'
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{
-              padding: window.innerWidth > window.innerHeight ? '12px' : '24px'
+              padding: '24px'
             }}>
               <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
                 Authentication Required
@@ -1073,10 +1072,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             zIndex: 2147483647, // Maximum z-index value
             backgroundColor: 'rgba(0, 0, 0, 0.95)',
             display: 'flex',
-            alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
+            alignItems: 'center',
             justifyContent: 'center',
-            padding: window.innerWidth > window.innerHeight ? '8px' : '16px',
-            paddingTop: window.innerWidth > window.innerHeight ? '4px' : '16px',
+            padding: '16px',
             overflow: 'auto',
             overflowY: 'auto',
             WebkitOverflowScrolling: 'touch',
@@ -1086,14 +1084,14 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           }}
         >
           <div className="bg-white rounded-2xl shadow-2xl w-full flex flex-col" style={{
-            maxWidth: window.innerWidth > window.innerHeight ? '90vw' : '28rem',
-            maxHeight: window.innerWidth > window.innerHeight ? '95vh' : '90vh',
-            margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0',
+            maxWidth: '28rem',
+            maxHeight: '90vh',
+            margin: '0',
             userSelect: 'none',
             WebkitUserSelect: 'none'
           }}>
             <div className="border-b border-gray-200 flex-shrink-0" style={{
-              padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
+              padding: '24px',
               userSelect: 'none',
               WebkitUserSelect: 'none'
             }}>
@@ -1106,7 +1104,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             </div>
             
             <div className="flex-1 overflow-y-auto" style={{
-              padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
+              padding: '24px',
               WebkitOverflowScrolling: 'touch',
               touchAction: 'pan-y',
               userSelect: 'none',
@@ -1128,7 +1126,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             </div>
             
             <div className="border-t border-gray-200 flex-shrink-0" style={{
-              padding: window.innerWidth > window.innerHeight ? '12px' : '24px',
+              padding: '24px',
               userSelect: 'none',
               WebkitUserSelect: 'none'
             }}>
