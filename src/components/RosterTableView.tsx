@@ -832,7 +832,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                               right: 0,
                               bottom: 0,
                               zIndex: 5,
-                              cursor: 'pointer',
                               touchAction: 'manipulation',
                               backgroundColor: 'transparent',
                               border: 'none',
