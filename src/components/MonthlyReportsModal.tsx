@@ -6,7 +6,8 @@ import { individualBillGenerator } from '../utils/pdf/individualBillGenerator';
 import { annexureGenerator } from '../utils/pdf/annexureGenerator';
 import { rosterListGenerator } from '../utils/pdf/rosterListGenerator';
 import { RosterEntry } from '../types/roster';
-import { availableNames, sortByGroup } from '../utils/rosterAuth';
+import { availableNames, sortByGroup, authCodes } from '../utils/rosterAuth';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface MonthlyReportsModalProps {
   isOpen: boolean;
@@ -42,6 +43,7 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
     staffName?: string;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showAuthCodes, setShowAuthCodes] = useState(false);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -210,10 +212,31 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
     
     const staffSet = new Set<string>();
     monthEntries.forEach(entry => {
-      staffSet.add(entry.assigned_name);
+      // For individual reports, use base names only (remove (R) suffix)
+      const baseName = entry.assigned_name.replace(/\(R\)$/, '').trim();
+      staffSet.add(baseName);
     });
     
-    return sortByGroup(Array.from(staffSet));
+    // Sort base names using the same logic but without (R) versions
+    const baseNames = Array.from(staffSet);
+    return baseNames.sort((a, b) => {
+      // Get auth entries for both names to check titles
+      const authA = availableNames.find(name => name.replace(/\(R\)$/, '').trim() === a);
+      const authB = availableNames.find(name => name.replace(/\(R\)$/, '').trim() === b);
+      
+      const authEntryA = authCodes.find(auth => auth.name === authA);
+      const authEntryB = authCodes.find(auth => auth.name === authB);
+      
+      const titleA = authEntryA?.title || 'MIT';
+      const titleB = authEntryB?.title || 'MIT';
+      
+      // SMIT first, then MIT
+      if (titleA === 'SMIT' && titleB !== 'SMIT') return -1;
+      if (titleA !== 'SMIT' && titleB === 'SMIT') return 1;
+      
+      // Same title, sort alphabetically
+      return a.localeCompare(b);
+    });
   };
   if (!isOpen) return null;
 
@@ -397,7 +420,21 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
               {reportType === 'individual' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Select Staff Member
+                    <div className="flex items-center justify-between">
+                      <span>Select Staff Member</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowAuthCodes(!showAuthCodes)}
+                        className="p-1 rounded hover:bg-gray-100 transition-colors duration-200"
+                        title={showAuthCodes ? "Hide authentication codes" : "Show authentication codes"}
+                      >
+                        {showAuthCodes ? (
+                          <EyeOff className="w-4 h-4 text-gray-500" />
+                        ) : (
+                          <Eye className="w-4 h-4 text-gray-500" />
+                        )}
+                      </button>
+                    </div>
                   </label>
                   <select
                     value={selectedStaff}
@@ -407,13 +444,27 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
                   >
                     <option value="">Select staff member</option>
                     {getStaffForMonth().map(staffName => (
-                      <option key={staffName} value={staffName}>{staffName}</option>
+                      <option key={staffName} value={staffName}>
+                        {staffName}
+                        {showAuthCodes && (() => {
+                          const authEntry = authCodes.find(auth => auth.name.replace(/\(R\)$/, '').trim() === staffName);
+                          return authEntry ? ` (${authEntry.code})` : '';
+                        })()}
+                      </option>
                     ))}
                   </select>
                   
                   {selectedStaff && (
                     <div className="mt-2 text-sm text-gray-600 text-center">
                       Will generate individual bill for {selectedStaff}
+                      {showAuthCodes && (() => {
+                        const authEntry = authCodes.find(auth => auth.name.replace(/\(R\)$/, '').trim() === selectedStaff);
+                        return authEntry ? (
+                          <div className="mt-1 text-xs text-gray-500">
+                            Authentication code: <span className="font-mono bg-gray-100 px-1 rounded">{authEntry.code}</span>
+                          </div>
+                        ) : null;
+                      })()}
                     </div>
                   )}
                 </div>
