@@ -378,12 +378,12 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   };
 
   const handleEntryUpdate = (updatedEntry: RosterEntry) => {
-    if (!isMountedRef.current) {
-      console.warn('Component unmounted, skipping loadEntries call');
-      return;
-    }
+    // CRITICAL: Mark that an edit has occurred to prevent future auto-scroll
+    setHasEditOccurred(true);
+    console.log('🔄 Entry updated - marked hasEditOccurred = true to prevent auto-scroll');
     
-    if (onRefresh) {
+    // Don't call onRefresh here - it causes unwanted scrolling
+    // The real-time updates will handle data synchronization
       onRefresh();
     }
   };
