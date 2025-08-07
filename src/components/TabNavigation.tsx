@@ -117,6 +117,13 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabChange })
           gsap.to(touchedTabButton, {
             scale: 1,
             duration: 0.15,
+            ease: "power2.out",
+            force3D: true
+          });
+        }
+      });
+    }
+    
     // Update state immediately for mobile responsiveness
     setLocalActiveTab(tabId);
     onTabChange(tabId);
