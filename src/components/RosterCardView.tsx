@@ -125,6 +125,19 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
             block: 'center' 
           });
           console.log(`📍 Scrolled to edited entry: ${entryId}`);
+          
+          // Add highlight effect to the edited entry
+          editedElement.style.transition = 'all 0.3s ease';
+          editedElement.style.transform = 'scale(1.05)';
+          editedElement.style.boxShadow = '0 0 20px rgba(255, 193, 7, 0.8)';
+          editedElement.style.backgroundColor = 'rgba(255, 193, 7, 0.2)';
+          
+          // Remove highlight after animation
+          setTimeout(() => {
+            editedElement.style.transform = '';
+            editedElement.style.boxShadow = '';
+            editedElement.style.backgroundColor = '';
+          }, 2000);
         } else {
           // Fallback: scroll to the date section
           const dateSection = document.querySelector(`[data-date="${date}"]`);
@@ -139,12 +152,38 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
       }, 100);
     };
 
+    // Listen for tab change to roster - scroll to today
+    const handleScrollToToday = () => {
+      console.log('📍 Tab changed to roster - scrolling to today');
+      
+      if (filteredEntries.length > 0 && selectedDate.getMonth() === new Date().getMonth() && selectedDate.getFullYear() === new Date().getFullYear()) {
+        const today = new Date();
+        const todayString = today.toISOString().split('T')[0];
+        
+        const todayEntry = filteredEntries.find(entry => entry.date === todayString);
+        
+        if (todayEntry) {
+          setTimeout(() => {
+            const todaySection = document.querySelector(`[data-date="${todayString}"]`);
+            if (todaySection) {
+              todaySection.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+              });
+              console.log(`📍 Scrolled to today's date on tab change: ${todayString}`);
+            }
+          }, 200); // Slightly longer delay for tab change
+        }
+      }
+    };
     window.addEventListener('scrollToEditedEntry', handleScrollToEditedEntry as EventListener);
+    window.addEventListener('scrollToTodayOnRosterTab', handleScrollToToday as EventListener);
 
     return () => {
       window.removeEventListener('scrollToEditedEntry', handleScrollToEditedEntry as EventListener);
+      window.removeEventListener('scrollToTodayOnRosterTab', handleScrollToToday as EventListener);
     };
-  }, []);
+  }, [filteredEntries, selectedDate]);
 
   // Listen for roster updates
   useEffect(() => {

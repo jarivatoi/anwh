@@ -71,6 +71,11 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
     // Force loading to false on mount
     console.log('🔄 RosterPanel: Forcing loading states to false on mount');
     console.log('🔄 RosterPanel: Reset all loading states on mount');
+    
+    // Trigger scroll to today when roster panel mounts (tab change)
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('scrollToTodayOnRosterTab'));
+    }, 300); // Small delay to ensure component is fully rendered
   }, []);
 
   // Prevent body scroll when auth modal is open
