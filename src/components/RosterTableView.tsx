@@ -543,15 +543,15 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           {/* Left Arrow - Fixed Position */}
           <button
             onClick={() => navigateMonth('prev')}
-            className="p-1 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors duration-200 flex-shrink-0"
+            className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors duration-200 flex-shrink-0"
             title="Previous month"
-            style={{ minWidth: '32px', width: '32px' }}
+            style={{ minWidth: '40px', width: '40px' }}
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           
           {/* Center Content */}
-          <div className="flex items-center justify-center flex-1 px-2" style={{ gap: 'clamp(4px, 2vw, 12px)' }}>
+          <div className="flex items-center justify-center flex-1 px-4">
             <button
               onClick={onExportToCalendar}
               className="p-1 bg-green-600 hover:bg-green-700 text-white rounded transition-colors duration-200"
@@ -559,56 +559,69 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             >
               <Download className="w-3 h-3" />
             </button>
-            <Calendar className="w-5 h-5 text-indigo-600" />
+            <Calendar className="w-6 h-6 text-indigo-600" />
             
-            {/* Month selector */}
-            <select
-              value={selectedDate.getMonth()}
-              onChange={(e) => {
-                const newDate = new Date(selectedDate);
-                newDate.setMonth(parseInt(e.target.value));
-                onDateChange(newDate);
-              }}
-              disabled={isRefreshing}
-              className="text-base font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-1 py-1 disabled:opacity-50 disabled:cursor-not-allowed appearance-none"
-              style={{
-                WebkitAppearance: 'none',
-                MozAppearance: 'none',
-                appearance: 'none',
-                minWidth: 'fit-content',
-                maxWidth: '80px'
-              }}
-            >
-              {[
-                'January', 'February', 'March', 'April', 'May', 'June',
-                'July', 'August', 'September', 'October', 'November', 'December'
-              ].map((month, index) => (
-                <option key={index} value={index}>{month}</option>
-              ))}
-            </select>
-            
-            {/* Year selector */}
-            <select
-              value={selectedDate.getFullYear()}
-              onChange={(e) => {
-                const newDate = new Date(selectedDate);
-                newDate.setFullYear(parseInt(e.target.value));
-                onDateChange(newDate);
-              }}
-              disabled={isRefreshing}
-              className="text-base font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-1 py-1 disabled:opacity-50 disabled:cursor-not-allowed appearance-none"
-              style={{
-                WebkitAppearance: 'none',
-                MozAppearance: 'none',
-                appearance: 'none',
-                minWidth: 'fit-content',
-                maxWidth: '60px'
-              }}
-            >
-              {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
+            {/* Month and Year selectors with dynamic spacing */}
+            <div className="flex items-center" style={{ 
+              gap: (() => {
+                const monthNames = [
+                  'January', 'February', 'March', 'April', 'May', 'June',
+                  'July', 'August', 'September', 'October', 'November', 'December'
+                ];
+                const currentMonthName = monthNames[selectedDate.getMonth()];
+                // Shorter months get more gap, longer months get less gap
+                return currentMonthName.length <= 4 ? '16px' : 
+                       currentMonthName.length <= 6 ? '12px' : 
+                       currentMonthName.length <= 8 ? '8px' : '4px';
+              })()
+            }}>
+              {/* Month selector */}
+              <select
+                value={selectedDate.getMonth()}
+                onChange={(e) => {
+                  const newDate = new Date(selectedDate);
+                  newDate.setMonth(parseInt(e.target.value));
+                  onDateChange(newDate);
+                }}
+                disabled={isRefreshing}
+                className="text-lg font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-1 py-1 disabled:opacity-50 disabled:cursor-not-allowed appearance-none"
+                style={{
+                  WebkitAppearance: 'none',
+                  MozAppearance: 'none',
+                  appearance: 'none',
+                  minWidth: 'fit-content'
+                }}
+              >
+                {[
+                  'January', 'February', 'March', 'April', 'May', 'June',
+                  'July', 'August', 'September', 'October', 'November', 'December'
+                ].map((month, index) => (
+                  <option key={index} value={index}>{month}</option>
+                ))}
+              </select>
+              
+              {/* Year selector */}
+              <select
+                value={selectedDate.getFullYear()}
+                onChange={(e) => {
+                  const newDate = new Date(selectedDate);
+                  newDate.setFullYear(parseInt(e.target.value));
+                  onDateChange(newDate);
+                }}
+                disabled={isRefreshing}
+                className="text-lg font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-1 py-1 disabled:opacity-50 disabled:cursor-not-allowed appearance-none"
+                style={{
+                  WebkitAppearance: 'none',
+                  MozAppearance: 'none',
+                  appearance: 'none',
+                  minWidth: 'fit-content'
+                }}
+              >
+                {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
             
             {/* Status indicators right next to the month text */}
             <div className="flex items-center space-x-1">
@@ -682,9 +695,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           {/* Right Arrow - Fixed Position */}
           <button
             onClick={() => navigateMonth('next')}
-            className="p-1 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors duration-200 flex-shrink-0"
+            className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors duration-200 flex-shrink-0"
             title="Next month"
-            style={{ minWidth: '32px', width: '32px' }}
+            style={{ minWidth: '40px', width: '40px' }}
           >
             <ChevronRight className="w-5 h-5" />
           </button>
