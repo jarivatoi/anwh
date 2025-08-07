@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Download, Calendar, User, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
+import { X, Download, Calendar, User, Clock, CheckCircle, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { validateAuthCode } from '../utils/rosterAuth';
 import { fetchRosterEntries } from '../utils/rosterApi';
 import { calendarExportManager, ExportResult } from '../utils/calendarExport';
@@ -23,6 +23,7 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
   const [isExporting, setIsExporting] = useState(false);
   const [exportResult, setExportResult] = useState<ExportResult | null>(null);
   const [step, setStep] = useState<'auth' | 'exporting' | 'result'>('auth');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -320,16 +321,33 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Your Authentication Code
                 </label>
-                <input
-                  type="text"
-                  value={authCode}
-                  onChange={(e) => setAuthCode(e.target.value.toUpperCase())}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-center font-mono text-lg"
-                  placeholder="Enter your code"
-                  maxLength={4}
-                  autoComplete="off"
-                  autoFocus
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={authCode}
+                    onChange={(e) => setAuthCode(e.target.value.toUpperCase())}
+                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-center font-mono text-lg"
+                    placeholder="Enter your code"
+                    maxLength={4}
+                    autoComplete="off"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onTouchStart={() => setShowPassword(true)}
+                    onTouchEnd={() => setShowPassword(false)}
+                    onMouseDown={() => setShowPassword(true)}
+                    onMouseUp={() => setShowPassword(false)}
+                    onMouseLeave={() => setShowPassword(false)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                    style={{
+                      touchAction: 'manipulation',
+                      WebkitTapHighlightColor: 'transparent'
+                    }}
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
               
               {authError && (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Download, FileText, Users, List, Calendar, CheckCircle, AlertTriangle, User } from 'lucide-react';
+import { X, Download, FileText, Users, List, Calendar, CheckCircle, AlertTriangle, User, Eye, EyeOff } from 'lucide-react';
 import { monthlyReportGenerator } from '../utils/pdf/monthlyReportGenerator';
 import { individualBillGenerator } from '../utils/pdf/individualBillGenerator';
 import { annexureGenerator } from '../utils/pdf/annexureGenerator';
@@ -42,6 +42,7 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
     staffName?: string;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -210,10 +211,13 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
     
     const staffSet = new Set<string>();
     monthEntries.forEach(entry => {
-      staffSet.add(entry.assigned_name);
+      // Remove (R) suffix to show only base names for individual bills
+      const baseName = entry.assigned_name.replace(/\(R\)$/, '').trim();
+      staffSet.add(baseName);
     });
     
-    return sortByGroup(Array.from(staffSet));
+    // Sort the base names
+    return Array.from(staffSet).sort();
   };
   if (!isOpen) return null;
 
