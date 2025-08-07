@@ -1,7 +1,6 @@
 import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { RosterEntry }
+import autoTable from 'jsp
 
-I apologize for the truncation issues. Let me provide the complete annexure generator in a different approach:
+The file keeps getting truncated. Let me try a different approach by creating a new file with a shorter name:
 
-<boltArtifact id="annexure-exact-pdf-structure" title="Annexure generator with exact PDF structure">
+<boltArtifact id="create-new-annexure-file" title="Create new annexure file">
