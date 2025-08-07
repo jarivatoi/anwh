@@ -261,6 +261,106 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     return getSpecialDateInfo(date) !== null;
   };
 
+  // Handle closing auth modal
+  const handleCloseAuthModal = () => {
+    console.log('🔐 AUTH: Closing modal');
+    setShowAuthModal(false);
+    setAuthCode('');
+    setAuthError('');
+    setActionType(null);
+    setSelectedSpecialDate(null);
+    setSelectedShiftForAdd('');
+    setSelectedStaffForAdd([]);
+  };
+
+  // Navigation functions
+  const navigateToPreviousMonth = () => {
+    const newDate = new Date(selectedDate);
+    newDate.setMonth(newDate.getMonth() - 1);
+    onDateChange(newDate);
+  };
+  
+  const navigateToNextMonth = () => {
+    const newDate = new Date(selectedDate);
+    newDate.setMonth(newDate.getMonth() + 1);
+    onDateChange(newDate);
+  };
+
+  const formatMonthYear = () => {
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return `${monthNames[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`;
+  };
+
+  const handleMonthYearChange = (month: number, year: number) => {
+    const newDate = new Date(year, month, 1);
+    onDateChange(newDate);
+    setShowMonthYearSelector(false);
+  };
+
+  // Check if date is today
+  const isToday = (dateString: string) => {
+    const now = new Date();
+    const today = now.getFullYear() + '-' + 
+                  String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                  String(now.getDate()).padStart(2, '0');
+    return dateString === today;
+  };
+  
+  // Check if date is in the past
+  const isPastDate = (dateString: string) => {
+    const now = new Date();
+    const today = now.getFullYear() + '-' + 
+                  String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                  String(now.getDate()).padStart(2, '0');
+    return dateString < today;
+  };
+
+  // Check if date is in the future
+  const isFutureDate = (dateString: string) => {
+    const now = new Date();
+    const today = now.getFullYear() + '-' + 
+                  String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                  String(now.getDate()).padStart(2, '0');
+    return dateString > today;
+  };
+
+  // Format date for table display
+  const formatTableDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayName = dayNames[date.getDay()];
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear().toString().slice(-2);
+    
+    return {
+      dayName,
+      dateString: `${day}-${month}-${year}`
+    };
+  };
+
+  // Check if date has special info
+  const getSpecialDateInfo = (date: string) => {
+    const dateEntries = groupedEntries[date] || [];
+    for (const entry of dateEntries) {
+      if (entry.change_description && entry.change_description.includes('Special Date:')) {
+        const match = entry.change_description.match(/Special Date:\s*([^;]+)/);
+        if (match && match[1].trim()) {
+          return match[1].trim();
+        }
+      }
+    }
+    return null;
+  };
+
+  // Check if date is marked as special
+  const isSpecialDate = (date: string) => {
+    return getSpecialDateInfo(date) !== null;
+  };
+
   return (
     <>
       {/* Month Navigation Header */}
