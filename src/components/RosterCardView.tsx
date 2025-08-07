@@ -157,17 +157,20 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   // Listen for roster updates
   useEffect(() => {
     const handleRosterUpdate = (event: CustomEvent) => {
-      console.log('🔄 Card view: Roster updated, refreshing data...');
+      console.log('🔄 Card view: Roster updated, checking if should refresh...');
       
-      // Only refresh data, don't trigger any scrolling
-      if (onRefresh) {
+      // Only refresh data if no edits have occurred to prevent unwanted scrolling
+      if (!hasEditOccurred && onRefresh) {
+        console.log('🔄 Card view: No edits occurred, refreshing data...');
         onRefresh();
+      } else {
+        console.log('🔄 Card view: Edits have occurred, skipping refresh to prevent scroll issues');
       }
     };
 
     window.addEventListener('rosterUpdated', handleRosterUpdate as EventListener);
     return () => window.removeEventListener('rosterUpdated', handleRosterUpdate as EventListener);
-  }, [onRefresh]);
+  }, [onRefresh, hasEditOccurred]);
 
   // Sort entries by date in ascending order (oldest first)
   const sortedEntries = [...filteredEntries].sort((a, b) => 
