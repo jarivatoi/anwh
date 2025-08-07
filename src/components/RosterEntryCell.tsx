@@ -451,7 +451,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
                           
                           // Auto-focus next input
                           if (newValue && index < 3) {
-                            const nextInput = document.querySelector(`input[data-index="${index + 1}"]`) as HTMLInputElement;
+                            const nextInput = document.querySelector(\`input[data-index="${index + 1}"]`) as HTMLInputElement;
                             if (nextInput) nextInput.focus();
                           }
                         }
@@ -459,7 +459,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
                       onKeyDown={(e) => {
                         // Handle backspace to go to previous input
                         if (e.key === 'Backspace' && !authCode[index] && index > 0) {
-                          const prevInput = document.querySelector(`input[data-index="${index - 1}"]`) as HTMLInputElement;
+                          const prevInput = document.querySelector(\`input[data-index="${index - 1}"]`) as HTMLInputElement;
                           if (prevInput) prevInput.focus();
                         }
                       }}
@@ -529,3 +529,6 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
     </>
   );
 };
+        }
+  )
+}
