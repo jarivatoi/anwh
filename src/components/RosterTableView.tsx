@@ -316,4 +316,17 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         await onRefresh();
       }
       
+      // Force refresh key to trigger re-render
+      setRefreshKey(prev => prev + 1);
+      
+      // Close modal and reset states
+      handleCloseAuthModal();
+      
+    } catch (error) {
+      console.error('Failed to update roster:', error);
+      alert('Failed to update roster. Please try again.');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
       
