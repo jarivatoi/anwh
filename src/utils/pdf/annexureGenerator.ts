@@ -209,7 +209,7 @@ export class AnnexureGenerator {
       
       staffSummaries.push({
         staffName: actualStaffName,
-        totalD ays: staffEntries.length,
+        totalDays: staffEntries.length,
         totalHours,
         totalAmount,
         nightDutyCount,
