@@ -540,7 +540,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       {/* Month Navigation Header */}
       <div className="bg-white rounded-lg mb-4 p-4 shadow-sm sticky top-0 z-50">
         <div className="flex items-center justify-between">
-          {/* Export Button - Left side */}
+          {/* Export Button - Left edge */}
           <div className="flex items-center justify-center flex-shrink-0">
             <button
               onClick={onExportToCalendar}
@@ -571,7 +571,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             </div>
           </div>
           
-          {/* Spinner/Dot - Right side */}
+          {/* Spinner/Dot - Right edge */}
           <div className="flex items-center justify-center flex-shrink-0">
             <button
               onClick={() => handleManualRefresh()}
