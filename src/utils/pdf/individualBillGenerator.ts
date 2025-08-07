@@ -110,10 +110,10 @@ export class IndividualBillGenerator {
       },
       columnStyles: {
         0: { cellWidth: 25, halign: 'center' }, // Day Date
-        1: { cellWidth: 20, halign: 'center', fontStyle: 'bold', fontSize: 12, fontName: 'ZapfDingbats' }, // Morning (9-4)
-        2: { cellWidth: 20, halign: 'center', fontStyle: 'bold', fontSize: 12, fontName: 'ZapfDingbats' }, // Saturday (12-10)
-        3: { cellWidth: 20, halign: 'center', fontStyle: 'bold', fontSize: 12, fontName: 'ZapfDingbats' }, // Evening (4-10)
-        4: { cellWidth: 20, halign: 'center', fontStyle: 'bold', fontSize: 12, fontName: 'ZapfDingbats' }, // Night Duty
+        1: { cellWidth: 20, halign: 'center' }, // Morning (9-4) - same as date
+        2: { cellWidth: 20, halign: 'center' }, // Saturday (12-10) - same as date
+        3: { cellWidth: 20, halign: 'center' }, // Evening (4-10) - same as date
+        4: { cellWidth: 20, halign: 'center' }, // Night Duty - same as date
         5: { cellWidth: 15, halign: 'center' }, // Hours
         6: { cellWidth: 35, halign: 'center' }  // Remarks (centered)
       },
