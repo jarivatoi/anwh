@@ -60,6 +60,16 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   
   const isMountedRef = useRef(true);
 
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    const newDate = new Date(selectedDate);
+    if (direction === 'prev') {
+      newDate.setMonth(newDate.getMonth() - 1);
+    } else {
+      newDate.setMonth(newDate.getMonth() + 1);
+    }
+    onDateChange(newDate);
+  };
+
   const formatMonthYear = () => {
     const monthNames = [
       'January', 'February', 'March', 'April', 'May', 'June',
@@ -555,20 +565,36 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           
           {/* Center Content - Calendar and Month (clickable) */}
           <div className="flex items-center justify-center flex-1 min-w-0">
-            <Calendar className="w-6 h-6 text-indigo-600 pointer-events-none" />
-            
-            {/* Clickable Month/Year Display */}
-            <div className="ml-2 relative">
+            <div className="flex items-center space-x-2">
               <button
-                onClick={() => setShowMonthYearSelector(true)}
-                disabled={isRefreshing}
-                className="text-base font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-2 py-1 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-                style={{
-                  minWidth: 'fit-content',
-                  textAlign: 'center'
-                }}
+                onClick={() => navigateMonth('prev')}
+                className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors duration-200"
+                title="Previous month"
               >
-                {formatMonthYear()}
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <Calendar className="w-6 h-6 text-indigo-600 pointer-events-none" />
+              
+              {/* Clickable Month/Year Display */}
+              <div className="ml-2 relative">
+                <button
+                  onClick={() => setShowMonthYearSelector(true)}
+                  disabled={isRefreshing}
+                  className="text-base font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-2 py-1 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  style={{
+                    minWidth: 'fit-content',
+                    textAlign: 'center'
+                  }}
+                >
+                  {formatMonthYear()}
+                </button>
+              </div>
+              <button
+                onClick={() => navigateMonth('next')}
+                className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors duration-200"
+                title="Next month"
+              >
+                <ChevronRight className="w-5 h-5" />
               </button>
             </div>
           </div>
