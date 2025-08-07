@@ -540,18 +540,17 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       {/* Month Navigation Header */}
       <div className="bg-white rounded-lg mb-4 p-4 shadow-sm sticky top-0 z-50">
         <div className="flex items-center justify-between">
-          {/* Left Arrow - Fixed Position */}
-          <button
-            onClick={() => navigateMonth('prev')}
-            className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors duration-200 flex-shrink-0"
-            title="Previous month"
-            style={{ minWidth: '36px', width: '36px' }}
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          
-          {/* Center Content */}
-          <div className="flex items-center justify-center flex-1 px-1 min-w-0">
+          {/* Left Side - Arrow and Export Button */}
+          <div className="flex items-center space-x-2 flex-shrink-0">
+            <button
+              onClick={() => navigateMonth('prev')}
+              className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors duration-200 flex-shrink-0"
+              title="Previous month"
+              style={{ minWidth: '36px', width: '36px' }}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            
             <button
               onClick={onExportToCalendar}
               className="p-1 bg-green-600 hover:bg-green-700 text-white rounded transition-colors duration-200"
@@ -559,6 +558,10 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             >
               <Download className="w-3 h-3" />
             </button>
+          </div>
+          
+          {/* Center Content */}
+          <div className="flex items-center justify-center flex-1 px-1 min-w-0">
             <Calendar className="w-6 h-6 text-indigo-600" />
             
             {/* Month and Year selectors with dynamic spacing */}
@@ -590,99 +593,98 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 ))}
               </select>
             </div>
-            
-            {/* Status indicators right next to the month text */}
-            <div className="flex items-center space-x-1 flex-shrink-0">
-              <button
-                onClick={() => handleManualRefresh()}
-                disabled={isRefreshing}
-                className="p-2 rounded-lg text-gray-600 transition-colors duration-200 relative z-50 flex items-center justify-center"
-                style={{
-                  touchAction: 'manipulation',
-                  WebkitTapHighlightColor: 'transparent',
-                  position: 'relative',
-                  zIndex: 50,
-                  // Force proper rendering after orientation change
-                  transform: 'translate3d(0,0,0)',
-                  backfaceVisibility: 'hidden',
-                  WebkitBackfaceVisibility: 'hidden',
-                  WebkitTransform: 'translate3d(0,0,0)',
-                  // iPhone specific fixes
-                  WebkitTouchCallout: 'none',
-                  WebkitUserSelect: 'none',
-                  userSelect: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-                title="Manual refresh"
-              >
-                {/* Spinner Container */}
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  width: '20px',
-                  height: '20px',
-                  position: 'relative'
-                }}>
-                  {/* Refresh icon with rotation animation when loading */}
-                  <svg 
-                    style={{
-                      width: '18px',
-                      height: '18px',
-                      animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
-                      transform: 'translate3d(0,0,0)',
-                      backfaceVisibility: 'hidden'
-                    }}
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
-                    />
-                  </svg>
-                </div>
-                
-                {/* Status Dot Container */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '12px',
-                  height: '12px',
-                  position: 'relative'
-                }}>
-                  {/* Real-time status indicator */}
-                  <div style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    backgroundColor: realtimeStatus === 'connected' ? '#10b981' : 
-                                    realtimeStatus === 'connecting' ? '#f59e0b' :
-                                    realtimeStatus === 'error' ? '#ef4444' : '#6b7280',
-                    animation: realtimeStatus === 'connecting' ? 'pulse 1.5s ease-in-out infinite' : 'none',
-                    boxShadow: realtimeStatus === 'connected' ? '0 0 8px rgba(16, 185, 129, 0.8)' : 'none',
-                    backfaceVisibility: 'hidden'
-                  }} />
-                </div>
-              </button>
-            </div>
           </div>
           
-          {/* Right Arrow - Fixed Position */}
-          <button
-            onClick={() => navigateMonth('next')}
-            className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors duration-200 flex-shrink-0"
-            title="Next month"
-            style={{ minWidth: '36px', width: '36px' }}
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
+          {/* Right Side - Spinner/Dot and Arrow */}
+          <div className="flex items-center space-x-2 flex-shrink-0">
+            <button
+              onClick={() => handleManualRefresh()}
+              disabled={isRefreshing}
+              className="p-2 rounded-lg text-gray-600 transition-colors duration-200 relative z-50 flex items-center justify-center"
+              style={{
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
+                position: 'relative',
+                zIndex: 50,
+                // Force proper rendering after orientation change
+                transform: 'translate3d(0,0,0)',
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
+                WebkitTransform: 'translate3d(0,0,0)',
+                // iPhone specific fixes
+                WebkitTouchCallout: 'none',
+                WebkitUserSelect: 'none',
+                userSelect: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+              title="Manual refresh"
+            >
+              {/* Spinner Container */}
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                width: '20px',
+                height: '20px',
+                position: 'relative'
+              }}>
+                {/* Refresh icon with rotation animation when loading */}
+                <svg 
+                  style={{
+                    width: '18px',
+                    height: '18px',
+                    animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
+                    transform: 'translate3d(0,0,0)',
+                    backfaceVisibility: 'hidden'
+                  }}
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+                  />
+                </svg>
+              </div>
+              
+              {/* Status Dot Container */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '12px',
+                height: '12px',
+                position: 'relative'
+              }}>
+                {/* Real-time status indicator */}
+                <div style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: realtimeStatus === 'connected' ? '#10b981' : 
+                                  realtimeStatus === 'connecting' ? '#f59e0b' :
+                                  realtimeStatus === 'error' ? '#ef4444' : '#6b7280',
+                  animation: realtimeStatus === 'connecting' ? 'pulse 1.5s ease-in-out infinite' : 'none',
+                  boxShadow: realtimeStatus === 'connected' ? '0 0 8px rgba(16, 185, 129, 0.8)' : 'none',
+                  backfaceVisibility: 'hidden'
+                }} />
+              </div>
+            </button>
+            
+            <button
+              onClick={() => navigateMonth('next')}
+              className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors duration-200 flex-shrink-0"
+              title="Next month"
+              style={{ minWidth: '36px', width: '36px' }}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
