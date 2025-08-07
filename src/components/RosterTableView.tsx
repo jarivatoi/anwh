@@ -122,75 +122,77 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   // Auto-scroll to today's date when component first loads
   useEffect(() => {
     if (!loading && !hasAutoScrolled && !preventAutoScroll && filteredEntries.length > 0 && selectedDate.getMonth() === new Date().getMonth() && selectedDate.getFullYear() === new Date().getFullYear()) {
-      loading,
-      entriesLength: filteredEntries.length,
-      selectedMonth: selectedDate.getMonth(),
-      selectedYear: selectedDate.getFullYear(),
-      currentMonth: new Date().getMonth(),
-      currentYear: new Date().getFullYear()
-    });
+      console.log('🔍 TABLE AUTO-SCROLL: Checking conditions:', {
+        loading,
+        entriesLength: filteredEntries.length,
+        selectedMonth: selectedDate.getMonth(),
+        selectedYear: selectedDate.getFullYear(),
+        currentMonth: new Date().getMonth(),
+        currentYear: new Date().getFullYear()
+      });
     
-    const today = new Date();
-    const isCurrentMonth = selectedDate.getMonth() === today.getMonth() && 
-                           selectedDate.getFullYear() === today.getFullYear();
-    const shouldAutoScroll = !loading && 
-                            filteredEntries.length > 0 && 
-                            isCurrentMonth;
-    
-    console.log('🔍 TABLE AUTO-SCROLL: Should auto-scroll?', {
-      shouldAutoScroll,
-      isCurrentMonth,
-      loading,
-      entriesLength: filteredEntries.length
-    });
-    
-    if (shouldAutoScroll) {
-      const todayString = today.toISOString().split('T')[0];
-      console.log(`📍 TABLE AUTO-SCROLL: Attempting auto-scroll to today: ${todayString}`);
+      const today = new Date();
+      const isCurrentMonth = selectedDate.getMonth() === today.getMonth() && 
+                             selectedDate.getFullYear() === today.getFullYear();
+      const shouldAutoScroll = !loading && 
+                              filteredEntries.length > 0 && 
+                              isCurrentMonth;
       
-      const todayEntry = filteredEntries.find(entry => entry.date === todayString);
-      
-      console.log('🔍 TABLE AUTO-SCROLL: Today entry found?', {
-        todayEntry: !!todayEntry,
-        todayString,
-        firstFewEntries: filteredEntries.slice(0, 3).map(e => e.date)
+      console.log('🔍 TABLE AUTO-SCROLL: Should auto-scroll?', {
+        shouldAutoScroll,
+        isCurrentMonth,
+        loading,
+        entriesLength: filteredEntries.length
       });
       
-      if (todayEntry) {
-        console.log(`📍 TABLE AUTO-SCROLL: Found today's entry, scrolling to: ${todayString}`);
-        setTimeout(() => {
-          // Try multiple selectors to find today's row
-          const todaySection = document.querySelector(`[data-date="${todayString}"]`) ||
-                              document.querySelector(`tr[data-date="${todayString}"]`) ||
-                              document.querySelector(`*[data-date="${todayString}"]`);
-          
-          console.log('🔍 TABLE AUTO-SCROLL: DOM element search result:', {
-            todayString,
-            elementFound: !!todaySection,
-            elementType: todaySection?.tagName,
-            allDataDateElements: document.querySelectorAll('[data-date]').length
-          });
-          
-          if (todaySection) {
-            todaySection.scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'center' 
-            });
-            console.log(`📍 TABLE AUTO-SCROLL: Successfully scrolled to today's date: ${todayString}`);
-          } else {
-            console.log(`❌ TABLE AUTO-SCROLL: Could not find element with data-date="${todayString}"`);
+      if (shouldAutoScroll) {
+        const todayString = today.toISOString().split('T')[0];
+        console.log(`📍 TABLE AUTO-SCROLL: Attempting auto-scroll to today: ${todayString}`);
+        
+        const todayEntry = filteredEntries.find(entry => entry.date === todayString);
+        
+        console.log('🔍 TABLE AUTO-SCROLL: Today entry found?', {
+          todayEntry: !!todayEntry,
+          todayString,
+          firstFewEntries: filteredEntries.slice(0, 3).map(e => e.date)
+        });
+        
+        if (todayEntry) {
+          console.log(`📍 TABLE AUTO-SCROLL: Found today's entry, scrolling to: ${todayString}`);
+          setTimeout(() => {
+            // Try multiple selectors to find today's row
+            const todaySection = document.querySelector(`[data-date="${todayString}"]`) ||
+                                document.querySelector(`tr[data-date="${todayString}"]`) ||
+                                document.querySelector(`*[data-date="${todayString}"]`);
             
-            // Debug: List all data-date elements
-            const allDataDateElements = document.querySelectorAll('[data-date]');
-            console.log('🔍 TABLE AUTO-SCROLL: All data-date elements found:', 
-              Array.from(allDataDateElements).map(el => el.getAttribute('data-date')));
-          }
-        }, 800); // Even longer delay to ensure DOM is ready
-      } else {
-        console.log(`❌ TABLE AUTO-SCROLL: No entry found for today: ${todayString}`);
+            console.log('🔍 TABLE AUTO-SCROLL: DOM element search result:', {
+              todayString,
+              elementFound: !!todaySection,
+              elementType: todaySection?.tagName,
+              allDataDateElements: document.querySelectorAll('[data-date]').length
+            });
+            
+            if (todaySection) {
+              todaySection.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+              });
+              console.log(`📍 TABLE AUTO-SCROLL: Successfully scrolled to today's date: ${todayString}`);
+            } else {
+              console.log(`❌ TABLE AUTO-SCROLL: Could not find element with data-date="${todayString}"`);
+              
+              // Debug: List all data-date elements
+              const allDataDateElements = document.querySelectorAll('[data-date]');
+              console.log('🔍 TABLE AUTO-SCROLL: All data-date elements found:', 
+                Array.from(allDataDateElements).map(el => el.getAttribute('data-date')));
+            }
+          }, 800); // Even longer delay to ensure DOM is ready
+        } else {
+          console.log(`❌ TABLE AUTO-SCROLL: No entry found for today: ${todayString}`);
+        }
       }
     }
-  }, [loading, filteredEntries, selectedDate]);
+  }, [loading, filteredEntries, hasAutoScrolled, preventAutoScroll, selectedDate]);
 
   // Track when component mounts (tab switch) and trigger auto-scroll
   useEffect(() => {
@@ -223,7 +225,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               elementFound: !!todaySection,
               selector: `[data-date="${todayString}"]`
             });
-  }, [loading, filteredEntries, hasAutoScrolled, preventAutoScroll, selectedDate]);
+            
             if (todaySection) {
               todaySection.scrollIntoView({ 
                 behavior: 'smooth', 
@@ -280,9 +282,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       console.warn('Component unmounted, skipping loadEntries call');
       return;
     }
-    
-    // Prevent auto-scroll after manual edits
-    setPreventAutoScroll(true);
     
     if (onRefresh) {
       onRefresh();
