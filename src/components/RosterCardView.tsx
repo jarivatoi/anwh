@@ -43,6 +43,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState('');
   const [hasEditOccurred, setHasEditOccurred] = useState(false);
+  const [refreshingDate, setRefreshingDate] = useState<string | null>(null);
 
   const isMountedRef = useRef(true);
 
@@ -56,10 +57,26 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   // Track mounted status
   useEffect(() => {
     isMountedRef.current = true;
+    
+    // Prevent any automatic scrolling behavior
+    const preventAutoScroll = (e: Event) => {
+      if (hasEditOccurred) {
+        console.log('🚫 Preventing automatic scroll after edit');
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    
+    // Add scroll prevention listeners
+    window.addEventListener('scroll', preventAutoScroll, { passive: false });
+    document.addEventListener('scroll', preventAutoScroll, { passive: false });
+    
     return () => {
       isMountedRef.current = false;
+      window.removeEventListener('scroll', preventAutoScroll);
+      document.removeEventListener('scroll', preventAutoScroll);
     };
-  }, []);
+  }, [hasEditOccurred]);
 
   // Get the loadEntries function from the parent component
   // Listen for real-time updates
@@ -90,12 +107,14 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
       console.log('🔄 Manual refresh triggered in card view');
       // Just show spinner for visual feedback - don't actually refresh
       await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       setLastUpdateTime(new Date().toLocaleTimeString());
       console.log('✅ Manual refresh completed');
     } catch (error) {
       console.error('Manual refresh error:', error);
     } finally {
       setIsRefreshing(false);
+      setRefreshingDate(null);
       setRefreshingDate(null);
     }
   };
@@ -265,6 +284,19 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
     // CRITICAL: Mark that an edit has occurred and don't refresh
     setHasEditOccurred(true);
     console.log('🔄 Entry updated - marked hasEditOccurred = true, NOT calling onRefresh to prevent scroll issues');
+    
+    // EMERGENCY FIX: Completely disable all scrolling for 5 seconds after edit
+    const scrollContainer = document.querySelector('.h-full.overflow-y-auto');
+    if (scrollContainer) {
+      const originalScrollBehavior = (scrollContainer as HTMLElement).style.scrollBehavior;
+      (scrollContainer as HTMLElement).style.scrollBehavior = 'auto';
+      (scrollContainer as HTMLElement).style.overflow = 'hidden';
+      
+      setTimeout(() => {
+        (scrollContainer as HTMLElement).style.scrollBehavior = originalScrollBehavior;
+        (scrollContainer as HTMLElement).style.overflow = 'auto';
+      }, 5000);
+    }
     
     // Don't call onRefresh here - it causes unwanted scrolling
     // The real-time updates will handle data synchronization
@@ -446,7 +478,8 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
         ) : (
           <div className="h-full overflow-y-auto" style={{ 
             height: '100%',
-            WebkitOverflowScrolling: 'touch' // Better mobile scrolling
+            WebkitOverflowScrolling: 'touch', // Better mobile scrolling
+            scrollBehavior: hasEditOccurred ? 'auto' : 'smooth' // Disable smooth scrolling after edits
           }}>
             {Object.entries(groupedEntries).map(([date, dateEntries]) => {
               const shiftGroups = groupEntriesByShift(dateEntries);
