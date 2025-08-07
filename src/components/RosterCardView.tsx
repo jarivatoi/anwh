@@ -261,10 +261,11 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   };
 
   const handleEntryUpdate = (updatedEntry: RosterEntry) => {
-    // Only refresh data, don't trigger any scrolling
+    // CRITICAL: Only update local state, NO refresh to prevent scroll issues
     if (isMountedRef.current && onRefresh) {
-      console.log('🔄 Refreshing data after entry update (no auto-scroll)');
-      onRefresh();
+      console.log('🔄 Entry updated - NOT calling onRefresh to prevent scroll issues');
+      // Don't call onRefresh here - it causes unwanted scrolling
+      // The real-time updates will handle data synchronization
     }
   };
 
