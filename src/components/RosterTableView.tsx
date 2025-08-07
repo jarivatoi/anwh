@@ -563,7 +563,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             
             {/* Month and Year selectors with dynamic spacing */}
             <div className="flex items-center" style={{ 
-              gap: '4px' // Single consistent space
+              gap: '8px' // Space for month and calendar icon
             }}>
               <select
                 value={selectedDate.getMonth()}
@@ -587,29 +587,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   'July', 'August', 'September', 'October', 'November', 'December'
                 ].map((month, index) => (
                   <option key={index} value={index}>{month}</option>
-                ))}
-              </select>
-              
-              {/* Year selector */}
-              <select
-                value={selectedDate.getFullYear()}
-                onChange={(e) => {
-                  const newDate = new Date(selectedDate);
-                  newDate.setFullYear(parseInt(e.target.value));
-                  onDateChange(newDate);
-                }}
-                disabled={isRefreshing}
-                className="text-base font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-1 py-1 disabled:opacity-50 disabled:cursor-not-allowed appearance-none"
-                style={{
-                  WebkitAppearance: 'none',
-                  MozAppearance: 'none',
-                  appearance: 'none',
-                  minWidth: 'fit-content',
-                  maxWidth: '60px'
-                }}
-              >
-                {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map(year => (
-                  <option key={year} value={year}>{year}</option>
                 ))}
               </select>
             </div>
