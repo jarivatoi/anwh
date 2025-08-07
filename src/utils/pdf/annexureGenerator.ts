@@ -179,15 +179,11 @@ export class AnnexureGenerator {
       let totalAmount = 0;
       let nightDutyCount = 0;
       let nightDutyHours = 0;
-      let nightDutyHours = 0;
       
       staffEntries.forEach(entry => {
         // Count night duties for allowance calculation
         if (entry.shift_type === 'Night Duty') {
           nightDutyCount++;
-          // Add night duty hours (typically 12.5 hours per night)
-          const nightShiftHours = shiftCombinations.find(combo => combo.id === 'N')?.hours || 12.5;
-          nightDutyHours += nightShiftHours;
           // Add night duty hours (typically 12.5 hours per night)
           const nightShiftHours = shiftCombinations.find(combo => combo.id === 'N')?.hours || 12.5;
           nightDutyHours += nightShiftHours;
@@ -228,17 +224,8 @@ export class AnnexureGenerator {
       const employeeId = staffInfo?.employeeId || '';
       const salary = staffInfo?.salary || 0;
       
-      // Get staff info for full name, ID, and salary
-      const staffInfo = this.getStaffInfo(actualStaffName);
-      const fullName = staffInfo ? `${staffInfo.firstName || ''} ${staffInfo.surname || actualStaffName}`.trim() : actualStaffName;
-      const employeeId = staffInfo?.employeeId || '';
-      const salary = staffInfo?.salary || 0;
-      
       staffSummaries.push({
         staffName: actualStaffName,
-        fullName: fullName,
-        employeeId: employeeId,
-        salary: salary,
         fullName: fullName,
         employeeId: employeeId,
         salary: salary,
@@ -246,7 +233,6 @@ export class AnnexureGenerator {
         totalHours,
         totalAmount,
         nightDutyCount,
-        nightDutyHours,
         nightDutyHours,
         nightAllowance,
         grandTotal
