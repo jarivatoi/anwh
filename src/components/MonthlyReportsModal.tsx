@@ -394,8 +394,6 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
                       </div>
                     </div>
                   </label>
-                </div>
-              </div>
 
               {/* Staff Selection - Only show when Individual Report is selected */}
               {reportType === 'individual' && (
@@ -403,7 +401,7 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
                   <label className="block text-sm font-medium text-gray-700 mb-3">
                     Select Staff Member
                   </label>
-                  <select
+                    className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200 rounded-lg ml-2"
                     value={selectedStaff}
                     onChange={(e) => setSelectedStaff(e.target.value)}
                     disabled={isGenerating}

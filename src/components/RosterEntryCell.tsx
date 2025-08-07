@@ -312,8 +312,6 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
                       autoFocus={index === 0}
                     />
                   ))}
-                </div>
-                <div className="flex justify-center">
                   <button
                     type="button"
                     onTouchStart={() => setShowPassword(true)}
@@ -321,7 +319,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
                     onMouseDown={() => setShowPassword(true)}
                     onMouseUp={() => setShowPassword(false)}
                     onMouseLeave={() => setShowPassword(false)}
-                    className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200 rounded-lg"
+                    className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200 rounded-lg ml-2"
                     style={{
                       touchAction: 'manipulation',
                       WebkitTapHighlightColor: 'transparent'

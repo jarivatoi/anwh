@@ -620,8 +620,6 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
                       autoFocus={index === 0}
                     />
                   ))}
-                </div>
-                <div className="flex justify-center">
                   <button
                     type="button"
                     onTouchStart={() => setShowPassword(true)}
@@ -629,7 +627,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
                     onMouseDown={() => setShowPassword(true)}
                     onMouseUp={() => setShowPassword(false)}
                     onMouseLeave={() => setShowPassword(false)}
-                    className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200 rounded-lg"
+                    className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200 rounded-lg ml-2"
                     style={{
                       touchAction: 'manipulation',
                       WebkitTapHighlightColor: 'transparent'
