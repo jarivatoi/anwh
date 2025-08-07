@@ -264,12 +264,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       }
     };
 
-    const handlePreventAutoScroll = () => {
-      console.log('🚫 Table view: Preventing auto-scroll after manual edit');
-      setPreventAutoScroll(true);
-    };
     window.addEventListener('rosterUpdated', handleRosterUpdate as EventListener);
-    window.addEventListener('preventRosterAutoScroll', handlePreventAutoScroll as EventListener);
     return () => window.removeEventListener('rosterUpdated', handleRosterUpdate as EventListener);
   }, [onRefresh]);
 
@@ -540,7 +535,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     return {
       dayName,
       dateString: `${day}-${month}-${year}`
-      window.removeEventListener('preventRosterAutoScroll', handlePreventAutoScroll as EventListener);
     };
   };
 

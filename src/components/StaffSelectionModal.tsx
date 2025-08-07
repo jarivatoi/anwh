@@ -274,9 +274,6 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     });
     
     if (selectedStaff && (nameChanged || colorChanged)) {
-      // Prevent auto-scroll after this edit
-      window.dispatchEvent(new CustomEvent('preventRosterAutoScroll'));
-      
       if (onSelectStaffWithColor && isAdmin && colorChanged) {
         console.log('🎨 Calling onSelectStaffWithColor with color:', selectedColor);
         onSelectStaffWithColor(selectedStaff, selectedColor);
