@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Server, CheckCircle, Table, Grid, FileText, Upload, Download, Trash2, AlertTriangle } from 'lucide-react';
+import { Server, CheckCircle, Table, Grid, FileText, Upload, Download, Trash2, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { ViewType, ShiftFilterType } from '../types/roster';
 import { useRosterData } from '../hooks/useRosterData';
 import { RosterTableView } from './RosterTableView';
