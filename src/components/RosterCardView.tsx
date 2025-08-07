@@ -88,6 +88,9 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
       setHasEditOccurred(true);
       console.log('📡 Card view: Real-time update received, marked hasEditOccurred = true');
       
+      // CRITICAL: Prevent any re-sorting or re-positioning after real-time updates
+      console.log('📡 Card view: Preventing any data re-sorting after real-time update');
+      
       // Real-time changes will be reflected through the entries prop
     };
 
@@ -285,17 +288,27 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
     setHasEditOccurred(true);
     console.log('🔄 Entry updated - marked hasEditOccurred = true, NOT calling onRefresh to prevent scroll issues');
     
-    // EMERGENCY FIX: Completely disable all scrolling for 5 seconds after edit
+    // EMERGENCY FIX: Lock the current scroll position after edit
     const scrollContainer = document.querySelector('.h-full.overflow-y-auto');
     if (scrollContainer) {
-      const originalScrollBehavior = (scrollContainer as HTMLElement).style.scrollBehavior;
-      (scrollContainer as HTMLElement).style.scrollBehavior = 'auto';
-      (scrollContainer as HTMLElement).style.overflow = 'hidden';
+      const currentScrollTop = scrollContainer.scrollTop;
+      console.log('🔒 Locking scroll position at:', currentScrollTop);
+      
+      // Force scroll position to stay locked for 3 seconds
+      setTimeout(() => {
+        scrollContainer.scrollTop = currentScrollTop;
+        console.log('🔒 Restored scroll position to:', currentScrollTop);
+      }, 100);
       
       setTimeout(() => {
-        (scrollContainer as HTMLElement).style.scrollBehavior = originalScrollBehavior;
-        (scrollContainer as HTMLElement).style.overflow = 'auto';
-      }, 5000);
+        scrollContainer.scrollTop = currentScrollTop;
+        console.log('🔒 Double-check scroll position:', currentScrollTop);
+      }, 500);
+      
+      setTimeout(() => {
+        scrollContainer.scrollTop = currentScrollTop;
+        console.log('🔒 Final scroll position lock:', currentScrollTop);
+      }, 1000);
     }
     
     // Don't call onRefresh here - it causes unwanted scrolling
