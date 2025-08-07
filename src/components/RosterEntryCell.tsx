@@ -31,6 +31,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
   const [authError, setAuthError] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Prevent body scroll when auth modal is open
   React.useEffect(() => {
@@ -155,6 +156,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
     }
 
     setIsUpdating(true);
+    setIsEditing(true);
     try {
       const editorName = validateAuthCode(authCode);
       if (!editorName) return;
@@ -186,6 +188,8 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
       alert('Failed to update entry. Please try again.');
     } finally {
       setIsUpdating(false);
+      // Keep editing animation for a bit longer to show the change
+      setTimeout(() => setIsEditing(false), 1000);
     }
   };
 
@@ -227,7 +231,13 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
           position: 'relative',
           zIndex: 60,
           // Add pulsing animation only for special dates with actual info
-         animation: (isSpecialDate && specialDateInfo && specialDateInfo.trim()) ? 'pulse 2s ease-in-out infinite' : 'none'
+         animation: isEditing ? 'editingPulse 0.8s ease-in-out infinite' :
+                   (isSpecialDate && specialDateInfo && specialDateInfo.trim()) ? 'pulse 2s ease-in-out infinite' : 'none',
+         transform: isEditing ? 'scale(1.05)' : 'scale(1)',
+         transition: 'transform 0.3s ease-out, box-shadow 0.3s ease-out',
+         boxShadow: isEditing ? '0 0 15px rgba(99, 102, 241, 0.6)' : 'none',
+         backgroundColor: isEditing ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+         borderRadius: isEditing ? '4px' : '0'
         }}
       >
         <ScrollingText 
@@ -240,10 +250,53 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
             textAlign: 'center',
             width: '100%',
             border: 'none',
-            outline: 'none'
+            outline: 'none',
+            filter: isEditing ? 'brightness(1.1)' : 'none'
           }}
         />
+        
+        {/* Editing indicator overlay */}
+        {isEditing && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '-2px',
+              right: '-2px',
+              width: '8px',
+              height: '8px',
+              backgroundColor: '#10b981',
+              borderRadius: '50%',
+              animation: 'editingDot 1s ease-in-out infinite',
+              zIndex: 70
+            }}
+          />
+        )}
       </div>
+      
+      {/* Add CSS animations */}
+      <style jsx>{`
+        @keyframes editingPulse {
+          0%, 100% {
+            opacity: 1;
+            transform: scale(1.05);
+          }
+          50% {
+            opacity: 0.8;
+            transform: scale(1.1);
+          }
+        }
+        
+        @keyframes editingDot {
+          0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.6;
+            transform: scale(1.3);
+          }
+        }
+      `}</style>
 
       {/* Authentication Modal */}
       {showAuthModal && createPortal(
