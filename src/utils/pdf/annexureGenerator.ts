@@ -19,6 +19,23 @@ export interface AnnexureOptions {
 export class AnnexureGenerator {
   
   /**
+   * Format number without trailing zeros and hide if zero
+   */
+  private formatNumber(value: number): string {
+    if (value === 0) return '';
+    return value % 1 === 0 ? value.toString() : value.toFixed(2).replace(/\.?0+$/, '');
+  }
+  
+  /**
+   * Format currency without trailing zeros and hide if zero
+   */
+  private formatCurrency(value: number): string {
+    if (value === 0) return '';
+    const formatted = value % 1 === 0 ? value.toString() : value.toFixed(2).replace(/\.?0+$/, '');
+    return `Rs ${formatted}`;
+  }
+
+  /**
    * Generate annexure matching the exact PDF format
    */
   async generateAnnexure(options: AnnexureOptions): Promise<void> {
@@ -54,10 +71,10 @@ export class AnnexureGenerator {
       (index + 1).toString(), // Serial number
       summary.fullName, // Full name instead of staff name
       summary.employeeId, // ID number
-      formatMauritianRupees(summary.salary).formatted, // Salary
-      summary.totalHours.toFixed(1), // Hours payable (without night allowance)
-      summary.nightDutyHours.toFixed(1), // Night allowance hours
-      formatMauritianRupees(summary.grandTotal).formatted
+      this.formatCurrency(summary.salary), // Salary
+      this.formatNumber(summary.totalHours), // Hours payable (without night allowance)
+      this.formatNumber(summary.nightDutyHours), // Night allowance hours
+      this.formatCurrency(summary.grandTotal)
     ]);
     
     // Create table matching the original format
@@ -110,12 +127,12 @@ export class AnnexureGenerator {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     doc.text('GRAND TOTALS:', 15, finalY);
-    doc.text(`Total Salary: ${formatMauritianRupees(grandTotalSalary).formatted}`, 15, finalY + 8);
-    doc.text(`Total Hours Payable: ${grandTotalHours.toFixed(1)}`, 15, finalY + 16);
-    doc.text(`Total Night Allowance Hours: ${grandNightDutyHours.toFixed(1)}`, 15, finalY + 24);
+    doc.text(`Total Salary: ${this.formatCurrency(grandTotalSalary)}`, 15, finalY + 8);
+    doc.text(`Total Hours Payable: ${this.formatNumber(grandTotalHours)}`, 15, finalY + 16);
+    doc.text(`Total Night Allowance Hours: ${this.formatNumber(grandNightDutyHours)}`, 15, finalY + 24);
     
     doc.setFontSize(12);
-    doc.text(`GRAND TOTAL AMOUNT: ${formatMauritianRupees(grandTotal).formatted}`, 15, finalY + 36);
+    doc.text(`GRAND TOTAL AMOUNT: ${this.formatCurrency(grandTotal)}`, 15, finalY + 36);
     
     // Footer
     doc.setFont('helvetica', 'normal');
