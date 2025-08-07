@@ -52,18 +52,18 @@ export class AnnexureGenerator {
     // Prepare table data - matching the PDF format exactly
     const tableData = staffSummaries.map((summary, index) => [
       (index + 1).toString(), // Serial number
-      summary.staffName,
-      summary.totalDays.toString(),
-      summary.totalHours.toFixed(1),
-      formatMauritianRupees(summary.totalAmount).formatted,
-      formatMauritianRupees(summary.nightAllowance).formatted,
+      summary.fullName, // Full name instead of staff name
+      summary.employeeId, // ID number
+      formatMauritianRupees(summary.salary).formatted, // Salary
+      summary.totalHours.toFixed(1), // Hours payable (without night allowance)
+      summary.nightDutyHours.toFixed(1), // Night allowance hours
       formatMauritianRupees(summary.grandTotal).formatted
     ]);
     
     // Create table matching the original format
     autoTable(doc, {
       startY: 35,
-      head: [['S.No', 'Name', 'Working Days', 'Working Hours', 'Subtotal (Hours)', 'Night Allowance', 'Total Amount']],
+      head: [['S.No', 'NAME (Full Name)', 'ID NUMBER', 'SALARY', 'NO OF HRS PAYABLE (Hrs)', 'NIGHT ALLOWANCE (Hrs)', 'AMOUNT']],
       body: tableData,
       styles: {
         fontSize: 8,
@@ -82,12 +82,12 @@ export class AnnexureGenerator {
       },
       columnStyles: {
         0: { cellWidth: 15, halign: 'center' }, // S.No
-        1: { cellWidth: 35, halign: 'left' },   // Name
-        2: { cellWidth: 20, halign: 'center' }, // Working Days
-        3: { cellWidth: 20, halign: 'center' }, // Working Hours
-        4: { cellWidth: 30, halign: 'right' },  // Subtotal
-        5: { cellWidth: 25, halign: 'right' },  // Night Allowance
-        6: { cellWidth: 30, halign: 'right' }   // Total Amount
+        1: { cellWidth: 40, halign: 'left' },   // NAME (Full Name)
+        2: { cellWidth: 35, halign: 'center' }, // ID NUMBER
+        3: { cellWidth: 25, halign: 'right' },  // SALARY
+        4: { cellWidth: 25, halign: 'center' }, // NO OF HRS PAYABLE
+        5: { cellWidth: 25, halign: 'center' }, // NIGHT ALLOWANCE (Hrs)
+        6: { cellWidth: 30, halign: 'right' }   // AMOUNT
       },
       margin: { left: 15, right: 15 },
       theme: 'grid',
@@ -98,6 +98,8 @@ export class AnnexureGenerator {
     // Add grand totals at the bottom
     const grandTotalDays = staffSummaries.reduce((sum, s) => sum + s.totalDays, 0);
     const grandTotalHours = staffSummaries.reduce((sum, s) => sum + s.totalHours, 0);
+    const grandTotalSalary = staffSummaries.reduce((sum, s) => sum + s.salary, 0);
+    const grandNightDutyHours = staffSummaries.reduce((sum, s) => sum + s.nightDutyHours, 0);
     const grandSubtotal = staffSummaries.reduce((sum, s) => sum + s.totalAmount, 0);
     const grandNightAllowance = staffSummaries.reduce((sum, s) => sum + s.nightAllowance, 0);
     const grandTotal = staffSummaries.reduce((sum, s) => sum + s.grandTotal, 0);
@@ -108,13 +110,12 @@ export class AnnexureGenerator {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     doc.text('GRAND TOTALS:', 15, finalY);
-    doc.text(`Total Working Days: ${grandTotalDays}`, 15, finalY + 8);
-    doc.text(`Total Working Hours: ${grandTotalHours.toFixed(1)}`, 15, finalY + 16);
-    doc.text(`Total Subtotal: ${formatMauritianRupees(grandSubtotal).formatted}`, 15, finalY + 24);
-    doc.text(`Total Night Allowance: ${formatMauritianRupees(grandNightAllowance).formatted}`, 15, finalY + 32);
+    doc.text(`Total Salary: ${formatMauritianRupees(grandTotalSalary).formatted}`, 15, finalY + 8);
+    doc.text(`Total Hours Payable: ${grandTotalHours.toFixed(1)}`, 15, finalY + 16);
+    doc.text(`Total Night Allowance Hours: ${grandNightDutyHours.toFixed(1)}`, 15, finalY + 24);
     
     doc.setFontSize(12);
-    doc.text(`GRAND TOTAL AMOUNT: ${formatMauritianRupees(grandTotal).formatted}`, 15, finalY + 44);
+    doc.text(`GRAND TOTAL AMOUNT: ${formatMauritianRupees(grandTotal).formatted}`, 15, finalY + 36);
     
     // Footer
     doc.setFont('helvetica', 'normal');
@@ -142,10 +143,18 @@ export class AnnexureGenerator {
   ) {
     const staffSummaries: Array<{
       staffName: string;
+      fullName: string;
+      employeeId: string;
+      salary: number;
+      fullName: string;
+      employeeId: string;
+      salary: number;
       totalDays: number;
       totalHours: number;
       totalAmount: number;
       nightDutyCount: number;
+      nightDutyHours: number;
+      nightDutyHours: number;
       nightAllowance: number;
       grandTotal: number;
     }> = [];
@@ -169,11 +178,19 @@ export class AnnexureGenerator {
       let totalHours = 0;
       let totalAmount = 0;
       let nightDutyCount = 0;
+      let nightDutyHours = 0;
+      let nightDutyHours = 0;
       
       staffEntries.forEach(entry => {
         // Count night duties for allowance calculation
         if (entry.shift_type === 'Night Duty') {
           nightDutyCount++;
+          // Add night duty hours (typically 12.5 hours per night)
+          const nightShiftHours = shiftCombinations.find(combo => combo.id === 'N')?.hours || 12.5;
+          nightDutyHours += nightShiftHours;
+          // Add night duty hours (typically 12.5 hours per night)
+          const nightShiftHours = shiftCombinations.find(combo => combo.id === 'N')?.hours || 12.5;
+          nightDutyHours += nightShiftHours;
         }
         
         // Map and calculate hours
@@ -205,12 +222,32 @@ export class AnnexureGenerator {
         name.replace(/\(R\)$/, '').trim().toUpperCase() === baseName
       ) || baseName;
       
+      // Get staff info for full name, ID, and salary
+      const staffInfo = this.getStaffInfo(actualStaffName);
+      const fullName = staffInfo ? `${staffInfo.firstName || ''} ${staffInfo.surname || actualStaffName}`.trim() : actualStaffName;
+      const employeeId = staffInfo?.employeeId || '';
+      const salary = staffInfo?.salary || 0;
+      
+      // Get staff info for full name, ID, and salary
+      const staffInfo = this.getStaffInfo(actualStaffName);
+      const fullName = staffInfo ? `${staffInfo.firstName || ''} ${staffInfo.surname || actualStaffName}`.trim() : actualStaffName;
+      const employeeId = staffInfo?.employeeId || '';
+      const salary = staffInfo?.salary || 0;
+      
       staffSummaries.push({
         staffName: actualStaffName,
+        fullName: fullName,
+        employeeId: employeeId,
+        salary: salary,
+        fullName: fullName,
+        employeeId: employeeId,
+        salary: salary,
         totalDays: staffEntries.length,
         totalHours,
         totalAmount,
         nightDutyCount,
+        nightDutyHours,
+        nightDutyHours,
         nightAllowance,
         grandTotal
       });
@@ -218,6 +255,47 @@ export class AnnexureGenerator {
     
     // Sort by staff name
     return staffSummaries.sort((a, b) => a.staffName.localeCompare(b.staffName));
+  }
+  
+  /**
+   * Get staff information from auth codes
+   */
+  private getStaffInfo(staffName: string) {
+    // Import auth codes to get staff details
+    const authCodes = [
+      { code: 'B165', name: 'BHEKUR', title: 'MIT', salary: 47510, employeeId: 'B16048123000915', firstName: 'Yashdev', surname: 'BHEKUR' },
+      { code: 'B196', name: 'BHOLLOORAM', title: 'MIT', salary: 47510, employeeId: 'B19118118005356', firstName: 'Sawan', surname: 'BHOLLOORAM' },
+      { code: 'D28B', name: 'DHUNNY', title: 'MIT', salary: 30060, employeeId: '0280876127778', firstName: 'Leetarvind', surname: 'DHUNNY' },
+      { code: 'D07D', name: 'DOMUN', title: 'SMIT', salary: 59300, employeeId: 'D07027340003110', firstName: 'Shamir', surname: 'DOMUN' },
+      { code: 'H301', name: 'FOKEERCHAND', title: 'MIT', salary: 37185, employeeId: 'H30038612000061', firstName: 'Needeema', surname: 'FOKEERCHAND' },
+      { code: 'S069', name: 'GHOORAN', title: 'MIT', salary: 38010, employeeId: 'S06781460103939', firstName: 'Bibi Sharinaaz', surname: 'SAMTALLY-GHOORAN' },
+      { code: 'H13D', name: 'HOSENBUX', title: 'MIT', salary: 48810, employeeId: 'H13038118012901', firstName: 'Zameer', surname: 'HOSENBUX' },
+      { code: 'J149', name: 'JUMMUN', title: 'MIT', salary: 47510, employeeId: 'J14037926000909', firstName: 'Bibi Nawsheen', surname: 'JUMMUN' },
+      { code: 'M17G', name: 'MAUDHOO', title: 'MIT', salary: 38010, employeeId: 'M17038026006966', firstName: 'Chandanee', surname: 'MAUDHOO' },
+      { code: 'N28C', name: 'NARAYYA', title: 'MIT', salary: 38010, employeeId: 'N28088124016266', firstName: 'Viraj', surname: 'NARAYYA' },
+      { code: 'P09A', name: 'PITTEA', title: 'SMIT', salary: 59300, employeeId: 'P09117119004134', firstName: 'Pokhiraj', surname: 'PITTEA' },
+      { code: 'R16G', name: 'RUNGADOO', title: 'SMIT', salary: 59300, employeeId: 'R21057240011866', firstName: 'Manee', surname: 'RUNGADOO' },
+      { code: 'T16G', name: 'TEELUCK', title: 'SMIT', salary: 59300, employeeId: '', firstName: '', surname: 'TEELUCK' },
+      { code: 'V160', name: 'VEERASAWMY', title: 'SMIT', salary: 59300, employeeId: 'V16046642044100', firstName: 'Goindah', surname: 'VEERASAWMY' },
+      
+      // Radiographers (R) - same data as regular staff
+      { code: 'B16R', name: 'BHEKUR(R)', title: 'MIT', salary: 47510, employeeId: 'B16048123000915', firstName: 'Yashdev', surname: 'BHEKUR' },
+      { code: 'B19R', name: 'BHOLLOORAM(R)', title: 'MIT', salary: 47510, employeeId: 'B19118118005356', firstName: 'Sawan', surname: 'BHOLLOORAM' },
+      { code: 'D28R', name: 'DHUNNY(R)', title: 'MIT', salary: 30060, employeeId: '0280876127778', firstName: 'Leetarvind', surname: 'DHUNNY' },
+      { code: 'D07R', name: 'DOMUN(R)', title: 'SMIT', salary: 59300, employeeId: 'D07027340003110', firstName: 'Shamir', surname: 'DOMUN' },
+      { code: 'H30R', name: 'FOKEERCHAND(R)', title: 'MIT', salary: 37185, employeeId: 'H30038612000061', firstName: 'Needeema', surname: 'FOKEERCHAND' },
+      { code: 'H13R', name: 'HOSENBUX(R)', title: 'MIT', salary: 48810, employeeId: 'H13038118012901', firstName: 'Zameer', surname: 'HOSENBUX' },
+      { code: 'S06R', name: 'GHOORAN(R)', title: 'MIT', salary: 38010, employeeId: 'S06781460103939', firstName: 'Bibi Sharinaaz', surname: 'SAMTALLY-GHOORAN' },
+      { code: 'J14R', name: 'JUMMUN(R)', title: 'MIT', salary: 47510, employeeId: 'J14037926000909', firstName: 'Bibi Nawsheen', surname: 'JUMMUN' },
+      { code: 'M17R', name: 'MAUDHOO(R)', title: 'MIT', salary: 38010, employeeId: 'M17038026006966', firstName: 'Chandanee', surname: 'MAUDHOO' },
+      { code: 'N28R', name: 'NARAYYA(R)', title: 'MIT', salary: 38010, employeeId: 'N28088124016266', firstName: 'Viraj', surname: 'NARAYYA' },
+      { code: 'P09R', name: 'PITTEA(R)', title: 'SMIT', salary: 59300, employeeId: 'P09117119004134', firstName: 'Pokhiraj', surname: 'PITTEA' },
+      { code: 'R21R', name: 'RUNGADOO(R)', title: 'SMIT', salary: 59300, employeeId: 'R21057240011866', firstName: 'Manee', surname: 'RUNGADOO' },
+      { code: 'T16R', name: 'TEELUCK(R)', title: 'SMIT', salary: 59300, employeeId: '', firstName: '', surname: 'TEELUCK' },
+      { code: 'V16R', name: 'VEERASAWMY(R)', title: 'SMIT', salary: 59300, employeeId: 'V16046642044100', firstName: 'Goindah', surname: 'VEERASAWMY' }
+    ];
+    
+    return authCodes.find(auth => auth.name === staffName) || null;
   }
 }
 
