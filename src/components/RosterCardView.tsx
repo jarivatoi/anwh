@@ -7,7 +7,7 @@ import { EditDetailsModal } from './EditDetailsModal';
 import { RosterCardItem } from './RosterCardItem';
 import { RosterDateHeaderButton } from './RosterDateHeaderButton';
 import { ScrollingText } from './ScrollingText';
-import { availableNames, validateAuthCode, shiftTypes, isAdminCode } from '../utils/rosterAuth';
+import { availableNames, validateAuthCode, shiftTypes, isAdminCode, sortByGroup } from '../utils/rosterAuth';
 import { addRosterEntry, deleteRosterEntry } from '../utils/rosterApi';
 
 interface RosterCardViewProps {
@@ -171,17 +171,17 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
 
   // Custom sorting function to prioritize (R) names first
   const sortStaffNames = (entries: RosterEntry[]): RosterEntry[] => {
-    return [...entries].sort((a, b) => {
-      const aHasR = a.assigned_name.includes('(R)');
-      const bHasR = b.assigned_name.includes('(R)');
-      
-      // If one has (R) and other doesn't, (R) comes first
-      if (aHasR && !bHasR) return -1;
-      if (!aHasR && bHasR) return 1;
-      
-      // If both have (R) or both don't have (R), sort alphabetically
-      return a.assigned_name.localeCompare(b.assigned_name);
+    // Use sortByGroup to prioritize SMIT staff first
+    const sortedNames = sortByGroup(entries.map(e => e.assigned_name));
+    
+    // Create a map for quick lookup of original entries
+    const entryMap = new Map<string, RosterEntry>();
+    entries.forEach(entry => {
+      entryMap.set(entry.assigned_name, entry);
     });
+    
+    // Return entries in the sorted order
+    return sortedNames.map(name => entryMap.get(name)!).filter(Boolean);
   };
 
   const getShiftColor = (shiftType: string) => {
