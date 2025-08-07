@@ -42,6 +42,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   const [refreshKey, setRefreshKey] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState('');
+  const [hasEditOccurred, setHasEditOccurred] = useState(false);
 
   const isMountedRef = useRef(true);
 
@@ -111,6 +112,9 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
     const handleScrollToEditedEntry = (event: CustomEvent) => {
       const { entryId, date } = event.detail;
       console.log(`📍 Scrolling to edited entry: ${entryId} on ${date}`);
+      
+      // Mark that an edit has occurred - this prevents future auto-scroll
+      setHasEditOccurred(true);
       
       setTimeout(() => {
         const editedElement = document.querySelector(`[data-entry-id="${entryId}"]`);
@@ -251,12 +255,12 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   };
 
   const handleEntryUpdate = (updatedEntry: RosterEntry) => {
-    // CRITICAL: Only update local state, NO refresh to prevent scroll issues
-    if (isMountedRef.current && onRefresh) {
-      console.log('🔄 Entry updated - NOT calling onRefresh to prevent scroll issues');
-      // Don't call onRefresh here - it causes unwanted scrolling
-      // The real-time updates will handle data synchronization
-    }
+    // CRITICAL: Mark that an edit has occurred and don't refresh
+    setHasEditOccurred(true);
+    console.log('🔄 Entry updated - marked hasEditOccurred = true, NOT calling onRefresh to prevent scroll issues');
+    
+    // Don't call onRefresh here - it causes unwanted scrolling
+    // The real-time updates will handle data synchronization
   };
 
   // Handle edit button click
