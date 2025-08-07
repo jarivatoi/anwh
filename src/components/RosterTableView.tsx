@@ -43,6 +43,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [showMonthYearSelector, setShowMonthYearSelector] = useState(false);
+  const [hasTabSwitched, setHasTabSwitched] = useState(false);
   
   // Special date modal states
   const [showSpecialDateModal, setShowSpecialDateModal] = useState(false);
@@ -125,6 +126,62 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       setRefreshingDate(null);
     }
   };
+
+  // Auto-scroll to today's date only when switching to this tab
+  useEffect(() => {
+    console.log('🔍 TABLE TAB-SWITCH AUTO-SCROLL: Effect triggered');
+    
+    // Only auto-scroll if we haven't done it yet for this tab switch
+    if (!hasTabSwitched && !loading && filteredEntries.length > 0) {
+      const today = new Date();
+      const isCurrentMonth = selectedDate.getMonth() === today.getMonth() && 
+                             selectedDate.getFullYear() === today.getFullYear();
+      
+      console.log('🔍 TABLE TAB-SWITCH AUTO-SCROLL: Should auto-scroll?', {
+        hasTabSwitched,
+        loading,
+        entriesLength: filteredEntries.length,
+        isCurrentMonth
+      });
+      
+      if (isCurrentMonth) {
+        const todayString = today.toISOString().split('T')[0];
+        const todayEntry = filteredEntries.find(entry => entry.date === todayString);
+        
+        console.log('🔍 TABLE TAB-SWITCH AUTO-SCROLL: Today entry found?', {
+          todayEntry: !!todayEntry,
+          todayString
+        });
+        
+        if (todayEntry) {
+          console.log(`📍 TABLE TAB-SWITCH AUTO-SCROLL: Scrolling to today: ${todayString}`);
+          setTimeout(() => {
+            const todaySection = document.querySelector(`[data-date="${todayString}"]`) ||
+                                document.querySelector(`tr[data-date="${todayString}"]`);
+            
+            if (todaySection) {
+              todaySection.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+              });
+              console.log(`📍 TABLE TAB-SWITCH AUTO-SCROLL: Successfully scrolled to: ${todayString}`);
+            } else {
+              console.log(`❌ TABLE TAB-SWITCH AUTO-SCROLL: Element not found for: ${todayString}`);
+            }
+          }, 500); // Delay to ensure DOM is ready
+        }
+      }
+      
+      // Mark that we've done the tab switch auto-scroll
+      setHasTabSwitched(true);
+    }
+  }, [loading, filteredEntries, selectedDate, hasTabSwitched]);
+
+  // Reset tab switch flag when component mounts (new tab switch)
+  useEffect(() => {
+    console.log('🔍 TABLE TAB-SWITCH: Component mounted, resetting tab switch flag');
+    setHasTabSwitched(false);
+  }, []);
 
   // Listen for roster updates
   useEffect(() => {
