@@ -97,7 +97,7 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
           boxShadow: 'none'
         }}
       >
-        <div className={`font-medium text-[10px] sm:text-[12px] leading-tight relative z-20 ${
+        <div className={`font-medium text-[10px] sm:text-[12px] leading-tight relative z-20 flex flex-col items-center justify-center ${
           isSpecialDate ? 'text-red-900' :
           isToday ? 'text-green-900' : 'text-gray-900'
         }`} style={{
@@ -108,18 +108,24 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
           fontWeight: '500',
           animation: isSpecialDate ? 'pulse 2s ease-in-out infinite' : 'none'
         }}>
-          <div style={{ textAlign: 'center' }}>
-            {new Date(date).getDate()}
+          {/* Day name on first line */}
+          <div style={{ textAlign: 'center', fontSize: window.innerWidth > window.innerHeight ? '10px' : '12px', fontWeight: 'bold' }}>
+            {(() => {
+              const dateObj = new Date(date);
+              const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+              return dayNames[dateObj.getDay()];
+            })()}
           </div>
+          {/* Date in 7-Aug-25 format on second line */}
           <div style={{ textAlign: 'center', fontSize: window.innerWidth > window.innerHeight ? '10px' : '12px', fontWeight: '500' }}>
             {(() => {
               const dateObj = new Date(date);
               const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-              return monthNames[dateObj.getMonth()];
+              const day = dateObj.getDate();
+              const month = monthNames[dateObj.getMonth()];
+              const year = dateObj.getFullYear().toString().slice(-2);
+              return `${day}-${month}-${year}`;
             })()}
-          </div>
-          <div style={{ textAlign: 'center', fontSize: window.innerWidth > window.innerHeight ? '10px' : '12px', fontWeight: '500' }}>
-            {new Date(date).getFullYear()}
           </div>
         </div>
         
