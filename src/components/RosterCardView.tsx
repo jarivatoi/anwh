@@ -42,7 +42,6 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   const [refreshKey, setRefreshKey] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState('');
-  const [hasEditOccurred, setHasEditOccurred] = useState(false);
   const [refreshingDate, setRefreshingDate] = useState<string | null>(null);
 
   const isMountedRef = useRef(true);
@@ -57,65 +56,16 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   // Track mounted status
   useEffect(() => {
     isMountedRef.current = true;
-    
-    // COMPREHENSIVE SCROLL DEBUGGING - catch everything that scrolls
-    const debugScroll = (e: Event) => {
-      console.log('🔍 SCROLL DEBUG: Scroll event detected:', {
-        type: e.type,
-        target: e.target,
-        hasEditOccurred,
-        timestamp: new Date().toISOString()
-      });
-      
-      // Get stack trace to see what triggered the scroll
-      console.trace('🔍 SCROLL DEBUG: Stack trace for scroll event');
-    };
-    
-    // Monitor ALL scroll events
-    window.addEventListener('scroll', debugScroll, { passive: true });
-    document.addEventListener('scroll', debugScroll, { passive: true });
-    
-    // Also monitor scrollIntoView calls
-    const originalScrollIntoView = Element.prototype.scrollIntoView;
-    Element.prototype.scrollIntoView = function(options?: boolean | ScrollIntoViewOptions) {
-      console.log('🔍 SCROLL DEBUG: scrollIntoView called on element:', {
-        element: this,
-        tagName: this.tagName,
-        className: this.className,
-        id: this.id,
-        textContent: this.textContent?.substring(0, 50),
-        options,
-        hasEditOccurred,
-        timestamp: new Date().toISOString()
-      });
-      console.trace('🔍 SCROLL DEBUG: Stack trace for scrollIntoView');
-      
-      // Call original function
-      return originalScrollIntoView.call(this, options);
-    };
-    
     return () => {
       isMountedRef.current = false;
-      window.removeEventListener('scroll', debugScroll);
-      document.removeEventListener('scroll', debugScroll);
-      
-      // Restore original scrollIntoView
-      Element.prototype.scrollIntoView = originalScrollIntoView;
     };
-  }, [hasEditOccurred]);
+  }, []);
 
   // Get the loadEntries function from the parent component
   // Listen for real-time updates
   useEffect(() => {
     const handleRealtimeUpdate = (event: CustomEvent) => {
       console.log('📡 Card view received real-time update:', event.detail);
-      
-      // Mark that we've received real-time updates to prevent auto-scroll
-      setHasEditOccurred(true);
-      console.log('📡 Card view: Real-time update received, marked hasEditOccurred = true');
-      
-      // CRITICAL: Prevent any re-sorting or re-positioning after real-time updates
-      console.log('📡 Card view: Preventing any data re-sorting after real-time update');
       
       // Real-time changes will be reflected through the entries prop
     };
@@ -136,14 +86,12 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
       console.log('🔄 Manual refresh triggered in card view');
       // Just show spinner for visual feedback - don't actually refresh
       await new Promise(resolve => setTimeout(resolve, 1000));
-      await new Promise(resolve => setTimeout(resolve, 1000));
       setLastUpdateTime(new Date().toLocaleTimeString());
       console.log('✅ Manual refresh completed');
     } catch (error) {
       console.error('Manual refresh error:', error);
     } finally {
       setIsRefreshing(false);
-      setRefreshingDate(null);
       setRefreshingDate(null);
     }
   };
@@ -159,14 +107,15 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
     window.addEventListener('orientationchange', handleOrientationChange);
     return () => window.removeEventListener('orientationchange', handleOrientationChange);
   }, []);
-  // Listen for scroll to edited entry event only
+
+
+
+  // Auto-scroll to today's date when component first loads
   useEffect(() => {
+    // Listen for scroll to edited entry event instead of auto-scrolling to today
     const handleScrollToEditedEntry = (event: CustomEvent) => {
       const { entryId, date } = event.detail;
       console.log(`📍 Scrolling to edited entry: ${entryId} on ${date}`);
-      
-      // Mark that an edit has occurred - this prevents future auto-scroll
-      setHasEditOccurred(true);
       
       setTimeout(() => {
         const editedElement = document.querySelector(`[data-entry-id="${entryId}"]`);
@@ -176,19 +125,6 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
             block: 'center' 
           });
           console.log(`📍 Scrolled to edited entry: ${entryId}`);
-          
-          // Add highlight effect to the edited entry
-          editedElement.style.transition = 'all 0.3s ease';
-          editedElement.style.transform = 'scale(1.05)';
-          editedElement.style.boxShadow = '0 0 20px rgba(255, 193, 7, 0.8)';
-          editedElement.style.backgroundColor = 'rgba(255, 193, 7, 0.2)';
-          
-          // Remove highlight after animation
-          setTimeout(() => {
-            editedElement.style.transform = '';
-            editedElement.style.boxShadow = '';
-            editedElement.style.backgroundColor = '';
-          }, 2000);
         } else {
           // Fallback: scroll to the date section
           const dateSection = document.querySelector(`[data-date="${date}"]`);
@@ -204,25 +140,49 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
     };
 
     window.addEventListener('scrollToEditedEntry', handleScrollToEditedEntry as EventListener);
-    return () => window.removeEventListener('scrollToEditedEntry', handleScrollToEditedEntry as EventListener);
-  }, []);
+    
+    // Only auto-scroll to today on initial load if no edits are happening
+    if (!loading && !hasAutoScrolled && filteredEntries.length > 0 && selectedDate.getMonth() === new Date().getMonth() && selectedDate.getFullYear() === new Date().getFullYear()) {
+      const today = new Date();
+      const todayString = today.toISOString().split('T')[0];
+      
+      const todayEntry = filteredEntries.find(entry => entry.date === todayString);
+      
+      if (todayEntry) {
+        setTimeout(() => {
+          const todaySection = document.querySelector(`[data-date="${todayString}"]`);
+          if (todaySection) {
+            todaySection.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center' 
+            });
+            console.log(`📍 Auto-scrolled to today's date: ${todayString}`);
+          }
+        }, 100);
+      }
+      
+      setHasAutoScrolled(true);
+    }
+
+    return () => {
+      window.removeEventListener('scrollToEditedEntry', handleScrollToEditedEntry as EventListener);
+    };
+  }, [loading, filteredEntries, hasAutoScrolled, selectedDate]);
+
   // Listen for roster updates
   useEffect(() => {
     const handleRosterUpdate = (event: CustomEvent) => {
-      console.log('🔄 Card view: Roster updated, checking if should refresh...');
+      console.log('🔄 Card view: Roster updated, refreshing data...');
       
-      // Only refresh data if no edits have occurred to prevent unwanted scrolling
-      if (!hasEditOccurred && onRefresh) {
-        console.log('🔄 Card view: No edits occurred, refreshing data...');
+      // Also refresh from server
+      if (onRefresh) {
         onRefresh();
-      } else {
-        console.log('🔄 Card view: Edits have occurred, skipping refresh to prevent scroll issues');
       }
     };
 
     window.addEventListener('rosterUpdated', handleRosterUpdate as EventListener);
     return () => window.removeEventListener('rosterUpdated', handleRosterUpdate as EventListener);
-  }, [onRefresh, hasEditOccurred]);
+  }, [onRefresh]);
 
   // Sort entries by date in ascending order (oldest first)
   const sortedEntries = [...filteredEntries].sort((a, b) => 
@@ -310,70 +270,20 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   };
 
   const handleEntryUpdate = (updatedEntry: RosterEntry) => {
-    // CRITICAL: Mark that an edit has occurred and don't refresh
-    setHasEditOccurred(true);
-    console.log('🔄 Entry updated - marked hasEditOccurred = true, NOT calling onRefresh to prevent scroll issues');
-    
-    // EMERGENCY FIX: Monitor and lock scroll position
-    const scrollContainer = document.querySelector('.h-full.overflow-y-auto');
-    if (scrollContainer) {
-      const currentScrollTop = scrollContainer.scrollTop;
-      console.log('🔒 Locking scroll position at:', currentScrollTop);
-      
-      // Monitor scroll position changes
-      const scrollObserver = new MutationObserver(() => {
-        if (scrollContainer.scrollTop !== currentScrollTop) {
-          console.log('🚨 SCROLL POSITION CHANGED!', {
-            from: currentScrollTop,
-            to: scrollContainer.scrollTop,
-            difference: scrollContainer.scrollTop - currentScrollTop
-          });
-          console.trace('🚨 SCROLL CHANGE STACK TRACE');
-        }
-      });
-      
-      // Start observing
-      scrollObserver.observe(scrollContainer, {
-        attributes: true,
-        attributeFilter: ['scrollTop']
-      });
-      
-      // Also monitor with setInterval
-      let lastScrollTop = currentScrollTop;
-      const scrollMonitor = setInterval(() => {
-        if (scrollContainer.scrollTop !== lastScrollTop) {
-          console.log('🚨 SCROLL MONITOR: Position changed!', {
-            from: lastScrollTop,
-            to: scrollContainer.scrollTop,
-            timestamp: new Date().toISOString()
-          });
-          lastScrollTop = scrollContainer.scrollTop;
-        }
-      }, 100);
-      
-      // Force scroll position to stay locked
-      setTimeout(() => {
-        scrollContainer.scrollTop = currentScrollTop;
-        console.log('🔒 Restored scroll position to:', currentScrollTop);
-      }, 100);
-      
-      setTimeout(() => {
-        scrollContainer.scrollTop = currentScrollTop;
-        console.log('🔒 Double-check scroll position:', currentScrollTop);
-      }, 500);
-      
-      setTimeout(() => {
-        scrollContainer.scrollTop = currentScrollTop;
-        console.log('🔒 Final scroll position lock:', currentScrollTop);
-        
-        // Clean up monitoring
-        scrollObserver.disconnect();
-        clearInterval(scrollMonitor);
-      }, 1000);
+    // Check if component is still mounted before calling loadEntries
+    if (!isMountedRef.current) {
+      console.warn('Component unmounted, skipping loadEntries call');
+      return;
     }
     
-    // Don't call onRefresh here - it causes unwanted scrolling
-    // The real-time updates will handle data synchronization
+    if (onRefresh) {
+      onRefresh();
+    }
+    
+    // Also trigger a data refresh
+    if (isMountedRef.current && onRefresh) {
+      onRefresh();
+    }
   };
 
   // Handle edit button click
@@ -552,8 +462,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
         ) : (
           <div className="h-full overflow-y-auto" style={{ 
             height: '100%',
-            WebkitOverflowScrolling: 'touch', // Better mobile scrolling
-            scrollBehavior: hasEditOccurred ? 'auto' : 'smooth' // Disable smooth scrolling after edits
+            WebkitOverflowScrolling: 'touch' // Better mobile scrolling
           }}>
             {Object.entries(groupedEntries).map(([date, dateEntries]) => {
               const shiftGroups = groupEntriesByShift(dateEntries);

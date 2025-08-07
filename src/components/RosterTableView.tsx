@@ -40,7 +40,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState('');
   const [refreshingDate, setRefreshingDate] = useState<string | null>(null);
-  const [hasEditOccurred, setHasEditOccurred] = useState(false);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
@@ -89,11 +88,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     return entryDate.getMonth() === selectedDate.getMonth() && 
            entryDate.getFullYear() === selectedDate.getFullYear();
   });
-
-  // Sort entries by date in ascending order (oldest first) - MOVED TO TOP
-  const sortedEntries = [...filteredEntries].sort((a, b) => 
-    new Date(a.date).getTime() - new Date(b.date).getTime()
-  );
 
   // Listen for real-time updates
   useEffect(() => {
@@ -259,111 +253,11 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     return () => window.removeEventListener('rosterUpdated', handleRosterUpdate as EventListener);
   }, [onRefresh]);
 
-  // Listen for scroll to edited entry event
-  useEffect(() => {
-    const handleScrollToEditedEntry = (event: CustomEvent) => {
-      const { entryId, date } = event.detail;
-      console.log(`📍 Scrolling to edited entry: ${entryId} on ${date}`);
-      
-      // Mark that an edit has occurred - this disables future auto-scroll to today
-      setHasEditOccurred(true);
-      
-      setTimeout(() => {
-        const editedElement = document.querySelector(`[data-entry-id="${entryId}"]`);
-        if (editedElement) {
-          editedElement.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center' 
-          });
-          console.log(`📍 Scrolled to edited entry: ${entryId}`);
-          
-          // Add highlight effect to the edited entry
-          editedElement.style.transition = 'all 0.3s ease';
-          editedElement.style.transform = 'scale(1.05)';
-          editedElement.style.boxShadow = '0 0 20px rgba(255, 193, 7, 0.8)';
-          editedElement.style.backgroundColor = 'rgba(255, 193, 7, 0.2)';
-          
-          // Remove highlight after animation
-          setTimeout(() => {
-            editedElement.style.transform = '';
-            editedElement.style.boxShadow = '';
-            editedElement.style.backgroundColor = '';
-          }, 2000);
-        } else {
-          // Fallback: scroll to the date section
-          const dateSection = document.querySelector(`[data-date="${date}"]`);
-          if (dateSection) {
-            dateSection.scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'center' 
-            });
-            console.log(`📍 Scrolled to date section: ${date}`);
-          }
-        }
-      }, 100);
-    };
+  // Sort entries by date in ascending order
+  const sortedEntries = [...filteredEntries].sort((a, b) => 
+    new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
 
-    window.addEventListener('scrollToEditedEntry', handleScrollToEditedEntry as EventListener);
-    return () => window.removeEventListener('scrollToEditedEntry', handleScrollToEditedEntry as EventListener);
-  }, []);
-
-  // Auto-scroll to today's date when component first loads (only if no edits have occurred)
-  useEffect(() => {
-    // Only run on initial mount when entries first become available
-    if (!hasEditOccurred && sortedEntries.length > 0 && !hasAutoScrolled && selectedDate.getMonth() === new Date().getMonth() && selectedDate.getFullYear() === new Date().getFullYear()) {
-      const today = new Date();
-      const todayString = today.toISOString().split('T')[0];
-      
-      const todayEntry = sortedEntries.find(entry => entry.date === todayString);
-      
-      if (todayEntry) {
-        setHasAutoScrolled(true); // Mark that we've auto-scrolled once
-        setTimeout(() => {
-          const todayRow = document.querySelector(`[data-date="${todayString}"]`);
-          if (todayRow) {
-            todayRow.scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'center' 
-            });
-            console.log(`📍 Auto-scrolled to today's date: ${todayString} (no edits occurred)`);
-          }
-        }, 500); // Delay to ensure table is rendered
-      }
-    }
-  }, [hasEditOccurred, hasAutoScrolled, selectedDate]); // Removed sortedEntries from dependencies
-
-  // Listen for tab change to roster - scroll to today (only if no edits have occurred)
-  useEffect(() => {
-    const handleScrollToToday = () => {
-      console.log('📍 Tab changed to roster - checking if should scroll to today');
-      
-      if (!hasEditOccurred && sortedEntries.length > 0 && selectedDate.getMonth() === new Date().getMonth() && selectedDate.getFullYear() === new Date().getFullYear()) {
-        const today = new Date();
-        const todayString = today.toISOString().split('T')[0];
-        
-        const todayEntry = sortedEntries.find(entry => entry.date === todayString);
-        
-        if (todayEntry) {
-          setTimeout(() => {
-            const todayRow = document.querySelector(`[data-date="${todayString}"]`);
-            if (todayRow) {
-              todayRow.scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'center' 
-              });
-              console.log(`📍 Scrolled to today's date on tab change: ${todayString} (no edits occurred)`);
-            }
-          }, 200);
-        }
-      } else {
-        console.log('📍 Not scrolling to today - edits have occurred or conditions not met');
-      }
-    };
-
-    window.addEventListener('scrollToTodayOnRosterTab', handleScrollToToday as EventListener);
-    return () => window.removeEventListener('scrollToTodayOnRosterTab', handleScrollToToday as EventListener);
-  }, [sortedEntries, selectedDate, hasEditOccurred]);
-  
   // Group entries by date for sticky headers
   const groupedEntries = sortedEntries.reduce((groups, entry) => {
     const date = entry.date;
@@ -381,12 +275,11 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   };
 
   const handleEntryUpdate = (updatedEntry: RosterEntry) => {
-    // CRITICAL: Mark that an edit has occurred to prevent future auto-scroll
-    setHasEditOccurred(true);
-    console.log('🔄 Entry updated - marked hasEditOccurred = true to prevent auto-scroll');
+    if (!isMountedRef.current) {
+      console.warn('Component unmounted, skipping loadEntries call');
+      return;
+    }
     
-    // Don't call onRefresh here - it causes unwanted scrolling
-    // The real-time updates will handle data synchronization
     if (onRefresh) {
       onRefresh();
     }
