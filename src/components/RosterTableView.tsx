@@ -513,10 +513,15 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 <button
                   onClick={() => setShowMonthYearSelector(true)}
                   disabled={isRefreshing}
-                  className="text-base font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-2 py-1 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  className="text-sm font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-2 py-1 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                   style={{
                     minWidth: 'fit-content',
-                    textAlign: 'center'
+                    textAlign: 'center',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '140px',
+                    fontSize: window.innerWidth <= 375 ? '12px' : '14px' // Smaller on iPhone SE and similar
                   }}
                 >
                   {formatMonthYear()}
