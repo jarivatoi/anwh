@@ -361,6 +361,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     window.addEventListener('scrollToTodayOnRosterTab', handleScrollToToday as EventListener);
     return () => window.removeEventListener('scrollToTodayOnRosterTab', handleScrollToToday as EventListener);
   }, [sortedEntries, selectedDate, hasEditOccurred]);
+  
   // Group entries by date for sticky headers
   const groupedEntries = sortedEntries.reduce((groups, entry) => {
     const date = entry.date;
@@ -384,6 +385,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     
     // Don't call onRefresh here - it causes unwanted scrolling
     // The real-time updates will handle data synchronization
+    if (onRefresh) {
       onRefresh();
     }
   };
