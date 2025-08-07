@@ -172,19 +172,27 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     // Get all currently assigned staff for this shift
     const currentlyAssigned = allEntriesForShift.map(e => e.assigned_name);
     
-    // Filter out staff who are already working, including matching base names
+    // Filter out staff who are already working, but ALWAYS include both versions of the current person
     const filtered = availableStaff.filter(staffName => {
       // Exclude ADMIN from selection
       if (staffName === 'ADMIN') {
         return false;
       }
       
-      // Don't filter out the current assignment (allow changing to same person)
+      // Always include the current assignment
       if (staffName === entry.assigned_name) {
         return true;
       }
       
-      // Check if this staff member (or their counterpart) is already assigned
+      // Always include the counterpart of the current assignment (regular <-> (R) version)
+      const currentBaseName = entry.assigned_name.replace(/\(R\)$/, '').trim();
+      const staffBaseName = staffName.replace(/\(R\)$/, '').trim();
+      
+      if (currentBaseName === staffBaseName) {
+        return true; // Include both versions of the same person
+      }
+      
+      // For other staff, check if they (or their counterpart) are already assigned
       const baseName = staffName.replace(/\(R\)$/, '').trim();
       const isAlreadyAssigned = currentlyAssigned.some(assigned => {
         const assignedBaseName = assigned.replace(/\(R\)$/, '').trim();
