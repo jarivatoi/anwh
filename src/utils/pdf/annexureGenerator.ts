@@ -52,12 +52,12 @@ export class AnnexureGenerator {
     // Prepare table data - matching the PDF format exactly
     const tableData = staffSummaries.map((summary, index) => [
       (index + 1).toString(), // Serial number
-      summary.fullName, // Full name (surname first)
+      summary.fullName, // Full name instead of staff name
       summary.employeeId, // ID number
-      this.trimTrailingZeros(formatMauritianRupees(summary.salary).formatted), // Salary
-      this.trimTrailingZeros(summary.totalHours.toFixed(1)), // Hours payable (without night allowance)
-      this.trimTrailingZeros(summary.nightDutyHours.toFixed(1)), // Night allowance hours
-      this.trimTrailingZeros(formatMauritianRupees(summary.grandTotal).formatted)
+      formatMauritianRupees(summary.salary).formatted, // Salary
+      summary.totalHours.toFixed(1), // Hours payable (without night allowance)
+      summary.nightDutyHours.toFixed(1), // Night allowance hours
+      formatMauritianRupees(summary.grandTotal).formatted
     ]);
     
     // Create table matching the original format
@@ -66,8 +66,8 @@ export class AnnexureGenerator {
       head: [['S.No', 'NAME (Full Name)', 'ID NUMBER', 'SALARY', 'NO OF HRS PAYABLE (Hrs)', 'NIGHT ALLOWANCE (Hrs)', 'AMOUNT']],
       body: tableData,
       styles: {
-        fontSize: 6,
-        cellPadding: 1,
+        fontSize: 8,
+        cellPadding: 2,
         overflow: 'linebreak',
         halign: 'center',
         valign: 'middle'
@@ -76,20 +76,20 @@ export class AnnexureGenerator {
         fillColor: [220, 220, 220],
         textColor: [0, 0, 0],
         fontStyle: 'bold',
-        fontSize: 7,
+        fontSize: 9,
         halign: 'center',
         valign: 'middle'
       },
       columnStyles: {
-        0: { cellWidth: 12, halign: 'center' }, // S.No
-        1: { cellWidth: 35, halign: 'left' },   // NAME (Full Name)
-        2: { cellWidth: 30, halign: 'center' }, // ID NUMBER
-        3: { cellWidth: 22, halign: 'right' },  // SALARY
-        4: { cellWidth: 22, halign: 'center' }, // NO OF HRS PAYABLE
-        5: { cellWidth: 22, halign: 'center' }, // NIGHT ALLOWANCE (Hrs)
-        6: { cellWidth: 25, halign: 'right' }   // AMOUNT
+        0: { cellWidth: 15, halign: 'center' }, // S.No
+        1: { cellWidth: 40, halign: 'left' },   // NAME (Full Name)
+        2: { cellWidth: 35, halign: 'center' }, // ID NUMBER
+        3: { cellWidth: 25, halign: 'right' },  // SALARY
+        4: { cellWidth: 25, halign: 'center' }, // NO OF HRS PAYABLE
+        5: { cellWidth: 25, halign: 'center' }, // NIGHT ALLOWANCE (Hrs)
+        6: { cellWidth: 30, halign: 'right' }   // AMOUNT
       },
-      margin: { left: 10, right: 10 },
+      margin: { left: 15, right: 15 },
       theme: 'grid',
       tableLineWidth: 0.3,
       tableLineColor: [0, 0, 0]
@@ -110,12 +110,12 @@ export class AnnexureGenerator {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     doc.text('GRAND TOTALS:', 15, finalY);
-    doc.text(`Total Salary: ${this.trimTrailingZeros(formatMauritianRupees(grandTotalSalary).formatted)}`, 15, finalY + 8);
-    doc.text(`Total Hours Payable: ${this.trimTrailingZeros(grandTotalHours.toFixed(1))}`, 15, finalY + 16);
-    doc.text(`Total Night Allowance Hours: ${this.trimTrailingZeros(grandNightDutyHours.toFixed(1))}`, 15, finalY + 24);
+    doc.text(`Total Salary: ${formatMauritianRupees(grandTotalSalary).formatted}`, 15, finalY + 8);
+    doc.text(`Total Hours Payable: ${grandTotalHours.toFixed(1)}`, 15, finalY + 16);
+    doc.text(`Total Night Allowance Hours: ${grandNightDutyHours.toFixed(1)}`, 15, finalY + 24);
     
     doc.setFontSize(12);
-    doc.text(`GRAND TOTAL AMOUNT: ${this.trimTrailingZeros(formatMauritianRupees(grandTotal).formatted)}`, 15, finalY + 36);
+    doc.text(`GRAND TOTAL AMOUNT: ${formatMauritianRupees(grandTotal).formatted}`, 15, finalY + 36);
     
     // Footer
     doc.setFont('helvetica', 'normal');
@@ -220,7 +220,7 @@ export class AnnexureGenerator {
       
       // Get staff info for full name, ID, and salary
       const staffInfo = this.getStaffInfo(actualStaffName);
-      const fullName = staffInfo ? `${staffInfo.surname || actualStaffName} ${staffInfo.firstName || ''}`.trim() : actualStaffName;
+      const fullName = staffInfo ? `${staffInfo.firstName || ''} ${staffInfo.surname || actualStaffName}`.trim() : actualStaffName;
       const employeeId = staffInfo?.employeeId || '';
       const salary = staffInfo?.salary || 0;
       
@@ -282,21 +282,6 @@ export class AnnexureGenerator {
     ];
     
     return authCodes.find(auth => auth.name === staffName) || null;
-  }
-  
-  /**
-   * Trim trailing zeros from formatted numbers
-   */
-  private trimTrailingZeros(value: string): string {
-    // Handle currency format (Rs 123.00 -> Rs 123)
-    if (value.startsWith('Rs ')) {
-      const numberPart = value.substring(3);
-      const trimmed = parseFloat(numberPart).toString();
-      return `Rs ${trimmed}`;
-    }
-    
-    // Handle regular numbers (123.00 -> 123)
-    return parseFloat(value).toString();
   }
 }
 
