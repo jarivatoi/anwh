@@ -540,8 +540,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       {/* Month Navigation Header */}
       <div className="bg-white rounded-lg mb-4 p-4 shadow-sm sticky top-0 z-50">
         <div className="flex items-center justify-between">
-          {/* Left Side - Arrow and Export Button */}
-          <div className="flex items-center space-x-2 flex-shrink-0">
+          {/* Left Side - Arrow */}
+          <div className="flex items-center flex-shrink-0">
             <button
               onClick={() => navigateMonth('prev')}
               className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors duration-200 flex-shrink-0"
@@ -552,7 +552,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             </button>
           </div>
           
-          {/* Export Button - Midway */}
+          {/* Export Button - Midway between left arrow and month */}
           <div className="flex items-center justify-center flex-shrink-0">
             <button
               onClick={onExportToCalendar}
@@ -564,7 +564,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           </div>
           
           {/* Center Content */}
-          <div className="flex items-center justify-center flex-1 px-1 min-w-0">
+          <div className="flex items-center justify-center flex-1 min-w-0">
             <Calendar className="w-6 h-6 text-indigo-600" />
             
             {/* Month and Year selectors with dynamic spacing */}
@@ -598,7 +598,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             </div>
           </div>
           
-          {/* Spinner/Dot - Midway */}
+          {/* Spinner/Dot - Midway between month and right arrow */}
           <div className="flex items-center justify-center flex-shrink-0">
             <button
               onClick={() => handleManualRefresh()}
@@ -680,8 +680,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             </button>
           </div>
           
-          {/* Right Side - Spinner/Dot and Arrow */}
-          <div className="flex items-center space-x-2 flex-shrink-0">
+          {/* Right Side - Arrow */}
+          <div className="flex items-center flex-shrink-0">
             <button
               onClick={() => navigateMonth('next')}
               className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors duration-200 flex-shrink-0"
