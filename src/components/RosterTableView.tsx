@@ -727,7 +727,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     border: '2px solid #374151',
                     width: '21.25%'
                   }}>
-                    Night
+                    N
                   </th>
                 </tr>
               </thead>
