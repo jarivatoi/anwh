@@ -40,7 +40,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState('');
   const [refreshingDate, setRefreshingDate] = useState<string | null>(null);
-  const [preventAutoScroll, setPreventAutoScroll] = useState(false);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
@@ -121,16 +120,14 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
 
   // Auto-scroll to today's date when component first loads
   useEffect(() => {
-    if (!loading && !hasAutoScrolled && !preventAutoScroll && filteredEntries.length > 0 && selectedDate.getMonth() === new Date().getMonth() && selectedDate.getFullYear() === new Date().getFullYear()) {
-      console.log('🔍 TABLE AUTO-SCROLL: Checking conditions:', {
-        loading,
-        entriesLength: filteredEntries.length,
-        selectedMonth: selectedDate.getMonth(),
-        selectedYear: selectedDate.getFullYear(),
-        currentMonth: new Date().getMonth(),
-        currentYear: new Date().getFullYear()
-      });
-    }
+    console.log('🔍 TABLE AUTO-SCROLL: Effect triggered', {
+      loading,
+      entriesLength: filteredEntries.length,
+      selectedMonth: selectedDate.getMonth(),
+      selectedYear: selectedDate.getFullYear(),
+      currentMonth: new Date().getMonth(),
+      currentYear: new Date().getFullYear()
+    });
     
     const today = new Date();
     const isCurrentMonth = selectedDate.getMonth() === today.getMonth() && 
@@ -192,7 +189,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         console.log(`❌ TABLE AUTO-SCROLL: No entry found for today: ${todayString}`);
       }
     }
-  }, [loading, filteredEntries, hasAutoScrolled, preventAutoScroll, selectedDate]);
+  }, [loading, filteredEntries, selectedDate]);
 
   // Track when component mounts (tab switch) and trigger auto-scroll
   useEffect(() => {
@@ -282,9 +279,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       console.warn('Component unmounted, skipping loadEntries call');
       return;
     }
-    
-    // Prevent auto-scroll after manual edits
-    setPreventAutoScroll(true);
     
     if (onRefresh) {
       onRefresh();
