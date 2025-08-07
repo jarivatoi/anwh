@@ -563,17 +563,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             
             {/* Month and Year selectors with dynamic spacing */}
             <div className="flex items-center" style={{ 
-              gap: (() => {
-                const monthNames = [
-                  'January', 'February', 'March', 'April', 'May', 'June',
-                  'July', 'August', 'September', 'October', 'November', 'December'
-                ];
-                const currentMonthName = monthNames[selectedDate.getMonth()];
-                // Shorter months get more gap, longer months get less gap
-                return currentMonthName.length <= 4 ? '8px' : 
-                       currentMonthName.length <= 6 ? '6px' : 
-                       currentMonthName.length <= 8 ? '4px' : '2px';
-              })()
+              gap: '4px' // Single consistent space
             }}>
               {/* Month selector */}
               <select
