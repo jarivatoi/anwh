@@ -43,6 +43,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState('');
   const [refreshingDate, setRefreshingDate] = useState<string | null>(null);
+  const [hasEditOccurred, setHasEditOccurred] = useState(false);
 
   const isMountedRef = useRef(true);
 
@@ -117,6 +118,9 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
       const { entryId, date } = event.detail;
       console.log(`📍 Scrolling to edited entry: ${entryId} on ${date}`);
       
+      // Mark that an edit has occurred - this disables future auto-scroll to today
+      setHasEditOccurred(true);
+      
       setTimeout(() => {
         const editedElement = document.querySelector(`[data-entry-id="${entryId}"]`);
         if (editedElement) {
@@ -154,6 +158,12 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
 
     // Listen for tab change to roster - scroll to today (only on tab change)
     const handleScrollToToday = () => {
+      // Only scroll to today if no edit has occurred
+      if (hasEditOccurred) {
+        console.log('📍 Tab changed to roster - but edit occurred, skipping scroll to today');
+        return;
+      }
+      
       console.log('📍 Tab changed to roster - scrolling to today');
       
       if (filteredEntries.length > 0 && selectedDate.getMonth() === new Date().getMonth() && selectedDate.getFullYear() === new Date().getFullYear()) {
@@ -184,7 +194,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
       window.removeEventListener('scrollToEditedEntry', handleScrollToEditedEntry as EventListener);
       window.removeEventListener('scrollToTodayOnRosterTab', handleScrollToToday as EventListener);
     };
-  }, [filteredEntries, selectedDate]);
+  }, [filteredEntries, selectedDate, hasEditOccurred]);
 
   // Listen for roster updates
   useEffect(() => {
