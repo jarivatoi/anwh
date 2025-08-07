@@ -57,7 +57,7 @@ export class AnnexureGenerator {
       summary.totalHours.toFixed(1),
       formatMauritianRupees(summary.totalAmount).formatted,
       summary.nightDutyCount > 0 ? `${summary.nightDutyCount} × 6 × 0.25 × ${formatMauritianRupees(hourlyRate).formatted}` : '',
-      formatMauritianRupees(summary.nightAll owance).formatted,
+      formatMauritianRupees(summary.nightAllowance).formatted,
       formatMauritianRupees(summary.grandTotal).formatted
     ]);
     
