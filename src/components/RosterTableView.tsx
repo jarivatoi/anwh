@@ -523,7 +523,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     const monthName = monthNames[date.getMonth()];
     const year = date.getFullYear().toString().slice(-2);
     
-    return `${dayName}\n${day} ${monthName} ${year}`;
+    return `${dayName}\n${day}-${monthName}-${year}`;
   };
 
   // Check if date has special info
