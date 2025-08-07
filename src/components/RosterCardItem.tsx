@@ -29,6 +29,7 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authError, setAuthError] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Prevent body scroll when auth modal is open
   React.useEffect(() => {
@@ -122,7 +123,7 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
   };
 
   const handleStaffSelect = async (newStaffName: string) => {
-    await this.handleStaffSelectWithColor(newStaffName);
+    await handleStaffSelectWithColor(newStaffName);
   };
 
   const handleStaffSelectWithColor = async (newStaffName: string, textColor?: string) => {
@@ -132,6 +133,7 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
     }
 
     setIsUpdating(true);
+    setIsEditing(true);
     try {
       const editorName = validateAuthCode(authCode);
       if (!editorName) return;
@@ -155,6 +157,8 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
       alert('Failed to update entry. Please try again.');
     } finally {
       setIsUpdating(false);
+      // Keep editing animation for a bit longer to show the change
+      setTimeout(() => setIsEditing(false), 1000);
     }
   };
 
@@ -196,7 +200,14 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
           position: 'relative',
           zIndex: 60,
           // Add pulsing animation only for special dates with actual info
-         animation: (isSpecialDate && specialDateInfo && specialDateInfo.trim()) ? 'pulse 2s ease-in-out infinite' : 'none'
+         animation: isEditing ? 'goldenPulse 1.2s ease-in-out infinite' :
+                   (isSpecialDate && specialDateInfo && specialDateInfo.trim()) ? 'pulse 2s ease-in-out infinite' : 'none',
+         transform: isEditing ? 'scale(1.05)' : 'scale(1)',
+         transition: 'all 0.4s ease-out',
+         boxShadow: isEditing ? '0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.4), inset 0 0 10px rgba(255, 215, 0, 0.2)' : 'none',
+         backgroundColor: isEditing ? 'rgba(255, 215, 0, 0.15)' : 'transparent',
+         borderRadius: isEditing ? '6px' : '0',
+         border: isEditing ? '2px solid #ffd700' : 'none'
         }}
       >
         <ScrollingText 
@@ -209,10 +220,154 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
             textAlign: 'center',
             width: '100%',
             border: 'none',
-            outline: 'none'
+            outline: 'none',
+            filter: isEditing ? 'brightness(1.2) contrast(1.1)' : 'none',
+            textShadow: isEditing ? '0 0 8px rgba(255, 215, 0, 0.6)' : 'none'
           }}
         />
+        
+        {/* Editing indicator overlay */}
+        {isEditing && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '-4px',
+              right: '-4px',
+              width: '12px',
+              height: '12px',
+              background: 'linear-gradient(45deg, #ffd700, #ffed4e)',
+              borderRadius: '50%',
+              animation: 'goldenDot 1.5s ease-in-out infinite',
+              zIndex: 70,
+              border: '1px solid #b45309',
+              boxShadow: '0 0 8px rgba(255, 215, 0, 0.8)'
+            }}
+          />
+        )}
+        
+        {/* Golden sparkle effects */}
+        {isEditing && (
+          <>
+            <div
+              style={{
+                position: 'absolute',
+                top: '2px',
+                left: '2px',
+                width: '4px',
+                height: '4px',
+                backgroundColor: '#ffd700',
+                borderRadius: '50%',
+                animation: 'sparkle1 2s ease-in-out infinite',
+                zIndex: 65
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '2px',
+                right: '8px',
+                width: '3px',
+                height: '3px',
+                backgroundColor: '#ffed4e',
+                borderRadius: '50%',
+                animation: 'sparkle2 2.5s ease-in-out infinite',
+                zIndex: 65
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '1px',
+                width: '2px',
+                height: '2px',
+                backgroundColor: '#fbbf24',
+                borderRadius: '50%',
+                animation: 'sparkle3 1.8s ease-in-out infinite',
+                zIndex: 65
+              }}
+            />
+          </>
+        )}
       </div>
+      
+      {/* Add CSS animations */}
+      <style jsx>{`
+        @keyframes goldenPulse {
+          0%, 100% {
+            opacity: 1;
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.4);
+          }
+          50% {
+            opacity: 0.9;
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 1), 0 0 60px rgba(255, 215, 0, 0.6);
+          }
+        }
+        
+        @keyframes goldenDot {
+          0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
+          }
+          50% {
+            opacity: 0.7;
+            transform: scale(1.3);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 1);
+          }
+        }
+        
+        @keyframes sparkle1 {
+          0%, 100% {
+            opacity: 0;
+            transform: scale(0) rotate(0deg);
+          }
+          25% {
+            opacity: 1;
+            transform: scale(1) rotate(90deg);
+          }
+          50% {
+            opacity: 0.8;
+            transform: scale(1.2) rotate(180deg);
+          }
+          75% {
+            opacity: 0.6;
+            transform: scale(0.8) rotate(270deg);
+          }
+        }
+        
+        @keyframes sparkle2 {
+          0%, 100% {
+            opacity: 0;
+            transform: scale(0);
+          }
+          30% {
+            opacity: 1;
+            transform: scale(1.5);
+          }
+          60% {
+            opacity: 0.7;
+            transform: scale(1);
+          }
+        }
+        
+        @keyframes sparkle3 {
+          0%, 100% {
+            opacity: 0;
+            transform: scale(0) translateY(0);
+          }
+          40% {
+            opacity: 1;
+            transform: scale(1.8) translateY(-2px);
+          }
+          80% {
+            opacity: 0.5;
+            transform: scale(1) translateY(0);
+          }
+        }
+      `}</style>
 
       {/* Authentication Modal */}
       {showAuthModal && createPortal(
