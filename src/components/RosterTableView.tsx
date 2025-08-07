@@ -90,6 +90,11 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
            entryDate.getFullYear() === selectedDate.getFullYear();
   });
 
+  // Sort entries by date in ascending order (oldest first) - MOVED TO TOP
+  const sortedEntries = [...filteredEntries].sort((a, b) => 
+    new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+
   // Listen for real-time updates
   useEffect(() => {
     const handleRealtimeUpdate = (event: CustomEvent) => {
@@ -356,11 +361,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     window.addEventListener('scrollToTodayOnRosterTab', handleScrollToToday as EventListener);
     return () => window.removeEventListener('scrollToTodayOnRosterTab', handleScrollToToday as EventListener);
   }, [sortedEntries, selectedDate, hasEditOccurred]);
-  // Sort entries by date in ascending order
-  const sortedEntries = [...filteredEntries].sort((a, b) => 
-    new Date(a.date).getTime() - new Date(b.date).getTime()
-  );
-
   // Group entries by date for sticky headers
   const groupedEntries = sortedEntries.reduce((groups, entry) => {
     const date = entry.date;
