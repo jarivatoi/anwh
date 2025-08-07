@@ -112,7 +112,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
 
   // Auto-scroll to today's date when component first loads
   useEffect(() => {
-    // Listen for scroll to edited entry event instead of auto-scrolling to today
+    // Listen for scroll to edited entry event
     const handleScrollToEditedEntry = (event: CustomEvent) => {
       const { entryId, date } = event.detail;
       console.log(`📍 Scrolling to edited entry: ${entryId} on ${date}`);
@@ -140,34 +140,11 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
     };
 
     window.addEventListener('scrollToEditedEntry', handleScrollToEditedEntry as EventListener);
-    
-    // Only auto-scroll to today on initial load if no edits are happening
-    if (!loading && !hasAutoScrolled && filteredEntries.length > 0 && selectedDate.getMonth() === new Date().getMonth() && selectedDate.getFullYear() === new Date().getFullYear()) {
-      const today = new Date();
-      const todayString = today.toISOString().split('T')[0];
-      
-      const todayEntry = filteredEntries.find(entry => entry.date === todayString);
-      
-      if (todayEntry) {
-        setTimeout(() => {
-          const todaySection = document.querySelector(`[data-date="${todayString}"]`);
-          if (todaySection) {
-            todaySection.scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'center' 
-            });
-            console.log(`📍 Auto-scrolled to today's date: ${todayString}`);
-          }
-        }, 100);
-      }
-      
-      setHasAutoScrolled(true);
-    }
 
     return () => {
       window.removeEventListener('scrollToEditedEntry', handleScrollToEditedEntry as EventListener);
     };
-  }, [loading, filteredEntries, hasAutoScrolled, selectedDate]);
+  }, []);
 
   // Listen for roster updates
   useEffect(() => {
