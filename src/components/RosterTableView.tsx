@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Calendar, Edit, FileText, Download, RefreshCw, Star, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Eye, EyeOff } from 'lucide-react';
 import { RosterEntry, ShiftFilterType } from '../types/roster';
@@ -60,6 +61,20 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   
   const isMountedRef = useRef(true);
 
+  const formatMonthYear = () => {
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return `${monthNames[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`;
+  };
+
+  const handleMonthYearChange = (month: number, year: number) => {
+    const newDate = new Date(year, month, 1);
+    onDateChange(newDate);
+    setShowMonthYearSelector(false);
+  };
+
   // Track mounted status
   useEffect(() => {
     isMountedRef.current = true;
@@ -104,6 +119,130 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     }
   };
 
+  // Auto-scroll to today's date when component first loads
+  useEffect(() => {
+    if (!loading && !hasAutoScrolled && !preventAutoScroll && filteredEntries.length > 0 && selectedDate.getMonth() === new Date().getMonth() && selectedDate.getFullYear() === new Date().getFullYear()) {
+      console.log('🔍 TABLE AUTO-SCROLL: Checking conditions:', {
+        loading,
+        entriesLength: filteredEntries.length,
+        selectedMonth: selectedDate.getMonth(),
+        selectedYear: selectedDate.getFullYear(),
+        currentMonth: new Date().getMonth(),
+        currentYear: new Date().getFullYear()
+      });
+    }
+    
+    const today = new Date();
+    const isCurrentMonth = selectedDate.getMonth() === today.getMonth() && 
+                           selectedDate.getFullYear() === today.getFullYear();
+    const shouldAutoScroll = !loading && 
+                            filteredEntries.length > 0 && 
+                            isCurrentMonth;
+    
+    console.log('🔍 TABLE AUTO-SCROLL: Should auto-scroll?', {
+      shouldAutoScroll,
+      isCurrentMonth,
+      loading,
+      entriesLength: filteredEntries.length
+    });
+    
+    if (shouldAutoScroll) {
+      const todayString = today.toISOString().split('T')[0];
+      console.log(`📍 TABLE AUTO-SCROLL: Attempting auto-scroll to today: ${todayString}`);
+      
+      const todayEntry = filteredEntries.find(entry => entry.date === todayString);
+      
+      console.log('🔍 TABLE AUTO-SCROLL: Today entry found?', {
+        todayEntry: !!todayEntry,
+        todayString,
+        firstFewEntries: filteredEntries.slice(0, 3).map(e => e.date)
+      });
+      
+      if (todayEntry) {
+        console.log(`📍 TABLE AUTO-SCROLL: Found today's entry, scrolling to: ${todayString}`);
+        setTimeout(() => {
+          // Try multiple selectors to find today's row
+          const todaySection = document.querySelector(`[data-date="${todayString}"]`) ||
+                              document.querySelector(`tr[data-date="${todayString}"]`) ||
+                              document.querySelector(`*[data-date="${todayString}"]`);
+          
+          console.log('🔍 TABLE AUTO-SCROLL: DOM element search result:', {
+            todayString,
+            elementFound: !!todaySection,
+            elementType: todaySection?.tagName,
+            allDataDateElements: document.querySelectorAll('[data-date]').length
+          });
+          
+          if (todaySection) {
+            todaySection.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center' 
+            });
+            console.log(`📍 TABLE AUTO-SCROLL: Successfully scrolled to today's date: ${todayString}`);
+          } else {
+            console.log(`❌ TABLE AUTO-SCROLL: Could not find element with data-date="${todayString}"`);
+            
+            // Debug: List all data-date elements
+            const allDataDateElements = document.querySelectorAll('[data-date]');
+            console.log('🔍 TABLE AUTO-SCROLL: All data-date elements found:', 
+              Array.from(allDataDateElements).map(el => el.getAttribute('data-date')));
+          }
+        }, 800); // Even longer delay to ensure DOM is ready
+      } else {
+        console.log(`❌ TABLE AUTO-SCROLL: No entry found for today: ${todayString}`);
+      }
+    }
+  }, [loading, filteredEntries, hasAutoScrolled, preventAutoScroll, selectedDate]);
+
+  // Track when component mounts (tab switch) and trigger auto-scroll
+  useEffect(() => {
+    console.log('🔍 TABLE AUTO-SCROLL: Tab switch effect triggered');
+    setLastTabSwitch(Date.now());
+    
+    // Force auto-scroll on tab switch with delay
+    if (!loading && filteredEntries.length > 0) {
+      const today = new Date();
+      const isCurrentMonth = selectedDate.getMonth() === today.getMonth() && 
+                             selectedDate.getFullYear() === today.getFullYear();
+      
+      console.log('🔍 TABLE AUTO-SCROLL: Tab switch auto-scroll check:', {
+        loading,
+        entriesLength: filteredEntries.length,
+        isCurrentMonth
+      });
+      
+      if (isCurrentMonth) {
+        const todayString = today.toISOString().split('T')[0];
+        const todayEntry = filteredEntries.find(entry => entry.date === todayString);
+        
+        if (todayEntry) {
+          console.log(`📍 TABLE AUTO-SCROLL: Tab switch - scrolling to: ${todayString}`);
+          setTimeout(() => {
+            const todaySection = document.querySelector(`[data-date="${todayString}"]`) ||
+                                document.querySelector(`tr[data-date="${todayString}"]`);
+            
+            console.log('🔍 TABLE AUTO-SCROLL: Tab switch DOM search:', {
+              elementFound: !!todaySection,
+              selector: `[data-date="${todayString}"]`
+            });
+            
+            if (todaySection) {
+              todaySection.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+              });
+              console.log(`📍 TABLE AUTO-SCROLL: Tab switch successfully scrolled to: ${todayString}`);
+            } else {
+              console.log(`❌ TABLE AUTO-SCROLL: Tab switch - element not found for: ${todayString}`);
+            }
+          }, 1000); // Even longer delay for tab switch
+        } else {
+          console.log(`❌ TABLE AUTO-SCROLL: Tab switch - no entry for today: ${todayString}`);
+        }
+      }
+    }
+  }, []);
+
   // Listen for roster updates
   useEffect(() => {
     const handleRosterUpdate = (event: CustomEvent) => {
@@ -144,6 +283,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       return;
     }
     
+    // Prevent auto-scroll after manual edits
+    setPreventAutoScroll(true);
+    
     if (onRefresh) {
       onRefresh();
     }
@@ -161,106 +303,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     setAuthError('');
   };
   
-  // Handle closing auth modal
-  const handleCloseAuthModal = () => {
-    console.log('🔐 AUTH: Closing modal');
-    setShowAuthModal(false);
-    setAuthCode('');
-    setAuthError('');
-    setActionType(null);
-    setSelectedSpecialDate(null);
-    setSelectedShiftForAdd('');
-    setSelectedStaffForAdd([]);
-  };
-
-  // Navigation functions
-  const navigateToPreviousMonth = () => {
-    const newDate = new Date(selectedDate);
-    newDate.setMonth(newDate.getMonth() - 1);
-    onDateChange(newDate);
-  };
-  
-  const navigateToNextMonth = () => {
-    const newDate = new Date(selectedDate);
-    newDate.setMonth(newDate.getMonth() + 1);
-    onDateChange(newDate);
-  };
-
-  const formatMonthYear = () => {
-    const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    return `${monthNames[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`;
-  };
-
-  const handleMonthYearChange = (month: number, year: number) => {
-    const newDate = new Date(year, month, 1);
-    onDateChange(newDate);
-    setShowMonthYearSelector(false);
-  };
-
-  // Check if date is today
-  const isToday = (dateString: string) => {
-    const now = new Date();
-    const today = now.getFullYear() + '-' + 
-                  String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                  String(now.getDate()).padStart(2, '0');
-    return dateString === today;
-  };
-  
-  // Check if date is in the past
-  const isPastDate = (dateString: string) => {
-    const now = new Date();
-    const today = now.getFullYear() + '-' + 
-                  String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                  String(now.getDate()).padStart(2, '0');
-    return dateString < today;
-  };
-
-  // Check if date is in the future
-  const isFutureDate = (dateString: string) => {
-    const now = new Date();
-    const today = now.getFullYear() + '-' + 
-                  String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                  String(now.getDate()).padStart(2, '0');
-    return dateString > today;
-  };
-
-  // Format date for table display
-  const formatTableDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const dayName = dayNames[date.getDay()];
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear().toString().slice(-2);
-    
-    return {
-      dayName,
-      dateString: `${day}-${month}-${year}`
-    };
-  };
-
-  // Check if date has special info
-  const getSpecialDateInfo = (date: string) => {
-    const dateEntries = groupedEntries[date] || [];
-    for (const entry of dateEntries) {
-      if (entry.change_description && entry.change_description.includes('Special Date:')) {
-        const match = entry.change_description.match(/Special Date:\s*([^;]+)/);
-        if (match && match[1].trim()) {
-          return match[1].trim();
-        }
-      }
-    }
-    return null;
-  };
-
-  // Check if date is marked as special
-  const isSpecialDate = (date: string) => {
-    return getSpecialDateInfo(date) !== null;
-  };
-
   // Handle add staff long press (admin only)
   const handleDateCellLongPress = (date: string) => {
     console.log('👥 ADD STAFF: Long press detected on date:', date);
@@ -416,9 +458,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         await onRefresh();
       }
       
-      // Force refresh key to trigger re-render
-      setRefreshKey(prev => prev + 1);
-      
       // Close modal and reset states
       handleCloseAuthModal();
       
@@ -430,54 +469,197 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     }
   };
 
+  // Handle closing auth modal
+  const handleCloseAuthModal = () => {
+    console.log('🔐 AUTH: Closing modal');
+    setShowAuthModal(false);
+    setAuthCode('');
+    setAuthError('');
+    setActionType(null);
+    setSelectedSpecialDate(null);
+    setSelectedShiftForAdd('');
+    setSelectedStaffForAdd([]);
+  };
+
+  // Check if date is today
+  const isToday = (dateString: string) => {
+    const now = new Date();
+    const today = now.getFullYear() + '-' + 
+                  String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                  String(now.getDate()).padStart(2, '0');
+    return dateString === today;
+  };
+  
+  // Check if date is in the past
+  const isPastDate = (dateString: string) => {
+    const now = new Date();
+    const today = now.getFullYear() + '-' + 
+                  String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                  String(now.getDate()).padStart(2, '0');
+    return dateString < today;
+  };
+
+  // Check if date is in the future
+  const isFutureDate = (dateString: string) => {
+    const now = new Date();
+    const today = now.getFullYear() + '-' + 
+                  String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                  String(now.getDate()).padStart(2, '0');
+    return dateString > today;
+  };
+
+  // Format date for table display
+  const formatTableDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayName = dayNames[date.getDay()];
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear().toString().slice(-2);
+    
+    return {
+      dayName,
+      dateString: `${day}-${month}-${year}`
+    };
+  };
+
+  // Check if date has special info
+  const getSpecialDateInfo = (date: string) => {
+    const dateEntries = groupedEntries[date] || [];
+    for (const entry of dateEntries) {
+      if (entry.change_description && entry.change_description.includes('Special Date:')) {
+        const match = entry.change_description.match(/Special Date:\s*([^;]+)/);
+        if (match && match[1].trim()) {
+          return match[1].trim();
+        }
+      }
+    }
+    return null;
+  };
+
+  // Check if date is marked as special
+  const isSpecialDate = (date: string) => {
+    return getSpecialDateInfo(date) !== null;
+  };
+
+
   return (
     <>
       {/* Month Navigation Header */}
       <div className="bg-white rounded-lg mb-4 p-4 shadow-sm sticky top-0 z-50">
         <div className="flex items-center justify-between">
-          {/* Left Arrow */}
-          <button
-            onClick={navigateToPreviousMonth}
-            className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors duration-200"
-            title="Previous Month"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          
-          {/* Center Content - Calendar and Month (clickable) */}
-          <div className="flex items-center justify-center flex-1 min-w-0">
-            <Calendar className="w-6 h-6 text-indigo-600 mr-2" />
-            
-            {/* Clickable Month/Year Display */}
+          {/* Export Button - Left edge */}
+          <div className="flex items-center justify-center flex-shrink-0">
             <button
-              onClick={() => setShowMonthYearSelector(true)}
-              disabled={isRefreshing}
-              className="text-xl font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-2 py-1 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              onClick={onExportToCalendar}
+              className="p-1 bg-green-600 hover:bg-green-700 text-white rounded transition-colors duration-200"
+              title="Export to Calendar"
             >
-              {formatMonthYear()}
+              <Download className="w-3 h-3" />
             </button>
           </div>
           
-          {/* Right Arrow */}
-          <button
-            onClick={navigateToNextMonth}
-            className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors duration-200"
-            title="Next Month"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
-        
-        {/* Export Button Row */}
-        <div className="flex items-center justify-center mt-3">
-          <button
-            onClick={onExportToCalendar}
-            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200 flex items-center space-x-2"
-            title="Export to Calendar"
-          >
-            <Download className="w-4 h-4" />
-            <span>Export to Calendar</span>
-          </button>
+          {/* Center Content - Calendar and Month (clickable) */}
+          <div className="flex items-center justify-center flex-1 min-w-0">
+            <Calendar className="w-6 h-6 text-indigo-600 pointer-events-none" />
+            
+            {/* Clickable Month/Year Display */}
+            <div className="ml-2 relative">
+              <button
+                onClick={() => setShowMonthYearSelector(true)}
+                disabled={isRefreshing}
+                className="text-base font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-2 py-1 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                style={{
+                  minWidth: 'fit-content',
+                  textAlign: 'center'
+                }}
+              >
+                {formatMonthYear()}
+              </button>
+            </div>
+          </div>
+          
+          {/* Spinner/Dot - Right edge */}
+          <div className="flex items-center justify-center flex-shrink-0">
+            <button
+              onClick={() => handleManualRefresh()}
+              disabled={isRefreshing}
+              className="p-2 rounded-lg text-gray-600 transition-colors duration-200 relative z-50 flex items-center justify-center"
+              style={{
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
+                position: 'relative',
+                zIndex: 50,
+                // Force proper rendering after orientation change
+                transform: 'translate3d(0,0,0)',
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
+                WebkitTransform: 'translate3d(0,0,0)',
+                // iPhone specific fixes
+                WebkitTouchCallout: 'none',
+                WebkitUserSelect: 'none',
+                userSelect: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+              title="Manual refresh"
+            >
+              {/* Spinner Container */}
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                width: '20px',
+                height: '20px',
+                position: 'relative'
+              }}>
+                {/* Refresh icon with rotation animation when loading */}
+                <svg 
+                  style={{
+                    width: '18px',
+                    height: '18px',
+                    animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
+                    transform: 'translate3d(0,0,0)',
+                    backfaceVisibility: 'hidden'
+                  }}
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+                  />
+                </svg>
+              </div>
+              
+              {/* Status Dot Container */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '12px',
+                height: '12px',
+                position: 'relative'
+              }}>
+                {/* Real-time status indicator */}
+                <div style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: realtimeStatus === 'connected' ? '#10b981' : 
+                                  realtimeStatus === 'connecting' ? '#f59e0b' :
+                                  realtimeStatus === 'error' ? '#ef4444' : '#6b7280',
+                  animation: realtimeStatus === 'connecting' ? 'pulse 1.5s ease-in-out infinite' : 'none',
+                  boxShadow: realtimeStatus === 'connected' ? '0 0 8px rgba(16, 185, 129, 0.8)' : 'none',
+                  backfaceVisibility: 'hidden'
+                }} />
+              </div>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -609,17 +791,18 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       isFutureDate={isFutureDate(date)}
                       onDoublePress={() => handleSpecialDateDoublePress(date)}
                       onLongPress={() => handleDateCellLongPress(date)}
-                      isSpecialDate={isSpecialDate(date)}
+                      isSpecialDate={isSpecialDate(date) && getSpecialDateInfo(date) !== null}
                       specialDateInfo={getSpecialDateInfo(date)}
+                      formatTableDate={formatTableDate}
                     />
                     
                     {shiftTypes.map(shiftType => {
                       const shiftEntries = dateEntries.filter(entry => entry.shift_type === shiftType);
                      
-                      // Sort entries to prioritize SMIT staff first
-                      const sortedShiftEntries = sortByGroup(shiftEntries.map(e => e.assigned_name))
-                        .map(name => shiftEntries.find(e => e.assigned_name === name))
-                        .filter(Boolean) as RosterEntry[];
+                     // Sort entries to prioritize SMIT staff first
+                     const sortedShiftEntries = sortByGroup(shiftEntries.map(e => e.assigned_name))
+                       .map(name => shiftEntries.find(e => e.assigned_name === name))
+                       .filter(Boolean) as RosterEntry[];
                       
                       return (
                         <td key={shiftType} style={{
@@ -690,101 +873,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         </div>
       )}
 
-      {/* Month/Year Selector Modal */}
-      {showMonthYearSelector && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 2147483647,
-            backgroundColor: 'rgba(0, 0, 0, 0.95)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '16px'
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowMonthYearSelector(false);
-            }
-          }}
-        >
-          <div 
-            className="bg-white rounded-2xl shadow-2xl w-full"
-            style={{
-              maxWidth: '28rem',
-              userSelect: 'none',
-              WebkitUserSelect: 'none'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">
-                Select Month and Year
-              </h3>
-              
-              <div className="space-y-4">
-                {/* Month Selection */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Month
-                  </label>
-                  <select
-                    value={selectedDate.getMonth()}
-                    onChange={(e) => {
-                      const newMonth = parseInt(e.target.value);
-                      handleMonthYearChange(newMonth, selectedDate.getFullYear());
-                    }}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center"
-                  >
-                    {[
-                      'January', 'February', 'March', 'April', 'May', 'June',
-                      'July', 'August', 'September', 'October', 'November', 'December'
-                    ].map((month, index) => (
-                      <option key={index} value={index}>{month}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                {/* Year Selection */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Year
-                  </label>
-                  <select
-                    value={selectedDate.getFullYear()}
-                    onChange={(e) => {
-                      const newYear = parseInt(e.target.value);
-                      handleMonthYearChange(selectedDate.getMonth(), newYear);
-                    }}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center"
-                  >
-                    {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map(year => (
-                      <option key={year} value={year}>{year}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              
-              <div className="mt-6">
-                <button
-                  onClick={() => setShowMonthYearSelector(false)}
-                  className="w-full px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Authentication Modal */}
-      {showAuthModal && (
+      {showAuthModal && createPortal(
         <div 
           className="fixed inset-0 bg-black bg-opacity-50"
           style={{
@@ -793,13 +883,14 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             left: 0,
             right: 0,
             bottom: 0,
-            zIndex: 2147483647,
+            zIndex: 2147483647, // Maximum z-index value
             backgroundColor: 'rgba(0, 0, 0, 0.95)',
             display: 'flex',
             alignItems: 'flex-start',
             justifyContent: 'center',
             padding: window.innerWidth > window.innerHeight ? '4px' : '16px',
             paddingTop: window.innerWidth > window.innerHeight ? '2px' : '16px',
+            // CRITICAL: Prevent all scrolling
             overflow: 'auto',
             overflowY: 'auto',
             touchAction: 'pan-y',
@@ -822,6 +913,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               flexDirection: 'column',
               backgroundColor: '#ffffff',
               zIndex: 2147483647,
+              // Enable touch interactions within modal
               touchAction: 'auto',
               overflow: 'hidden',
               margin: window.innerWidth > window.innerHeight ? '4px 0' : '16px 0'
@@ -935,20 +1027,21 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   Cancel
                 </button>
                 <button
-                  onClick={handleAuthSubmit}
+                  onClick={actionType === 'special' ? handleAuthSubmit : handleAuthSubmit}
                   disabled={authCode.length < 4 || !isAdminCode(authCode) || isUpdating || (actionType === 'addStaff' && !selectedShiftForAdd)}
                   className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200"
                 >
-                  Continue
+                  {actionType === 'special' ? 'Continue' : 'Continue'}
                 </button>
               </div>
             </div>
           </div>
         </div>
+        , document.body
       )}
 
       {/* Staff Selection Modal - Show after shift is selected */}
-      {actionType === 'addStaff' && selectedSpecialDate && selectedShiftForAdd && authCode && !showAuthModal && (
+      {actionType === 'addStaff' && selectedSpecialDate && selectedShiftForAdd && authCode && !showAuthModal && createPortal(
         <div 
           className="fixed inset-0 bg-black bg-opacity-50"
           style={{
@@ -957,7 +1050,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             left: 0,
             right: 0,
             bottom: 0,
-            zIndex: 2147483647,
+            zIndex: 2147483647, // Maximum z-index value
             backgroundColor: 'rgba(0, 0, 0, 0.95)',
             display: 'flex',
             alignItems: window.innerWidth > window.innerHeight ? 'flex-start' : 'center',
@@ -988,7 +1081,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 Edit Staff Assignment
               </h3>
               <p className="text-sm text-gray-600 text-center select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
-                {selectedSpecialDate && formatTableDate(selectedSpecialDate).dateString} ({selectedSpecialDate && new Date(selectedSpecialDate).toLocaleDateString('en-US', { weekday: 'long' })}) - {selectedShiftForAdd}
+                {formatTableDate(selectedSpecialDate).dateString} ({new Date(selectedSpecialDate).toLocaleDateString('en-US', { weekday: 'long' })}) - {selectedShiftForAdd}
               </p>
             </div>
             
@@ -1047,6 +1140,101 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             </div>
           </div>
         </div>
+        , document.body
+      )}
+
+      {/* Month/Year Selector Modal */}
+      {showMonthYearSelector && createPortal(
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 2147483647,
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowMonthYearSelector(false);
+            }
+          }}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl w-full"
+            style={{
+              maxWidth: '28rem',
+              userSelect: 'none',
+              WebkitUserSelect: 'none'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">
+                Select Month and Year
+              </h3>
+              
+              <div className="space-y-4">
+                {/* Month Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Month
+                  </label>
+                  <select
+                    value={selectedDate.getMonth()}
+                    onChange={(e) => {
+                      const newMonth = parseInt(e.target.value);
+                      handleMonthYearChange(newMonth, selectedDate.getFullYear());
+                    }}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center"
+                  >
+                    {[
+                      'January', 'February', 'March', 'April', 'May', 'June',
+                      'July', 'August', 'September', 'October', 'November', 'December'
+                    ].map((month, index) => (
+                      <option key={index} value={index}>{month}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                {/* Year Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Year
+                  </label>
+                  <select
+                    value={selectedDate.getFullYear()}
+                    onChange={(e) => {
+                      const newYear = parseInt(e.target.value);
+                      handleMonthYearChange(selectedDate.getMonth(), newYear);
+                    }}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center"
+                  >
+                    {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map(year => (
+                      <option key={year} value={year}>{year}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              
+              <div className="mt-6">
+                <button
+                  onClick={() => setShowMonthYearSelector(false)}
+                  className="w-full px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        , document.body
       )}
 
       {/* Special Date Modal */}
