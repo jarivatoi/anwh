@@ -299,6 +299,22 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
                 zIndex: 65
               }}
             />
+            
+            {/* Pointing Hand Animation */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '50%',
+                right: '-25px',
+                fontSize: '16px',
+                animation: 'pointingHand 2s ease-in-out infinite',
+                zIndex: 70,
+                transform: 'translateY(-50%)',
+                filter: 'drop-shadow(0 2px 4px rgba(255, 215, 0, 0.6))'
+              }}
+            >
+              👉
+            </div>
           </>
         )}
       </div>
@@ -377,6 +393,25 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
           80% {
             opacity: 0.5;
             transform: scale(1) translateY(0);
+          }
+        }
+        
+        @keyframes pointingHand {
+          0%, 100% {
+            transform: translateY(-50%) translateX(0px);
+            opacity: 0.8;
+          }
+          25% {
+            transform: translateY(-50%) translateX(-3px);
+            opacity: 1;
+          }
+          50% {
+            transform: translateY(-50%) translateX(3px);
+            opacity: 0.9;
+          }
+          75% {
+            transform: translateY(-50%) translateX(-2px);
+            opacity: 1;
           }
         }
       `}</style>
