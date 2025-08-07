@@ -56,7 +56,6 @@ export class AnnexureGenerator {
       summary.totalDays.toString(),
       summary.totalHours.toFixed(1),
       formatMauritianRupees(summary.totalAmount).formatted,
-      summary.nightDutyCount > 0 ? `${summary.nightDutyCount} × 6 × 0.25 × ${formatMauritianRupees(hourlyRate).formatted}` : '',
       formatMauritianRupees(summary.nightAllowance).formatted,
       formatMauritianRupees(summary.grandTotal).formatted
     ]);
@@ -64,7 +63,7 @@ export class AnnexureGenerator {
     // Create table matching the original format
     autoTable(doc, {
       startY: 35,
-      head: [['S.No', 'Name', 'Working Days', 'Working Hours', 'Subtotal (Hours)', 'Night Allowance Calculation', 'Night Allowance', 'Total Amount']],
+      head: [['S.No', 'Name', 'Working Days', 'Working Hours', 'Subtotal (Hours)', 'Night Allowance', 'Total Amount']],
       body: tableData,
       styles: {
         fontSize: 8,
@@ -87,9 +86,8 @@ export class AnnexureGenerator {
         2: { cellWidth: 20, halign: 'center' }, // Working Days
         3: { cellWidth: 20, halign: 'center' }, // Working Hours
         4: { cellWidth: 30, halign: 'right' },  // Subtotal
-        5: { cellWidth: 40, halign: 'center' }, // Night Allowance Calculation
-        6: { cellWidth: 25, halign: 'right' },  // Night Allowance
-        7: { cellWidth: 30, halign: 'right' }   // Total Amount
+        5: { cellWidth: 25, halign: 'right' },  // Night Allowance
+        6: { cellWidth: 30, halign: 'right' }   // Total Amount
       },
       margin: { left: 15, right: 15 },
       theme: 'grid',
