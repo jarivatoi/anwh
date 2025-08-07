@@ -54,6 +54,7 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
   const [adminName, setAdminName] = useState<string | null>(null);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [showMonthlyReports, setShowMonthlyReports] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const { entries: fetchedEntries, loading, error, removeEntry, loadEntries, realtimeStatus } = useRosterData();
 
