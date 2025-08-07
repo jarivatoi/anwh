@@ -239,6 +239,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
          backgroundColor: isEditing ? 'rgba(255, 215, 0, 0.15)' : 'transparent',
          borderRadius: isEditing ? '6px' : '0',
          border: isEditing ? '2px solid #ffd700' : 'none'
+         border: isEditing ? '2px solid #ffd700' : 'none'
         }}
       >
         <ScrollingText 
@@ -253,6 +254,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
             border: 'none',
             outline: 'none',
             filter: isEditing ? 'brightness(1.2) contrast(1.1)' : 'none',
+            textShadow: isEditing ? '0 0 8px rgba(255, 215, 0, 0.6)' : 'none'
             textShadow: isEditing ? '0 0 8px rgba(255, 215, 0, 0.6)' : 'none'
           }}
         />
@@ -272,8 +274,55 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
               zIndex: 70,
               border: '1px solid #b45309',
               boxShadow: '0 0 8px rgba(255, 215, 0, 0.8)'
+              border: '1px solid #b45309',
+              boxShadow: '0 0 8px rgba(255, 215, 0, 0.8)'
             }}
           />
+        )}
+        
+        {/* Golden sparkle effects */}
+        {isEditing && (
+          <>
+            <div
+              style={{
+                position: 'absolute',
+                top: '2px',
+                left: '2px',
+                width: '4px',
+                height: '4px',
+                backgroundColor: '#ffd700',
+                borderRadius: '50%',
+                animation: 'sparkle1 2s ease-in-out infinite',
+                zIndex: 65
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '2px',
+                right: '8px',
+                width: '3px',
+                height: '3px',
+                backgroundColor: '#ffed4e',
+                borderRadius: '50%',
+                animation: 'sparkle2 2.5s ease-in-out infinite',
+                zIndex: 65
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '1px',
+                width: '2px',
+                height: '2px',
+                backgroundColor: '#fbbf24',
+                borderRadius: '50%',
+                animation: 'sparkle3 1.8s ease-in-out infinite',
+                zIndex: 65
+              }}
+            />
+          </>
         )}
         
         {/* Golden sparkle effects */}
@@ -329,6 +378,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
             opacity: 1;
             transform: scale(1.05);
             box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.4);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.4);
           }
           50% {
             opacity: 0.9;
@@ -346,6 +396,58 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
           50% {
             opacity: 0.7;
             transform: scale(1.3);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 1);
+          }
+        }
+        
+        @keyframes sparkle1 {
+          0%, 100% {
+            opacity: 0;
+            transform: scale(0) rotate(0deg);
+          }
+          25% {
+            opacity: 1;
+            transform: scale(1) rotate(90deg);
+          }
+          50% {
+            opacity: 0.9;
+            transform: scale(1.2) rotate(180deg);
+          }
+          75% {
+            opacity: 0.6;
+            transform: scale(0.8) rotate(270deg);
+          }
+        }
+        
+        @keyframes sparkle2 {
+          0%, 100% {
+            opacity: 0;
+            transform: scale(0);
+          }
+            box-shadow: 0 0 30px rgba(255, 215, 0, 1), 0 0 60px rgba(255, 215, 0, 0.6);
+          30% {
+            opacity: 1;
+            transform: scale(1.5);
+        @keyframes goldenDot {
+          60% {
+            opacity: 0.7;
+            transform: scale(1);
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
+          }
+        }
+        
+        @keyframes sparkle3 {
+          0%, 100% {
+            opacity: 0;
+            transform: scale(0) translateY(0);
+          }
+          40% {
+            opacity: 1;
+            transform: scale(1.8) translateY(-2px);
+          }
+          80% {
+            opacity: 0.7;
+            transform: scale(1) translateY(0);
             box-shadow: 0 0 15px rgba(255, 215, 0, 1);
           }
         }
