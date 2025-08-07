@@ -515,10 +515,15 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   // Format date for table display
   const formatTableDate = (dateString: string) => {
     const date = new Date(dateString);
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
     const dayName = dayNames[date.getDay()];
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate();
+    const monthName = monthNames[date.getMonth()];
+    const year = date.getFullYear().toString().slice(-2);
+    
+    return `${dayName}\n${day} ${monthName} ${year}`;
     const year = date.getFullYear().toString().slice(-2);
     
     return {
