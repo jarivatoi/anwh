@@ -321,17 +321,42 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Your Authentication Code
                 </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={authCode}
-                    onChange={(e) => setAuthCode(e.target.value.toUpperCase())}
-                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-center font-mono text-lg"
-                    placeholder="Enter your code"
-                    maxLength={4}
-                    autoComplete="off"
-                    autoFocus
-                  />
+                <div className="flex justify-center space-x-3 mb-3">
+                  {[0, 1, 2, 3].map((index) => (
+                    <input
+                      key={index}
+                      type={showPassword ? "text" : "password"}
+                      value={authCode[index] || ''}
+                      onChange={(e) => {
+                        const newValue = e.target.value.toUpperCase();
+                        if (newValue.length <= 1) {
+                          const newCode = authCode.split('');
+                          newCode[index] = newValue;
+                          setAuthCode(newCode.join(''));
+                          
+                          // Auto-focus next input
+                          if (newValue && index < 3) {
+                            const nextInput = document.querySelector(`input[data-index="${index + 1}"]`) as HTMLInputElement;
+                            if (nextInput) nextInput.focus();
+                          }
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        // Handle backspace to go to previous input
+                        if (e.key === 'Backspace' && !authCode[index] && index > 0) {
+                          const prevInput = document.querySelector(`input[data-index="${index - 1}"]`) as HTMLInputElement;
+                          if (prevInput) prevInput.focus();
+                        }
+                      }}
+                      data-index={index}
+                      className="w-12 h-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center font-mono text-lg"
+                      maxLength={1}
+                      autoComplete="off"
+                      autoFocus={index === 0}
+                    />
+                  ))}
+                </div>
+                <div className="flex justify-center">
                   <button
                     type="button"
                     onTouchStart={() => setShowPassword(true)}
@@ -339,7 +364,7 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
                     onMouseDown={() => setShowPassword(true)}
                     onMouseUp={() => setShowPassword(false)}
                     onMouseLeave={() => setShowPassword(false)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                    className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200 rounded-lg"
                     style={{
                       touchAction: 'manipulation',
                       WebkitTapHighlightColor: 'transparent'
