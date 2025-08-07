@@ -790,6 +790,11 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                     
                     {shiftTypes.map(shiftType => {
                       const shiftEntries = dateEntries.filter(entry => entry.shift_type === shiftType);
+                     
+                     // Sort entries to prioritize SMIT staff first
+                     const sortedShiftEntries = sortByGroup(shiftEntries.map(e => e.assigned_name))
+                       .map(name => shiftEntries.find(e => e.assigned_name === name))
+                       .filter(Boolean) as RosterEntry[];
                       
                       return (
                         <td key={shiftType} style={{
@@ -837,13 +842,13 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                               </div>
                             )}
                             
-                            {shiftEntries.map((entry, index) => (
+                            {sortedShiftEntries.map((entry, index) => (
                               <RosterEntryCell
                                 key={entry.id}
                                 entry={entry}
                                 onUpdate={handleEntryUpdate}
                                 onShowDetails={handleShowDetails}
-                                allEntriesForShift={shiftEntries}
+                                allEntriesForShift={sortedShiftEntries}
                                 isSpecialDate={isSpecialDate(date)}
                                 specialDateInfo={getSpecialDateInfo(date)}
                               />
