@@ -309,13 +309,15 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
 
   // Auto-scroll to today's date when component first loads (only if no edits have occurred)
   useEffect(() => {
-    if (!hasEditOccurred && sortedEntries.length > 0 && selectedDate.getMonth() === new Date().getMonth() && selectedDate.getFullYear() === new Date().getFullYear()) {
+    // Only run on initial mount when entries first become available
+    if (!hasEditOccurred && sortedEntries.length > 0 && !hasAutoScrolled && selectedDate.getMonth() === new Date().getMonth() && selectedDate.getFullYear() === new Date().getFullYear()) {
       const today = new Date();
       const todayString = today.toISOString().split('T')[0];
       
       const todayEntry = sortedEntries.find(entry => entry.date === todayString);
       
       if (todayEntry) {
+        setHasAutoScrolled(true); // Mark that we've auto-scrolled once
         setTimeout(() => {
           const todayRow = document.querySelector(`[data-date="${todayString}"]`);
           if (todayRow) {
@@ -328,7 +330,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         }, 500); // Delay to ensure table is rendered
       }
     }
-  }, [sortedEntries, hasEditOccurred, selectedDate]);
+  }, [hasEditOccurred, hasAutoScrolled, selectedDate]); // Removed sortedEntries from dependencies
 
   // Listen for tab change to roster - scroll to today (only if no edits have occurred)
   useEffect(() => {
