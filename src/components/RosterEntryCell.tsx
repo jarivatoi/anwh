@@ -239,7 +239,6 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
          backgroundColor: isEditing ? 'rgba(255, 215, 0, 0.15)' : 'transparent',
          borderRadius: isEditing ? '6px' : '0',
          border: isEditing ? '2px solid #ffd700' : 'none'
-         border: isEditing ? '2px solid #ffd700' : 'none'
         }}
       >
         <ScrollingText 
@@ -254,7 +253,6 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
             border: 'none',
             outline: 'none',
             filter: isEditing ? 'brightness(1.2) contrast(1.1)' : 'none',
-            textShadow: isEditing ? '0 0 8px rgba(255, 215, 0, 0.6)' : 'none'
             textShadow: isEditing ? '0 0 8px rgba(255, 215, 0, 0.6)' : 'none'
           }}
         />
@@ -272,8 +270,6 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
               borderRadius: '50%',
               animation: 'goldenDot 1.5s ease-in-out infinite',
               zIndex: 70,
-              border: '1px solid #b45309',
-              boxShadow: '0 0 8px rgba(255, 215, 0, 0.8)'
               border: '1px solid #b45309',
               boxShadow: '0 0 8px rgba(255, 215, 0, 0.8)'
             }}
@@ -383,7 +379,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
           50% {
             opacity: 0.9;
             transform: scale(1.1);
-            box-shadow: 0 0 30px rgba(255, 215, 0, 1), 0 0 60px rgba(255, 215, 0, 0.6);
+         box-shadow: 0 0 30px rgba(255, 215, 0, 1), 0 0 60px rgba(255, 215, 0, 0.6);
           }
         }
         
@@ -396,58 +392,6 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
           50% {
             opacity: 0.7;
             transform: scale(1.3);
-            box-shadow: 0 0 15px rgba(255, 215, 0, 1);
-          }
-        }
-        
-        @keyframes sparkle1 {
-          0%, 100% {
-            opacity: 0;
-            transform: scale(0) rotate(0deg);
-          }
-          25% {
-            opacity: 1;
-            transform: scale(1) rotate(90deg);
-          }
-          50% {
-            opacity: 0.9;
-            transform: scale(1.2) rotate(180deg);
-          }
-          75% {
-            opacity: 0.6;
-            transform: scale(0.8) rotate(270deg);
-          }
-        }
-        
-        @keyframes sparkle2 {
-          0%, 100% {
-            opacity: 0;
-            transform: scale(0);
-          }
-            box-shadow: 0 0 30px rgba(255, 215, 0, 1), 0 0 60px rgba(255, 215, 0, 0.6);
-          30% {
-            opacity: 1;
-            transform: scale(1.5);
-        @keyframes goldenDot {
-          60% {
-            opacity: 0.7;
-            transform: scale(1);
-            box-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
-          }
-        }
-        
-        @keyframes sparkle3 {
-          0%, 100% {
-            opacity: 0;
-            transform: scale(0) translateY(0);
-          }
-          40% {
-            opacity: 1;
-            transform: scale(1.8) translateY(-2px);
-          }
-          80% {
-            opacity: 0.7;
-            transform: scale(1) translateY(0);
             box-shadow: 0 0 15px rgba(255, 215, 0, 1);
           }
         }
@@ -500,51 +444,6 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
             transform: scale(1) translateY(0);
           }
         }
-      `}</style>
-
-      {/* Authentication Modal */}
-      {showAuthModal && createPortal(
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center p-4"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 999999999,
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            pointerEvents: 'auto'
-          }}
-          onWheel={(e) => e.preventDefault()}
-          onScroll={(e) => e.preventDefault()}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (e.target === e.currentTarget) {
-              handleCancelAuth();
-            }
-          }}
-        >
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-            <div className="p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
-                Authentication Required
-              </h3>
-              
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Authentication Code
-                </label>
-                <div className="flex justify-center space-x-3 mb-3">
-                  {[0, 1, 2, 3].map((index) => (
-                    <input
-                      key={index}
-                      type={showPassword ? "text" : "password"}
-                      value={authCode[index] || ''}
-                      onChange={(e) => {
-                        const newValue = e.target.value.toUpperCase();
                         if (newValue.length <= 1) {
                           const newCode = authCode.split('');
                           newCode[index] = newValue;
