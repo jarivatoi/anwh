@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calendar, Edit, FileText, Download, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Calendar, Edit, FileText, Download, RefreshCw, Star, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Eye, EyeOff } from 'lucide-react';
 import { RosterEntry, ShiftFilterType } from '../types/roster';
