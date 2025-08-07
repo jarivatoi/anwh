@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { RosterEntry } from '../types/roster';
 import { StaffSelectionModal } from './StaffSelectionModal';
 import { validateAuthCode, availableNames } from '../utils/rosterAuth';
@@ -29,6 +30,7 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authError, setAuthError] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Prevent body scroll when auth modal is open
   React.useEffect(() => {
@@ -122,7 +124,7 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
   };
 
   const handleStaffSelect = async (newStaffName: string) => {
-    await this.handleStaffSelectWithColor(newStaffName);
+    await handleStaffSelectWithColor(newStaffName);
   };
 
   const handleStaffSelectWithColor = async (newStaffName: string, textColor?: string) => {
