@@ -268,6 +268,7 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
         style={{ 
           userSelect: 'none', 
           WebkitUserSelect: 'none',
+          WebkitTouchCallout: 'none',
           height: '100vh',
           maxWidth: '100vw',
           borderRadius: '0',

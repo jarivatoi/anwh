@@ -313,6 +313,9 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
       <div 
         className="bg-white rounded-2xl shadow-2xl w-full flex flex-col"
         style={{
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          WebkitTouchCallout: 'none',
           maxWidth: window.innerWidth > window.innerHeight ? '98vw' : '28rem',
           maxHeight: window.innerWidth > window.innerHeight ? '98vh' : '90vh',
           margin: window.innerWidth > window.innerHeight ? '2px 0' : '16px 0'

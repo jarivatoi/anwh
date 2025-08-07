@@ -119,16 +119,22 @@ export const PDFImportModal: React.FC<PDFImportModalProps> = ({
       <div className="bg-white rounded-2xl shadow-2xl w-full flex flex-col" style={{
         maxWidth: window.innerWidth > window.innerHeight ? '98vw' : '32rem',
         maxHeight: window.innerWidth > window.innerHeight ? '98vh' : '90vh',
-        margin: window.innerWidth > window.innerHeight ? '2px 0' : '16px 0'
+        margin: window.innerWidth > window.innerHeight ? '2px 0' : '16px 0',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        WebkitTouchCallout: 'none'
       }}>
         {/* Header */}
         <div className="relative pb-4 border-b border-gray-200 flex-shrink-0" style={{
-          padding: window.innerWidth > window.innerHeight ? '8px' : '24px'
+          padding: window.innerWidth > window.innerHeight ? '8px' : '24px',
+          userSelect: 'none',
+          WebkitUserSelect: 'none'
         }}>
           {!parsing && !importing && (
             <button
               onClick={handleClose}
               className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+              style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
             >
               <X className="w-5 h-5" />
             </button>
@@ -140,11 +146,11 @@ export const PDFImportModal: React.FC<PDFImportModalProps> = ({
             </div>
           </div>
 
-          <h3 className="text-xl font-bold text-gray-900 mb-2 text-center">
+          <h3 className="text-xl font-bold text-gray-900 mb-2 text-center" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
             Import Roster from PDF
           </h3>
           
-          <p className="text-sm text-gray-600 text-center">
+          <p className="text-sm text-gray-600 text-center" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
             Upload a PDF file to automatically extract roster data
           </p>
         </div>
@@ -153,7 +159,9 @@ export const PDFImportModal: React.FC<PDFImportModalProps> = ({
         <div className="flex-1 overflow-y-auto" style={{
           padding: window.innerWidth > window.innerHeight ? '8px' : '24px',
           WebkitOverflowScrolling: 'touch',
-          touchAction: 'pan-y'
+          touchAction: 'pan-y',
+          userSelect: 'none',
+          WebkitUserSelect: 'none'
         }}>
           {/* File Upload */}
           {!file && (

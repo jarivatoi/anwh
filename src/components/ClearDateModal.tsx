@@ -147,6 +147,7 @@ export const ClearDateModal: React.FC<ClearDateModalProps> = ({
         style={{ 
           userSelect: 'none', 
           WebkitUserSelect: 'none',
+          WebkitTouchCallout: 'none',
           marginTop: window.innerWidth > window.innerHeight ? '2px' : '2rem',
           marginBottom: window.innerWidth > window.innerHeight ? '2px' : '2rem',
           maxWidth: window.innerWidth > window.innerHeight ? '95vw' : '28rem',

@@ -239,6 +239,9 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
       <div 
         className="bg-white rounded-2xl shadow-2xl max-w-lg w-full"
         style={{ 
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          WebkitTouchCallout: 'none',
           maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column'

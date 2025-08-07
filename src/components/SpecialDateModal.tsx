@@ -130,6 +130,9 @@ export const SpecialDateModal: React.FC<SpecialDateModalProps> = ({
       <div 
         className="bg-white rounded-2xl shadow-2xl max-w-md w-full"
         style={{ 
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          WebkitTouchCallout: 'none',
           maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column'
