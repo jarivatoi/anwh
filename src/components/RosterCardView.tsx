@@ -42,7 +42,6 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   const [refreshKey, setRefreshKey] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState('');
-  const [refreshingDate, setRefreshingDate] = useState<string | null>(null);
 
   const isMountedRef = useRef(true);
 
@@ -107,12 +106,8 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
     window.addEventListener('orientationchange', handleOrientationChange);
     return () => window.removeEventListener('orientationchange', handleOrientationChange);
   }, []);
-
-
-
-  // Auto-scroll to today's date when component first loads
+  // Listen for scroll to edited entry event only
   useEffect(() => {
-    // Listen for scroll to edited entry event
     const handleScrollToEditedEntry = (event: CustomEvent) => {
       const { entryId, date } = event.detail;
       console.log(`📍 Scrolling to edited entry: ${entryId} on ${date}`);
@@ -152,14 +147,9 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
       }, 100);
     };
 
-
     window.addEventListener('scrollToEditedEntry', handleScrollToEditedEntry as EventListener);
-
-    return () => {
-      window.removeEventListener('scrollToEditedEntry', handleScrollToEditedEntry as EventListener);
-    };
+    return () => window.removeEventListener('scrollToEditedEntry', handleScrollToEditedEntry as EventListener);
   }, []);
-
   // Listen for roster updates
   useEffect(() => {
     const handleRosterUpdate = (event: CustomEvent) => {
