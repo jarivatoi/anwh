@@ -84,7 +84,7 @@ export class AnnexureGenerator {
       columnStyles: {
         0: { cellWidth: 15, halign: 'center' }, // S.No
         1: { cellWidth: 35, halign: 'left' },   // Name
-        2: { cellWidth: 20, hal ign: 'center' }, // Working Days
+        2: { cellWidth: 20, halign: 'center' }, // Working Days
         3: { cellWidth: 20, halign: 'center' }, // Working Hours
         4: { cellWidth: 30, halign: 'right' },  // Subtotal
         5: { cellWidth: 40, halign: 'center' }, // Night Allowance Calculation
