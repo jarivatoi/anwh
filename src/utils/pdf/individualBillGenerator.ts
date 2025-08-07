@@ -115,7 +115,7 @@ export class IndividualBillGenerator {
         3: { cellWidth: 20, halign: 'center', fontStyle: 'bold', fontSize: 8 }, // Evening (4-10)
         4: { cellWidth: 20, halign: 'center', fontStyle: 'bold', fontSize: 8 }, // Night Duty
         5: { cellWidth: 15, halign: 'center' }, // Hours
-        6: { cellWidth: 35, halign: 'left' }    // Remarks (blank)
+        6: { cellWidth: 35, halign: 'center' }  // Remarks (centered)
       },
       margin: { left: 20, right: 20 },
       pageBreak: 'auto',
