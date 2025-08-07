@@ -261,18 +261,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     return getSpecialDateInfo(date) !== null;
   };
 
-  // Handle closing auth modal
-  const handleCloseAuthModal = () => {
-    console.log('🔐 AUTH: Closing modal');
-    setShowAuthModal(false);
-    setAuthCode('');
-    setAuthError('');
-    setActionType(null);
-    setSelectedSpecialDate(null);
-    setSelectedShiftForAdd('');
-    setSelectedStaffForAdd([]);
-  };
-
   // Navigation functions
   const navigateToPreviousMonth = () => {
     const newDate = new Date(selectedDate);
