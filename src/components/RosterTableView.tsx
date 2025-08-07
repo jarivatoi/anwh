@@ -565,7 +565,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           
           {/* Center Content - Calendar and Month */}
           <div className="flex items-center justify-center flex-1 min-w-0 mx-4">
-            <Calendar className="w-6 h-6 text-indigo-600" />
+            <Calendar className="w-6 h-6 text-indigo-600 pointer-events-none" />
             
             {/* Month selector */}
             <div className="ml-2">
