@@ -67,6 +67,10 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
     const handleRealtimeUpdate = (event: CustomEvent) => {
       console.log('📡 Card view received real-time update:', event.detail);
       
+      // Mark that we've received real-time updates to prevent auto-scroll
+      setHasEditOccurred(true);
+      console.log('📡 Card view: Real-time update received, marked hasEditOccurred = true');
+      
       // Real-time changes will be reflected through the entries prop
     };
 
