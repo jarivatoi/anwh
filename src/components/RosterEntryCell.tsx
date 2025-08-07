@@ -257,25 +257,6 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
           }}
         />
         
-        {/* Editing indicator overlay */}
-        {isEditing && (
-          <div
-            style={{
-              position: 'absolute',
-              top: '-4px',
-              right: '-4px',
-              width: '12px',
-              height: '12px',
-              background: 'linear-gradient(45deg, #ffd700, #ffed4e)',
-              borderRadius: '50%',
-              animation: 'goldenDot 1.5s ease-in-out infinite',
-              zIndex: 70,
-              border: '1px solid #b45309',
-              boxShadow: '0 0 8px rgba(255, 215, 0, 0.8)'
-            }}
-          />
-        )}
-        
         {/* Golden sparkle effects */}
         {isEditing && (
           <>
