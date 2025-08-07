@@ -40,6 +40,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState('');
   const [refreshingDate, setRefreshingDate] = useState<string | null>(null);
+  const [preventAutoScroll, setPreventAutoScroll] = useState(false);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
@@ -120,7 +121,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
 
   // Auto-scroll to today's date when component first loads
   useEffect(() => {
-    console.log('🔍 TABLE AUTO-SCROLL: Effect triggered', {
+    if (!loading && !hasAutoScrolled && !preventAutoScroll && filteredEntries.length > 0 && selectedDate.getMonth() === new Date().getMonth() && selectedDate.getFullYear() === new Date().getFullYear()) {
       loading,
       entriesLength: filteredEntries.length,
       selectedMonth: selectedDate.getMonth(),
@@ -222,7 +223,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               elementFound: !!todaySection,
               selector: `[data-date="${todayString}"]`
             });
-            
+  }, [loading, filteredEntries, hasAutoScrolled, preventAutoScroll, selectedDate]);
             if (todaySection) {
               todaySection.scrollIntoView({ 
                 behavior: 'smooth', 
@@ -279,6 +280,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       console.warn('Component unmounted, skipping loadEntries call');
       return;
     }
+    
+    // Prevent auto-scroll after manual edits
+    setPreventAutoScroll(true);
     
     if (onRefresh) {
       onRefresh();
