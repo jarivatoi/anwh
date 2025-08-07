@@ -162,7 +162,7 @@ export class AnnexureGenerator {
         if (!staffGroups[baseName]) {
           staffGroups[baseName] = [];
         }
-        staff Groups[baseName].push(entry);
+        staffGroups[baseName].push(entry);
       }
     });
     
