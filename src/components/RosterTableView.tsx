@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Calendar, Edit, FileText, Download, RefreshCw, Star, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { RosterEntry, ShiftFilterType } from '../types/roster';
 import { EditDetailsModal } from './EditDetailsModal';
 import { SpecialDateModal } from './SpecialDateModal';
