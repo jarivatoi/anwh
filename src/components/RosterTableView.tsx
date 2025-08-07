@@ -68,6 +68,27 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     ];
     return `${monthNames[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`;
   };
+  
+  // Calculate dynamic width based on month name length for arrow positioning
+  const getMonthNameWidth = () => {
+    const monthYear = formatMonthYear(selectedDate);
+    // Approximate character width calculation (adjust multiplier as needed)
+    // Using 12px per character as base estimate for text-xl font
+    return monthYear.length * 12;
+  };
+  
+  // Navigation functions
+  const navigateToPreviousMonth = () => {
+    const newDate = new Date(selectedDate);
+    newDate.setMonth(newDate.getMonth() - 1);
+    onDateChange(newDate);
+  };
+  
+  const navigateToNextMonth = () => {
+    const newDate = new Date(selectedDate);
+    newDate.setMonth(newDate.getMonth() + 1);
+    onDateChange(newDate);
+  };
 
   const handleMonthYearChange = (month: number, year: number) => {
     const newDate = new Date(year, month, 1);
