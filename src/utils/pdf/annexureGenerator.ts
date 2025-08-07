@@ -220,7 +220,7 @@ export class AnnexureGenerator {
       
       // Get staff info for full name, ID, and salary
       const staffInfo = this.getStaffInfo(actualStaffName);
-      const fullName = staffInfo ? `${staffInfo.firstName || ''} ${staffInfo.surname || actualStaffName}`.trim() : actualStaffName;
+      const fullName = staffInfo ? `${staffInfo.surname || actualStaffName} ${staffInfo.firstName || ''}`.trim() : actualStaffName;
       const employeeId = staffInfo?.employeeId || '';
       const salary = staffInfo?.salary || 0;
       
