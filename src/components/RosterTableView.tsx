@@ -543,14 +543,15 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           {/* Left Arrow - Fixed Position */}
           <button
             onClick={() => navigateMonth('prev')}
-            className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors duration-200 flex-shrink-0"
+            className="p-1 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors duration-200 flex-shrink-0"
             title="Previous month"
+            style={{ minWidth: '32px', width: '32px' }}
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           
           {/* Center Content */}
-          <div className="flex items-center justify-center space-x-3 flex-1">
+          <div className="flex items-center justify-center flex-1 px-2" style={{ gap: 'clamp(4px, 2vw, 12px)' }}>
             <button
               onClick={onExportToCalendar}
               className="p-1 bg-green-600 hover:bg-green-700 text-white rounded transition-colors duration-200"
@@ -569,11 +570,13 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 onDateChange(newDate);
               }}
               disabled={isRefreshing}
-              className="text-lg font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-2 py-1 disabled:opacity-50 disabled:cursor-not-allowed appearance-none"
+              className="text-base font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-1 py-1 disabled:opacity-50 disabled:cursor-not-allowed appearance-none"
               style={{
                 WebkitAppearance: 'none',
                 MozAppearance: 'none',
-                appearance: 'none'
+                appearance: 'none',
+                minWidth: 'fit-content',
+                maxWidth: '80px'
               }}
             >
               {[
@@ -593,11 +596,13 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 onDateChange(newDate);
               }}
               disabled={isRefreshing}
-              className="text-lg font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-2 py-1 disabled:opacity-50 disabled:cursor-not-allowed appearance-none"
+              className="text-base font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-1 py-1 disabled:opacity-50 disabled:cursor-not-allowed appearance-none"
               style={{
                 WebkitAppearance: 'none',
                 MozAppearance: 'none',
-                appearance: 'none'
+                appearance: 'none',
+                minWidth: 'fit-content',
+                maxWidth: '60px'
               }}
             >
               {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map(year => (
@@ -606,7 +611,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             </select>
             
             {/* Status indicators right next to the month text */}
-            <div className="flex items-center space-x-2 ml-2">
+            <div className="flex items-center space-x-1">
               <button
                 onClick={() => handleManualRefresh()}
                 disabled={isRefreshing}
@@ -677,8 +682,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           {/* Right Arrow - Fixed Position */}
           <button
             onClick={() => navigateMonth('next')}
-            className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors duration-200 flex-shrink-0"
+            className="p-1 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors duration-200 flex-shrink-0"
             title="Next month"
+            style={{ minWidth: '32px', width: '32px' }}
           >
             <ChevronRight className="w-5 h-5" />
           </button>
