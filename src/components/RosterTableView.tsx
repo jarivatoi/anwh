@@ -596,6 +596,15 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           
           {/* Center Content - Calendar and Month (clickable) */}
           <div className="flex items-center justify-center flex-1 min-w-0">
+            {/* Left Navigation Arrow */}
+            <button
+              onClick={navigateToPreviousMonth}
+              className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors duration-200 mr-4"
+              title="Previous Month"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            
             <Calendar className="w-6 h-6 text-indigo-600 pointer-events-none" />
             
             {/* Clickable Month/Year Display */}
@@ -612,6 +621,15 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 {formatMonthYear()}
               </button>
             </div>
+            
+            {/* Right Navigation Arrow */}
+            <button
+              onClick={navigateToNextMonth}
+              className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors duration-200 ml-4"
+              title="Next Month"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
           </div>
           
           {/* Spinner/Dot - Right edge */}
