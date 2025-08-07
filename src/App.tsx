@@ -678,57 +678,6 @@ function App() {
   console.log('🎯 Showing main app interface');
   return (
     <>
-      {/* Pull-to-refresh indicator */}
-      {isPulling && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: `${Math.min(pullDistance, 100)}px`,
-            background: 'linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, rgba(99, 102, 241, 0.05) 100%)',
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'center',
-            paddingBottom: '10px',
-            zIndex: 9999,
-            transition: 'height 0.2s ease-out'
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              opacity: Math.min(pullDistance / 60, 1),
-              transform: `scale(${Math.min(pullDistance / 60, 1)})`,
-              transition: 'opacity 0.2s ease-out, transform 0.2s ease-out'
-            }}
-          >
-            <div
-              style={{
-                width: '20px',
-                height: '20px',
-                border: '2px solid #6366f1',
-                borderTop: '2px solid transparent',
-                borderRadius: '50%',
-                animation: pullDistance > 60 ? 'spin 1s linear infinite' : 'none'
-              }}
-            />
-            <span
-              style={{
-                color: '#6366f1',
-                fontSize: '14px',
-                fontWeight: '600'
-              }}
-            >
-              {pullDistance > 60 ? 'Release to refresh' : 'Pull to refresh'}
-            </span>
-          </div>
-        </div>
-      )}
-
       <div 
         className="min-h-screen bg-black select-none p-4"
         style={{ 
@@ -800,7 +749,6 @@ function App() {
               onToggleSpecialDate={toggleSpecialDate}
               onClose={closeModal}
             />
-            <RosterPanel setActiveTab={setActiveTab} onOpenCalendarExportModal={handleOpenCalendarExportModal} />
           </>
         )}
 
