@@ -528,7 +528,3 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
       />
     </>
   );
-};
-        }
-  )
-}
