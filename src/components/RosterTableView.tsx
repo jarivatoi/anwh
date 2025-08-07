@@ -545,13 +545,13 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             onClick={() => navigateMonth('prev')}
             className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors duration-200 flex-shrink-0"
             title="Previous month"
-            style={{ minWidth: '40px', width: '40px' }}
+            style={{ minWidth: '36px', width: '36px' }}
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-4 h-4" />
           </button>
           
           {/* Center Content */}
-          <div className="flex items-center justify-center flex-1 px-4">
+          <div className="flex items-center justify-center flex-1 px-1 min-w-0">
             <button
               onClick={onExportToCalendar}
               className="p-1 bg-green-600 hover:bg-green-700 text-white rounded transition-colors duration-200"
@@ -573,12 +573,13 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   onDateChange(newDate);
                 }}
                 disabled={isRefreshing}
-                className="text-lg font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-1 py-1 disabled:opacity-50 disabled:cursor-not-allowed appearance-none"
+                className="text-base font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-1 py-1 disabled:opacity-50 disabled:cursor-not-allowed appearance-none"
                 style={{
                   WebkitAppearance: 'none',
                   MozAppearance: 'none',
                   appearance: 'none',
-                  minWidth: 'fit-content'
+                  minWidth: 'fit-content',
+                  maxWidth: '90px'
                 }}
               >
                 {[
@@ -598,12 +599,13 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   onDateChange(newDate);
                 }}
                 disabled={isRefreshing}
-                className="text-lg font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-1 py-1 disabled:opacity-50 disabled:cursor-not-allowed appearance-none"
+                className="text-base font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-1 py-1 disabled:opacity-50 disabled:cursor-not-allowed appearance-none"
                 style={{
                   WebkitAppearance: 'none',
                   MozAppearance: 'none',
                   appearance: 'none',
-                  minWidth: 'fit-content'
+                  minWidth: 'fit-content',
+                  maxWidth: '60px'
                 }}
               >
                 {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map(year => (
@@ -613,15 +615,15 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             </div>
             
             {/* Status indicators right next to the month text */}
-            <div className="flex items-center space-x-1">
+            <div className="flex items-center space-x-1 flex-shrink-0">
               <button
                 onClick={() => handleManualRefresh()}
                 disabled={isRefreshing}
                 className="p-2 rounded-lg text-gray-600 transition-colors duration-200"
                 title="Manual refresh"
                 style={{
-                  width: '32px',
-                  height: '32px',
+                  width: '28px',
+                  height: '28px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -632,8 +634,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 {isRefreshing ? (
                   <svg 
                     style={{
-                      width: '18px',
-                      height: '18px',
+                      width: '16px',
+                      height: '16px',
                       animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
                       // Prevent icon from causing shifts
                       transform: 'translate3d(0,0,0)',
@@ -653,8 +655,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 ) : (
                   <svg 
                     style={{
-                      width: '18px',
-                      height: '18px',
+                      width: '16px',
+                      height: '16px',
                       animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
                       // Prevent icon from causing shifts
                       transform: 'translate3d(0,0,0)',
@@ -686,9 +688,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             onClick={() => navigateMonth('next')}
             className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors duration-200 flex-shrink-0"
             title="Next month"
-            style={{ minWidth: '40px', width: '40px' }}
+            style={{ minWidth: '36px', width: '36px' }}
           >
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
