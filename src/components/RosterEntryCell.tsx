@@ -239,6 +239,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
          backgroundColor: isEditing ? 'rgba(255, 215, 0, 0.15)' : 'transparent',
          borderRadius: isEditing ? '6px' : '0',
          border: isEditing ? '2px solid #ffd700' : 'none'
+         border: isEditing ? '2px solid #ffd700' : 'none'
         }}
       >
         <ScrollingText 
@@ -253,6 +254,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
             border: 'none',
             outline: 'none',
             filter: isEditing ? 'brightness(1.2) contrast(1.1)' : 'none',
+            textShadow: isEditing ? '0 0 8px rgba(255, 215, 0, 0.6)' : 'none'
             textShadow: isEditing ? '0 0 8px rgba(255, 215, 0, 0.6)' : 'none'
           }}
         />
@@ -270,6 +272,8 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
               borderRadius: '50%',
               animation: 'goldenDot 1.5s ease-in-out infinite',
               zIndex: 70,
+              border: '1px solid #b45309',
+              boxShadow: '0 0 8px rgba(255, 215, 0, 0.8)'
               border: '1px solid #b45309',
               boxShadow: '0 0 8px rgba(255, 215, 0, 0.8)'
             }}
@@ -374,6 +378,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
             opacity: 1;
             transform: scale(1.05);
             box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.4);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.4);
           }
           50% {
             opacity: 0.9;
@@ -391,6 +396,58 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
           50% {
             opacity: 0.7;
             transform: scale(1.3);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 1);
+          }
+        }
+        
+        @keyframes sparkle1 {
+          0%, 100% {
+            opacity: 0;
+            transform: scale(0) rotate(0deg);
+          }
+          25% {
+            opacity: 1;
+            transform: scale(1) rotate(90deg);
+          }
+          50% {
+            opacity: 0.9;
+            transform: scale(1.2) rotate(180deg);
+          }
+          75% {
+            opacity: 0.6;
+            transform: scale(0.8) rotate(270deg);
+          }
+        }
+        
+        @keyframes sparkle2 {
+          0%, 100% {
+            opacity: 0;
+            transform: scale(0);
+          }
+            box-shadow: 0 0 30px rgba(255, 215, 0, 1), 0 0 60px rgba(255, 215, 0, 0.6);
+          30% {
+            opacity: 1;
+            transform: scale(1.5);
+        @keyframes goldenDot {
+          60% {
+            opacity: 0.7;
+            transform: scale(1);
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
+          }
+        }
+        
+        @keyframes sparkle3 {
+          0%, 100% {
+            opacity: 0;
+            transform: scale(0) translateY(0);
+          }
+          40% {
+            opacity: 1;
+            transform: scale(1.8) translateY(-2px);
+          }
+          80% {
+            opacity: 0.7;
+            transform: scale(1) translateY(0);
             box-shadow: 0 0 15px rgba(255, 215, 0, 1);
           }
         }
@@ -447,119 +504,112 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
 
       {/* Authentication Modal */}
       {showAuthModal && createPortal(
-        <div
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center p-4"
           style={{
             position: 'fixed',
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-            padding: '20px'
+            zIndex: 999999999,
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            pointerEvents: 'auto'
           }}
+          onWheel={(e) => e.preventDefault()}
+          onScroll={(e) => e.preventDefault()}
           onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
             if (e.target === e.currentTarget) {
               handleCancelAuth();
             }
           }}
         >
-          <div
-            style={{
-              backgroundColor: 'white',
-              borderRadius: '12px',
-              padding: '24px',
-              maxWidth: '400px',
-              width: '100%',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="text-center mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
                 Authentication Required
               </h3>
-              <p className="text-sm text-gray-600">
-                Enter your 4-digit authentication code to modify this entry
-              </p>
-            </div>
-            
-            <div className="mb-6">
-              <div className="flex justify-center items-center space-x-2">
-                {[0, 1, 2, 3].map((index) => (
-                  <input
-                    key={index}
-                    type={showPassword ? "text" : "password"}
-                    value={authCode[index] || ''}
-                    onChange={(e) => {
-                      const newValue = e.target.value;
-                      if (newValue.length <= 1) {
-                        const newCode = authCode.split('');
-                        newCode[index] = newValue;
-                        setAuthCode(newCode.join(''));
-                        
-                        // Auto-focus next input
-                        if (newValue && index < 3) {
-                          const nextInput = document.querySelector(`input[data-index="${index + 1}"]`) as HTMLInputElement;
-                          if (nextInput) nextInput.focus();
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Authentication Code
+                </label>
+                <div className="flex justify-center space-x-3 mb-3">
+                  {[0, 1, 2, 3].map((index) => (
+                    <input
+                      key={index}
+                      type={showPassword ? "text" : "password"}
+                      value={authCode[index] || ''}
+                      onChange={(e) => {
+                        const newValue = e.target.value.toUpperCase();
+                        if (newValue.length <= 1) {
+                          const newCode = authCode.split('');
+                          newCode[index] = newValue;
+                          setAuthCode(newCode.join(''));
+                          
+                          // Auto-focus next input
+                          if (newValue && index < 3) {
+                            const nextInput = document.querySelector(`input[data-index="${index + 1}"]`) as HTMLInputElement;
+                            if (nextInput) nextInput.focus();
+                          }
                         }
-                      }
+                      }}
+                      onKeyDown={(e) => {
+                        // Handle backspace to go to previous input
+                        if (e.key === 'Backspace' && !authCode[index] && index > 0) {
+                          const prevInput = document.querySelector(`input[data-index="${index - 1}"]`) as HTMLInputElement;
+                          if (prevInput) prevInput.focus();
+                        }
+                      }}
+                      data-index={index}
+                      className="w-12 h-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center font-mono text-lg"
+                      maxLength={1}
+                      autoComplete="off"
+                      autoFocus={index === 0}
+                    />
+                  ))}
+                  <button
+                    type="button"
+                    onTouchStart={() => setShowPassword(true)}
+                    onTouchEnd={() => setShowPassword(false)}
+                    onMouseDown={() => setShowPassword(true)}
+                    onMouseUp={() => setShowPassword(false)}
+                    onMouseLeave={() => setShowPassword(false)}
+                    className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200 rounded-lg ml-2"
+                    style={{
+                      touchAction: 'manipulation',
+                      WebkitTapHighlightColor: 'transparent'
                     }}
-                    onKeyDown={(e) => {
-                      // Handle backspace to go to previous input
-                      if (e.key === 'Backspace' && !authCode[index] && index > 0) {
-                        const prevInput = document.querySelector(`input[data-index="${index - 1}"]`) as HTMLInputElement;
-                        if (prevInput) prevInput.focus();
-                      }
-                    }}
-                    data-index={index}
-                    className="w-12 h-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center font-mono text-lg"
-                    maxLength={1}
-                    autoComplete="off"
-                    autoFocus={index === 0}
-                  />
-                ))}
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+              
+              {authError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-700 text-center">{authError}</p>
+                </div>
+              )}
+              
+              <div className="flex space-x-3">
                 <button
-                  type="button"
-                  onTouchStart={() => setShowPassword(true)}
-                  onTouchEnd={() => setShowPassword(false)}
-                  onMouseDown={() => setShowPassword(true)}
-                  onMouseUp={() => setShowPassword(false)}
-                  onMouseLeave={() => setShowPassword(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200 rounded-lg ml-2"
-                  style={{
-                    touchAction: 'manipulation',
-                    WebkitTapHighlightColor: 'transparent'
-                  }}
+                  onClick={handleCancelAuth}
+                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAuthSubmit}
+                  disabled={authCode.length < 4}
+                  className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200"
+                >
+                  Continue
                 </button>
               </div>
-            </div>
-            
-            {authError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-700 text-center">{authError}</p>
-              </div>
-            )}
-            
-            <div className="flex space-x-3">
-              <button
-                onClick={handleCancelAuth}
-                className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAuthSubmit}
-                disabled={authCode.length < 4}
-                className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200"
-              >
-                Continue
-              </button>
             </div>
           </div>
         </div>,

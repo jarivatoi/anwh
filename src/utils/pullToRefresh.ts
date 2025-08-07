@@ -250,3 +250,6 @@ if (document.readyState === 'loading') {
 } else {
   pullToRefreshInstance = new PullToRefreshManager();
 }
+
+// Export for manual control if needed
+export { PullToRefreshManager };
