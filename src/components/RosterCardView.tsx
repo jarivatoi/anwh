@@ -152,7 +152,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
       }, 100);
     };
 
-    // Listen for tab change to roster - scroll to today
+    // Listen for tab change to roster - scroll to today (only on tab change)
     const handleScrollToToday = () => {
       console.log('📍 Tab changed to roster - scrolling to today');
       
@@ -172,10 +172,11 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
               });
               console.log(`📍 Scrolled to today's date on tab change: ${todayString}`);
             }
-          }, 200); // Slightly longer delay for tab change
+          }, 200);
         }
       }
     };
+
     window.addEventListener('scrollToEditedEntry', handleScrollToEditedEntry as EventListener);
     window.addEventListener('scrollToTodayOnRosterTab', handleScrollToToday as EventListener);
 
@@ -190,7 +191,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
     const handleRosterUpdate = (event: CustomEvent) => {
       console.log('🔄 Card view: Roster updated, refreshing data...');
       
-      // Also refresh from server
+      // Only refresh data, don't trigger any scrolling
       if (onRefresh) {
         onRefresh();
       }
