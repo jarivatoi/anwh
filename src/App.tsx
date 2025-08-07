@@ -282,6 +282,11 @@ function App() {
   const handleTabChange = (newTab: 'calendar' | 'settings' | 'data' | 'roster') => {
     // Immediately update the active tab state for instant UI feedback
     setActiveTab(newTab);
+    
+    // If switching to roster tab, dispatch event to reset auto-scroll
+    if (newTab === 'roster') {
+      window.dispatchEvent(new CustomEvent('rosterTabActivated'));
+    }
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {

@@ -83,6 +83,18 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     };
   }, []);
 
+  // Listen for tab changes to reset auto-scroll prevention
+  useEffect(() => {
+    const handleTabChange = () => {
+      console.log('📱 Tab changed to roster - resetting auto-scroll prevention');
+      setPreventAutoScroll(false);
+    };
+
+    // Listen for when user switches to roster tab
+    window.addEventListener('rosterTabActivated', handleTabChange);
+    return () => window.removeEventListener('rosterTabActivated', handleTabChange);
+  }, []);
+
   // Filter entries based on selected date
   const filteredEntries = entries.filter(entry => {
     const entryDate = new Date(entry.date);
@@ -282,6 +294,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
       console.warn('Component unmounted, skipping loadEntries call');
       return;
     }
+    
+    // Prevent auto-scroll after manual edits
+    setPreventAutoScroll(true);
     
     // Prevent auto-scroll after manual edits
     setPreventAutoScroll(true);
