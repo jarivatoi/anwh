@@ -551,113 +551,102 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
           </button>
           
           {/* Center Content */}
-          <div className="flex items-center justify-center flex-1 px-1 min-w-0">
+          <div className="flex items-center justify-center flex-1 space-x-4">
             <button
               onClick={onExportToCalendar}
-              className="p-1 bg-green-600 hover:bg-green-700 text-white rounded transition-colors duration-200"
+              className="p-1 bg-green-600 hover:bg-green-700 text-white rounded transition-colors duration-200 flex-shrink-0"
               title="Export to Calendar"
             >
               <Download className="w-3 h-3" />
             </button>
-            <Calendar className="w-6 h-6 text-indigo-600" />
             
-            {/* Month and Year selectors with dynamic spacing */}
-            <div className="flex items-center" style={{ 
-              gap: '8px' // Space for month and calendar icon
-            }}>
-              <select
-                value={selectedDate.getMonth()}
-                onChange={(e) => {
-                  const newDate = new Date(selectedDate);
-                  newDate.setMonth(parseInt(e.target.value));
-                  onDateChange(newDate);
-                }}
-                disabled={isRefreshing}
-                className="text-base font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-1 py-1 disabled:opacity-50 disabled:cursor-not-allowed appearance-none"
-                style={{
-                  WebkitAppearance: 'none',
-                  MozAppearance: 'none',
-                  appearance: 'none',
-                  minWidth: 'fit-content',
-                  maxWidth: '90px'
-                }}
-              >
-                {[
-                  'January', 'February', 'March', 'April', 'May', 'June',
-                  'July', 'August', 'September', 'October', 'November', 'December'
-                ].map((month, index) => (
-                  <option key={index} value={index}>{month}</option>
-                ))}
-              </select>
-            </div>
+            <Calendar className="w-6 h-6 text-indigo-600 flex-shrink-0" />
             
-            {/* Status indicators right next to the month text */}
-            <div className="flex items-center space-x-1 flex-shrink-0">
-              <button
-                onClick={() => handleManualRefresh()}
-                disabled={isRefreshing}
-                className="p-2 rounded-lg text-gray-600 transition-colors duration-200"
-                title="Manual refresh"
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  opacity: isRefreshing ? 1 : 0.7,
-                  visibility: 'visible'
-                }}
-              >
-                {isRefreshing ? (
-                  <svg 
-                    style={{
-                      width: '16px',
-                      height: '16px',
-                      animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
-                      // Prevent icon from causing shifts
-                      transform: 'translate3d(0,0,0)',
-                      backfaceVisibility: 'hidden'
-                    }}
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
-                    />
-                  </svg>
-                ) : (
-                  <svg 
-                    style={{
-                      width: '16px',
-                      height: '16px',
-                      animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
-                      // Prevent icon from causing shifts
-                      transform: 'translate3d(0,0,0)',
-                      backfaceVisibility: 'hidden'
-                    }}
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
-                    />
-                  </svg>
-                )}
-              </button>
-              <div className={`w-2 h-2 rounded-full ${
-                realtimeStatus === 'connected' ? 'bg-green-500 animate-pulse' : 
-                realtimeStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
-                realtimeStatus === 'error' ? 'bg-red-500' : 'bg-gray-400'
-              }`} />
-            </div>
+            <select
+              value={selectedDate.getMonth()}
+              onChange={(e) => {
+                const newDate = new Date(selectedDate);
+                newDate.setMonth(parseInt(e.target.value));
+                onDateChange(newDate);
+              }}
+              disabled={isRefreshing}
+              className="text-base font-semibold text-gray-900 bg-transparent border-none outline-none cursor-pointer rounded px-1 py-1 disabled:opacity-50 disabled:cursor-not-allowed appearance-none flex-shrink-0"
+              style={{
+                WebkitAppearance: 'none',
+                MozAppearance: 'none',
+                appearance: 'none',
+                minWidth: 'fit-content'
+              }}
+            >
+              {[
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'
+              ].map((month, index) => (
+                <option key={index} value={index}>{month}</option>
+              ))}
+            </select>
+            
+            <button
+              onClick={() => handleManualRefresh()}
+              disabled={isRefreshing}
+              className="p-2 rounded-lg text-gray-600 transition-colors duration-200 flex-shrink-0"
+              title="Manual refresh"
+              style={{
+                width: '28px',
+                height: '28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: isRefreshing ? 1 : 0.7
+              }}
+            >
+              {isRefreshing ? (
+                <svg 
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    animation: 'spin 1s linear infinite',
+                    transform: 'translate3d(0,0,0)',
+                    backfaceVisibility: 'hidden'
+                  }}
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+                  />
+                </svg>
+              ) : (
+                <svg 
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    transform: 'translate3d(0,0,0)',
+                    backfaceVisibility: 'hidden'
+                  }}
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+                  />
+                </svg>
+              )}
+            </button>
+            
+            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+              realtimeStatus === 'connected' ? 'bg-green-500 animate-pulse' : 
+              realtimeStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
+              realtimeStatus === 'error' ? 'bg-red-500' : 'bg-gray-400'
+            }`} />
           </div>
           
           {/* Right Arrow - Fixed Position */}
