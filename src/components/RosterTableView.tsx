@@ -253,6 +253,51 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     return () => window.removeEventListener('rosterUpdated', handleRosterUpdate as EventListener);
   }, [onRefresh]);
 
+  // Listen for scroll to edited entry event
+  useEffect(() => {
+    const handleScrollToEditedEntry = (event: CustomEvent) => {
+      const { entryId, date } = event.detail;
+      console.log(`📍 Scrolling to edited entry: ${entryId} on ${date}`);
+      
+      setTimeout(() => {
+        const editedElement = document.querySelector(`[data-entry-id="${entryId}"]`);
+        if (editedElement) {
+          editedElement.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+          console.log(`📍 Scrolled to edited entry: ${entryId}`);
+          
+          // Add highlight effect to the edited entry
+          editedElement.style.transition = 'all 0.3s ease';
+          editedElement.style.transform = 'scale(1.05)';
+          editedElement.style.boxShadow = '0 0 20px rgba(255, 193, 7, 0.8)';
+          editedElement.style.backgroundColor = 'rgba(255, 193, 7, 0.2)';
+          
+          // Remove highlight after animation
+          setTimeout(() => {
+            editedElement.style.transform = '';
+            editedElement.style.boxShadow = '';
+            editedElement.style.backgroundColor = '';
+          }, 2000);
+        } else {
+          // Fallback: scroll to the date section
+          const dateSection = document.querySelector(`[data-date="${date}"]`);
+          if (dateSection) {
+            dateSection.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center' 
+            });
+            console.log(`📍 Scrolled to date section: ${date}`);
+          }
+        }
+      }, 100);
+    };
+
+    window.addEventListener('scrollToEditedEntry', handleScrollToEditedEntry as EventListener);
+    return () => window.removeEventListener('scrollToEditedEntry', handleScrollToEditedEntry as EventListener);
+  }, []);
+
   // Sort entries by date in ascending order
   const sortedEntries = [...filteredEntries].sort((a, b) => 
     new Date(a.date).getTime() - new Date(b.date).getTime()
