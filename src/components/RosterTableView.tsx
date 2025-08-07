@@ -563,14 +563,12 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             </button>
           </div>
           
-          {/* Center Content */}
-          <div className="flex items-center justify-center flex-1 min-w-0">
+          {/* Center Content - Calendar and Month */}
+          <div className="flex items-center justify-center flex-1 min-w-0 mx-4">
             <Calendar className="w-6 h-6 text-indigo-600" />
             
-            {/* Month and Year selectors with dynamic spacing */}
-            <div className="flex items-center" style={{ 
-              gap: '8px' // Space for month and calendar icon
-            }}>
+            {/* Month selector */}
+            <div className="ml-2">
               <select
                 value={selectedDate.getMonth()}
                 onChange={(e) => {
