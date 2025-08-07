@@ -110,10 +110,10 @@ export class IndividualBillGenerator {
       },
       columnStyles: {
         0: { cellWidth: 25, halign: 'center' }, // Day Date
-        1: { cellWidth: 20, halign: 'center', fontStyle: 'bold', fontSize: 8 }, // Morning (9-4)
-        2: { cellWidth: 20, halign: 'center', fontStyle: 'bold', fontSize: 8 }, // Saturday (12-10)
-        3: { cellWidth: 20, halign: 'center', fontStyle: 'bold', fontSize: 8 }, // Evening (4-10)
-        4: { cellWidth: 20, halign: 'center', fontStyle: 'bold', fontSize: 8 }, // Night Duty
+        1: { cellWidth: 20, halign: 'center', fontStyle: 'bold', fontSize: 12, fontName: 'ZapfDingbats' }, // Morning (9-4)
+        2: { cellWidth: 20, halign: 'center', fontStyle: 'bold', fontSize: 12, fontName: 'ZapfDingbats' }, // Saturday (12-10)
+        3: { cellWidth: 20, halign: 'center', fontStyle: 'bold', fontSize: 12, fontName: 'ZapfDingbats' }, // Evening (4-10)
+        4: { cellWidth: 20, halign: 'center', fontStyle: 'bold', fontSize: 12, fontName: 'ZapfDingbats' }, // Night Duty
         5: { cellWidth: 15, halign: 'center' }, // Hours
         6: { cellWidth: 35, halign: 'center' }  // Remarks (centered)
       },
@@ -308,10 +308,10 @@ export class IndividualBillGenerator {
         totalHours += dayHours;
         
         // Create checkmarks for each shift column
-        const morningCheck = shifts.includes('Morning Shift (9-4)') ? '✓' : '';
-        const saturdayCheck = shifts.includes('Saturday Regular (12-10)') ? '✓' : '';
-        const eveningCheck = shifts.includes('Evening Shift (4-10)') ? '✓' : '';
-        const nightCheck = shifts.includes('Night Duty') ? '✓' : '';
+        const morningCheck = shifts.includes('Morning Shift (9-4)') ? '4' : '';
+        const saturdayCheck = shifts.includes('Saturday Regular (12-10)') ? '4' : '';
+        const eveningCheck = shifts.includes('Evening Shift (4-10)') ? '4' : '';
+        const nightCheck = shifts.includes('Night Duty') ? '4' : '';
         
         rows.push([
           dayDate,
