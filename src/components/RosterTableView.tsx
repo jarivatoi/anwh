@@ -564,13 +564,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             {/* Month and Year selectors with dynamic spacing */}
             <div className="flex items-center" style={{ 
               gap: '4px' // Single consistent space
-            }}>
-              {/* Month selector */}
-              <select
-                value={selectedDate.getMonth()}
-                onChange={(e) => {
-                  const newDate = new Date(selectedDate);
-                  newDate.setMonth(parseInt(e.target.value));
                   onDateChange(newDate);
                 }}
                 disabled={isRefreshing}
