@@ -6,7 +6,6 @@ import { validateAuthCode, availableNames } from '../utils/rosterAuth';
 import { updateRosterEntry } from '../utils/rosterApi';
 import { useLongPress } from '../hooks/useLongPress';
 import { ScrollingText } from './ScrollingText';
-import { Eye, EyeOff } from 'lucide-react';
 
 interface RosterEntryCellProps {
   entry: RosterEntry;
@@ -30,7 +29,6 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authError, setAuthError] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
   // Prevent body scroll when auth modal is open
   React.useEffect(() => {
@@ -123,17 +121,6 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
     setAuthError('');
   };
 
-  const handleCancelAuth = () => {
-    setShowAuthModal(false);
-    setAuthCode('');
-    setAuthError('');
-  };
-
-  const handleCancelStaffSelection = () => {
-    setShowStaffModal(false);
-    setAuthCode('');
-  };
-
   const handleStaffSelect = async (newStaffName: string) => {
     await handleStaffSelectWithColor(newStaffName);
   };
@@ -190,25 +177,31 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
         onUpdate(updatedEntry);
       }
 
-      // Dispatch event to scroll to edited entry
-      window.dispatchEvent(new CustomEvent('scrollToEditedEntry', {
-        detail: { entryId: entry.id, date: entry.date }
-      }));
-
       setShowStaffModal(false);
       setAuthCode('');
     } catch (error) {
-      console.error('Error updating roster entry:', error);
+      console.error('Failed to update entry:', error);
+      alert('Failed to update entry. Please try again.');
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const handleCancelAuth = () => {
+    setShowAuthModal(false);
+    setAuthCode('');
+    setAuthError('');
+  };
+
+  const handleCancelStaffSelection = () => {
+    setShowStaffModal(false);
+    setAuthCode('');
   };
 
   return (
     <>
       <div
         {...longPressHandlers}
-        data-entry-id={entry.id}
         style={{
           padding: '4px 2px',
           margin: 0,

@@ -112,43 +112,15 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
 
   // Auto-scroll to today's date when component first loads
   useEffect(() => {
-    // Listen for scroll to edited entry event instead of auto-scrolling to today
-    const handleScrollToEditedEntry = (event: CustomEvent) => {
-      const { entryId, date } = event.detail;
-      console.log(`📍 Scrolling to edited entry: ${entryId} on ${date}`);
-      
-      setTimeout(() => {
-        const editedElement = document.querySelector(`[data-entry-id="${entryId}"]`);
-        if (editedElement) {
-          editedElement.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center' 
-          });
-          console.log(`📍 Scrolled to edited entry: ${entryId}`);
-        } else {
-          // Fallback: scroll to the date section
-          const dateSection = document.querySelector(`[data-date="${date}"]`);
-          if (dateSection) {
-            dateSection.scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'center' 
-            });
-            console.log(`📍 Scrolled to date section: ${date}`);
-          }
-        }
-      }, 100);
-    };
-
-    window.addEventListener('scrollToEditedEntry', handleScrollToEditedEntry as EventListener);
-    
-    // Only auto-scroll to today on initial load if no edits are happening
     if (!loading && !hasAutoScrolled && filteredEntries.length > 0 && selectedDate.getMonth() === new Date().getMonth() && selectedDate.getFullYear() === new Date().getFullYear()) {
       const today = new Date();
-      const todayString = today.toISOString().split('T')[0];
+      const todayString = today.toISOString().split('T')[0]; // YYYY-MM-DD format
       
+      // Check if today's date exists in the entries
       const todayEntry = filteredEntries.find(entry => entry.date === todayString);
       
       if (todayEntry) {
+        // Scroll to today's date section after a brief delay to ensure DOM is ready
         setTimeout(() => {
           const todaySection = document.querySelector(`[data-date="${todayString}"]`);
           if (todaySection) {
@@ -159,14 +131,12 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
             console.log(`📍 Auto-scrolled to today's date: ${todayString}`);
           }
         }, 100);
+      } else {
+        console.log(`📍 Today's date (${todayString}) not found in roster entries - no auto-scroll`);
       }
       
       setHasAutoScrolled(true);
     }
-
-    return () => {
-      window.removeEventListener('scrollToEditedEntry', handleScrollToEditedEntry as EventListener);
-    };
   }, [loading, filteredEntries, hasAutoScrolled, selectedDate]);
 
   // Listen for roster updates
@@ -531,7 +501,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
                             )}
                             
                             {shiftEntries.map((entry, index) => (
-                             <div key={entry.id} className="relative" style={{ zIndex: 30 }} data-entry-id={entry.id}>
+                             <div key={entry.id} className="relative" style={{ zIndex: 30 }}>
                                 <RosterCardItem
                                   entry={entry}
                                   onShowDetails={handleShowDetails}
