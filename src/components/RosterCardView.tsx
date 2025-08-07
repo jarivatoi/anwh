@@ -31,7 +31,6 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   // All hooks must be declared at the top level before any conditional returns
   const [selectedEntry, setSelectedEntry] = useState<RosterEntry | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [hasAutoScrolled, setHasAutoScrolled] = useState(false);
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authCode, setAuthCode] = useState('');
@@ -43,6 +42,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState('');
   const [refreshingDate, setRefreshingDate] = useState<string | null>(null);
+  const [hasTabSwitched, setHasTabSwitched] = useState(false);
 
   const isMountedRef = useRef(true);
 
@@ -110,34 +110,59 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
 
 
 
-  // Auto-scroll to today's date when component first loads
+  // Auto-scroll to today's date only when switching to this tab
   useEffect(() => {
-    if (!loading && !hasAutoScrolled && filteredEntries.length > 0 && selectedDate.getMonth() === new Date().getMonth() && selectedDate.getFullYear() === new Date().getFullYear()) {
+    console.log('🔍 CARD TAB-SWITCH AUTO-SCROLL: Effect triggered');
+    
+    // Only auto-scroll if we haven't done it yet for this tab switch
+    if (!hasTabSwitched && !loading && filteredEntries.length > 0) {
       const today = new Date();
-      const todayString = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+      const isCurrentMonth = selectedDate.getMonth() === today.getMonth() && 
+                             selectedDate.getFullYear() === today.getFullYear();
       
-      // Check if today's date exists in the entries
-      const todayEntry = filteredEntries.find(entry => entry.date === todayString);
+      console.log('🔍 CARD TAB-SWITCH AUTO-SCROLL: Should auto-scroll?', {
+        hasTabSwitched,
+        loading,
+        entriesLength: filteredEntries.length,
+        isCurrentMonth
+      });
       
-      if (todayEntry) {
-        // Scroll to today's date section after a brief delay to ensure DOM is ready
-        setTimeout(() => {
-          const todaySection = document.querySelector(`[data-date="${todayString}"]`);
-          if (todaySection) {
-            todaySection.scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'center' 
-            });
-            console.log(`📍 Auto-scrolled to today's date: ${todayString}`);
-          }
-        }, 100);
-      } else {
-        console.log(`📍 Today's date (${todayString}) not found in roster entries - no auto-scroll`);
+      if (isCurrentMonth) {
+        const todayString = today.toISOString().split('T')[0];
+        const todayEntry = filteredEntries.find(entry => entry.date === todayString);
+        
+        console.log('🔍 CARD TAB-SWITCH AUTO-SCROLL: Today entry found?', {
+          todayEntry: !!todayEntry,
+          todayString
+        });
+        
+        if (todayEntry) {
+          console.log(`📍 CARD TAB-SWITCH AUTO-SCROLL: Scrolling to today: ${todayString}`);
+          setTimeout(() => {
+            const todaySection = document.querySelector(`[data-date="${todayString}"]`);
+            if (todaySection) {
+              todaySection.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+              });
+              console.log(`📍 CARD TAB-SWITCH AUTO-SCROLL: Successfully scrolled to: ${todayString}`);
+            } else {
+              console.log(`❌ CARD TAB-SWITCH AUTO-SCROLL: Element not found for: ${todayString}`);
+            }
+          }, 500); // Delay to ensure DOM is ready
+        }
       }
       
-      setHasAutoScrolled(true);
+      // Mark that we've done the tab switch auto-scroll
+      setHasTabSwitched(true);
     }
-  }, [loading, filteredEntries, hasAutoScrolled, selectedDate]);
+  }, [loading, filteredEntries, selectedDate, hasTabSwitched]);
+
+  // Reset tab switch flag when component mounts (new tab switch)
+  useEffect(() => {
+    console.log('🔍 CARD TAB-SWITCH: Component mounted, resetting tab switch flag');
+    setHasTabSwitched(false);
+  }, []);
 
   // Listen for roster updates
   useEffect(() => {
