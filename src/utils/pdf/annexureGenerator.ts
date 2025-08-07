@@ -18,7 +18,7 @@ export interface AnnexureOptions {
 
 export class AnnexureGenerator {
   
-  /***
+  /**
    * Generate annexure for all staff
    */
   async generateAnnexure(options: AnnexureOptions): Promise<void> {
