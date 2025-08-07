@@ -308,10 +308,10 @@ export class IndividualBillGenerator {
         totalHours += dayHours;
         
         // Create checkmarks for each shift column
-        const morningCheck = shifts.includes('Morning Shift (9-4)') ? '✓' : '';
-        const saturdayCheck = shifts.includes('Saturday Regular (12-10)') ? '✓' : '';
-        const eveningCheck = shifts.includes('Evening Shift (4-10)') ? '✓' : '';
-        const nightCheck = shifts.includes('Night Duty') ? '✓' : '';
+        const morningCheck = shifts.includes('Morning Shift (9-4)') ? 'X' : '';
+        const saturdayCheck = shifts.includes('Saturday Regular (12-10)') ? 'X' : '';
+        const eveningCheck = shifts.includes('Evening Shift (4-10)') ? 'X' : '';
+        const nightCheck = shifts.includes('Night Duty') ? 'X' : '';
         
         rows.push([
           dayDate,
