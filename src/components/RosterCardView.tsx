@@ -171,8 +171,9 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
 
   // Custom sorting function to prioritize (R) names first
   const sortStaffNames = (entries: RosterEntry[]): RosterEntry[] => {
-    // Use sortByGroup to prioritize SMIT staff first
-    const sortedNames = sortByGroup(entries.map(e => e.assigned_name));
+    // Extract names and sort them properly using sortByGroup
+    const names = entries.map(e => e.assigned_name);
+    const sortedNames = sortByGroup(names);
     
     // Create a map for quick lookup of original entries
     const entryMap = new Map<string, RosterEntry>();
@@ -181,7 +182,7 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
     });
     
     // Return entries in the sorted order
-    return sortedNames.map(name => entryMap.get(name)!).filter(Boolean);
+    return sortedNames.map(name => entryMap.get(name)).filter(Boolean) as RosterEntry[];
   };
 
   const getShiftColor = (shiftType: string) => {
