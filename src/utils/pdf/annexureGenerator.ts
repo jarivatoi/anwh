@@ -101,29 +101,29 @@ export class AnnexureGenerator {
     const grandTotalDays = staffSummaries.reduce((sum, s) => sum + s.totalDays, 0);
     const grandTotalHours = staffSummaries.reduce((sum, s) => sum + s.totalHours, 0);
     const grandSubtotal = staffSummaries.reduce((sum, s) => sum + s.totalAmount, 0);
-    const grandNight Allowance = staffSummaries.reduce((sum, s) => sum + s.nightAllowance, 0);
+    const grandNightAllowance = staffSummaries.reduce((sum, s) => sum + s.nightAllowance, 0);
     const grandTotal = staffSummaries.reduce((sum, s) => sum + s.grandTotal, 0);
     
     const finalY = (doc as any).lastAutoTable.finalY + 10;
     
     // Grand totals row
-    doc.setFont('helvetica', '  bold');
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     doc.text('GRAND TOTALS:', 15, finalY);
     doc.text(`Total Working Days: ${grandTotalDays}`, 15, finalY + 8);
     doc.text(`Total Working Hours: ${grandTotalHours.toFixed(1)}`, 15, finalY + 16);
-    doc.text(`Total Subt otal: ${formatMauritianRupees(grandSubtotal).formatted}`, 15, finalY + 24);
+    doc.text(`Total Subtotal: ${formatMauritianRupees(grandSubtotal).formatted}`, 15, finalY + 24);
     doc.text(`Total Night Allowance: ${formatMauritianRupees(grandNightAllowance).formatted}`, 15, finalY + 32);
     
     doc.setFontSize(12);
-    doc.text(`GRAND TOTAL AMOUNT: ${formatM auritianRupees(grandTotal).formatted}`, 15, finalY + 44);
+    doc.text(`GRAND TOTAL AMOUNT: ${formatMauritianRupees(grandTotal).formatted}`, 15, finalY + 44);
     
     // Footer
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.text(`Generated on: ${new Date().toLocaleString()}`, 15, doc.internal.pageSize.getHeight() - 15);
     doc.text('X-ray AN WH System', doc.internal.pageSize.getWidth() - 15, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
-    
+    doc.text('X-ray ANWH System', doc.internal.pageSize.getWidth() - 15, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
     // Save
     const filename = `Annexure_${monthNames[month]}_${year}.pdf`;
     doc.save(filename);
