@@ -16,7 +16,6 @@ import { DaySchedule, SpecialDates, Settings, ExportData } from './types';
 import { gsap } from 'gsap';
 import { RosterPanel } from './components/RosterPanel';
 import { syncRosterToCalendar } from './utils/rosterCalendarSync';
-import { EffectsDemo } from './components/EffectsDemo';
 
 function App() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -31,9 +30,6 @@ function App() {
   const [smoothProgress, setSmoothProgress] = useState(0);
   const [showMainApp, setShowMainApp] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
-
-  // Add demo mode state
-  const [showDemo, setShowDemo] = useState(false);
 
   // Use IndexedDB hooks
   const { schedule, specialDates, setSchedule, setSpecialDates, isLoading: dataLoading, error: dataError, refreshData } = useScheduleData();
@@ -282,19 +278,6 @@ function App() {
       );
     }
   }, [showMainApp]);
-
-  // Check for demo mode in URL
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('demo') === 'effects') {
-      setShowDemo(true);
-    }
-  }, []);
-
-  // Show effects demo if requested
-  if (showDemo) {
-    return <EffectsDemo />;
-  }
 
   const handleTabChange = (newTab: 'calendar' | 'settings' | 'data' | 'roster') => {
     // Immediately update the active tab state for instant UI feedback
