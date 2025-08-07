@@ -148,6 +148,11 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
         onUpdate(updatedEntry);
       }
 
+      // Dispatch event to scroll to edited entry
+      window.dispatchEvent(new CustomEvent('scrollToEditedEntry', {
+        detail: { entryId: entry.id, date: entry.date }
+      }));
+
       setShowStaffModal(false);
       setAuthCode('');
     } catch (error) {
@@ -173,6 +178,7 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
     <>
       <div
         {...longPressHandlers}
+        data-entry-id={entry.id}
         style={{
           padding: '4px 2px',
           margin: 0,

@@ -846,6 +846,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                             
                             {sortedShiftEntries.map((entry, index) => (
                               <RosterEntryCell
+                                data-entry-id={entry.id}
                                 key={entry.id}
                                 entry={entry}
                                 onUpdate={handleEntryUpdate}

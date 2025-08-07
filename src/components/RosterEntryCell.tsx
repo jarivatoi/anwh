@@ -177,31 +177,12 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
         onUpdate(updatedEntry);
       }
 
-      setShowStaffModal(false);
-      setAuthCode('');
-    } catch (error) {
-      console.error('Failed to update entry:', error);
-      alert('Failed to update entry. Please try again.');
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleCancelAuth = () => {
-    setShowAuthModal(false);
-    setAuthCode('');
-    setAuthError('');
-  };
-
-  const handleCancelStaffSelection = () => {
-    setShowStaffModal(false);
-    setAuthCode('');
-  };
-
-  return (
-    <>
-      <div
+      // Dispatch event to scroll to edited entry
+      window.dispatchEvent(new CustomEvent('scrollToEditedEntry', {
+        detail: { entryId: entry.id, date: entry.date }
+      }));
         {...longPressHandlers}
+        data-entry-id={entry.id}
         style={{
           padding: '4px 2px',
           margin: 0,
