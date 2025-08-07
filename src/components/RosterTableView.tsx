@@ -550,7 +550,10 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            
+          </div>
+          
+          {/* Export Button - Midway */}
+          <div className="flex items-center justify-center flex-shrink-0">
             <button
               onClick={onExportToCalendar}
               className="p-1 bg-green-600 hover:bg-green-700 text-white rounded transition-colors duration-200"
@@ -595,8 +598,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
             </div>
           </div>
           
-          {/* Right Side - Spinner/Dot and Arrow */}
-          <div className="flex items-center space-x-2 flex-shrink-0">
+          {/* Spinner/Dot - Midway */}
+          <div className="flex items-center justify-center flex-shrink-0">
             <button
               onClick={() => handleManualRefresh()}
               disabled={isRefreshing}
@@ -675,7 +678,10 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                 }} />
               </div>
             </button>
-            
+          </div>
+          
+          {/* Right Side - Spinner/Dot and Arrow */}
+          <div className="flex items-center space-x-2 flex-shrink-0">
             <button
               onClick={() => navigateMonth('next')}
               className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors duration-200 flex-shrink-0"
