@@ -58,23 +58,49 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   useEffect(() => {
     isMountedRef.current = true;
     
-    // Prevent any automatic scrolling behavior
-    const preventAutoScroll = (e: Event) => {
-      if (hasEditOccurred) {
-        console.log('🚫 Preventing automatic scroll after edit');
-        e.preventDefault();
-        e.stopPropagation();
-      }
+    // COMPREHENSIVE SCROLL DEBUGGING - catch everything that scrolls
+    const debugScroll = (e: Event) => {
+      console.log('🔍 SCROLL DEBUG: Scroll event detected:', {
+        type: e.type,
+        target: e.target,
+        hasEditOccurred,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Get stack trace to see what triggered the scroll
+      console.trace('🔍 SCROLL DEBUG: Stack trace for scroll event');
     };
     
-    // Add scroll prevention listeners
-    window.addEventListener('scroll', preventAutoScroll, { passive: false });
-    document.addEventListener('scroll', preventAutoScroll, { passive: false });
+    // Monitor ALL scroll events
+    window.addEventListener('scroll', debugScroll, { passive: true });
+    document.addEventListener('scroll', debugScroll, { passive: true });
+    
+    // Also monitor scrollIntoView calls
+    const originalScrollIntoView = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function(options?: boolean | ScrollIntoViewOptions) {
+      console.log('🔍 SCROLL DEBUG: scrollIntoView called on element:', {
+        element: this,
+        tagName: this.tagName,
+        className: this.className,
+        id: this.id,
+        textContent: this.textContent?.substring(0, 50),
+        options,
+        hasEditOccurred,
+        timestamp: new Date().toISOString()
+      });
+      console.trace('🔍 SCROLL DEBUG: Stack trace for scrollIntoView');
+      
+      // Call original function
+      return originalScrollIntoView.call(this, options);
+    };
     
     return () => {
       isMountedRef.current = false;
-      window.removeEventListener('scroll', preventAutoScroll);
-      document.removeEventListener('scroll', preventAutoScroll);
+      window.removeEventListener('scroll', debugScroll);
+      document.removeEventListener('scroll', debugScroll);
+      
+      // Restore original scrollIntoView
+      Element.prototype.scrollIntoView = originalScrollIntoView;
     };
   }, [hasEditOccurred]);
 
@@ -288,13 +314,44 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
     setHasEditOccurred(true);
     console.log('🔄 Entry updated - marked hasEditOccurred = true, NOT calling onRefresh to prevent scroll issues');
     
-    // EMERGENCY FIX: Lock the current scroll position after edit
+    // EMERGENCY FIX: Monitor and lock scroll position
     const scrollContainer = document.querySelector('.h-full.overflow-y-auto');
     if (scrollContainer) {
       const currentScrollTop = scrollContainer.scrollTop;
       console.log('🔒 Locking scroll position at:', currentScrollTop);
       
-      // Force scroll position to stay locked for 3 seconds
+      // Monitor scroll position changes
+      const scrollObserver = new MutationObserver(() => {
+        if (scrollContainer.scrollTop !== currentScrollTop) {
+          console.log('🚨 SCROLL POSITION CHANGED!', {
+            from: currentScrollTop,
+            to: scrollContainer.scrollTop,
+            difference: scrollContainer.scrollTop - currentScrollTop
+          });
+          console.trace('🚨 SCROLL CHANGE STACK TRACE');
+        }
+      });
+      
+      // Start observing
+      scrollObserver.observe(scrollContainer, {
+        attributes: true,
+        attributeFilter: ['scrollTop']
+      });
+      
+      // Also monitor with setInterval
+      let lastScrollTop = currentScrollTop;
+      const scrollMonitor = setInterval(() => {
+        if (scrollContainer.scrollTop !== lastScrollTop) {
+          console.log('🚨 SCROLL MONITOR: Position changed!', {
+            from: lastScrollTop,
+            to: scrollContainer.scrollTop,
+            timestamp: new Date().toISOString()
+          });
+          lastScrollTop = scrollContainer.scrollTop;
+        }
+      }, 100);
+      
+      // Force scroll position to stay locked
       setTimeout(() => {
         scrollContainer.scrollTop = currentScrollTop;
         console.log('🔒 Restored scroll position to:', currentScrollTop);
@@ -308,6 +365,10 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
       setTimeout(() => {
         scrollContainer.scrollTop = currentScrollTop;
         console.log('🔒 Final scroll position lock:', currentScrollTop);
+        
+        // Clean up monitoring
+        scrollObserver.disconnect();
+        clearInterval(scrollMonitor);
       }, 1000);
     }
     
