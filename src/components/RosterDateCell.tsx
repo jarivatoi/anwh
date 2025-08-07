@@ -116,15 +116,22 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
               return dayNames[dateObj.getDay()];
             })()}
           </div>
-          {/* Date in 7-Aug-25 format on second line */}
+          {/* Date in 7-Aug format on second line */}
           <div style={{ textAlign: 'center', fontSize: window.innerWidth > window.innerHeight ? '10px' : '12px', fontWeight: '500' }}>
             {(() => {
               const dateObj = new Date(date);
               const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
               const day = dateObj.getDate();
               const month = monthNames[dateObj.getMonth()];
-              const year = dateObj.getFullYear().toString().slice(-2);
-              return `${day}-${month}-${year}`;
+              return `${day}-${month}`;
+            })()}
+          </div>
+          {/* Year on third line */}
+          <div style={{ textAlign: 'center', fontSize: window.innerWidth > window.innerHeight ? '10px' : '12px', fontWeight: '500' }}>
+            {(() => {
+              const dateObj = new Date(date);
+              const year = dateObj.getFullYear();
+              return year;
             })()}
           </div>
         </div>
