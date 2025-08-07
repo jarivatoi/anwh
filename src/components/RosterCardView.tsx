@@ -286,18 +286,9 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   };
 
   const handleEntryUpdate = (updatedEntry: RosterEntry) => {
-    // Check if component is still mounted before calling loadEntries
-    if (!isMountedRef.current) {
-      console.warn('Component unmounted, skipping loadEntries call');
-      return;
-    }
-    
-    if (onRefresh) {
-      onRefresh();
-    }
-    
-    // Also trigger a data refresh
+    // Only refresh data, don't trigger any scrolling
     if (isMountedRef.current && onRefresh) {
+      console.log('🔄 Refreshing data after entry update (no auto-scroll)');
       onRefresh();
     }
   };
