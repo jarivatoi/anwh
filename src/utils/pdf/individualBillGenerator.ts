@@ -195,13 +195,7 @@ export class AnnexureGenerator {
     
     // Group entries by staff
     const staffGroups: Record<string, RosterEntry[]> = {};
-    
-    entries.forEach(entry => {
-      const entryDate = new Date(entry.date);
-      // Handle same person with/without (R) suffix
-      const entryBaseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
-      const staffBaseName = staffName.replace(/\(R\)$/, '').trim().toUpperCase();
-      return entryBaseName === staffBaseName && 
+      if (entryDate.getMonth() === month && entryDate.getFullYear() === year) {
         const baseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
         if (!staffGroups[baseName]) {
           staffGroups[baseName] = [];
