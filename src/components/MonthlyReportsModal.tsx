@@ -204,6 +204,7 @@ export class AnnexureGenerator {
           staffGroups[baseName] = [];
           console.error(`❌ Failed to generate bill for ${staffName}:`, error);
           // Continue with other staff members instead of failing completely
+        }
         staffGroups[baseName].push(entry);
       }
     });
