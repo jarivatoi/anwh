@@ -776,16 +776,17 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
                 Quick Actions
               </h3>
               
-              <div className="space-y-3">
+              <div className="space-y-3 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}>
                 <button
                   onClick={() => {
                     setShowQuickActions(false);
                     setShowPDFImport(true);
                   }}
-                  className="w-full flex items-center space-x-3 px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg font-medium transition-colors duration-200"
+                  className="w-full flex items-center space-x-3 px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg font-medium transition-colors duration-200 select-none"
+                  style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
                 >
                   <Upload className="w-5 h-5" />
-                  <span>Import from PDF</span>
+                  <span className="select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}>Import from PDF</span>
                 </button>
                 
                 <button
@@ -794,17 +795,18 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
                     handleExportToPDF();
                   }}
                   disabled={isExportingPDF}
-                  className="w-full flex items-center space-x-3 px-4 py-3 bg-green-50 hover:bg-green-100 disabled:bg-gray-100 disabled:text-gray-500 text-green-700 rounded-lg font-medium transition-colors duration-200"
+                  className="w-full flex items-center space-x-3 px-4 py-3 bg-green-50 hover:bg-green-100 disabled:bg-gray-100 disabled:text-gray-500 text-green-700 rounded-lg font-medium transition-colors duration-200 select-none"
+                  style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
                 >
                   {isExportingPDF ? (
                     <>
                       <div className="w-5 h-5 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
-                      <span>Exporting PDF...</span>
+                      <span className="select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}>Exporting PDF...</span>
                     </>
                   ) : (
                     <>
                       <Download className="w-5 h-5" />
-                      <span>Export to PDF</span>
+                      <span className="select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}>Export to PDF</span>
                     </>
                   )}
                 </button>
@@ -814,10 +816,11 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
                     setShowQuickActions(false);
                     setShowMonthlyReports(true);
                   }}
-                  className="w-full flex items-center space-x-3 px-4 py-3 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg font-medium transition-colors duration-200"
+                  className="w-full flex items-center space-x-3 px-4 py-3 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg font-medium transition-colors duration-200 select-none"
+                  style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
                 >
                   <FileText className="w-5 h-5" />
-                  <span>Monthly Reports</span>
+                  <span className="select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}>Monthly Reports</span>
                 </button>
                 
                 <button
@@ -826,19 +829,21 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
                     setClearType('all');
                     setShowClearConfirm(true);
                   }}
-                  className="w-full flex items-center space-x-3 px-4 py-3 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg font-medium transition-colors duration-200"
+                  className="w-full flex items-center space-x-3 px-4 py-3 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg font-medium transition-colors duration-200 select-none"
+                  style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
                 >
                   <Trash2 className="w-5 h-5" />
-                  <span>Clear Database</span>
+                  <span className="select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}>Clear Database</span>
                 </button>
               </div>
               
               <div className="mt-6">
                 <button
                   onClick={() => setShowQuickActions(false)}
-                  className="w-full px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200"
+                  className="w-full px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 select-none"
+                  style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
                 >
-                  Cancel
+                  <span className="select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}>Cancel</span>
                 </button>
               </div>
             </div>
