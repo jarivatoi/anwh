@@ -101,10 +101,10 @@ export class AnnexureGenerator {
         0: { cellWidth: 15, halign: 'center' }, // S.No
         1: { cellWidth: 40, halign: 'left' },   // NAME (Full Name)
         2: { cellWidth: 35, halign: 'center' }, // ID NUMBER
-        3: { cellWidth: 25, halign: 'right' },  // SALARY
+        3: { cellWidth: 25, halign: 'left' },  // SALARY
         4: { cellWidth: 25, halign: 'center' }, // NO OF HRS PAYABLE
         5: { cellWidth: 25, halign: 'center' }, // NIGHT ALLOWANCE (Hrs)
-        6: { cellWidth: 30, halign: 'right' }   // AMOUNT
+        6: { cellWidth: 30, halign: 'center' }   // AMOUNT
       },
       margin: { left: 15, right: 15 },
       theme: 'grid',
@@ -170,8 +170,6 @@ export class AnnexureGenerator {
       totalHours: number;
       totalAmount: number;
       nightDutyCount: number;
-      nightDutyHours: number;
-      nightDutyHours: number;
       nightAllowance: number;
       grandTotal: number;
     }> = [];
