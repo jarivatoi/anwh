@@ -2,12 +2,14 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { RosterEntry } from '../../types/roster';
 import { formatMauritianRupees } from '../currency';
-import { availableNames } from '../rosterAuth';
+import { getStaffInfo, getStaffSalary } from '../rosterAuth';
 
-export interface AnnexureOptions {
+export interface IndividualBillOptions {
+  staffName: string;
   month: number;
   year: number;
   entries: RosterEntry[];
+  basicSalary: number;
   hourlyRate: number;
   shiftCombinations: Array<{
     id: string;
@@ -16,51 +18,17 @@ export interface AnnexureOptions {
   }>;
 }
 
-export class AnnexureGenerator {
+export class IndividualBillGenerator {
   
   /**
-   * Format number without trailing zeros and hide if zero
+   * Generate individual bill for a specific staff member matching the exact PDF format
    */
-  private formatNumber(value: number): string {
-    if (value === 0) return '';
-    return value % 1 === 0 ? value.toString() : value.toFixed(2).replace(/\.?0+$/, '');
-  }
-  
-  /**
-   * Format currency without trailing zeros and hide if zero
-   */
-  private formatCurrency(value: number): string {
-    if (value === 0) return '';
-    const formatted = value % 1 === 0 ? value.toString() : value.toFixed(2).replace(/\.?0+$/, '');
-    return `Rs ${formatted}`;
-  }
-
-  /**
-   * Format number without trailing zeros and hide if zero
-   */
-  private formatNumber(value: number): string {
-    if (value === 0) return '';
-    return value % 1 === 0 ? value.toString() : value.toFixed(2).replace(/\.?0+$/, '');
-  }
-  
-  /**
-   * Format currency without trailing zeros and hide if zero
-   */
-  private formatCurrency(value: number): string {
-    if (value === 0) return '';
-    const formatted = value % 1 === 0 ? value.toString() : value.toFixed(2).replace(/\.?0+$/, '');
-    return `Rs ${formatted}`;
-  }
-
-  /**
-   * Generate annexure matching the exact PDF format
-   */
-  async generateAnnexure(options: AnnexureOptions): Promise<void> {
-    const { month, year, entries, hourlyRate, shiftCombinations } = options;
+  async generateBill(options: IndividualBillOptions): Promise<void> {
+    const { staffName, month, year, entries, basicSalary, hourlyRate, shiftCombinations } = options;
     
-    console.log('📄 Generating annexure for all staff');
+    console.log('📄 Starting individual bill generation for:', staffName);
     
-    // Create PDF document - A4 portrait to match the original
+    // Create PDF document - A4 portrait
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -72,36 +40,61 @@ export class AnnexureGenerator {
       'July', 'August', 'September', 'October', 'November', 'December'
     ];
     
-    // Header - matching the original format
+    // Filter entries for the specific staff member and month
+    const staffEntries = this.filterEntriesForStaff(entries, staffName, month, year);
+    
+    console.log(`📄 Filtered ${staffEntries.length} entries for ${staffName} in ${monthNames[month]} ${year}`);
+    
+    // Get staff information
+    const staffInfo = getStaffInfo(staffName);
+    const staffSalary = getStaffSalary(staffName);
+    
+    // Header - compact format
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('X-RAY DEPARTMENT - ANWH', doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
+    doc.text('X-RAY DEPARTMENT - ANWH', doc.internal.pageSize.getWidth() / 2, 10, { align: 'center' });
     
     doc.setFontSize(12);
-    doc.text(`ANNEXURE - ${monthNames[month]} ${year}`, doc.internal.pageSize.getWidth() / 2, 25, { align: 'center' });
+    doc.text(`INDIVIDUAL WORK SUMMARY - ${monthNames[month]} ${year}`, doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
     
-    // Calculate summary for all staff
-    const staffSummaries = this.calculateStaffSummaries(entries, month, year, hourlyRate, shiftCombinations);
+    // Staff details section - two-column layout with proper alignment
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
     
-    // Prepare table data - matching the PDF format exactly
-    const tableData = staffSummaries.map((summary, index) => [
-      (index + 1).toString(), // Serial number
-      summary.fullName, // Full name instead of staff name
-      summary.employeeId, // ID number
-      this.formatCurrency(summary.salary), // Salary
-      this.formatNumber(summary.totalHours), // Hours payable (without night allowance)
-      this.formatNumber(summary.nightDutyHours), // Night allowance hours
-      this.formatCurrency(summary.grandTotal)
-    ]);
+    // Left column - Name, Month/Year, Employee ID
+    doc.text('Name:', 20, 30);
+    doc.text('Month/Year:', 20, 37);
+    doc.text('Employee ID:', 20, 44);
     
-    // Create table matching the original format
+    // Left column values  
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${staffInfo?.firstName || ''} ${staffInfo?.surname || staffName}`, 50, 30);
+    doc.text(`${monthNames[month]} ${year}`, 50, 37);
+    doc.text(staffInfo?.employeeId || '', 50, 44);
+    
+    // Right column - Title, Salary, Hourly Rate
+    doc.setFont('helvetica', 'bold');
+    doc.text('Title:', 120, 30);
+    doc.text('Salary:', 120, 37);
+    doc.text('Hourly Rate:', 120, 44);
+    
+    // Right column values
+    doc.setFont('helvetica', 'normal');
+    doc.text(staffInfo?.title || 'MIT', 150, 30);
+    doc.text(`Rs ${(staffInfo?.salary || 0).toLocaleString()}`, 150, 37);
+    doc.text(`Rs ${hourlyRate.toFixed(2)}`, 150, 44);
+    
+    // Prepare table data for ALL days in the month
+    const tableData = this.prepareAllDaysTableData(staffEntries, month, year, hourlyRate, shiftCombinations);
+    
+    // Create table with compact layout
     autoTable(doc, {
-      startY: 35,
-      head: [['S.No', 'NAME (Full Name)', 'ID NUMBER', 'SALARY', 'NO OF HRS PAYABLE (Hrs)', 'NIGHT ALLOWANCE (Hrs)', 'AMOUNT']],
-      body: tableData,
+      startY: 55,
+      head: [['Day Date', 'Morning\n(9-4)', 'Saturday\n(12-10)', 'Evening\n(4-10)', 'Night\nDuty', 'Hours', 'Remarks']],
+      body: tableData.rows,
       styles: {
-        fontSize: 8,
-        cellPadding: 2,
+        fontSize: 6,
+        cellPadding: 1,
         overflow: 'linebreak',
         halign: 'center',
         valign: 'middle'
@@ -110,215 +103,292 @@ export class AnnexureGenerator {
         fillColor: [220, 220, 220],
         textColor: [0, 0, 0],
         fontStyle: 'bold',
-        fontSize: 9,
+        fontSize: 7,
         halign: 'center',
-        valign: 'middle'
+        valign: 'middle',
+        cellPadding: 2
       },
       columnStyles: {
-        0: { cellWidth: 15, halign: 'center' }, // S.No
-        1: { cellWidth: 40, halign: 'left' },   // NAME (Full Name)
-        2: { cellWidth: 35, halign: 'center' }, // ID NUMBER
-        3: { cellWidth: 25, halign: 'right' },  // SALARY
-        4: { cellWidth: 25, halign: 'center' }, // NO OF HRS PAYABLE
-        5: { cellWidth: 25, halign: 'center' }, // NIGHT ALLOWANCE (Hrs)
-        6: { cellWidth: 30, halign: 'right' }   // AMOUNT
+        0: { cellWidth: 25, halign: 'center' }, // Day Date
+        1: { cellWidth: 20, halign: 'center' }, // Morning (9-4) - same as date
+        2: { cellWidth: 20, halign: 'center' }, // Saturday (12-10) - same as date
+        3: { cellWidth: 20, halign: 'center' }, // Evening (4-10) - same as date
+        4: { cellWidth: 20, halign: 'center' }, // Night Duty - same as date
+        5: { cellWidth: 15, halign: 'center' }, // Hours
+        6: { cellWidth: 35, halign: 'center' }  // Remarks (centered)
       },
-      margin: { left: 15, right: 15 },
+      margin: { left: 20, right: 20 },
+      pageBreak: 'auto',
+      rowPageBreak: 'avoid',
       theme: 'grid',
-      tableLineWidth: 0.3,
-      tableLineColor: [0, 0, 0]
+      tableLineWidth: 0.2,
+      tableLineColor: [0, 0, 0],
+      // Ensure table doesn't extend beyond content
+      tableWidth: 'wrap'
     });
     
-    // Add grand totals at the bottom
-    const grandTotalDays = staffSummaries.reduce((sum, s) => sum + s.totalDays, 0);
-    const grandTotalHours = staffSummaries.reduce((sum, s) => sum + s.totalHours, 0);
-    const grandTotalSalary = staffSummaries.reduce((sum, s) => sum + s.salary, 0);
-    const grandNightDutyHours = staffSummaries.reduce((sum, s) => sum + s.nightDutyHours, 0);
-    const grandSubtotal = staffSummaries.reduce((sum, s) => sum + s.totalAmount, 0);
-    const grandNightAllowance = staffSummaries.reduce((sum, s) => sum + s.nightAllowance, 0);
-      doc.text(`Night Allowance: ${this.formatNumber(nightDutyCount)} × 6 × 0.25 × ${this.formatCurrency(hourlyRate)} = ${this.formatCurrency(nightAllowance)}`, 15, startY + 26, { align: 'left' });
-    
+    // Add summary section
     const finalY = (doc as any).lastAutoTable.finalY + 10;
+    this.addSummarySection(doc, tableData.totalDays, tableData.totalHours, tableData.nightDutyCount, hourlyRate, finalY);
     
-    // Grand totals row
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text('GRAND TOTALS:', 15, finalY);
-    doc.text(`Total Salary: ${this.formatCurrency(grandTotalSalary)}`, 15, finalY + 8);
-    doc.text(`Total Hours Payable: ${this.formatNumber(grandTotalHours)}`, 15, finalY + 16);
-    doc.text(`Total Night Allowance Hours: ${this.formatNumber(grandNightDutyHours)}`, 15, finalY + 24);
+    // Add signature sections
+    this.addSignatureSections(doc, tableData.totalDays, tableData.totalHours, tableData.nightDutyCount, hourlyRate);
     
-    doc.setFontSize(12);
-    doc.text(`GRAND TOTAL AMOUNT: ${this.formatCurrency(grandTotal)}`, 15, finalY + 36);
-    
-    // Footer
+    // Footer - positioned at absolute bottom
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.text(`Generated on: ${new Date().toLocaleString()}`, 15, doc.internal.pageSize.getHeight() - 15);
-    doc.text('X-ray AN WH System', doc.internal.pageSize.getWidth() - 15, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
-    doc.text('X-ray ANWH System', doc.internal.pageSize.getWidth() - 15, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
-    // Save
-    const filename = `Annexure_${monthNames[month]}_${year}.pdf`;
+    doc.setFontSize(6);
+    const pageHeight = doc.internal.pageSize.getHeight();
+    doc.text('X-ray ANWH System', doc.internal.pageSize.getWidth() - 15, pageHeight - 15, { align: 'right' });
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, doc.internal.pageSize.getWidth() - 15, pageHeight - 10, { align: 'right' });
+    
+    // Generate filename
+    const filename = `${staffName}_${monthNames[month]}_${year}_Bill.pdf`;
+    
+    // Save the PDF
     doc.save(filename);
     
-    console.log('✅ Annexure generated:', filename);
+    console.log('✅ Individual bill generated:', filename);
   }
   
+  /**
+   * Add compact summary section
+   */
+  private addSummarySection(doc: jsPDF, totalDays: number, totalHours: number, nightDutyCount: number, hourlyRate: number, startY: number): void {
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('SUMMARY:', 15, startY);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    
+    // Calculate total amount from hours
+    const totalAmount = totalHours * hourlyRate;
+    
+    // Summary details
+    doc.text(`Total Working Days: ${totalDays}`, 15, startY + 8);
+    doc.text(`Total Working Hours: ${totalHours.toFixed(1)}`, 15, startY + 14);
+    doc.text(`Subtotal (Hours): ${formatMauritianRupees(totalAmount).formatted}`, 15, startY + 20);
+    
+    // Night duty allowance - calculation: (number of nights) × 6 × 0.25 × hourly_rate
+    const nightAllowanceBase = nightDutyCount * 6 * 0.25;
+    const nightAllowance = nightAllowanceBase * hourlyRate;
+    if (nightDutyCount > 0) {
+      doc.text(`Night Allowance: ${nightDutyCount} × 6 × 0.25 × ${formatMauritianRupees(hourlyRate).formatted} = ${formatMauritianRupees(nightAllowance).formatted}`, 15, startY + 26, { align: 'left' });
+    }
+    
+    // Grand total
+    const grandTotal = totalAmount + nightAllowance;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text(`TOTAL AMOUNT: ${formatMauritianRupees(grandTotal).formatted}`, 15, startY + (nightDutyCount > 0 ? 34 : 28));
+  }
   
   /**
-   * Calculate summaries for all staff with night allowance
+   * Add signature sections at bottom
    */
-  private calculateStaffSummaries(
+  private addSignatureSections(doc: jsPDF, totalDays: number, totalHours: number, nightDutyCount: number, hourlyRate: number): void {
+    const totalAmount = totalHours * hourlyRate;
+    const nightAllowanceBase = nightDutyCount * 6 * 0.25;
+    const nightAllowance = nightAllowanceBase * hourlyRate;
+    const grandTotal = totalAmount + nightAllowance;
+    
+    // Calculate position after summary
+    const summaryEndY = (doc as any).lastAutoTable.finalY + 5 + (nightDutyCount > 0 ? 34 : 28) + 10;
+    
+    // Left side - Date and signature
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text('Date and Signature: ________________', 15, summaryEndY + 5);
+    doc.text('Signature:_________________', 15, summaryEndY + 12);
+    
+    // Right side - Certification
+    const rightX = 120;
+    doc.text('Certified Correct as per Attendance.', rightX, summaryEndY + 5);
+    doc.text('Name :- _____________________________', rightX, summaryEndY + 12);
+    doc.text('Grade: Principal Medical Imaging Technologist.', rightX, summaryEndY + 19);
+    doc.text('Signature:- ____________________________________', rightX, summaryEndY + 26);
+  }
+  
+  /**
+   * Filter roster entries for specific staff member and month
+   */
+  private filterEntriesForStaff(
     entries: RosterEntry[], 
+    staffName: string, 
     month: number, 
-    year: number, 
+    year: number
+  ): RosterEntry[] {
+    return entries.filter(entry => {
+      // Check if entry belongs to this staff member (match base names)
+      const entryBaseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
+      const staffBaseName = staffName.replace(/\(R\)$/, '').trim().toUpperCase();
+      
+      if (entryBaseName !== staffBaseName) {
+        return false;
+      }
+      
+      // Check if entry is in the specified month/year
+      const entryDate = new Date(entry.date);
+      return entryDate.getMonth() === month && entryDate.getFullYear() === year;
+    });
+  }
+  
+  /**
+   * Prepare table data for ALL days in the month (uniform format)
+   */
+  private prepareAllDaysTableData(
+    entries: RosterEntry[], 
+    month: number,
+    year: number,
     hourlyRate: number, 
     shiftCombinations: Array<{id: string, combination: string, hours: number}>
-  ) {
-    const staffSummaries: Array<{
-      staffName: string;
-      fullName: string;
-      employeeId: string;
-      salary: number;
-      fullName: string;
-      employeeId: string;
-      salary: number;
-      totalDays: number;
-      totalHours: number;
-      totalAmount: number;
-      nightDutyCount: number;
-      nightDutyHours: number;
-      nightDutyHours: number;
-      nightAllowance: number;
-      grandTotal: number;
-    }> = [];
-    
-    // Group entries by staff
-    const staffGroups: Record<string, RosterEntry[]> = {};
-    
-    entries.forEach(entry => {
-      const entryDate = new Date(entry.date);
-      if (entryDate.getMonth() === month && entryDate.getFullYear() === year) {
-        const baseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
-        if (!staffGroups[baseName]) {
-          staffGroups[baseName] = [];
-        }
-        staffGroups[baseName].push(entry);
+  ): {
+    rows: string[][];
+    totalDays: number;
+    totalHours: number;
+    nightDutyCount: number;
+  } {
+    // Group existing entries by date
+    const entriesByDate = entries.reduce((groups, entry) => {
+      const dateKey = entry.date;
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
       }
-    });
+      groups[dateKey].push(entry);
+      return groups;
+    }, {} as Record<string, RosterEntry[]>);
     
-    // Calculate for each staff member
-    Object.entries(staffGroups).forEach(([baseName, staffEntries]) => {
-      let totalHours = 0;
-      let totalAmount = 0;
-      let nightDutyCount = 0;
-      let nightDutyHours = 0;
+    // Get all days in the month
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const rows: string[][] = [];
+    let totalHours = 0;
+    let nightDutyCount = 0;
+    let totalDays = 0;
+    
+    // Process ALL days in the month (1 to last day)
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateKey = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+      const dayEntries = entriesByDate[dateKey] || [];
       
-      staffEntries.forEach(entry => {
-        // Count night duties for allowance calculation
-        if (entry.shift_type === 'Night Duty') {
-          nightDutyCount++;
-        }
+      // Format as "Day Date" (e.g., "Mon 01/07")
+      const dayDate = this.formatDayDate(dateKey);
+      
+      if (dayEntries.length > 0) {
+        // This day has shifts - process them
+        totalDays++;
+    
+        // Combine shifts for the same date
+        const shifts: string[] = [];
+        let dayHours = 0;
+        let remarks = '';
         
-        // Map and calculate hours
-        const shiftMapping: Record<string, string> = {
-          'Morning Shift (9-4)': '9-4',
-          'Evening Shift (4-10)': '4-10',
-          'Saturday Regular (12-10)': '12-10',
-          'Night Duty': 'N',
-          'Sunday/Public Holiday/Special': '9-4'
-        };
-        
-        const shiftId = shiftMapping[entry.shift_type];
-        if (shiftId) {
-          const combination = shiftCombinations.find(combo => combo.id === shiftId);
-          if (combination) {
-            // Special case: Night Duty should use 11 hours (since allowances are paid separately)
-            const hoursToUse = entry.shift_type === 'Night Duty' ? 11 : combination.hours;
-            totalHours += hoursToUse;
-            totalAmount += hoursToUse * hourlyRate;
+        dayEntries.forEach(entry => {
+          shifts.push(entry.shift_type);
+          
+          // Count night duties for allowance
+          if (entry.shift_type === 'Night Duty') {
+            nightDutyCount++;
           }
-        }
-      });
-      
-      // Calculate night allowance hours: (number of nights) × 6 × 0.25
-      nightDutyHours = nightDutyCount * 6 * 0.25;
-      
-      // Calculate night allowance amount: nightDutyHours × hourly_rate
-      const nightAllowance = nightDutyHours * hourlyRate;
-      const grandTotal =  totalAmount + nightAllowance;
-      
-      // Find the actual staff name (with (R) if applicable)
-      const actualStaffName = availableNames.find(name => 
-        name.replace(/\(R\)$/, '').trim().toUpperCase() === baseName
-      ) || baseName;
-      
-      // Get staff info for full name, ID, and salary
-      const staffInfo = this.getStaffInfo(actualStaffName);
-      const fullName = staffInfo ? `${staffInfo.surname || actualStaffName} ${staffInfo.firstName || ''}`.trim() : actualStaffName;
-      const employeeId = staffInfo?.employeeId || '';
-      const salary = staffInfo?.salary || 0;
-      
-      staffSummaries.push({
-        staffName: actualStaffName,
-        fullName: fullName,
-        employeeId: employeeId,
-        salary: salary,
-        totalDays: staffEntries.length,
-        totalHours,
-        totalAmount,
-        nightDutyCount,
-        nightDutyHours,
-        nightAllowance,
-        grandTotal
-      });
-    });
+          
+          // Calculate hours for this shift
+          const shiftHours = this.getShiftHours(entry.shift_type, shiftCombinations);
+          dayHours += shiftHours;
+          
+          // Extract special date info from change_description
+          if (entry.change_description && entry.change_description.includes('Special Date:')) {
+            const specialMatch = entry.change_description.match(/Special Date:\s*([^;]+)/);
+            if (specialMatch && specialMatch[1].trim()) {
+              const fullRemarks = specialMatch[1].trim();
+              // Only show text before asterisk (*) if asterisk exists
+              remarks = fullRemarks.includes('*') ? fullRemarks.split('*')[0].trim() : fullRemarks;
+            }
+          }
+        });
+        
+        totalHours += dayHours;
+        
+        // Create checkmarks for each shift column
+        const morningCheck = shifts.includes('Morning Shift (9-4)') ? 'X' : '';
+        const saturdayCheck = shifts.includes('Saturday Regular (12-10)') ? 'X' : '';
+        const eveningCheck = shifts.includes('Evening Shift (4-10)') ? 'X' : '';
+        const nightCheck = shifts.includes('Night Duty') ? 'X' : '';
+        
+        rows.push([
+          dayDate,
+          morningCheck,
+          saturdayCheck,
+          eveningCheck,
+          nightCheck,
+          dayHours.toFixed(1),
+          remarks // Special date info or blank
+        ]);
+      } else {
+        // This day has no shifts - show empty row
+        rows.push([
+          dayDate,
+          '', // No morning shift
+          '', // No saturday shift
+          '', // No evening shift
+          '', // No night duty
+          '0.0', // No hours
+          '' // Blank remarks
+        ]);
+      }
+    }
     
-    // Sort by staff name
-    return staffSummaries.sort((a, b) => a.staffName.localeCompare(b.staffName));
+    return {
+      rows,
+      totalDays,
+      totalHours,
+      nightDutyCount
+    };
   }
   
   /**
-   * Get staff information from auth codes
+   * Get hours for a shift type
    */
-  private getStaffInfo(staffName: string) {
-    // Import auth codes to get staff details
-    const authCodes = [
-      { code: 'B165', name: 'BHEKUR', title: 'MIT', salary: 47510, employeeId: 'B16048123000915', firstName: 'Yashdev', surname: 'BHEKUR' },
-      { code: 'B196', name: 'BHOLLOORAM', title: 'MIT', salary: 47510, employeeId: 'B19118118005356', firstName: 'Sawan', surname: 'BHOLLOORAM' },
-      { code: 'D28B', name: 'DHUNNY', title: 'MIT', salary: 30060, employeeId: '0280876127778', firstName: 'Leetarvind', surname: 'DHUNNY' },
-      { code: 'D07D', name: 'DOMUN', title: 'SMIT', salary: 59300, employeeId: 'D07027340003110', firstName: 'Shamir', surname: 'DOMUN' },
-      { code: 'H301', name: 'FOKEERCHAND', title: 'MIT', salary: 37185, employeeId: 'H30038612000061', firstName: 'Needeema', surname: 'FOKEERCHAND' },
-      { code: 'S069', name: 'GHOORAN', title: 'MIT', salary: 38010, employeeId: 'S06781460103939', firstName: 'Bibi Sharinaaz', surname: 'SAMTALLY-GHOORAN' },
-      { code: 'H13D', name: 'HOSENBUX', title: 'MIT', salary: 48810, employeeId: 'H13038118012901', firstName: 'Zameer', surname: 'HOSENBUX' },
-      { code: 'J149', name: 'JUMMUN', title: 'MIT', salary: 47510, employeeId: 'J14037926000909', firstName: 'Bibi Nawsheen', surname: 'JUMMUN' },
-      { code: 'M17G', name: 'MAUDHOO', title: 'MIT', salary: 38010, employeeId: 'M17038026006966', firstName: 'Chandanee', surname: 'MAUDHOO' },
-      { code: 'N28C', name: 'NARAYYA', title: 'MIT', salary: 38010, employeeId: 'N28088124016266', firstName: 'Viraj', surname: 'NARAYYA' },
-      { code: 'P09A', name: 'PITTEA', title: 'SMIT', salary: 59300, employeeId: 'P09117119004134', firstName: 'Pokhiraj', surname: 'PITTEA' },
-      { code: 'R16G', name: 'RUNGADOO', title: 'SMIT', salary: 59300, employeeId: 'R21057240011866', firstName: 'Manee', surname: 'RUNGADOO' },
-      { code: 'T16G', name: 'TEELUCK', title: 'SMIT', salary: 59300, employeeId: '', firstName: '', surname: 'TEELUCK' },
-      { code: 'V160', name: 'VEERASAWMY', title: 'SMIT', salary: 59300, employeeId: 'V16046642044100', firstName: 'Goindah', surname: 'VEERASAWMY' },
-      
-      // Radiographers (R) - same data as regular staff
-      { code: 'B16R', name: 'BHEKUR(R)', title: 'MIT', salary: 47510, employeeId: 'B16048123000915', firstName: 'Yashdev', surname: 'BHEKUR' },
-      { code: 'B19R', name: 'BHOLLOORAM(R)', title: 'MIT', salary: 47510, employeeId: 'B19118118005356', firstName: 'Sawan', surname: 'BHOLLOORAM' },
-      { code: 'D28R', name: 'DHUNNY(R)', title: 'MIT', salary: 30060, employeeId: '0280876127778', firstName: 'Leetarvind', surname: 'DHUNNY' },
-      { code: 'D07R', name: 'DOMUN(R)', title: 'SMIT', salary: 59300, employeeId: 'D07027340003110', firstName: 'Shamir', surname: 'DOMUN' },
-      { code: 'H30R', name: 'FOKEERCHAND(R)', title: 'MIT', salary: 37185, employeeId: 'H30038612000061', firstName: 'Needeema', surname: 'FOKEERCHAND' },
-      { code: 'H13R', name: 'HOSENBUX(R)', title: 'MIT', salary: 48810, employeeId: 'H13038118012901', firstName: 'Zameer', surname: 'HOSENBUX' },
-      { code: 'S06R', name: 'GHOORAN(R)', title: 'MIT', salary: 38010, employeeId: 'S06781460103939', firstName: 'Bibi Sharinaaz', surname: 'SAMTALLY-GHOORAN' },
-      { code: 'J14R', name: 'JUMMUN(R)', title: 'MIT', salary: 47510, employeeId: 'J14037926000909', firstName: 'Bibi Nawsheen', surname: 'JUMMUN' },
-      { code: 'M17R', name: 'MAUDHOO(R)', title: 'MIT', salary: 38010, employeeId: 'M17038026006966', firstName: 'Chandanee', surname: 'MAUDHOO' },
-      { code: 'N28R', name: 'NARAYYA(R)', title: 'MIT', salary: 38010, employeeId: 'N28088124016266', firstName: 'Viraj', surname: 'NARAYYA' },
-      { code: 'P09R', name: 'PITTEA(R)', title: 'SMIT', salary: 59300, employeeId: 'P09117119004134', firstName: 'Pokhiraj', surname: 'PITTEA' },
-      { code: 'R21R', name: 'RUNGADOO(R)', title: 'SMIT', salary: 59300, employeeId: 'R21057240011866', firstName: 'Manee', surname: 'RUNGADOO' },
-      { code: 'T16R', name: 'TEELUCK(R)', title: 'SMIT', salary: 59300, employeeId: '', firstName: '', surname: 'TEELUCK' },
-      { code: 'V16R', name: 'VEERASAWMY(R)', title: 'SMIT', salary: 59300, employeeId: 'V16046642044100', firstName: 'Goindah', surname: 'VEERASAWMY' }
-    ];
+  private getShiftHours(shiftType: string, shiftCombinations: Array<{id: string, combination: string, hours: number}>): number {
+    // Map roster shift types to combination IDs
+    const shiftMapping: Record<string, string> = {
+      'Morning Shift (9-4)': '9-4',
+      'Evening Shift (4-10)': '4-10',
+      'Saturday Regular (12-10)': '12-10',
+      'Night Duty': 'N',
+      'Sunday/Public Holiday/Special': '9-4'
+    };
     
-    return authCodes.find(auth => auth.name === staffName) || null;
+    const combinationId = shiftMapping[shiftType];
+    if (!combinationId) {
+      console.warn(`Unknown shift type: ${shiftType}`);
+      return 0;
+    }
+    
+    // Special case: Night Duty should show 11 hours (since allowances are paid separately)
+    if (shiftType === 'Night Duty') {
+      return 11;
+    }
+    
+    const combination = shiftCombinations.find(combo => combo.id === combinationId);
+    if (!combination) {
+      console.warn(`No combination found for shift ID: ${combinationId}`);
+      return 0;
+    }
+    
+    return combination.hours;
+  }
+  
+  /**
+   * Format date as "Day DD/MM" (e.g., "Mon 01/07")
+   */
+  private formatDayDate(dateString: string): string {
+    const date = new Date(dateString);
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayName = dayNames[date.getDay()];
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    return `${dayName} ${day}/${month}`;
   }
 }
 
 // Create singleton instance
-export const annexureGenerator = new AnnexureGenerator();
+export const individualBillGenerator = new IndividualBillGenerator();
