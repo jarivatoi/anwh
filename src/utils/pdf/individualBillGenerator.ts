@@ -136,7 +136,7 @@ export class AnnexureGenerator {
     const grandNightDutyHours = staffSummaries.reduce((sum, s) => sum + s.nightDutyHours, 0);
     const grandSubtotal = staffSummaries.reduce((sum, s) => sum + s.totalAmount, 0);
     const grandNightAllowance = staffSummaries.reduce((sum, s) => sum + s.nightAllowance, 0);
-    const grandTotal = staffSummaries.reduce((sum, s) => sum + s.grandTotal, 0);
+      doc.text(`Night Allowance: ${this.formatNumber(nightDutyCount)} × 6 × 0.25 × ${this.formatCurrency(hourlyRate)} = ${this.formatCurrency(nightAllowance)}`, 15, startY + 26, { align: 'left' });
     
     const finalY = (doc as any).lastAutoTable.finalY + 10;
     
@@ -321,4 +321,4 @@ export class AnnexureGenerator {
 }
 
 // Create singleton instance
-export const individualBillGenerator = new IndividualBillGenerator();
+export const annexureGenerator = new AnnexureGenerator();
