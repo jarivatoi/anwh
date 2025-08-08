@@ -773,7 +773,9 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
               </div>
               
               <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
-                Quick Actions
+                <span className="select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}>
+                  Quick Actions
+                </span>
               </h3>
               
               <div className="space-y-3 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}>
