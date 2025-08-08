@@ -16,7 +16,7 @@ export interface AnnexureOptions {
   }>;
 }
 
-export class IndividualBillGenerator {
+export class AnnexureGenerator {
   
   /**
    * Format number without trailing zeros and hide if zero
@@ -321,4 +321,4 @@ export class IndividualBillGenerator {
 }
 
 // Create singleton instance
-export const annexureGenerator = new AnnexureGenerator();
+export const individualBillGenerator = new IndividualBillGenerator();
