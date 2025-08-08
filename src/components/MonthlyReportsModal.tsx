@@ -2,7 +2,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { RosterEntry } from '../../types/roster';
 import { formatMauritianRupees } from '../currency';
-import { availableNames } from '../rosterAuth';
+import { availableNames } from '../utils/rosterAuth';
 
 export interface AnnexureOptions {
   month: number;
@@ -18,6 +18,23 @@ export interface AnnexureOptions {
 
 export class AnnexureGenerator {
   
+  /**
+   * Format number without trailing zeros and hide if zero
+   */
+  private formatNumber(value: number): string {
+    if (value === 0) return '';
+    return value % 1 === 0 ? value.toString() : value.toFixed(2).replace(/\.?0+$/, '');
+  }
+  
+  /**
+   * Format currency without trailing zeros and hide if zero
+   */
+  private formatCurrency(value: number): string {
+    if (value === 0) return '';
+    const formatted = value % 1 === 0 ? value.toString() : value.toFixed(2).replace(/\.?0+$/, '');
+    return `Rs ${formatted}`;
+  }
+
   /**
    * Format number without trailing zeros and hide if zero
    */
@@ -138,8 +155,8 @@ export class AnnexureGenerator {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.text(`Generated on: ${new Date().toLocaleString()}`, 15, doc.internal.pageSize.getHeight() - 15);
+    doc.text('X-ray AN WH System', doc.internal.pageSize.getWidth() - 15, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
     doc.text('X-ray ANWH System', doc.internal.pageSize.getWidth() - 15, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
-    
     // Save
     const filename = `Annexure_${monthNames[month]}_${year}.pdf`;
     doc.save(filename);
@@ -163,10 +180,14 @@ export class AnnexureGenerator {
       fullName: string;
       employeeId: string;
       salary: number;
+      fullName: string;
+      employeeId: string;
+      salary: number;
       totalDays: number;
       totalHours: number;
       totalAmount: number;
       nightDutyCount: number;
+      nightDutyHours: number;
       nightDutyHours: number;
       nightAllowance: number;
       grandTotal: number;
