@@ -19,23 +19,6 @@ export interface AnnexureOptions {
 export class AnnexureGenerator {
   
   /**
-   * Format name with line breaks for long names
-   */
-  private formatNameWithLineBreaks(fullName: string): string {
-    // If name is longer than 20 characters, split into lines
-    if (fullName.length > 20) {
-      const parts = fullName.split(' ');
-      if (parts.length >= 2) {
-        // Put surname on first line, first name(s) on second line
-        const surname = parts[0];
-        const firstName = parts.slice(1).join(' ');
-        return `${surname}\n${firstName}`;
-      }
-    }
-    return fullName;
-  }
-  
-  /**
    * Format number without trailing zeros and hide if zero
    */
   private formatNumber(value: number): string {
@@ -86,7 +69,7 @@ export class AnnexureGenerator {
     // Prepare table data - matching the PDF format exactly
     const tableData = staffSummaries.map((summary, index) => [
       (index + 1).toString(), // Serial number
-      this.formatNameWithLineBreaks(summary.fullName), // Full name with line breaks
+      summary.fullName, // Full name instead of staff name
       summary.employeeId, // ID number
       this.formatCurrency(summary.salary), // Salary
       this.formatNumber(summary.totalHours), // Hours payable (without night allowance)
@@ -124,7 +107,6 @@ export class AnnexureGenerator {
         6: { cellWidth: 30, halign: 'right' }   // AMOUNT
       },
       margin: { left: 15, right: 15 },
-      halign: 'center', // Center the entire table horizontally
       theme: 'grid',
       tableLineWidth: 0.3,
       tableLineColor: [0, 0, 0]
@@ -244,8 +226,7 @@ export class AnnexureGenerator {
       });
       
       // Calculate night allowance: (number of nights) × 6 × 0.25 × hourly_rate
-      const nightAllowanceBase = nightDutyCount * 6 * 0.25;
-      const nightAllowance = nightAllowanceBase * hourlyRate;
+      const nightAllowance = nightDutyCount * 6 * 0.25;
       const grandTotal =  totalAmount + nightAllowance;
       
       // Find the actual staff name (with (R) if applicable)
