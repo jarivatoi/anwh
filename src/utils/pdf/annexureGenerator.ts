@@ -36,6 +36,23 @@ export class AnnexureGenerator {
   }
 
   /**
+   * Format number without trailing zeros and hide if zero
+   */
+  private formatNumber(value: number): string {
+    if (value === 0) return '';
+    return value % 1 === 0 ? value.toString() : value.toFixed(2).replace(/\.?0+$/, '');
+  }
+  
+  /**
+   * Format currency without trailing zeros and hide if zero
+   */
+  private formatCurrency(value: number): string {
+    if (value === 0) return '';
+    const formatted = value % 1 === 0 ? value.toString() : value.toFixed(2).replace(/\.?0+$/, '');
+    return `Rs ${formatted}`;
+  }
+
+  /**
    * Generate annexure matching the exact PDF format
    */
   async generateAnnexure(options: AnnexureOptions): Promise<void> {
