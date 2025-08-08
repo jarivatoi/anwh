@@ -138,24 +138,26 @@ const handleRemovalSync = (
   });
   
   // CRITICAL: Only sync removal if the assigned name matches the calendar label
+  // Handle both NARAYYA and NARAYYA(R) as the same person
   const assignedBaseName = assignedName.replace(/\(R\)$/, '').trim().toUpperCase();
   const calendarBaseName = calendarLabel.replace(/\(R\)$/, '').trim().toUpperCase();
   
-  console.log('🔍 rosterCalendarSync.ts: Removal name matching check:', {
+  console.log('🔍 rosterCalendarSync.ts: Removal name matching check (handles R variants):', {
     assignedName,
     calendarLabel,
     assignedBaseName,
     calendarBaseName,
-    namesMatch: assignedBaseName === calendarBaseName
+    namesMatch: assignedBaseName === calendarBaseName,
+    note: 'Both NARAYYA and NARAYYA(R) should match NARAYYA calendar'
   });
   
   // If names don't match, don't sync removal to calendar
   if (assignedBaseName !== calendarBaseName) {
-    console.log(`❌ rosterCalendarSync.ts: Names don't match for removal - skipping sync. Assigned: "${assignedBaseName}", Calendar: "${calendarBaseName}"`);
+    console.log(`❌ rosterCalendarSync.ts: Base names don't match for removal - skipping sync. Assigned base: "${assignedBaseName}", Calendar base: "${calendarBaseName}"`);
     return false;
   }
   
-  console.log(`✅ rosterCalendarSync.ts: Names match for removal - proceeding with sync`);
+  console.log(`✅ rosterCalendarSync.ts: Base names match for removal - proceeding with sync (${assignedName} matches ${calendarLabel})`);
   
   // Map roster shift type to calendar shift ID
   const shiftMapping: Record<string, string> = {
@@ -232,7 +234,7 @@ const handleRemovalSync = (
       <strong style="font-size: 15px;">Calendar Updated</strong>
     </div>
     <div style="font-size: 13px; line-height: 1.4; opacity: 0.95;">
-      <strong>${assignedName}</strong> removed from calendar<br>
+      <strong>${assignedName}</strong> removed from <strong>${calendarLabel}</strong>'s calendar<br>
       📅 <strong>${date}</strong> - ${shiftType}
     </div>
   `;
@@ -305,24 +307,26 @@ export const syncRosterToCalendar = (
   
   // CRITICAL: Only sync if the assigned name matches the calendar label
   // This prevents other people's roster changes from affecting your personal calendar
+  // Handle both NARAYYA and NARAYYA(R) as the same person
   const assignedBaseName = assignedName.replace(/\(R\)$/, '').trim().toUpperCase();
   const calendarBaseName = calendarLabel.replace(/\(R\)$/, '').trim().toUpperCase();
   
-  console.log('🔍 ROSTER SYNC: Name matching check:', {
+  console.log('🔍 ROSTER SYNC: Name matching check (handles R variants):', {
     assignedName,
     calendarLabel,
     assignedBaseName,
     calendarBaseName,
-    namesMatch: assignedBaseName === calendarBaseName
+    namesMatch: assignedBaseName === calendarBaseName,
+    note: 'Both NARAYYA and NARAYYA(R) should match NARAYYA calendar'
   });
   
   // If names don't match, don't sync to calendar
   if (assignedBaseName !== calendarBaseName) {
-    console.log(`❌ ROSTER SYNC: Names don't match - skipping sync. Assigned: "${assignedBaseName}", Calendar: "${calendarBaseName}"`);
+    console.log(`❌ ROSTER SYNC: Base names don't match - skipping sync. Assigned base: "${assignedBaseName}", Calendar base: "${calendarBaseName}"`);
     return false;
   }
   
-  console.log(`✅ ROSTER SYNC: Names match - proceeding with sync`);
+  console.log(`✅ ROSTER SYNC: Base names match - proceeding with sync (${assignedName} matches ${calendarLabel})`);
   
   // Handle removal action
   if (action === 'removed') {
@@ -437,7 +441,7 @@ export const syncRosterToCalendar = (
         <strong style="font-size: 15px;">Calendar Updated</strong>
       </div>
       <div style="font-size: 13px; line-height: 1.4; opacity: 0.95;">
-        <strong>${assignedName}</strong> added to calendar<br>
+        <strong>${assignedName}</strong> added to <strong>${calendarLabel}</strong>'s calendar<br>
         📅 <strong>${date}</strong> - ${shiftType}
         ${(needsSpecial || isRosterSpecialDate) ? '<br>📌 Date marked as special' : ''}
       </div>
