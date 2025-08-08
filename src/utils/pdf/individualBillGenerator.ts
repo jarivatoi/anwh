@@ -319,6 +319,3 @@ export class AnnexureGenerator {
     return authCodes.find(auth => auth.name === staffName) || null;
   }
 }
-
-// Create singleton instance
-export const individualBillGenerator = new AnnexureGenerator();
