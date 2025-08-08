@@ -216,32 +216,41 @@ const handleRemovalSync = (
     });
   }
   
-  // Show removal notification
+  // Show enhanced removal notification with person's name
   const notification = document.createElement('div');
   notification.style.cssText = `
     position: fixed;
     top: 80px;
     right: 20px;
-    background: #ef4444;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
     color: white;
-    padding: 12px 16px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    padding: 16px 20px;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
     z-index: 999999;
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 14px;
     font-weight: 500;
+    max-width: 320px;
     animation: slideInRight 0.3s ease-out;
+    border: 2px solid rgba(255, 255, 255, 0.2);
   `;
   
   notification.innerHTML = `
-    📅 Calendar updated: ${shiftType} removed from ${date}
-    ${!stillNeedsSpecial ? '<br>📌 Special date marking removed' : ''}
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+      <div style="width: 8px; height: 8px; background: white; border-radius: 50%; opacity: 0.9;"></div>
+      <strong style="font-size: 15px;">Calendar Updated</strong>
+    </div>
+    <div style="font-size: 13px; line-height: 1.4; opacity: 0.95;">
+      <strong>${assignedName}</strong> removed from calendar<br>
+      📅 <strong>${date}</strong> - ${shiftType}
+      ${!stillNeedsSpecial ? '<br>📌 Special date marking also removed' : ''}
+    </div>
   `;
   
   document.body.appendChild(notification);
   
-  // Auto-remove after 3 seconds
+  // Auto-remove after 4 seconds (longer for removal notifications)
   setTimeout(() => {
     if (document.body.contains(notification)) {
       notification.style.animation = 'slideInRight 0.3s ease-out reverse';
@@ -251,11 +260,35 @@ const handleRemovalSync = (
         }
       }, 300);
     }
-  }, 3000);
+  }, 4000);
   
   console.log(`✅ ROSTER SYNC: Calendar updated successfully for ${date}`);
   return true;
 };
+
+// Add CSS for notification animations
+const addNotificationStyles = () => {
+  if (!document.querySelector('#roster-sync-styles')) {
+    const style = document.createElement('style');
+    style.id = 'roster-sync-styles';
+    style.textContent = `
+      @keyframes slideInRight {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+};
+
+// Initialize styles
+addNotificationStyles();
 
 /**
  * Main synchronization function
@@ -387,27 +420,36 @@ export const syncRosterToCalendar = (
   console.log(`🔍 ROSTER SYNC: Calendar updated: ${calendarUpdated}, Final schedule keys: ${Object.keys(schedule).length}`);
   
   if (calendarUpdated) {
-    // Show success notification
+    // Show enhanced addition notification
     const notification = document.createElement('div');
     notification.style.cssText = `
       position: fixed;
       top: 80px;
       right: 20px;
-      background: #10b981;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
       color: white;
-      padding: 12px 16px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      padding: 16px 20px;
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
       z-index: 999999;
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       font-size: 14px;
       font-weight: 500;
+      max-width: 320px;
       animation: slideInRight 0.3s ease-out;
+      border: 2px solid rgba(255, 255, 255, 0.2);
     `;
     
     notification.innerHTML = `
-      📅 Calendar updated: ${shiftType} added to ${date}
-      ${(needsSpecial || isRosterSpecialDate) ? '<br>📌 Date marked as special' : ''}
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+        <div style="width: 8px; height: 8px; background: white; border-radius: 50%; opacity: 0.9;"></div>
+        <strong style="font-size: 15px;">Calendar Updated</strong>
+      </div>
+      <div style="font-size: 13px; line-height: 1.4; opacity: 0.95;">
+        <strong>${assignedName}</strong> added to calendar<br>
+        📅 <strong>${date}</strong> - ${shiftType}
+        ${(needsSpecial || isRosterSpecialDate) ? '<br>📌 Date marked as special' : ''}
+      </div>
     `;
     
     document.body.appendChild(notification);
