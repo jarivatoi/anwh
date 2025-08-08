@@ -191,11 +191,14 @@ const handleRemovalSync = (
     if (updatedShifts.length === 0) {
       // If no shifts left, remove the date entry completely
       delete newSchedule[date];
+      console.log(`🗑️ rosterCalendarSync.ts: No shifts left for ${date}, removing date entry completely`);
     } else {
       // Otherwise, update with remaining shifts
       newSchedule[date] = updatedShifts;
+      console.log(`🗑️ rosterCalendarSync.ts: Updated ${date} with remaining shifts:`, updatedShifts);
     }
     
+    console.log(`🗑️ rosterCalendarSync.ts: Schedule update completed for ${date}`);
     return newSchedule;
   });
   
@@ -203,6 +206,7 @@ const handleRemovalSync = (
   // because the person might have special activities without any shifts
   
   // Show enhanced removal notification with person's name
+  console.log('🔔 rosterCalendarSync.ts: Creating removal notification...');
   const notification = document.createElement('div');
   notification.style.cssText = `
     position: fixed;
@@ -234,6 +238,7 @@ const handleRemovalSync = (
   `;
   
   document.body.appendChild(notification);
+  console.log('🔔 rosterCalendarSync.ts: Removal notification created and added to DOM');
   
   // Auto-remove after 4 seconds (longer for removal notifications)
   setTimeout(() => {
@@ -242,6 +247,7 @@ const handleRemovalSync = (
       setTimeout(() => {
         if (document.body.contains(notification)) {
           document.body.removeChild(notification);
+          console.log('🔔 rosterCalendarSync.ts: Removal notification removed from DOM');
         }
       }, 300);
     }

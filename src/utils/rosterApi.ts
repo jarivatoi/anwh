@@ -197,6 +197,14 @@ export const deleteRosterEntry = async (id: string): Promise<void> => {
     
     // Dispatch event for calendar synchronization with removal action
     if (entryToDelete) {
+      console.log('🔄 Dispatching rosterCalendarSync event for removal:', {
+        date: entryToDelete.date,
+        shiftType: entryToDelete.shift_type,
+        assignedName: entryToDelete.assigned_name,
+        editorName: entryToDelete.last_edited_by || 'Unknown',
+        action: 'removed'
+      });
+      
       const syncEvent = {
         date: entryToDelete.date,
         shiftType: entryToDelete.shift_type,
@@ -207,6 +215,8 @@ export const deleteRosterEntry = async (id: string): Promise<void> => {
       window.dispatchEvent(new CustomEvent('rosterCalendarSync', {
         detail: syncEvent
       }));
+      
+      console.log('✅ rosterCalendarSync event dispatched for removal');
     }
   } catch (error) {
     console.error('❌ Network error deleting roster entry:', error);
