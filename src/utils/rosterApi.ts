@@ -103,6 +103,16 @@ export const updateRosterEntry = async (id: string, formData: RosterFormData, ed
       throw new Error(`Failed to fetch current entry: ${fetchError.message}`);
     }
 
+    // CRITICAL: Check if this is a name change that should trigger removal from calendar
+    const isNameChange = currentEntry.assigned_name !== formData.assignedName;
+    const oldAssignedName = currentEntry.assigned_name;
+    
+    console.log('🔍 UPDATE: Name change detection:', {
+      oldName: oldAssignedName,
+      newName: formData.assignedName,
+      isNameChange,
+      editorName
+    });
     const now = new Date();
     const timestamp = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
     
@@ -144,6 +154,24 @@ export const updateRosterEntry = async (id: string, formData: RosterFormData, ed
 
     console.log('✅ Successfully updated roster entry:', data);
     
+    // CRITICAL: If this is a name change, dispatch REMOVAL event for the old name first
+    if (isNameChange) {
+      console.log('🗑️ UPDATE: Dispatching removal event for old name:', oldAssignedName);
+      const removalEvent = {
+        date: formData.date,
+        shiftType: formData.shiftType,
+        assignedName: oldAssignedName, // Use the OLD name for removal
+        editorName: editorName,
+        action: 'removed'
+      };
+      window.dispatchEvent(new CustomEvent('rosterCalendarSync', {
+        detail: removalEvent
+      }));
+      console.log('✅ UPDATE: Removal event dispatched for:', oldAssignedName);
+      
+      // Small delay to ensure removal is processed first
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
     // Dispatch event for calendar synchronization with detailed logging
     const syncEvent = {
       date: formData.date,
@@ -155,6 +183,7 @@ export const updateRosterEntry = async (id: string, formData: RosterFormData, ed
     window.dispatchEvent(new CustomEvent('rosterCalendarSync', {
       detail: syncEvent
     }));
+    console.log('✅ UPDATE: Addition event dispatched for:', formData.assignedName);
     
     return data;
   } catch (error) {
