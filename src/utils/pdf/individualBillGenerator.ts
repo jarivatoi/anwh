@@ -321,3 +321,4 @@ export class AnnexureGenerator {
 }
 
 // Create singleton instance
+export const individualBillGenerator = new IndividualBillGenerator();
