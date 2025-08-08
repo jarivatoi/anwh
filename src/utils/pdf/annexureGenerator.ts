@@ -101,10 +101,10 @@ export class AnnexureGenerator {
         0: { cellWidth: 15, halign: 'center' }, // S.No
         1: { cellWidth: 40, halign: 'left' },   // NAME (Full Name)
         2: { cellWidth: 35, halign: 'center' }, // ID NUMBER
-        3: { cellWidth: 25, halign: 'left' },  // SALARY
+        3: { cellWidth: 25, halign: 'right' },  // SALARY
         4: { cellWidth: 25, halign: 'center' }, // NO OF HRS PAYABLE
         5: { cellWidth: 25, halign: 'center' }, // NIGHT ALLOWANCE (Hrs)
-        6: { cellWidth: 30, halign: 'center' }   // AMOUNT
+        6: { cellWidth: 30, halign: 'right' }   // AMOUNT
       },
       margin: { left: 15, right: 15 },
       theme: 'grid',
@@ -170,6 +170,8 @@ export class AnnexureGenerator {
       totalHours: number;
       totalAmount: number;
       nightDutyCount: number;
+      nightDutyHours: number;
+      nightDutyHours: number;
       nightAllowance: number;
       grandTotal: number;
     }> = [];
@@ -199,9 +201,6 @@ export class AnnexureGenerator {
         // Count night duties for allowance calculation
         if (entry.shift_type === 'Night Duty') {
           nightDutyCount++;
-          // Add night duty hours (typically 12.5 hours per night)
-          const nightShiftHours = shiftCombinations.find(combo => combo.id === 'N')?.hours || 12.5;
-          nightDutyHours += nightShiftHours;
         }
         
         // Map and calculate hours
@@ -223,8 +222,11 @@ export class AnnexureGenerator {
         }
       });
       
-      // Calculate night allowance: (number of nights) × 6 × 0.25 × hourly_rate
-      const nightAllowance = nightDutyCount * 6 * 0.25;
+      // Calculate night allowance hours: (number of nights) × 6 × 0.25
+      nightDutyHours = nightDutyCount * 6 * 0.25;
+      
+      // Calculate night allowance amount: nightDutyHours × hourly_rate
+      const nightAllowance = nightDutyHours * hourlyRate;
       const grandTotal =  totalAmount + nightAllowance;
       
       // Find the actual staff name (with (R) if applicable)
