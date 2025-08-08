@@ -199,22 +199,8 @@ const handleRemovalSync = (
     return newSchedule;
   });
   
-  // Check if we should remove special date marking
-  // Only remove special marking if no other shifts require it
-  const remainingShifts = currentShifts.filter(shift => shift !== calendarShiftId);
-  const stillNeedsSpecial = remainingShifts.some(shift => {
-    const remainingShiftType = Object.entries(shiftMapping).find(([_, id]) => id === shift)?.[0];
-    return remainingShiftType ? requiresSpecialDate(date, remainingShiftType) : false;
-  });
-  
-  if (!stillNeedsSpecial && specialDates[date]) {
-    console.log(`🗑️ rosterCalendarSync.ts: Removing special date marking for ${date}`);
-    setSpecialDates(prev => {
-      const newSpecialDates = { ...prev };
-      delete newSpecialDates[date];
-      return newSpecialDates;
-    });
-  }
+  // Note: We don't remove special date marking when removing shifts
+  // because the person might have special activities without any shifts
   
   // Show enhanced removal notification with person's name
   const notification = document.createElement('div');
@@ -244,7 +230,6 @@ const handleRemovalSync = (
     <div style="font-size: 13px; line-height: 1.4; opacity: 0.95;">
       <strong>${assignedName}</strong> removed from calendar<br>
       📅 <strong>${date}</strong> - ${shiftType}
-      ${!stillNeedsSpecial ? '<br>📌 Special date marking also removed' : ''}
     </div>
   `;
   
