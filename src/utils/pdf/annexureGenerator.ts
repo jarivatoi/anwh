@@ -216,8 +216,10 @@ export class AnnexureGenerator {
         if (shiftId) {
           const combination = shiftCombinations.find(combo => combo.id === shiftId);
           if (combination) {
-            totalHours += combination.hours;
-            totalAmount += combination.hours * hourlyRate;
+            // Special case: Night Duty should use 11 hours (since allowances are paid separately)
+            const hoursToUse = entry.shift_type === 'Night Duty' ? 11 : combination.hours;
+            totalHours += hoursToUse;
+            totalAmount += hoursToUse * hourlyRate;
           }
         }
       });
