@@ -58,7 +58,7 @@ export class AnnexureGenerator {
   async generateAnnexure(options: AnnexureOptions): Promise<void> {
     const { month, year, entries, hourlyRate, shiftCombinations } = options;
     
-    console.log('📄 Generating individual bill for staff');
+    console.log('📄 Generating annexure for all staff');
     
     // Create PDF document - A4 portrait to match the original
     const doc = new jsPDF({
@@ -321,4 +321,4 @@ export class AnnexureGenerator {
 }
 
 // Create singleton instance
-export const annexureGenerator = new AnnexureGenerator();
+export const individualBillGenerator = new IndividualBillGenerator();
