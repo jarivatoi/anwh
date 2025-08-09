@@ -98,7 +98,7 @@ export class RosterListGenerator {
         columnStyles: {
           0: { cellWidth: 'auto', halign: 'left', valign: 'middle' },   // Date (auto-fit)
           1: { cellWidth: 'auto', halign: 'left', valign: 'middle' },   // Shift (auto-fit)
-          2: { cellWidth: 60, halign: 'left', valign: 'middle', overflow: 'linebreak' },   // Staff Names (sized for ~3 staff, wraps if more)
+          2: { cellWidth: 80, halign: 'left', valign: 'middle', overflow: 'linebreak' },   // Staff Names (sized for 3+ staff, wraps if more)
           3: { cellWidth: 'auto', halign: 'left', valign: 'middle', overflow: 'linebreak' }    // Remarks (auto-fit with wrap)
         },
         margin: { left: 10, right: 10 },
@@ -212,7 +212,7 @@ export class RosterListGenerator {
       return entry.text_color;
     }
     
-    // Use the EXACT same logic as RosterEntryCell component
+    // Use the EXACT same logic as RosterEntryCell component - FIXED
     const hasBeenReverted = (() => {
       if (!entry.change_description) return false;
       
@@ -225,17 +225,16 @@ export class RosterListGenerator {
           originalPdfAssignment = originalPdfAssignment.replace('(R', '(R)');
         }
         
-        // CRITICAL: Check if current assignment matches original PDF assignment AND was reverted by ADMIN
+        // CRITICAL: Check if current assignment matches original PDF assignment
         return entry.assigned_name === originalPdfAssignment && entry.last_edited_by === 'ADMIN';
       }
       
       return false;
     })();
     
-    // Check if entry has been edited (name changed) by non-ADMIN
+    // Check if entry has been edited (name changed) by non-ADMIN users
     const hasBeenEdited = entry.change_description && 
                          entry.change_description.includes('Name changed from') &&
-                         entry.last_edited_by && 
                          entry.last_edited_by !== 'ADMIN';
     
     if (hasBeenReverted) {
