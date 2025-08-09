@@ -75,6 +75,8 @@ export class RosterListGenerator {
                 let currentX = data.cell.x + 2;
                 let currentLine = 0;
                 const lineHeight = 3;
+                const lineHeight = 3;
+                const lineHeight = 3;
                 const maxWidth = data.cell.width - 4;
                 let totalLines = 1;
                 let tempX = 0;
@@ -168,9 +170,10 @@ export class RosterListGenerator {
         columnStyles: {
           0: { cellWidth: 35, halign: 'left', valign: 'middle' },   // Date (fixed width)
           1: { cellWidth: 45, halign: 'left', valign: 'middle' }   // Shift (fixed width)
-        },
-        theme: 'grid',
         tableLineWidth: 0.25,
+          1: { cellWidth: 45, halign: 'left', valign: 'middle' },   // Shift (fixed width)
+          2: { cellWidth: 70, halign: 'left', valign: 'middle' },   // Staff Names (fixed width)
+          3: { halign: 'center', valign: 'middle' }   // Remarks (center aligned)
         tableLineColor: [0, 0, 0]
       });
     }
