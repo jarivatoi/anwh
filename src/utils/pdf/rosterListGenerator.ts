@@ -207,12 +207,21 @@ export class RosterListGenerator {
    * Get actual text color for staff name based on edit status
    */
   private getTextColor(entry: RosterEntry): string {
+    console.log('🎨 PDF COLOR DEBUG for entry:', {
+      id: entry.id,
+      assignedName: entry.assigned_name,
+      lastEditedBy: entry.last_edited_by,
+      changeDescription: entry.change_description,
+      textColor: entry.text_color
+    });
+
     // HIGHEST PRIORITY: Admin-set text color
     if (entry.text_color) {
+      console.log('🎨 PDF: Using admin-set color:', entry.text_color);
       return entry.text_color;
     }
     
-    // Use the EXACT same logic as RosterEntryCell component - FIXED
+    // Use the EXACT same logic as RosterEntryCell component
     const hasBeenReverted = (() => {
       if (!entry.change_description) return false;
       
@@ -225,8 +234,15 @@ export class RosterListGenerator {
           originalPdfAssignment = originalPdfAssignment.replace('(R', '(R)');
         }
         
-        // CRITICAL: Check if current assignment matches original PDF assignment
-        return entry.assigned_name === originalPdfAssignment && entry.last_edited_by === 'ADMIN';
+        // CRITICAL: Check if current assignment matches original PDF assignment AND was reverted by ADMIN
+        const isReverted = entry.assigned_name === originalPdfAssignment && entry.last_edited_by === 'ADMIN';
+        console.log('🎨 PDF: Revert check:', {
+          currentName: entry.assigned_name,
+          originalPdf: originalPdfAssignment,
+          lastEditedBy: entry.last_edited_by,
+          isReverted
+        });
+        return isReverted;
       }
       
       return false;
@@ -237,6 +253,12 @@ export class RosterListGenerator {
                          entry.change_description.includes('Name changed from') &&
                          entry.last_edited_by !== 'ADMIN';
     
+    console.log('🎨 PDF: Color decision:', {
+      hasBeenReverted,
+      hasBeenEdited,
+      finalColor: hasBeenReverted ? 'GREEN' : hasBeenEdited ? 'RED' : 'BLACK'
+    });
+
     if (hasBeenReverted) {
       return '#059669'; // Green for reverted entries (back to original PDF by ADMIN)
     } else if (hasBeenEdited) {
