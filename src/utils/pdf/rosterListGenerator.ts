@@ -107,7 +107,7 @@ export class RosterListGenerator {
                   
                   // Format text with comma separator (but not at start of new lines)
                   const isFirstOnLine = currentX === data.cell.x + 2;
-                  const textToShow = (index === 0 || isFirstOnLine) ? staff.name : `, ${staff.name}`;
+                  const textToShow = (index === 0 || isFirstOnLine) ? staff.name : `, ${staff.name},`;
                   const textWidth = doc.getTextWidth(textToShow);
                   
                   // Check if text would exceed cell width (with 4mm margin)
