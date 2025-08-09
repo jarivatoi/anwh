@@ -62,37 +62,14 @@ export class RosterListGenerator {
             data.cell.text = [];
           }
         },
-        didDrawCell: (data) => {
-          // Only draw custom colored text for staff names column in body
-          if (data.column.index === 2 && data.section === 'body' && data.row.index >= 0) {
-            // Get the staff data for this specific row
-            if (data.row.index < tableData.length) {
-              const originalRow = tableData[data.row.index];
-              const staffNamesData = this.getStaffNamesForRow(originalRow[0], originalRow[1], entries);
-              
-              if (staffNamesData && staffNamesData.length > 0) {
-                // Start drawing from left edge of cell with proper margin
-                const lineHeight = 3;
-                const maxWidth = data.cell.width - 4;
-                
-                // Pre-calculate how many lines we'll need
-                let tempX = 0;
-                let totalLines = 1;
-                staffNamesData.forEach((staff, index) => {
-                  const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
-                  const textWidth = doc.getTextWidth(textToShow);
-                  
-                  if (tempX + textWidth > maxWidth && index > 0) {
-                    totalLines++;
-                    tempX = doc.getTextWidth(staff.name); // Reset with just the name (no comma)
-                  } else {
-                    tempX += textWidth;
-                  }
-                });
-                
                 // Set font to match table
                 doc.setFontSize(8);
                 doc.setFont('helvetica', 'normal');
+                
+                // Initialize drawing variables
+                let drawX = data.cell.x + 2;
+                let drawY = data.cell.y + 2; // Start from top for first line
+                let currentLineNumber = 0;
                 
                 staffNamesData.forEach((staff, index) => {
                   // Set individual color for this staff member
