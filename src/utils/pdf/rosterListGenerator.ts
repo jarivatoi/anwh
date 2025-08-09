@@ -56,51 +56,45 @@ export class RosterListGenerator {
         startY: 35,
         head: [['Date', 'Shift', 'Staff Names', 'Remarks']],
         body: tableData,
-        didDrawCell: (data) => {
-          // Custom drawing for staff names column (column index 2)
-          if (data.column.index === 2 && data.row.index >= 0 && data.section === 'body') {
-            // Clear the default text first
+        willDrawCell: (data) => {
+          // Clear staff names column content to prevent default rendering
+          if (data.column.index === 2 && data.section === 'body') {
             data.cell.text = [];
-            
-            // Get the original staff data for this row
+          }
+        },
+        didDrawCell: (data) => {
+          // Only draw custom colored text for staff names column in body
+          if (data.column.index === 2 && data.section === 'body' && data.row.index >= 0) {
+            // Get the staff data for this specific row
             if (data.row.index < tableData.length) {
               const originalRow = tableData[data.row.index];
               const staffNamesData = this.getStaffNamesForRow(originalRow[0], originalRow[1], entries);
               
               if (staffNamesData && staffNamesData.length > 0) {
-                // Calculate proper text positioning
-                let currentX = data.cell.x + 3;
-                const cellY = data.cell.y + (data.cell.height / 2) + 1;
-                const maxWidth = data.cell.width - 6;
+                // Start drawing from left edge of cell with proper margin
+                let currentX = data.cell.x + 2;
+                const cellY = data.cell.y + (data.cell.height / 2) + 1.5;
                 
-                // Set font size to match table
+                // Set font to match table
                 doc.setFontSize(8);
+                doc.setFont('helvetica', 'normal');
                 
                 staffNamesData.forEach((staff, index) => {
-                  // Set color for this staff member
+                  // Set individual color for this staff member
                   const rgbColor = this.hexToRgb(staff.color);
                   doc.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
                   
-                  // Add comma separator if not first name
+                  // Format text with comma separator
                   const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
                   
-                  // Check if text fits on current line
-                  const textWidth = doc.getTextWidth(textToShow);
-                  
-                  if (currentX + textWidth > data.cell.x + maxWidth && index > 0) {
-                    // Move to next line
-                    currentX = data.cell.x + 3;
-                    // Note: For simplicity, we'll keep on same line and let it wrap
-                  }
-                  
-                  // Draw the text
+                  // Draw the text at current position
                   doc.text(textToShow, currentX, cellY);
                   
-                  // Update position for next text
-                  currentX += textWidth;
+                  // Move position for next name
+                  currentX += doc.getTextWidth(textToShow);
                 });
                 
-                // Reset text color to black for other cells
+                // Reset color for other cells
                 doc.setTextColor(0, 0, 0);
               }
             }
