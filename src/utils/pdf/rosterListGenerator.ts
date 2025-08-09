@@ -57,24 +57,11 @@ export class RosterListGenerator {
         head: [['Date', 'Shift', 'Staff Names', 'Remarks']],
         body: tableData,
         didParseCell: (data) => {
-          // Apply colors to staff names column (column index 2)
-          if (data.column.index === 2 && data.row.index >= 0) {
-            const staffWithColors = data.row.raw[2];
-            if (Array.isArray(staffWithColors)) {
-              // Create formatted text with colors
-              let formattedText = '';
-              staffWithColors.forEach((staff, index) => {
-                if (index > 0) formattedText += ', ';
-                formattedText += staff.text;
-              });
-              data.cell.text = [formattedText];
-              
-              // For now, use the first staff member's color for the entire cell
-              // jsPDF autoTable doesn't support multi-color text in a single cell
-              if (staffWithColors.length > 0) {
-                data.cell.styles.textColor = staffWithColors[0].color;
-              }
-            }
+          // Apply individual colors to staff names column (column index 2)
+          if (data.column.index === 2 && data.row.index >= 0 && data.row.raw.staffColor) {
+            const hexColor = data.row.raw.staffColor;
+            const rgbColor = this.hexToRgb(hexColor);
+            data.cell.styles.textColor = rgbColor;
           }
         },
         styles: {
@@ -96,10 +83,10 @@ export class RosterListGenerator {
           fillColor: [248, 250, 252]
         },
         columnStyles: {
-          0: { cellWidth: 'auto', halign: 'left', valign: 'middle' },   // Date (auto-fit)
-          1: { cellWidth: 'auto', halign: 'left', valign: 'middle' },   // Shift (auto-fit)
-          2: { cellWidth: 80, halign: 'left', valign: 'middle', overflow: 'linebreak' },   // Staff Names (sized for 3+ staff, wraps if more)
-          3: { cellWidth: 'auto', halign: 'left', valign: 'middle', overflow: 'linebreak' }    // Remarks (auto-fit with wrap)
+          0: { cellWidth: 35, halign: 'left', valign: 'middle' },   // Date (fixed width)
+          1: { cellWidth: 45, halign: 'left', valign: 'middle' },   // Shift (fixed width)
+          2: { cellWidth: 40, halign: 'left', valign: 'middle' },   // Staff Names (one name per row)
+          3: { cellWidth: 50, halign: 'left', valign: 'middle', overflow: 'linebreak' }    // Remarks (remaining space)
         },
         margin: { left: 10, right: 10 },
         pageBreak: 'auto',
@@ -302,24 +289,29 @@ export class RosterListGenerator {
         const shiftEntries = shiftData[shiftType];
         if (!shiftEntries || shiftEntries.length === 0) return;
         
-        // Get staff names with colors
-        const staffWithColors = this.formatStaffNamesWithColors(shiftEntries);
-        
         // Get remarks from special date info
         const remarks = this.extractRemarks(shiftEntries);
         
         // Format shift type for display
         const formattedShift = this.formatShiftTypeForList(shiftType);
         
-        // Create row with colored staff names
-        const row = [
-          this.formatDateForList(date),  // DDD dd-mmm-yyyy
-          formattedShift,                // Shift type
-          staffWithColors,               // Staff names with color info
-          remarks                        // Remarks
-        ];
-        
-        tableData.push(row);
+        // Create separate row for each staff member to ensure individual colors
+        shiftEntries.forEach((entry, index) => {
+          const isFirstStaff = index === 0;
+          
+          // Create row data
+          const row = [
+            isFirstStaff ? this.formatDateForList(date) : '', // Only show date for first staff
+            isFirstStaff ? formattedShift : '',               // Only show shift for first staff
+            entry.assigned_name,                              // Individual staff name
+            isFirstStaff ? remarks : ''                       // Only show remarks for first staff
+          ];
+          
+          // Store color info for this specific row
+          (row as any).staffColor = this.getTextColor(entry);
+          
+          tableData.push(row);
+        });
       });
     });
     
