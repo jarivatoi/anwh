@@ -60,54 +60,63 @@ export class RosterListGenerator {
           // Clear staff names column content to prevent default rendering
           if (data.column.index === 2 && data.section === 'body') {
             data.cell.text = [];
-          }
-        },
-                // Set font to match table
-                doc.setFontSize(8);
-                doc.setFont('helvetica', 'normal');
+            
+            // Get staff names data for this specific row
+            const rowIndex = data.row.index;
+            const dateValue = tableData[rowIndex][0];
+            const shiftValue = tableData[rowIndex][1];
+            const staffNamesData = this.getStaffNamesForRow(dateValue, shiftValue, monthEntries);
+            
+            if (staffNamesData.length > 0) {
+              // Calculate available width and line height
+              const maxWidth = data.cell.width - 4; // Account for padding
+              const lineHeight = 3; // Line spacing
+              
+              // Set font to match table
+              doc.setFontSize(8);
+              doc.setFont('helvetica', 'normal');
+              
+              // Initialize drawing variables
+              let drawX = data.cell.x + 2;
+              let drawY = data.cell.y + 2; // Start from top for first line
+              let currentLineNumber = 0;
+              
+              staffNamesData.forEach((staff, index) => {
+                // Set individual color for this staff member
+                const rgbColor = this.hexToRgb(staff.color);
+                doc.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
                 
-                // Initialize drawing variables
-                let drawX = data.cell.x + 2;
-                let drawY = data.cell.y + 2; // Start from top for first line
-                let currentLineNumber = 0;
+                // Format text with comma separator (but not at start of new lines)
+                const isFirstOnLine = drawX === data.cell.x + 2;
+                const textToShow = (index === 0 || isFirstOnLine) ? staff.name : `, ${staff.name}`;
+                const textWidth = doc.getTextWidth(textToShow);
                 
-                staffNamesData.forEach((staff, index) => {
-                  // Set individual color for this staff member
-                  const rgbColor = this.hexToRgb(staff.color);
-                  doc.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
+                // If text would exceed width, move to next line
+                if (drawX + textWidth > data.cell.x + maxWidth && index > 0) {
+                  // Add comma at the end of current line before wrapping
+                  doc.text(',', drawX, drawY);
                   
-                  // Format text with comma separator (but not at start of new lines)
-                  const isFirstOnLine = drawX === data.cell.x + 2;
-                  const textToShow = (index === 0 || isFirstOnLine) ? staff.name : `, ${staff.name}`;
-                  const textWidth = doc.getTextWidth(textToShow);
+                  // Move to next line
+                  currentLineNumber++;
+                  drawX = data.cell.x + 2; // Reset to left margin
+                  drawY = data.cell.y + 2 + (currentLineNumber * lineHeight); // Calculate Y position consistently
                   
-                  // If text would exceed width, move to next line
-                  if (drawX + textWidth > data.cell.x + maxWidth && index > 0) {
-                    // Add comma at the end of current line before wrapping
-                    doc.text(',', drawX, drawY);
-                    
-                    // Move to next line
-                    currentLineNumber++;
-                    drawX = data.cell.x + 2; // Reset to left margin
-                    drawY = data.cell.y + 2 + (currentLineNumber * lineHeight); // Calculate Y position consistently
-                    
-                    // Recalculate text without comma for new line
-                    const newLineText = staff.name;
-                    const newLineWidth = doc.getTextWidth(newLineText);
-                    
-                    // Draw the text at current position (no comma at start of line)
-                    doc.text(newLineText, drawX, drawY);
-                    drawX += newLineWidth;
-                  } else {
-                    // Draw the text at current position
-                    doc.text(textToShow, drawX, drawY);
-                    drawX += textWidth;
-                  }
-                });
-                
-                // Reset color for other cells
-                doc.setTextColor(0, 0, 0);
-              }
+                  // Recalculate text without comma for new line
+                  const newLineText = staff.name;
+                  const newLineWidth = doc.getTextWidth(newLineText);
+                  
+                  // Draw the text at current position (no comma at start of line)
+                  doc.text(newLineText, drawX, drawY);
+                  drawX += newLineWidth;
+                } else {
+                  // Draw the text at current position
+                  doc.text(textToShow, drawX, drawY);
+                  drawX += textWidth;
+                }
+              });
+              
+              // Reset color for other cells
+              doc.setTextColor(0, 0, 0);
             }
           }
         },
