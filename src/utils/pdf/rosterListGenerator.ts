@@ -60,30 +60,33 @@ export class RosterListGenerator {
           fontSize: 8,
           cellPadding: 2,
           overflow: 'linebreak',
-          halign: 'left',
-          valign: 'top'
+          halign: 'center',
+          valign: 'middle'
         },
         headStyles: {
           fillColor: [79, 70, 229],
           textColor: 255,
           fontStyle: 'bold',
           fontSize: 9,
-          halign: 'center'
+          halign: 'center',
+          valign: 'middle'
         },
         alternateRowStyles: {
           fillColor: [248, 250, 252]
         },
         columnStyles: {
-          0: { cellWidth: 45, halign: 'left' },   // Date (DDD dd-mmm-yyyy)
-          1: { cellWidth: 40, halign: 'left' },   // Shift
-          2: { cellWidth: 60, halign: 'left' },   // Staff Names (comma separated)
-          3: { cellWidth: 45, halign: 'left' }    // Remarks
+          0: { cellWidth: 'auto', halign: 'center', valign: 'middle' },   // Date (auto-fit)
+          1: { cellWidth: 'auto', halign: 'center', valign: 'middle' },   // Shift (auto-fit)
+          2: { cellWidth: 'wrap', halign: 'center', valign: 'middle' },   // Staff Names (max space)
+          3: { cellWidth: 'auto', halign: 'center', valign: 'middle' }    // Remarks (auto-fit)
         },
         margin: { left: 10, right: 10 },
         pageBreak: 'auto',
         rowPageBreak: 'auto',
+        tableWidth: 'auto',
         tableLineWidth: 0.2,
-        theme: 'grid'
+        theme: 'grid',
+        showHead: 'everyPage'
       });
     }
     
