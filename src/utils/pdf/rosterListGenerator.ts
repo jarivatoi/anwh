@@ -117,8 +117,10 @@ export class RosterListGenerator {
                     // Add comma at the end of current line before wrapping
                     doc.text(',', currentX, cellY);
                     
+                    // Move to next line
+                    currentLine++;
                     currentX = data.cell.x + 2; // Reset to left margin
-                    cellY += lineHeight; // Move down for next line
+                    cellY = data.cell.y + 4 + (currentLine * lineHeight); // Calculate Y position from cell top
                     
                     // Recalculate text without comma for new line
                     const newLineText = staff.name;
