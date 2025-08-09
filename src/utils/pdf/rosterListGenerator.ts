@@ -207,24 +207,16 @@ export class RosterListGenerator {
    * Get actual text color for staff name based on edit status
    */
   private getTextColor(entry: RosterEntry): string {
-    console.log('🎨 PDF COLOR DEBUG for entry:', {
-      id: entry.id,
-      assignedName: entry.assigned_name,
-      lastEditedBy: entry.last_edited_by,
-      changeDescription: entry.change_description,
-      textColor: entry.text_color
-    });
-
     // HIGHEST PRIORITY: Admin-set text color
     if (entry.text_color) {
-      console.log('🎨 PDF: Using admin-set color:', entry.text_color);
       return entry.text_color;
     }
     
-    // Use the EXACT same logic as RosterEntryCell component
-    const hasBeenReverted = (() => {
+    // Check if entry has been reverted to original
+    const hasBeenReverted = () => {
       if (!entry.change_description) return false;
       
+      // Check if we have original PDF assignment stored
       const originalPdfMatch = entry.change_description.match(/\(Original PDF: ([^)]+)\)/);
       if (originalPdfMatch) {
         let originalPdfAssignment = originalPdfMatch[1].trim();
@@ -234,32 +226,19 @@ export class RosterListGenerator {
           originalPdfAssignment = originalPdfAssignment.replace('(R', '(R)');
         }
         
-        // CRITICAL: Check if current assignment matches original PDF assignment AND was reverted by ADMIN
-        const isReverted = entry.assigned_name === originalPdfAssignment && entry.last_edited_by === 'ADMIN';
-        console.log('🎨 PDF: Revert check:', {
-          currentName: entry.assigned_name,
-          originalPdf: originalPdfAssignment,
-          lastEditedBy: entry.last_edited_by,
-          isReverted
-        });
-        return isReverted;
+        // Check if current assignment matches original PDF assignment (reverted to original)
+        return entry.assigned_name === originalPdfAssignment;
       }
       
       return false;
-    })();
+    };
     
-    // Check if entry has been edited (name changed) by non-ADMIN users
+    // Check if entry has been edited (name changed)
     const hasBeenEdited = entry.change_description && 
                          entry.change_description.includes('Name changed from') &&
-                         entry.last_edited_by !== 'ADMIN';
-    
-    console.log('🎨 PDF: Color decision:', {
-      hasBeenReverted,
-      hasBeenEdited,
-      finalColor: hasBeenReverted ? 'GREEN' : hasBeenEdited ? 'RED' : 'BLACK'
-    });
+                         entry.last_edited_by;
 
-    if (hasBeenReverted) {
+    if (hasBeenReverted()) {
       return '#059669'; // Green for reverted entries (back to original PDF by ADMIN)
     } else if (hasBeenEdited) {
       return '#dc2626'; // Red for edited entries (by non-ADMIN users)
