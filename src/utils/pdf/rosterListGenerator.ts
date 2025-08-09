@@ -58,48 +58,50 @@ export class RosterListGenerator {
         body: tableData,
         didDrawCell: (data) => {
           // Custom drawing for staff names column (column index 2)
-          if (data.column.index === 2 && data.row.index >= 0) {
-            const staffData = data.row.raw[2];
+          if (data.column.index === 2 && data.row.index >= 0 && data.section === 'body') {
+            // Clear the default text first
+            data.cell.text = [];
             
-            // Check if this is our special staff names array
+            // Get the original staff data for this row
             if (data.row.index < tableData.length) {
-              // Get the original staff data from our stored array
               const originalRow = tableData[data.row.index];
               const staffNamesData = this.getStaffNamesForRow(originalRow[0], originalRow[1], entries);
               
               if (staffNamesData && staffNamesData.length > 0) {
-              // Clear the default text
-              data.cell.text = [];
-              
-              // Draw each staff name with its individual color
-              let currentX = data.cell.x + 2;
-              const cellY = data.cell.y + data.cell.height / 2;
-              
-              staffNamesData.forEach((staff, index) => {
-                // Set color for this staff member
-                const rgbColor = this.hexToRgb(staff.color);
-                doc.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
+                // Calculate proper text positioning
+                let currentX = data.cell.x + 3;
+                const cellY = data.cell.y + (data.cell.height / 2) + 1;
+                const maxWidth = data.cell.width - 6;
+                
+                // Set font size to match table
                 doc.setFontSize(8);
                 
-                // Add comma separator if not first name
-                const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
+                staffNamesData.forEach((staff, index) => {
+                  // Set color for this staff member
+                  const rgbColor = this.hexToRgb(staff.color);
+                  doc.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
+                  
+                  // Add comma separator if not first name
+                  const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
+                  
+                  // Check if text fits on current line
+                  const textWidth = doc.getTextWidth(textToShow);
+                  
+                  if (currentX + textWidth > data.cell.x + maxWidth && index > 0) {
+                    // Move to next line
+                    currentX = data.cell.x + 3;
+                    // Note: For simplicity, we'll keep on same line and let it wrap
+                  }
+                  
+                  // Draw the text
+                  doc.text(textToShow, currentX, cellY);
+                  
+                  // Update position for next text
+                  currentX += textWidth;
+                });
                 
-                // Draw the text
-                doc.text(textToShow, currentX, cellY);
-                
-                // Calculate width of this text for next position
-                const textWidth = doc.getTextWidth(textToShow);
-                currentX += textWidth;
-                
-                // Check if we need to wrap to next line
-                if (currentX > data.cell.x + data.cell.width - 5) {
-                  currentX = data.cell.x + 2;
-                  // Note: For simplicity, we'll let long lists wrap naturally
-                }
-              });
-              
-              // Reset text color to black for other cells
-              doc.setTextColor(0, 0, 0);
+                // Reset text color to black for other cells
+                doc.setTextColor(0, 0, 0);
               }
             }
           }
@@ -125,7 +127,7 @@ export class RosterListGenerator {
         columnStyles: {
           0: { cellWidth: 35, halign: 'left', valign: 'middle' },   // Date (fixed width)
           1: { cellWidth: 45, halign: 'left', valign: 'middle' },   // Shift (fixed width)
-          2: { cellWidth: 40, halign: 'left', valign: 'middle' },   // Staff Names (one name per row)
+          2: { cellWidth: 85, halign: 'left', valign: 'middle' },   // Staff Names (increased width)
           3: { cellWidth: 50, halign: 'left', valign: 'middle', overflow: 'linebreak' }    // Remarks (remaining space)
         },
         margin: { left: 10, right: 10 },
