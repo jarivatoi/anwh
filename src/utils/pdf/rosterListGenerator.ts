@@ -56,12 +56,46 @@ export class RosterListGenerator {
         startY: 35,
         head: [['Date', 'Shift', 'Staff Names', 'Remarks']],
         body: tableData,
-        didParseCell: (data) => {
-          // Apply individual colors to staff names column (column index 2)
-          if (data.column.index === 2 && data.row.index >= 0 && data.row.raw.staffColor) {
-            const hexColor = data.row.raw.staffColor;
-            const rgbColor = this.hexToRgb(hexColor);
-            data.cell.styles.textColor = rgbColor;
+        didDrawCell: (data) => {
+          // Custom drawing for staff names column (column index 2)
+          if (data.column.index === 2 && data.row.index >= 0) {
+            const staffData = data.row.raw[2];
+            
+            // Check if this is our special staff names array
+            if (Array.isArray(staffData) && staffData.length > 0 && staffData[0].name) {
+              // Clear the default text
+              data.cell.text = [];
+              
+              // Draw each staff name with its individual color
+              let currentX = data.cell.x + 2;
+              const cellY = data.cell.y + data.cell.height / 2;
+              
+              staffData.forEach((staff, index) => {
+                // Set color for this staff member
+                const rgbColor = this.hexToRgb(staff.color);
+                doc.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
+                doc.setFontSize(8);
+                
+                // Add comma separator if not first name
+                const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
+                
+                // Draw the text
+                doc.text(textToShow, currentX, cellY);
+                
+                // Calculate width of this text for next position
+                const textWidth = doc.getTextWidth(textToShow);
+                currentX += textWidth;
+                
+                // Check if we need to wrap to next line
+                if (currentX > data.cell.x + data.cell.width - 5) {
+                  currentX = data.cell.x + 2;
+                  // Note: For simplicity, we'll let long lists wrap naturally
+                }
+              });
+              
+              // Reset text color to black for other cells
+              doc.setTextColor(0, 0, 0);
+            }
           }
         },
         styles: {
@@ -247,7 +281,7 @@ export class RosterListGenerator {
   }
   
   /**
-   * Create table data with colored text for staff names
+   * Create table data with combined staff names but individual colors
    */
   private createColoredTableData(entries: RosterEntry[]): any[] {
     // Group entries by date and shift type
@@ -295,23 +329,21 @@ export class RosterListGenerator {
         // Format shift type for display
         const formattedShift = this.formatShiftTypeForList(shiftType);
         
-        // Create separate row for each staff member to ensure individual colors
-        shiftEntries.forEach((entry, index) => {
-          const isFirstStaff = index === 0;
-          
-          // Create row data
-          const row = [
-            isFirstStaff ? this.formatDateForList(date) : '', // Only show date for first staff
-            isFirstStaff ? formattedShift : '',               // Only show shift for first staff
-            entry.assigned_name,                              // Individual staff name
-            isFirstStaff ? remarks : ''                       // Only show remarks for first staff
-          ];
-          
-          // Store color info for this specific row
-          (row as any).staffColor = this.getTextColor(entry);
-          
-          tableData.push(row);
-        });
+        // Combine all staff names with individual colors
+        const staffNamesWithColors = shiftEntries.map(entry => ({
+          name: entry.assigned_name,
+          color: this.getTextColor(entry)
+        }));
+        
+        // Create single row with combined staff names
+        const row = [
+          this.formatDateForList(date),
+          formattedShift,
+          staffNamesWithColors, // Pass array of names with colors
+          remarks
+        ];
+        
+        tableData.push(row);
       });
     });
     
