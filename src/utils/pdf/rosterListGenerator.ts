@@ -33,13 +33,7 @@ export class RosterListGenerator {
     // Header
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text('X-RAY DEPARTMENT', doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
-    
-    doc.setFontSize(14);
-    doc.text('ANWH - Work Schedule', doc.internal.pageSize.getWidth() / 2, 25, { align: 'center' });
-    
-    doc.setFontSize(12);
-    doc.text(`ROSTER - ${monthNames[month]} ${year}`, doc.internal.pageSize.getWidth() / 2, 35, { align: 'center' });
+    doc.text(`X-Ray Roster for month of ${monthNames[month]} ${year}`, doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
     
     // Filter entries for the specified month/year
     const monthEntries = entries.filter(entry => {
@@ -52,54 +46,52 @@ export class RosterListGenerator {
     if (monthEntries.length === 0) {
       // Show "No data" message
       doc.setFontSize(14);
-      doc.text('No roster entries found for this month', doc.internal.pageSize.getWidth() / 2, 50, { align: 'center' });
+      doc.text('No roster entries found for this month', doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
     } else {
-      // Group entries by date and staff, then create table data
+      // Create table data in the new format
       const tableData = this.prepareRosterTableData(monthEntries);
       
-      // Create table with very small fonts to fit everything
+      // Create table with new column structure
       autoTable(doc, {
-        startY: 45,
-        head: [['Date', 'Day', 'Staff Name', 'Morning (9-4)', 'Saturday (12-10)', 'Evening (4-10)', 'Night Duty', 'Special (9-4)']],
+        startY: 35,
+        head: [['Date', 'Shift', 'Staff Names', 'Remarks']],
         body: tableData,
         styles: {
-          fontSize: 5, // Very small font to fit more
-          cellPadding: 1,
+          fontSize: 8,
+          cellPadding: 2,
           overflow: 'linebreak',
-          halign: 'center'
+          halign: 'left',
+          valign: 'top'
         },
         headStyles: {
           fillColor: [79, 70, 229],
           textColor: 255,
           fontStyle: 'bold',
-          fontSize: 6
+          fontSize: 9,
+          halign: 'center'
         },
         alternateRowStyles: {
           fillColor: [248, 250, 252]
         },
         columnStyles: {
-          0: { cellWidth: 20 }, // Date
-          1: { cellWidth: 15 }, // Day
-          2: { cellWidth: 35 }, // Staff Name
-          3: { cellWidth: 20 }, // Morning (9-4)
-          4: { cellWidth: 20 }, // Saturday (12-10)
-          5: { cellWidth: 20 }, // Evening (4-10)
-          6: { cellWidth: 20 }, // Night Duty
-          7: { cellWidth: 20 }  // Special (9-4)
+          0: { cellWidth: 45, halign: 'left' },   // Date (DDD dd-mmm-yyyy)
+          1: { cellWidth: 40, halign: 'left' },   // Shift
+          2: { cellWidth: 60, halign: 'left' },   // Staff Names (comma separated)
+          3: { cellWidth: 45, halign: 'left' }    // Remarks
         },
         margin: { left: 10, right: 10 },
-        pageBreak: 'avoid',
-        rowPageBreak: 'avoid',
-        tableLineWidth: 0.1,
+        pageBreak: 'auto',
+        rowPageBreak: 'auto',
+        tableLineWidth: 0.2,
         theme: 'grid'
       });
     }
     
     // Footer
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6);
-    doc.text(`Generated on: ${new Date().toLocaleString()}`, 10, doc.internal.pageSize.getHeight() - 8);
-    doc.text(`Total Staff: ${this.getUniqueStaffCount(monthEntries)}`, doc.internal.pageSize.getWidth() - 10, doc.internal.pageSize.getHeight() - 8, { align: 'right' });
+    doc.setFontSize(8);
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 10, doc.internal.pageSize.getHeight() - 15);
+    doc.text(`Total Entries: ${monthEntries.length}`, doc.internal.pageSize.getWidth() - 10, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
     
     // Save
     const filename = `Roster_List_${monthNames[month]}_${year}.pdf`;
@@ -109,23 +101,23 @@ export class RosterListGenerator {
   }
   
   /**
-   * Prepare roster table data with checkmarks for shifts worked
+   * Prepare roster table data in new tabular format
    */
   private prepareRosterTableData(entries: RosterEntry[]): string[][] {
-    // Group entries by date and staff
-    const groupedData: Record<string, Record<string, string[]>> = {};
+    // Group entries by date and shift type
+    const groupedData: Record<string, Record<string, RosterEntry[]>> = {};
     
     entries.forEach(entry => {
       const dateKey = entry.date;
-      const staffName = entry.assigned_name;
+      const shiftType = entry.shift_type;
       
       if (!groupedData[dateKey]) {
         groupedData[dateKey] = {};
       }
-      if (!groupedData[dateKey][staffName]) {
-        groupedData[dateKey][staffName] = [];
+      if (!groupedData[dateKey][shiftType]) {
+        groupedData[dateKey][shiftType] = [];
       }
-      groupedData[dateKey][staffName].push(entry.shift_type);
+      groupedData[dateKey][shiftType].push(entry);
     });
     
     // Convert to table rows
@@ -135,28 +127,36 @@ export class RosterListGenerator {
     const sortedDates = Object.keys(groupedData).sort();
     
     sortedDates.forEach(date => {
-      const staffData = groupedData[date];
-      const staffNames = Object.keys(staffData).sort();
+      const shiftData = groupedData[date];
       
-      staffNames.forEach(staffName => {
-        const shifts = staffData[staffName];
+      // Define shift order for consistent display
+      const shiftOrder = [
+        'Morning Shift (9-4)',
+        'Saturday Regular (12-10)', 
+        'Evening Shift (4-10)',
+        'Night Duty',
+        'Sunday/Public Holiday/Special'
+      ];
+      
+      // Process shifts in order
+      shiftOrder.forEach(shiftType => {
+        const shiftEntries = shiftData[shiftType];
+        if (!shiftEntries || shiftEntries.length === 0) return;
         
-        // Create checkmarks for each shift type
-        const morning = shifts.includes('Morning Shift (9-4)') || shifts.includes('Sunday/Public Holiday/Special') ? '✓' : '';
-        const saturday = shifts.includes('Saturday Regular (12-10)') ? '✓' : '';
-        const evening = shifts.includes('Evening Shift (4-10)') ? '✓' : '';
-        const night = shifts.includes('Night Duty') ? '✓' : '';
-        const special = shifts.includes('Sunday/Public Holiday/Special') ? '✓' : '';
+        // Get staff names for this shift (comma separated)
+        const staffNames = shiftEntries.map(entry => entry.assigned_name).join(', ');
+        
+        // Get remarks from special date info
+        const remarks = this.extractRemarks(shiftEntries);
+        
+        // Format shift type for display
+        const formattedShift = this.formatShiftTypeForList(shiftType);
         
         tableData.push([
-          this.formatDate(date),
-          this.getDayName(date),
-          staffName,
-          morning,
-          saturday,
-          evening,
-          night,
-          special
+          this.formatDateForList(date),  // DDD dd-mmm-yyyy
+          formattedShift,                // Shift type
+          staffNames,                    // Staff names (comma separated)
+          remarks                        // Remarks
         ]);
       });
     });
@@ -165,43 +165,49 @@ export class RosterListGenerator {
   }
   
   /**
-   * Get count of unique staff members
+   * Extract remarks from entries (special date info)
    */
-  private getUniqueStaffCount(entries: RosterEntry[]): number {
-    const uniqueStaff = new Set(entries.map(entry => entry.assigned_name));
-    return uniqueStaff.size;
+  private extractRemarks(entries: RosterEntry[]): string {
+    // Look for special date information in change descriptions
+    for (const entry of entries) {
+      if (entry.change_description && entry.change_description.includes('Special Date:')) {
+        const match = entry.change_description.match(/Special Date:\s*([^;]+)/);
+        if (match && match[1].trim()) {
+          // Only show text before asterisk (*) if asterisk exists
+          const fullRemarks = match[1].trim();
+          return fullRemarks.includes('*') ? fullRemarks.split('*')[0].trim() : fullRemarks;
+        }
+      }
+    }
+    return ''; // No special remarks
   }
   
   /**
-   * Format date for PDF display
+   * Format date as DDD dd-mmm-yyyy (e.g., "Mon 01-Jul-2025")
    */
-  private formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-  }
-  
-  /**
-   * Get day name for date
-   */
-  private getDayName(dateString: string): string {
+  private formatDateForList(dateString: string): string {
     const date = new Date(dateString);
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    return dayNames[date.getDay()];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    const dayName = dayNames[date.getDay()];
+    const day = date.getDate().toString().padStart(2, '0');
+    const monthName = monthNames[date.getMonth()];
+    const year = date.getFullYear();
+    
+    return `${dayName} ${day}-${monthName}-${year}`;
   }
   
   /**
-   * Format shift type for better PDF display
+   * Format shift type for list display
    */
-  private formatShiftType(shiftType: string): string {
+  private formatShiftTypeForList(shiftType: string): string {
     const shortNames: Record<string, string> = {
-      'Morning Shift (9-4)': 'Morning (9-4)',
-      'Evening Shift (4-10)': 'Evening (4-10)',
-      'Saturday Regular (12-10)': 'Saturday (12-10)',
+      'Morning Shift (9-4)': 'Morning Shift (9-4)',
+      'Evening Shift (4-10)': 'Evening Shift (4-10)', 
+      'Saturday Regular (12-10)': 'Saturday Regular (12-10)',
       'Night Duty': 'Night Duty',
-      'Sunday/Public Holiday/Special': 'Special (9-4)'
+      'Sunday/Public Holiday/Special': 'Sunday/Public Holiday/Special'
     };
     return shortNames[shiftType] || shiftType;
   }
