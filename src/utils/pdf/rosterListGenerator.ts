@@ -33,7 +33,7 @@ export class RosterListGenerator {
     // Header
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text(`X-Ray Roster for month of ${monthNames[month]} ${year}`, doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+    doc.text(`X-Ray Roster for Month of ${monthNames[month]} ${year}`, doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
     
     // Filter entries for the specified month/year
     const monthEntries = entries.filter(entry => {
@@ -74,6 +74,7 @@ export class RosterListGenerator {
                 // Start drawing from left edge of cell with proper margin
                 let currentX = data.cell.x + 2;
                 let currentLine = 0;
+                const lineHeight = 3;
                 const lineHeight = 3;
                 const maxWidth = data.cell.width - 4;
                 let totalLines = 1;
