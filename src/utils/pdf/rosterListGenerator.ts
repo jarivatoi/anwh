@@ -146,8 +146,8 @@ export class RosterListGenerator {
         const shiftEntries = shiftData[shiftType];
         if (!shiftEntries || shiftEntries.length === 0) return;
         
-        // Get staff names for this shift (comma separated)
-        const staffNames = shiftEntries.map(entry => entry.assigned_name).join(', ');
+        // Get staff names with color indicators
+        const staffNamesWithColors = this.formatStaffNamesWithColors(shiftEntries);
         
         // Get remarks from special date info
         const remarks = this.extractRemarks(shiftEntries);
@@ -158,13 +158,75 @@ export class RosterListGenerator {
         tableData.push([
           this.formatDateForList(date),  // DDD dd-mmm-yyyy
           formattedShift,                // Shift type
-          staffNames,                    // Staff names (comma separated)
+          staffNamesWithColors,          // Staff names with color indicators
           remarks                        // Remarks
         ]);
       });
     });
     
     return tableData;
+  }
+  
+  /**
+   * Format staff names with color indicators based on their edit status
+   */
+  private formatStaffNamesWithColors(entries: RosterEntry[]): string {
+    const staffWithColors = entries.map(entry => {
+      const staffName = entry.assigned_name;
+      const colorIndicator = this.getColorIndicator(entry);
+      
+      // Add color indicator as prefix if not black (original)
+      return colorIndicator ? `${colorIndicator}${staffName}` : staffName;
+    });
+    
+    return staffWithColors.join(', ');
+  }
+  
+  /**
+   * Get color indicator for staff name based on edit status
+   */
+  private getColorIndicator(entry: RosterEntry): string {
+    // HIGHEST PRIORITY: Admin-set text color
+    if (entry.text_color) {
+      if (entry.text_color === '#dc2626') return '[R] '; // Red
+      if (entry.text_color === '#059669') return '[G] '; // Green
+      if (entry.text_color === '#000000') return ''; // Black (no indicator)
+      // For any other custom colors, show as [C]
+      return '[C] ';
+    }
+    
+    // Check if entry has been reverted to original
+    const hasBeenReverted = (() => {
+      if (!entry.change_description) return false;
+      
+      const originalPdfMatch = entry.change_description.match(/\(Original PDF: ([^)]+)\)/);
+      if (originalPdfMatch) {
+        let originalPdfAssignment = originalPdfMatch[1].trim();
+        
+        // Fix missing closing parenthesis if it exists
+        if (originalPdfAssignment.includes('(R') && !originalPdfAssignment.includes('(R)')) {
+          originalPdfAssignment = originalPdfAssignment.replace('(R', '(R)');
+        }
+        
+        // Check if current assignment matches original PDF assignment (reverted to original)
+        return entry.assigned_name === originalPdfAssignment;
+      }
+      
+      return false;
+    })();
+    
+    // Check if entry has been edited (name changed)
+    const hasBeenEdited = entry.change_description && 
+                         entry.change_description.includes('Name changed from') &&
+                         entry.last_edited_by;
+    
+    if (hasBeenReverted) {
+      return '[G] '; // Green for reverted entries (back to original PDF)
+    } else if (hasBeenEdited) {
+      return '[R] '; // Red for edited entries
+    } else {
+      return ''; // Black for original entries (no indicator)
+    }
   }
   
   /**
