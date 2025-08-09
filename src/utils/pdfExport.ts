@@ -75,7 +75,6 @@ export class RosterListGenerator {
                 let currentX = data.cell.x + 2;
                 let currentLine = 0;
                 const lineHeight = 3;
-                const lineHeight = 3;
                 const maxWidth = data.cell.width - 4;
                 let totalLines = 1;
                 let tempX = 0;
@@ -165,11 +164,16 @@ export class RosterListGenerator {
           lineWidth: 0.25,
           lineColor: [0, 0, 0]
         },
-    // Header
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`X-Ray Roster for ${monthNames[month]} ${year}`, doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
-          1: { cellWidth: 45, halign: 'left', valign: 'middle' }   // Shift (fixed width)
+        columnStyles: {
+          0: { cellWidth: 35, halign: 'left', valign: 'middle' },   // Date (fixed width)
+          1: { cellWidth: 45, halign: 'left', valign: 'middle' },   // Shift (fixed width)
+          2: { cellWidth: 'auto', halign: 'left', valign: 'middle' }, // Staff Names (auto width)
+          3: { cellWidth: 'auto', halign: 'left', valign: 'middle' }  // Remarks (auto width)
+        }
+      });
+    }
+    
+    // Footer
     doc.setFontSize(8);
     doc.text(`Generated on: ${new Date().toLocaleString()}`, 10, doc.internal.pageSize.getHeight() - 15);
     doc.text(`Total Entries: ${monthEntries.length}`, doc.internal.pageSize.getWidth() - 10, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
@@ -284,6 +288,8 @@ export class RosterListGenerator {
         }
         
         // Check if current assignment matches original PDF assignment (reverted to original)
+        return entry.assigned_name === originalPdfAssignment;
+      }
       return false;
     };
     
@@ -295,7 +301,7 @@ export class RosterListGenerator {
     if (hasBeenReverted()) {
       return '#059669'; // Green for reverted entries (back to original PDF by ADMIN)
     } else if (hasBeenEdited) {
-      doc.text('No roster entries found for this month', doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
+      return '#dc2626'; // Red for edited entries
     } else {
       return '#000000'; // Black for original entries
     }
@@ -360,108 +366,58 @@ export class RosterListGenerator {
       const shiftData = groupedData[date];
       
       // Define shift order for consistent display
-      // Prepare table data in roster format
-      const tableData = this.prepareRosterTableData(monthEntries);
+      const shiftOrder = [
+        'Morning Shift (9-4)',
         'Saturday Regular (12-10)', 
-      // Create table matching roster view format
+        'Evening Shift (4-10)',
         'Night Duty',
-        startY: 35,
-        head: [['Date', 'Morning\n(9-4)', 'Saturday\n(12-10)', 'Evening\n(4-10)', 'Night\nDuty']],
+        'Sunday/Public Holiday/Special'
+      ];
       
       // Process shifts in order
       shiftOrder.forEach(shiftType => {
         const shiftEntries = shiftData[shiftType];
         if (!shiftEntries || shiftEntries.length === 0) return;
-          halign: 'center',
-          valign: 'middle',
-          lineWidth: 0.25,
-          lineColor: [0, 0, 0]
+        
         // Get remarks from special date info
         const remarks = this.extractRemarks(shiftEntries);
-    const filename = `Roster_Preview_${monthNames[month]}_${year}.pdf`;
-          textColor: [255, 255, 255],
+        
+        // Format shift type for display
         const formattedShift = this.formatShiftTypeForList(shiftType);
-          fontSize: 9,
-          halign: 'center',
-          valign: 'middle',
-          lineWidth: 0.25,
-          lineColor: [0, 0, 0]
+        
         // Combine all staff names with individual colors
-   * Prepare table data in roster format (same as roster view)
-          lineWidth: 0.25,
-  private prepareRosterTableData(entries: RosterEntry[]): string[][] {
-    // Group entries by date
-    const groupedEntries = entries.reduce((groups, entry) => {
-      const date = entry.date;
-      if (!groups[date]) {
-        groups[date] = [];
-      }
-      groups[date].push(entry);
-      return groups;
-    }, {} as Record<string, RosterEntry[]>);
-    
-    // Sort dates
-    const sortedDates = Object.keys(groupedEntries).sort();
-    
-    const tableData: string[][] = [];
-    
-    // Define shift types in order
-    const shiftTypes = [
-      'Morning Shift (9-4)',
-      'Saturday Regular (12-10)', 
-      'Evening Shift (4-10)',
-      'Night Duty',
-      'Sunday/Public Holiday/Special'
-    ];
-    
-    sortedDates.forEach(date => {
-      const dateEntries = groupedEntries[date];
-      
-      // Group entries by shift type for this date
-      const shiftGroups: Record<string, RosterEntry[]> = {};
-      dateEntries.forEach(entry => {
-        if (!shiftGroups[entry.shift_type]) {
-          shiftGroups[entry.shift_type] = [];
-        }
-        shiftGroups[entry.shift_type].push(entry);
+        const combinedStaffNames = shiftEntries.map(entry => entry.assigned_name).join(', ');
+        
+        tableData.push([
+          this.formatDateForList(date),  // DDD dd-mmm-yyyy
+          formattedShift,                // Shift type
+          combinedStaffNames,            // Staff names (will be replaced with colored text)
+          remarks                        // Remarks
+        ]);
       });
-      
-      // Sort staff names within each shift group
-      Object.keys(shiftGroups).forEach(shiftType => {
-        const names = shiftGroups[shiftType].map(e => e.assigned_name);
-        const sortedNames = sortByGroup(names);
-        shiftGroups[shiftType] = sortedNames.map(name => 
-          shiftGroups[shiftType].find(e => e.assigned_name === name)
-        ).filter(Boolean) as RosterEntry[];
-      });
-      
-      // Create table row for this date
-      const morningStaff = (shiftGroups['Morning Shift (9-4)'] || []).map(e => e.assigned_name).join(', ');
-      const saturdayStaff = (shiftGroups['Saturday Regular (12-10)'] || []).map(e => e.assigned_name).join(', ');
-      const eveningStaff = (shiftGroups['Evening Shift (4-10)'] || []).map(e => e.assigned_name).join(', ');
-      const nightStaff = (shiftGroups['Night Duty'] || []).map(e => e.assigned_name).join(', ');
-      
-      tableData.push([
-        this.formatDateForRoster(date),
-        morningStaff,
-        saturdayStaff,
-        eveningStaff,
-        nightStaff
-      ]);
     });
-  /**
+    
     return tableData;
   }
   
   /**
-   * Format date for roster display (DDD dd-mmm-yyyy)
+   * Extract remarks from entries
    */
-  private formatDateForRoster(dateString: string): string {
-    const date = new Date(dateString);
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  private extractRemarks(entries: RosterEntry[]): string {
+    // Get unique remarks from all entries
+    const remarks = entries
+      .map(entry => entry.special_date_info)
+      .filter(Boolean)
+      .filter((value, index, self) => self.indexOf(value) === index);
     
-    const dayName = dayNames[date.getDay()];
+    return remarks.join(', ');
+  }
+  
+  /**
+   * Format date for list display (DDD dd-mmm-yyyy)
+   */
+  private formatDateForList(dateString: string): string {
+    const date = new Date(dateString);
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     
@@ -470,7 +426,6 @@ export class RosterListGenerator {
     const monthName = monthNames[date.getMonth()];
     const year = date.getFullYear();
     
-    return `${dayName} ${day}-${monthName}-${year}`;
     return `${dayName} ${day}-${monthName}-${year}`;
   }
   
