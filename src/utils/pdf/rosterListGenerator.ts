@@ -77,7 +77,6 @@ export class RosterListGenerator {
                 const lineHeight = 3;
                 const lineHeight = 3;
                 const lineHeight = 3;
-                const lineHeight = 3;
                 const maxWidth = data.cell.width - 4;
                 let totalLines = 1;
                 let tempX = 0;
