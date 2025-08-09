@@ -73,7 +73,7 @@ export class RosterListGenerator {
               if (staffNamesData && staffNamesData.length > 0) {
                 // Start drawing from left edge of cell with proper margin
                 let currentX = data.cell.x + 2;
-                const cellY = data.cell.y + (data.cell.height / 2) + 1.5;
+                let cellY = data.cell.y + (data.cell.height / 2) + 1.5;
                 
                 // Set font to match table
                 doc.setFontSize(8);
