@@ -430,3 +430,98 @@ export class RosterListGenerator {
 
 // Create singleton instance
 export const rosterListGenerator = new RosterListGenerator();
+
+// Test function for 6 names line wrapping
+export const testSixNamesWrapping = async () => {
+  console.log('🧪 Testing 6 names line wrapping...');
+  
+  // Create test entries with 6 different staff members
+  const testEntries: RosterEntry[] = [
+    {
+      id: '1',
+      date: '2025-07-01',
+      shift_type: 'Morning Shift (9-4)',
+      assigned_name: 'NARAYYA(R)',
+      last_edited_by: 'ADMIN',
+      last_edited_at: '01-07-2025 09:00:00',
+      created_at: '2025-07-01T09:00:00Z',
+      change_description: 'Name changed from "PITTEA" to "NARAYYA(R)"',
+      text_color: '#dc2626' // Red
+    },
+    {
+      id: '2', 
+      date: '2025-07-01',
+      shift_type: 'Morning Shift (9-4)',
+      assigned_name: 'DOMUN(R)',
+      last_edited_by: 'ADMIN',
+      last_edited_at: '01-07-2025 09:00:00',
+      created_at: '2025-07-01T09:00:00Z',
+      change_description: 'Name changed from "BHEKUR" to "DOMUN(R)" (Original PDF: BHEKUR)',
+      text_color: '#059669' // Green (reverted)
+    },
+    {
+      id: '3',
+      date: '2025-07-01', 
+      shift_type: 'Morning Shift (9-4)',
+      assigned_name: 'PITTEA',
+      last_edited_by: null,
+      last_edited_at: '01-07-2025 09:00:00',
+      created_at: '2025-07-01T09:00:00Z',
+      change_description: 'Imported from PDF',
+      text_color: null // Black (original)
+    },
+    {
+      id: '4',
+      date: '2025-07-01',
+      shift_type: 'Morning Shift (9-4)', 
+      assigned_name: 'BHEKUR(R)',
+      last_edited_by: 'NARAYYA',
+      last_edited_at: '01-07-2025 09:00:00',
+      created_at: '2025-07-01T09:00:00Z',
+      change_description: 'Name changed from "MAUDHOO" to "BHEKUR(R)"',
+      text_color: '#dc2626' // Red (edited)
+    },
+    {
+      id: '5',
+      date: '2025-07-01',
+      shift_type: 'Morning Shift (9-4)',
+      assigned_name: 'MAUDHOO',
+      last_edited_by: null,
+      last_edited_at: '01-07-2025 09:00:00', 
+      created_at: '2025-07-01T09:00:00Z',
+      change_description: 'Imported from PDF',
+      text_color: null // Black (original)
+    },
+    {
+      id: '6',
+      date: '2025-07-01',
+      shift_type: 'Morning Shift (9-4)',
+      assigned_name: 'JUMMUN(R)',
+      last_edited_by: 'ADMIN',
+      last_edited_at: '01-07-2025 09:00:00',
+      created_at: '2025-07-01T09:00:00Z', 
+      change_description: 'Custom color set by admin',
+      text_color: '#7c3aed' // Purple (custom admin color)
+    }
+  ];
+  
+  // Test the roster list generator
+  try {
+    await rosterListGenerator.generateRosterList({
+      month: 6, // July (0-indexed)
+      year: 2025,
+      entries: testEntries
+    });
+    
+    console.log('✅ Test completed! Check downloads for: Roster_List_July_2025.pdf');
+    console.log('📊 Expected result:');
+    console.log('   Line 1: NARAYYA(R) (red), DOMUN(R) (green), PITTEA (black),');
+    console.log('   Line 2: BHEKUR(R) (red), MAUDHOO (black), JUMMUN(R) (purple)');
+    
+  } catch (error) {
+    console.error('❌ Test failed:', error);
+  }
+};
+
+// Add to window for easy testing
+(window as any).testSixNames = testSixNamesWrapping;
