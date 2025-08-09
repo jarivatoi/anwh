@@ -148,14 +148,31 @@ export class RosterListGenerator {
           overflow: 'linebreak',
           halign: 'left',
           valign: 'middle',
-          lineWidth: 1,
+          lineWidth: 0.25,
+          lineColor: [0, 0, 0]
+        },
+        headStyles: {
+          fillColor: [220, 220, 220],
+          textColor: [0, 0, 0],
+          fontStyle: 'bold',
+          fontSize: 9,
+          halign: 'center',
+          valign: 'middle',
+          lineWidth: 0.25,
+          lineColor: [0, 0, 0]
+        },
+        bodyStyles: {
+          lineWidth: 0.25,
           lineColor: [0, 0, 0]
         },
         columnStyles: {
           0: { cellWidth: 35, halign: 'left', valign: 'middle' },   // Date (fixed width)
           1: { cellWidth: 45, halign: 'left', valign: 'middle' },   // Shift (fixed width)
           3: { cellWidth: 50, halign: 'center', valign: 'middle', overflow: 'linebreak', minCellHeight: 10, lineWidth: 0.25, lineColor: [0, 0, 0] }  // Remarks (fixed width, centered, wrapping)
-        }
+        },
+        theme: 'grid',
+        tableLineWidth: 0.25,
+        tableLineColor: [0, 0, 0]
       });
     }
     
