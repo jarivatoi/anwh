@@ -80,21 +80,6 @@ export class RosterListGenerator {
                 let totalLines = 1;
                 staffNamesData.forEach((staff, index) => {
                   const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
-                }
-                )
-                if (totalLines === 1) {
-                  // Single line: center vertically in the cell
-                  drawY = data.cell.y + (data.cell.height / 2) + 1; // Center with slight adjustment
-                } else {
-                  // Multiple lines: start from top with proper margin
-                  drawY = data.cell.y + 2; // Start from top with minimal margin
-                }
-                
-                // Pre-calculate how many lines we'll need
-                let tempX = 0;
-                let totalLines = 1;
-                staffNamesData.forEach((staff, index) => {
-                  const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
                   const textWidth = doc.getTextWidth(textToShow);
                   
                   if (tempX + textWidth > maxWidth && index > 0) {
