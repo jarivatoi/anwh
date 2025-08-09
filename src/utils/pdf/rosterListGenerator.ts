@@ -75,10 +75,18 @@ export class RosterListGenerator {
                 const lineHeight = 3;
                 const maxWidth = data.cell.width - 4;
                 
-                // Initialize drawing variables
+                // Initialize drawing variables with different positioning for single vs multiple lines
                 let drawX = data.cell.x + 2;
-                let drawY = data.cell.y + 3; // Balanced position - not too high, not touching bottom
+                let drawY;
                 let currentLineNumber = 0;
+                
+                if (totalLines === 1) {
+                  // Single line: center vertically in the cell
+                  drawY = data.cell.y + (data.cell.height / 2) + 1; // Center with slight adjustment
+                } else {
+                  // Multiple lines: start from top with proper margin
+                  drawY = data.cell.y + 4; // More space from top for multiple lines
+                }
                 
                 // Pre-calculate how many lines we'll need
                 let tempX = 0;
@@ -117,7 +125,7 @@ export class RosterListGenerator {
                     // Move to next line
                     currentLineNumber++;
                     drawX = data.cell.x + 2; // Reset to left margin
-                    drawY = data.cell.y + 5 + (currentLineNumber * lineHeight); // Calculate Y position with proper spacing
+                    drawY = data.cell.y + 4 + (currentLineNumber * lineHeight); // Calculate Y position with proper spacing
                     
                     // Recalculate text without comma for new line
                     const newLineText = staff.name;
