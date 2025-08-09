@@ -97,7 +97,7 @@ export class RosterListGenerator {
                 let cellY = data.cell.y + (data.cell.height / 2) - (totalHeight / 2) + 2;
                 
                 // Set font to match table
-                doc.setFontSize(6);
+                doc.setFontSize(8);
                 doc.setFont('helvetica', 'normal');
                 
                 staffNamesData.forEach((staff, index) => {
@@ -143,8 +143,8 @@ export class RosterListGenerator {
           }
         },
         styles: {
-          fontSize: 6,
-          cellPadding: 1,
+          fontSize: 8,
+          cellPadding: 2,
           overflow: 'linebreak',
           halign: 'left',
           valign: 'middle',
@@ -155,7 +155,7 @@ export class RosterListGenerator {
           fillColor: [220, 220, 220],
           textColor: [0, 0, 0],
           fontStyle: 'bold',
-          fontSize: 7,
+          fontSize: 9,
           halign: 'center',
           valign: 'middle',
           lineWidth: 0.25,
@@ -166,12 +166,11 @@ export class RosterListGenerator {
           lineColor: [0, 0, 0]
         },
         columnStyles: {
-          0: { cellWidth: 12, halign: 'center' },   // Date (fixed width)
-          1: { cellWidth: 35, halign: 'left' },   // Shift (fixed width)
-          2: { cellWidth: 28, halign: 'left' },   // Staff Names (fixed width)
-          3: { cellWidth: 20, halign: 'center' }   // Remarks (center aligned)
+          0: { cellWidth: 35, halign: 'left', valign: 'middle' },   // Date (fixed width)
+          1: { cellWidth: 45, halign: 'left', valign: 'middle' },   // Shift (fixed width)
+          2: { cellWidth: 70, halign: 'left', valign: 'middle' },   // Staff Names (fixed width)
+          3: { halign: 'center', valign: 'middle' }   // Remarks (center aligned)
         },
-        margin: { left: 10, right: 10 },
         tableLineWidth: 0.25,
         tableLineColor: [0, 0, 0]
       });
