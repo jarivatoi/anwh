@@ -584,6 +584,31 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
                   Check your downloads folder for all PDF files.
                 </p>
               </div>
+              
+              {/* Test Button for 6 Names */}
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <h5 className="font-medium text-purple-800 mb-2">Test Line Wrapping:</h5>
+                <button
+                  onClick={async () => {
+                    try {
+                      // Import the test function
+                      const { testSixNamesWrapping } = await import('../../utils/pdf/rosterListGenerator');
+                      await testSixNamesWrapping();
+                      alert('✅ Test PDF generated! Check downloads for: Roster_List_July_2025.pdf');
+                    } catch (error) {
+                      console.error('Test failed:', error);
+                      alert('❌ Test failed. Check console for details.');
+                    }
+                  }}
+                  className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>Test 6 Names Line Wrapping</span>
+                </button>
+                <p className="text-sm text-purple-600 mt-2">
+                  Generates a test PDF with 6 staff names to verify line wrapping and colors work correctly.
+                </p>
+              </div>
             </div>
           )}
 
