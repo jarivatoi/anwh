@@ -212,7 +212,7 @@ export class RosterListGenerator {
       return entry.text_color;
     }
     
-    // Check if entry has been reverted to original
+    // Use the EXACT same logic as RosterEntryCell component
     const hasBeenReverted = (() => {
       if (!entry.change_description) return false;
       
@@ -225,22 +225,23 @@ export class RosterListGenerator {
           originalPdfAssignment = originalPdfAssignment.replace('(R', '(R)');
         }
         
-        // Check if current assignment matches original PDF assignment (reverted to original)
-        return entry.assigned_name === originalPdfAssignment;
+        // CRITICAL: Check if current assignment matches original PDF assignment AND was reverted by ADMIN
+        return entry.assigned_name === originalPdfAssignment && entry.last_edited_by === 'ADMIN';
       }
       
       return false;
     })();
     
-    // Check if entry has been edited (name changed)
+    // Check if entry has been edited (name changed) by non-ADMIN
     const hasBeenEdited = entry.change_description && 
                          entry.change_description.includes('Name changed from') &&
-                         entry.last_edited_by;
+                         entry.last_edited_by && 
+                         entry.last_edited_by !== 'ADMIN';
     
     if (hasBeenReverted) {
-      return '#059669'; // Green for reverted entries (back to original PDF)
+      return '#059669'; // Green for reverted entries (back to original PDF by ADMIN)
     } else if (hasBeenEdited) {
-      return '#dc2626'; // Red for edited entries
+      return '#dc2626'; // Red for edited entries (by non-ADMIN users)
     } else {
       return '#000000'; // Black for original entries
     }
