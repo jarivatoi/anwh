@@ -85,7 +85,7 @@ export class RosterListGenerator {
                   drawY = data.cell.y + (data.cell.height / 2) + 1; // Center with slight adjustment
                 } else {
                   // Multiple lines: start from top with proper margin
-                  drawY = data.cell.y + 4; // More space from top for multiple lines
+                  drawY = data.cell.y + 2; // Start from top with minimal margin
                 }
                 
                 // Pre-calculate how many lines we'll need
@@ -125,7 +125,7 @@ export class RosterListGenerator {
                     // Move to next line
                     currentLineNumber++;
                     drawX = data.cell.x + 2; // Reset to left margin
-                    drawY = data.cell.y + 4 + (currentLineNumber * lineHeight); // Calculate Y position with proper spacing
+                    drawY = data.cell.y + 2 + (currentLineNumber * lineHeight); // Calculate Y position consistently
                     
                     // Recalculate text without comma for new line
                     const newLineText = staff.name;
