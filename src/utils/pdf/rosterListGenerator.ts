@@ -80,6 +80,8 @@ export class RosterListGenerator {
                 let totalLines = 1;
                 staffNamesData.forEach((staff, index) => {
                   const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
+                }
+                )
                 if (totalLines === 1) {
                   // Single line: center vertically in the cell
                   drawY = data.cell.y + (data.cell.height / 2) + 1; // Center with slight adjustment
