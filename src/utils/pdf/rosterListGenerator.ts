@@ -75,6 +75,13 @@ export class RosterListGenerator {
                 let currentX = data.cell.x + 2;
                 let currentLine = 0;
                 const lineHeight = 3;
+                const lineHeight = 3;
+                const lineHeight = 3;
+                const lineHeight = 3;
+                const lineHeight = 3;
+                const lineHeight = 3;
+                const lineHeight = 3;
+                const lineHeight = 3;
                 const maxWidth = data.cell.width - 4;
                 let totalLines = 1;
                 let tempX = 0;
@@ -114,6 +121,11 @@ export class RosterListGenerator {
                   
                   // If text would exceed width, move to next line
                   if (currentX + textWidth > data.cell.x + maxWidth && index > 0) {
+                   // Add comma at the end of current line if there are more names
+                   if (index < staffNamesData.length - 1) {
+                     doc.text(',', currentX, cellY);
+                   }
+                   
                     currentX = data.cell.x + 2; // Reset to left margin
                     cellY += lineHeight; // Move down for next line
                     
