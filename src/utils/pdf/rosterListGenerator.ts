@@ -78,7 +78,7 @@ export class RosterListGenerator {
               
               // Initialize drawing variables
               let drawX = data.cell.x + 2;
-              let drawY = data.cell.y + 2; // Start from top for first line
+              let drawY = data.cell.y + 4; // Start from top with proper margin
               let currentLineNumber = 0;
               
               staffNamesData.forEach((staff, index) => {
@@ -99,7 +99,7 @@ export class RosterListGenerator {
                   // Move to next line
                   currentLineNumber++;
                   drawX = data.cell.x + 2; // Reset to left margin
-                  drawY = data.cell.y + 2 + (currentLineNumber * lineHeight); // Calculate Y position consistently
+                  drawY = data.cell.y + 4 + (currentLineNumber * lineHeight); // Calculate Y position with proper spacing
                   
                   // Recalculate text without comma for new line
                   const newLineText = staff.name;
