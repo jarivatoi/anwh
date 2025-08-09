@@ -168,6 +168,7 @@ export class RosterListGenerator {
         columnStyles: {
           0: { cellWidth: 35, halign: 'left', valign: 'middle' },   // Date (fixed width)
           1: { cellWidth: 45, halign: 'left', valign: 'middle' },   // Shift (fixed width)
+          2: { cellWidth: 70, halign: 'left', valign: 'middle' },   // Staff Names (fixed width)
           3: { halign: 'center', valign: 'middle' }   // Remarks (center aligned)
         },
         tableLineWidth: 0.25,
