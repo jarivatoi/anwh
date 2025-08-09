@@ -164,7 +164,7 @@ export class RosterListGenerator {
           0: { cellWidth: 35, halign: 'left', valign: 'middle' },   // Date (fixed width)
           1: { cellWidth: 45, halign: 'left', valign: 'middle' },   // Shift (fixed width)
           2: { cellWidth: 85, halign: 'left', valign: 'top', minCellHeight: 8 },   // Staff Names (top-aligned for multi-line)
-          3: { cellWidth: 50, halign: 'left', valign: 'middle', overflow: 'linebreak' }    // Remarks (final column)
+          3: { halign: 'left', valign: 'middle', overflow: 'linebreak' }    // Remarks (auto width)
         },
         margin: { left: 10, right: 10 },
         pageBreak: 'auto',
