@@ -62,7 +62,12 @@ export class RosterListGenerator {
             const staffData = data.row.raw[2];
             
             // Check if this is our special staff names array
-            if (Array.isArray(staffData) && staffData.length > 0 && staffData[0].name) {
+            if (data.row.index < tableData.length) {
+              // Get the original staff data from our stored array
+              const originalRow = tableData[data.row.index];
+              const staffNamesData = this.getStaffNamesForRow(originalRow[0], originalRow[1], entries);
+              
+              if (staffNamesData && staffNamesData.length > 0) {
               // Clear the default text
               data.cell.text = [];
               
@@ -70,7 +75,7 @@ export class RosterListGenerator {
               let currentX = data.cell.x + 2;
               const cellY = data.cell.y + data.cell.height / 2;
               
-              staffData.forEach((staff, index) => {
+              staffNamesData.forEach((staff, index) => {
                 // Set color for this staff member
                 const rgbColor = this.hexToRgb(staff.color);
                 doc.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
@@ -95,6 +100,7 @@ export class RosterListGenerator {
               
               // Reset text color to black for other cells
               doc.setTextColor(0, 0, 0);
+              }
             }
           }
         },
@@ -281,6 +287,23 @@ export class RosterListGenerator {
   }
   
   /**
+   * Get staff names data for a specific row during PDF generation
+   */
+  private getStaffNamesForRow(date: string, shiftType: string, entries: RosterEntry[]): { name: string; color: string }[] {
+    // Find entries that match this date and shift
+    const matchingEntries = entries.filter(entry => {
+      const formattedDate = this.formatDateForList(entry.date);
+      const formattedShift = this.formatShiftTypeForList(entry.shift_type);
+      return formattedDate === date && formattedShift === shiftType;
+    });
+    
+    return matchingEntries.map(entry => ({
+      name: entry.assigned_name,
+      color: this.getTextColor(entry)
+    }));
+  }
+  
+  /**
    * Create table data with combined staff names but individual colors
    */
   private createColoredTableData(entries: RosterEntry[]): any[] {
@@ -339,7 +362,7 @@ export class RosterListGenerator {
         const row = [
           this.formatDateForList(date),
           formattedShift,
-          staffNamesWithColors, // Pass array of names with colors
+          staffNamesWithColors.map(s => s.name).join(', '), // Convert to string for display
           remarks
         ];
         
