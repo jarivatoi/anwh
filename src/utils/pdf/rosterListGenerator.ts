@@ -86,12 +86,22 @@ export class RosterListGenerator {
                   
                   // Format text with comma separator
                   const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
+                  const textWidth = doc.getTextWidth(textToShow);
+                  
+                  // Check if text would exceed cell width (with 4mm margin)
+                  const maxWidth = data.cell.width - 4;
+                  
+                  // If text would exceed width, move to next line
+                  if (currentX + textWidth > data.cell.x + maxWidth && index > 0) {
+                    currentX = data.cell.x + 2; // Reset to left margin
+                    cellY += 3; // Move down by 3mm for next line
+                  }
                   
                   // Draw the text at current position
                   doc.text(textToShow, currentX, cellY);
                   
                   // Move position for next name
-                  currentX += doc.getTextWidth(textToShow);
+                  currentX += textWidth;
                 });
                 
                 // Reset color for other cells
@@ -121,7 +131,7 @@ export class RosterListGenerator {
         columnStyles: {
           0: { cellWidth: 35, halign: 'left', valign: 'middle' },   // Date (fixed width)
           1: { cellWidth: 45, halign: 'left', valign: 'middle' },   // Shift (fixed width)
-          2: { cellWidth: 85, halign: 'left', valign: 'middle' },   // Staff Names (increased width)
+          2: { cellWidth: 85, halign: 'left', valign: 'top', minCellHeight: 8 },   // Staff Names (top-aligned for multi-line)
           3: { cellWidth: 50, halign: 'left', valign: 'middle', overflow: 'linebreak' }    // Remarks (remaining space)
         },
         margin: { left: 10, right: 10 },
