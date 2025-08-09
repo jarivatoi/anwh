@@ -75,11 +75,11 @@ export class RosterListGenerator {
                 const lineHeight = 3;
                 const maxWidth = data.cell.width - 4;
                 
-                // Initialize drawing variables with different positioning for single vs multiple lines
-                let drawX = data.cell.x + 2;
-                let drawY;
-                let currentLineNumber = 0;
-                
+                // Pre-calculate how many lines we'll need
+                let tempX = 0;
+                let totalLines = 1;
+                staffNamesData.forEach((staff, index) => {
+                  const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
                 if (totalLines === 1) {
                   // Single line: center vertically in the cell
                   drawY = data.cell.y + (data.cell.height / 2) + 1; // Center with slight adjustment
