@@ -48,14 +48,35 @@ export class RosterListGenerator {
       doc.setFontSize(14);
       doc.text('No roster entries found for this month', doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
     } else {
-      // Create table data in the new format
-      const tableData = this.prepareRosterTableData(monthEntries);
+      // Create table data with colored text
+      const tableData = this.createColoredTableData(monthEntries);
       
       // Create table with new column structure
       autoTable(doc, {
         startY: 35,
         head: [['Date', 'Shift', 'Staff Names', 'Remarks']],
         body: tableData,
+        didParseCell: (data) => {
+          // Apply colors to staff names column (column index 2)
+          if (data.column.index === 2 && data.row.index >= 0) {
+            const staffWithColors = data.row.raw[2];
+            if (Array.isArray(staffWithColors)) {
+              // Create formatted text with colors
+              let formattedText = '';
+              staffWithColors.forEach((staff, index) => {
+                if (index > 0) formattedText += ', ';
+                formattedText += staff.text;
+              });
+              data.cell.text = [formattedText];
+              
+              // For now, use the first staff member's color for the entire cell
+              // jsPDF autoTable doesn't support multi-color text in a single cell
+              if (staffWithColors.length > 0) {
+                data.cell.styles.textColor = staffWithColors[0].color;
+              }
+            }
+          }
+        },
         styles: {
           fontSize: 8,
           cellPadding: 2,
@@ -168,31 +189,27 @@ export class RosterListGenerator {
   }
   
   /**
-   * Format staff names with color indicators based on their edit status
+   * Format staff names with actual text colors based on their edit status
    */
-  private formatStaffNamesWithColors(entries: RosterEntry[]): string {
-    const staffWithColors = entries.map(entry => {
+  private formatStaffNamesWithColors(entries: RosterEntry[]): { text: string; color: number[] }[] {
+    return entries.map(entry => {
       const staffName = entry.assigned_name;
-      const colorIndicator = this.getColorIndicator(entry);
+      const textColor = this.getTextColor(entry);
       
-      // Add color indicator as prefix if not black (original)
-      return colorIndicator ? `${colorIndicator}${staffName}` : staffName;
+      return {
+        text: staffName,
+        color: this.hexToRgb(textColor)
+      };
     });
-    
-    return staffWithColors.join(', ');
   }
   
   /**
-   * Get color indicator for staff name based on edit status
+   * Get actual text color for staff name based on edit status
    */
-  private getColorIndicator(entry: RosterEntry): string {
+  private getTextColor(entry: RosterEntry): string {
     // HIGHEST PRIORITY: Admin-set text color
     if (entry.text_color) {
-      if (entry.text_color === '#dc2626') return '[R] '; // Red
-      if (entry.text_color === '#059669') return '[G] '; // Green
-      if (entry.text_color === '#000000') return ''; // Black (no indicator)
-      // For any other custom colors, show as [C]
-      return '[C] ';
+      return entry.text_color;
     }
     
     // Check if entry has been reverted to original
@@ -221,12 +238,91 @@ export class RosterListGenerator {
                          entry.last_edited_by;
     
     if (hasBeenReverted) {
-      return '[G] '; // Green for reverted entries (back to original PDF)
+      return '#059669'; // Green for reverted entries (back to original PDF)
     } else if (hasBeenEdited) {
-      return '[R] '; // Red for edited entries
+      return '#dc2626'; // Red for edited entries
     } else {
-      return ''; // Black for original entries (no indicator)
+      return '#000000'; // Black for original entries
     }
+  }
+  
+  /**
+   * Convert hex color to RGB array for jsPDF
+   */
+  private hexToRgb(hex: string): number[] {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? [
+      parseInt(result[1], 16),
+      parseInt(result[2], 16),
+      parseInt(result[3], 16)
+    ] : [0, 0, 0]; // Default to black if parsing fails
+  }
+  
+  /**
+   * Create table data with colored text for staff names
+   */
+  private createColoredTableData(entries: RosterEntry[]): any[] {
+    // Group entries by date and shift type
+    const groupedData: Record<string, Record<string, RosterEntry[]>> = {};
+    
+    entries.forEach(entry => {
+      const dateKey = entry.date;
+      const shiftType = entry.shift_type;
+      
+      if (!groupedData[dateKey]) {
+        groupedData[dateKey] = {};
+      }
+      if (!groupedData[dateKey][shiftType]) {
+        groupedData[dateKey][shiftType] = [];
+      }
+      groupedData[dateKey][shiftType].push(entry);
+    });
+    
+    // Convert to table rows with colored text
+    const tableData: any[] = [];
+    
+    // Sort dates
+    const sortedDates = Object.keys(groupedData).sort();
+    
+    sortedDates.forEach(date => {
+      const shiftData = groupedData[date];
+      
+      // Define shift order for consistent display
+      const shiftOrder = [
+        'Morning Shift (9-4)',
+        'Saturday Regular (12-10)', 
+        'Evening Shift (4-10)',
+        'Night Duty',
+        'Sunday/Public Holiday/Special'
+      ];
+      
+      // Process shifts in order
+      shiftOrder.forEach(shiftType => {
+        const shiftEntries = shiftData[shiftType];
+        if (!shiftEntries || shiftEntries.length === 0) return;
+        
+        // Get staff names with colors
+        const staffWithColors = this.formatStaffNamesWithColors(shiftEntries);
+        
+        // Get remarks from special date info
+        const remarks = this.extractRemarks(shiftEntries);
+        
+        // Format shift type for display
+        const formattedShift = this.formatShiftTypeForList(shiftType);
+        
+        // Create row with colored staff names
+        const row = [
+          this.formatDateForList(date),  // DDD dd-mmm-yyyy
+          formattedShift,                // Shift type
+          staffWithColors,               // Staff names with color info
+          remarks                        // Remarks
+        ];
+        
+        tableData.push(row);
+      });
+    });
+    
+    return tableData;
   }
   
   /**
