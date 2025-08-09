@@ -73,7 +73,29 @@ export class RosterListGenerator {
               if (staffNamesData && staffNamesData.length > 0) {
                 // Start drawing from left edge of cell with proper margin
                 let currentX = data.cell.x + 2;
-                let cellY = data.cell.y + (data.cell.height / 2) + 1.5;
+                let currentLine = 0;
+                const lineHeight = 3;
+                const maxWidth = data.cell.width - 4;
+                let totalLines = 1;
+                let tempX = 0;
+                
+                // Pre-calculate how many lines we'll need
+                staffNamesData.forEach((staff, index) => {
+                  const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
+                  const textWidth = doc.getTextWidth(textToShow);
+                  
+                  if (tempX + textWidth > maxWidth && index > 0) {
+                    totalLines++;
+                    tempX = doc.getTextWidth(staff.name); // Reset with just the name (no comma)
+                  } else {
+                    tempX += textWidth;
+                  }
+                });
+                
+                // Calculate starting Y position for vertical centering
+                const lineHeight = 3;
+                const totalHeight = totalLines * lineHeight;
+                let cellY = data.cell.y + (data.cell.height / 2) - (totalHeight / 2) + 2;
                 
                 // Set font to match table
                 doc.setFontSize(8);
@@ -84,24 +106,30 @@ export class RosterListGenerator {
                   const rgbColor = this.hexToRgb(staff.color);
                   doc.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
                   
-                  // Format text with comma separator
-                  const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
+                  // Format text with comma separator (but not at start of new lines)
+                  const isFirstOnLine = currentX === data.cell.x + 2;
+                  const textToShow = (index === 0 || isFirstOnLine) ? staff.name : `, ${staff.name}`;
                   const textWidth = doc.getTextWidth(textToShow);
                   
                   // Check if text would exceed cell width (with 4mm margin)
-                  const maxWidth = data.cell.width - 4;
                   
                   // If text would exceed width, move to next line
                   if (currentX + textWidth > data.cell.x + maxWidth && index > 0) {
                     currentX = data.cell.x + 2; // Reset to left margin
-                    cellY += 3; // Move down by 3mm for next line
+                    cellY += lineHeight; // Move down for next line
+                    
+                    // Recalculate text without comma for new line
+                    const newLineText = staff.name;
+                    const newLineWidth = doc.getTextWidth(newLineText);
+                    
+                    // Draw the text at current position (no comma at start of line)
+                    doc.text(newLineText, currentX, cellY);
+                    currentX += newLineWidth;
+                  } else {
+                    // Draw the text at current position
+                    doc.text(textToShow, currentX, cellY);
+                    currentX += textWidth;
                   }
-                  
-                  // Draw the text at current position
-                  doc.text(textToShow, currentX, cellY);
-                  
-                  // Move position for next name
-                  currentX += textWidth;
                 });
                 
                 // Reset color for other cells
