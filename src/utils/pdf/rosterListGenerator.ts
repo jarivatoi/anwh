@@ -75,6 +75,12 @@ export class RosterListGenerator {
                 let currentX = data.cell.x + 2;
                 let currentLine = 0;
                 const lineHeight = 3;
+                const lineHeight = 3;
+                const lineHeight = 3;
+                const lineHeight = 3;
+                const lineHeight = 3;
+                const lineHeight = 3;
+                const lineHeight = 3;
                 const maxWidth = data.cell.width - 4;
                 let totalLines = 1;
                 let tempX = 0;
@@ -116,6 +122,7 @@ export class RosterListGenerator {
                   if (currentX + textWidth > data.cell.x + maxWidth && index > 0) {
                    // Add comma at the end of current line if there are more names
                    if (index < staffNamesData.length - 1) {
+                    if (index < staffNamesData.length - 1) {
                       doc.text(',', currentX, cellY);
                     }
                     
@@ -162,9 +169,7 @@ export class RosterListGenerator {
         },
         columnStyles: {
           0: { cellWidth: 35, halign: 'left', valign: 'middle' },   // Date (fixed width)
-          1: { cellWidth: 45, halign: 'left', valign: 'middle' }   // Shift (fixed width)
-        },
-        tableWidth: 'wrap',
+          1: { cellWidth: 45, halign: 'left', valign: 'middle' },   // Shift (fixed width)
         tableLineWidth: 0.2,
         theme: 'grid',
         showHead: 'everyPage'
