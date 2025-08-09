@@ -78,7 +78,7 @@ export class RosterListGenerator {
           0: { cellWidth: 'auto', halign: 'left', valign: 'middle' },   // Date (auto-fit)
           1: { cellWidth: 'auto', halign: 'left', valign: 'middle' },   // Shift (auto-fit)
           2: { cellWidth: 60, halign: 'left', valign: 'middle', overflow: 'linebreak' },   // Staff Names (sized for ~3 staff, wraps if more)
-          3: { cellWidth: 'wrap', halign: 'left', valign: 'middle', overflow: 'linebreak' }    // Remarks (remaining space with wrap)
+          3: { cellWidth: 'auto', halign: 'left', valign: 'middle', overflow: 'linebreak' }    // Remarks (auto-fit with wrap)
         },
         margin: { left: 10, right: 10 },
         pageBreak: 'auto',
