@@ -77,7 +77,7 @@ export class RosterListGenerator {
                 
                 // Initialize drawing variables
                 let drawX = data.cell.x + 2;
-                let drawY = data.cell.y + 5; // Start with more space from top
+                let drawY = data.cell.y + 3; // Balanced position - not too high, not touching bottom
                 let currentLineNumber = 0;
                 
                 // Pre-calculate how many lines we'll need
