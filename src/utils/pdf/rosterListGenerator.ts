@@ -75,6 +75,14 @@ export class RosterListGenerator {
                 let currentX = data.cell.x + 2;
                 let currentLine = 0;
                 const lineHeight = 3;
+                const lineHeight = 3;
+                const lineHeight = 3;
+                const lineHeight = 3;
+                const lineHeight = 3;
+                const lineHeight = 3;
+                const lineHeight = 3;
+                const lineHeight = 3;
+                const lineHeight = 3;
                 const maxWidth = data.cell.width - 4;
                 let totalLines = 1;
                 let tempX = 0;
@@ -114,6 +122,11 @@ export class RosterListGenerator {
                   
                   // If text would exceed width, move to next line
                   if (currentX + textWidth > data.cell.x + maxWidth && index > 0) {
+                   // Add comma at the end of current line if there are more names
+                   if (index < staffNamesData.length - 1) {
+                     doc.text(',', currentX, cellY);
+                   }
+                   
                     currentX = data.cell.x + 2; // Reset to left margin
                     cellY += lineHeight; // Move down for next line
                     
@@ -159,7 +172,7 @@ export class RosterListGenerator {
           0: { cellWidth: 35, halign: 'left', valign: 'middle' },   // Date (fixed width)
           1: { cellWidth: 45, halign: 'left', valign: 'middle' },   // Shift (fixed width)
           2: { cellWidth: 85, halign: 'left', valign: 'top', minCellHeight: 8 },   // Staff Names (top-aligned for multi-line)
-          3: { cellWidth: 50, halign: 'left', valign: 'middle', overflow: 'linebreak' }    // Remarks (remaining space)
+          3: { cellWidth: 50, halign: 'left', valign: 'middle', overflow: 'linebreak' }    // Remarks (final column)
         },
         margin: { left: 10, right: 10 },
         pageBreak: 'auto',
