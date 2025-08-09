@@ -77,6 +77,7 @@ export class RosterListGenerator {
                 const lineHeight = 3;
                 const lineHeight = 3;
                 const lineHeight = 3;
+                const lineHeight = 3;
                 const maxWidth = data.cell.width - 4;
                 let totalLines = 1;
                 let tempX = 0;
@@ -95,7 +96,6 @@ export class RosterListGenerator {
                 });
                 
                 // Calculate starting Y position for vertical centering
-                const lineHeight = 3;
                 const totalHeight = totalLines * lineHeight;
                 let cellY = data.cell.y + (data.cell.height / 2) - (totalHeight / 2) + 2;
                 
