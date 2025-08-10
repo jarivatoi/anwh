@@ -149,8 +149,6 @@ export class AnnexureGenerator {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     
-    doc.text(`Certified correct as per annexture: ________________________, 15, doc.internal.pageSize.getHeight() - 15);
-
     
     doc.text(`Generated on: ${new Date().toLocaleString()}`, 15, doc.internal.pageSize.getHeight() - 15);
     doc.text('X-ray AN WH System', doc.internal.pageSize.getWidth() - 15, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
