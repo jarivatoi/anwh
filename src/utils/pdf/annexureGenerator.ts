@@ -84,6 +84,7 @@ export class AnnexureGenerator {
       startY: 35,
       head: [['S.No', 'NAME\n(Full Name)', 'ID\nNUMBER', 'SALARY', 'NO OF HRS\nPAYABLE\n(Hrs)', 'NIGHT\nALLOWANCE\n(Hrs)', 'AMOUNT']],
       body: tableData,
+      halign: 'center',
       styles: {
         fontSize: 8,
         cellPadding: 2,
