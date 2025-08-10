@@ -111,14 +111,14 @@ export class ListParser {
    * Extract roster data from a single row
    */
   private extractDataFromRow(row: Array<{text: string, x: number, y: number}>): ParsedEntry | null {
-    if (row.length < 3) {
+    if (row.length < 4) {
       console.log(`📋 Row too short (${row.length} items), skipping`);
       return null;
     }
     
     console.log(`📋 EXTRACTING ROW DATA:`, row.map(item => `"${item.text}"`).join(' | '));
     
-    // Expected column order from PDF: Date, Day, Shift Type, Assigned Staff, Last Edited By, Last Edited At
+    // Expected column order from PDF: Date, Day, Shift Type, Assigned Staff, Last Edited By, Last Edited At, Remarks (optional)
     let date: string | null = null;
     let shiftType: string | null = null;
     let assignedName: string | null = null;
@@ -147,6 +147,16 @@ export class ListParser {
       if (staff) {
         assignedName = staff;
         console.log(`👤 Found staff in column 4: ${assignedName}`);
+      }
+    }
+    
+    // STEP 4: Check for remarks in last column (index 6 if 7 columns, or search for special date info)
+    let remarks: string | null = null;
+    if (row.length >= 7) {
+      const remarksText = row[6].text.trim();
+      if (remarksText && remarksText !== '' && remarksText.toLowerCase() !== 'remarks') {
+        remarks = remarksText;
+        console.log(`📝 Found remarks in column 7: ${remarks}`);
       }
     }
     

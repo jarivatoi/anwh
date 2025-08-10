@@ -65,7 +65,7 @@ export class PDFExporter {
       // Create table using autoTable
       autoTable(doc, {
         startY: 40,
-        head: [['Date', 'Day', 'Shift Type', 'Assigned Staff', 'Last Edited By', 'Last Edited At']],
+        head: [['Date', 'Day', 'Shift Type', 'Assigned Staff', 'Last Edited By', 'Last Edited At', 'Remarks']],
         body: tableData,
         styles: {
           fontSize: 8,
@@ -88,7 +88,8 @@ export class PDFExporter {
           2: { cellWidth: 45 }, // Shift Type
           3: { cellWidth: 40 }, // Assigned Staff
           4: { cellWidth: 35 }, // Last Edited By
-          5: { cellWidth: 40 }  // Last Edited At
+          5: { cellWidth: 40 }, // Last Edited At
+          6: { cellWidth: 50 }  // Remarks
         },
         margin: { left: 10, right: 10 },
         tableWidth: 'auto',
@@ -147,7 +148,8 @@ export class PDFExporter {
       this.formatShiftType(entry.shift_type),
       entry.assigned_name,
       entry.last_edited_by || 'System',
-      this.formatTimestamp(entry.last_edited_at)
+      this.formatTimestamp(entry.last_edited_at),
+      this.extractRemarks(entry)
     ]);
   }
   
@@ -236,6 +238,22 @@ export class PDFExporter {
       console.warn('Failed to parse timestamp:', timestamp, error);
       return '';
     }
+  }
+  
+  /**
+   * Extract remarks from entry (special date info)
+   */
+  private extractRemarks(entry: RosterEntry): string {
+    // Look for special date information in change descriptions
+    if (entry.change_description && entry.change_description.includes('Special Date:')) {
+      const match = entry.change_description.match(/Special Date:\s*([^;]+)/);
+      if (match && match[1].trim()) {
+        // Only show text before asterisk (*) if asterisk exists
+        const fullRemarks = match[1].trim();
+        return fullRemarks.includes('*') ? fullRemarks.split('*')[0].trim() : fullRemarks;
+      }
+    }
+    return ''; // No special remarks
   }
 }
 
