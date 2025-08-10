@@ -684,3 +684,7 @@ export class BatchPrintManager {
 
 // Create singleton instance
 export const batchPrintManager = new BatchPrintManager();
+      )
+    }
+  }
+}
