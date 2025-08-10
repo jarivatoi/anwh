@@ -116,13 +116,13 @@ export class AnnexureGenerator {
         cellPadding: 1.5
       },
       columnStyles: {
-        0: { cellWidth: 10, halign: 'center' }, // S.No
-        1: { cellWidth: 30, halign: 'left' },   // NAME (Full Name)
-        2: { cellWidth: 22, halign: 'center' }, // ID NUMBER
-        3: { cellWidth: 18, halign: 'right' },  // SALARY
-        4: { cellWidth: 18, halign: 'center' }, // NO OF HRS PAYABLE
-        5: { cellWidth: 18, halign: 'center' }, // NIGHT ALLOWANCE (Hrs)
-        6: { cellWidth: 22, halign: 'right' }   // AMOUNT
+        0: { cellWidth: 15, halign: 'center' }, // S.No
+        1: { cellWidth: 45, halign: 'left' },   // NAME (Full Name)
+        2: { cellWidth: 30, halign: 'center' }, // ID NUMBER
+        3: { cellWidth: 25, halign: 'right' },  // SALARY
+        4: { cellWidth: 25, halign: 'center' }, // NO OF HRS PAYABLE
+        5: { cellWidth: 25, halign: 'center' }, // NIGHT ALLOWANCE (Hrs)
+        6: { cellWidth: 30, halign: 'right' }   // AMOUNT
       },
       margin: { left: 15, right: 15 },
       theme: 'grid',
