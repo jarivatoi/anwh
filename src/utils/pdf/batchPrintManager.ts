@@ -567,7 +567,6 @@ export class BatchPrintManager {
     
     return doc;
   }
-  }
   
   /**
    * Get unique staff members from entries (base names only)
