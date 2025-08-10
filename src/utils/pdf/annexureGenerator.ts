@@ -100,8 +100,8 @@ export class AnnexureGenerator {
       head: [['S.No', 'NAME\n(Full Name)', 'ID\nNUMBER', 'SALARY', 'NO OF HRS\nPAYABLE\n(Hrs)', 'NIGHT\nALLOWANCE\n(Hrs)', 'AMOUNT']],
       body: tableData,
       styles: {
-        fontSize: 6,
-        cellPadding: 1.5,
+        fontSize: 8,
+        cellPadding: 2,
         overflow: 'linebreak',
         halign: 'center',
         valign: 'middle'
@@ -110,26 +110,17 @@ export class AnnexureGenerator {
         fillColor: [220, 220, 220],
         textColor: [0, 0, 0],
         fontStyle: 'bold',
-        fontSize: 7,
+        fontSize: 9,
         halign: 'center',
         valign: 'middle',
-        cellPadding: 2,
-        minCellHeight: 15
+        cellPadding: 3,
+        minCellHeight: 18
       },
-      columnStyles: {
-        0: { halign: 'center' }, // S.No
-        1: { halign: 'left' },   // NAME (Full Name)
-        2: { halign: 'center' }, // ID NUMBER
-        3: { halign: 'right' },  // SALARY
-        4: { halign: 'center' }, // NO OF HRS PAYABLE
-        5: { halign: 'center' }, // NIGHT ALLOWANCE (Hrs)
-        6: { halign: 'right' }   // AMOUNT
-      },
-      margin: { left: 15, right: 15 },
+      margin: { left: 10, right: 10 },
       theme: 'grid',
       tableLineWidth: 0.3,
       tableLineColor: [0, 0, 0],
-      tableWidth: 'wrap'
+      tableWidth: 'auto'
     });
     
     // Add grand totals at the bottom
