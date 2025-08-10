@@ -660,3 +660,7 @@ export const batchPrintManager = new BatchPrintManager();
     }
   }
 }
+      )
+    }
+  }
+}
