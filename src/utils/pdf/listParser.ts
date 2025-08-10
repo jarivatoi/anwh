@@ -214,6 +214,7 @@ export class ListParser {
     
     // Add remarks to change description if found
     if (remarks) {
+      // For import: Store FULL remarks text (including after *) in change description
       (entry as any).changeDescription = `Special Date: ${remarks}; Imported from PDF`;
     } else {
       (entry as any).changeDescription = 'Imported from PDF';

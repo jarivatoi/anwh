@@ -248,9 +248,8 @@ export class PDFExporter {
     if (entry.change_description && entry.change_description.includes('Special Date:')) {
       const match = entry.change_description.match(/Special Date:\s*([^;]+)/);
       if (match && match[1].trim()) {
-        // Only show text before asterisk (*) if asterisk exists
-        const fullRemarks = match[1].trim();
-        return fullRemarks.includes('*') ? fullRemarks.split('*')[0].trim() : fullRemarks;
+        // For export/import PDF: Include FULL remarks text (including after *)
+        return match[1].trim();
       }
     }
     return ''; // No special remarks
