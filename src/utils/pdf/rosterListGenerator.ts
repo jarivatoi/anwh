@@ -114,10 +114,8 @@ export class RosterListGenerator {
                   
                   // If text would exceed width, move to next line
                   if (currentX + textWidth > data.cell.x + maxWidth && index > 0) {
-                    // Add comma at the end of current line if there are more names
-                    if (index < staffNamesData.length - 1) {
-                      doc.text(',', currentX, cellY);
-                    }
+                    // Add comma at the end of current line before wrapping
+                    doc.text(',', currentX, cellY);
                     
                     currentX = data.cell.x + 2; // Reset to left margin
                     cellY += lineHeight; // Move down for next line
