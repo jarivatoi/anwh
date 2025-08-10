@@ -101,6 +101,7 @@ export class AnnexureGenerator {
       },
       margin: { left: 5, right: 5 },
       theme: 'grid',
+      halign: 'center',
       tableLineWidth: 0.3,
       tableLineColor: [0, 0, 0],
       tableWidth: 'wrap',
