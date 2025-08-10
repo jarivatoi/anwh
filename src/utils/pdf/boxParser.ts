@@ -131,27 +131,105 @@ export class BoxParser {
   private extractDateFromText(text: string): {date: string, dayOfWeek: number} | null {
     const cleanText = text.trim();
     
-    // DD MM YYYY format (like "01 07 2025")
-    const dayMonthYearPattern = /^(\d{1,2})\s+(\d{1,2})\s+(\d{4})$/;
-    const dayMonthYearMatch = cleanText.match(dayMonthYearPattern);
-    if (dayMonthYearMatch) {
-      const [, day, month, year] = dayMonthYearMatch;
+    console.log(`📅 DATE DEBUG: Analyzing text: "${cleanText}"`);
+    
+    // Format 1: DD MM YYYY (25 07 2025)
+    const ddmmyyyySpacePattern = /^(\d{1,2})\s+(\d{1,2})\s+(\d{4})$/;
+    const ddmmyyyySpaceMatch = cleanText.match(ddmmyyyySpacePattern);
+    if (ddmmyyyySpaceMatch) {
+      const [, day, month, year] = ddmmyyyySpaceMatch;
       const standardDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
       const dateObj = new Date(standardDate);
       
-      // Validate the date
       if (this.isValidDate(dateObj, parseInt(year), parseInt(month), parseInt(day))) {
-        return {
-          date: standardDate,
-          dayOfWeek: dateObj.getDay()
-        };
+        console.log(`📅 Parsed DD MM YYYY format: "${cleanText}" -> ${standardDate}`);
+        return { date: standardDate, dayOfWeek: dateObj.getDay() };
       }
-      // Invalid date - return null to skip this entry
-      console.log(`⚠️ Invalid date detected: "${text}" -> ${standardDate}, clearing date field`);
-      return null;
     }
     
-    // DD MM format (like "01 07") - assume 2025
+    // Format 2: DD-MM-YYYY (25-07-2025)
+    const ddmmyyyyDashPattern = /^(\d{1,2})-(\d{1,2})-(\d{4})$/;
+    const ddmmyyyyDashMatch = cleanText.match(ddmmyyyyDashPattern);
+    if (ddmmyyyyDashMatch) {
+      const [, day, month, year] = ddmmyyyyDashMatch;
+      const standardDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      const dateObj = new Date(standardDate);
+      
+      if (this.isValidDate(dateObj, parseInt(year), parseInt(month), parseInt(day))) {
+        console.log(`📅 Parsed DD-MM-YYYY format: "${cleanText}" -> ${standardDate}`);
+        return { date: standardDate, dayOfWeek: dateObj.getDay() };
+      }
+    }
+    
+    // Format 3: DD-MMM-YYYY (25-Jul-2025)
+    const ddmmmyyyyPattern = /^(\d{1,2})-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-(\d{4})$/i;
+    const ddmmmyyyyMatch = cleanText.match(ddmmmyyyyPattern);
+    if (ddmmmyyyyMatch) {
+      const [, day, monthName, year] = ddmmmyyyyMatch;
+      const monthNumber = this.getMonthNumber(monthName);
+      if (monthNumber !== -1) {
+        const standardDate = `${year}-${monthNumber.toString().padStart(2, '0')}-${day.padStart(2, '0')}`;
+        const dateObj = new Date(standardDate);
+        
+        if (this.isValidDate(dateObj, parseInt(year), monthNumber, parseInt(day))) {
+          console.log(`📅 Parsed DD-MMM-YYYY format: "${cleanText}" -> ${standardDate}`);
+          return { date: standardDate, dayOfWeek: dateObj.getDay() };
+        }
+      }
+    }
+    
+    // Format 4: DD MM YY (25 07 25)
+    const ddmmyySpacePattern = /^(\d{1,2})\s+(\d{1,2})\s+(\d{2})$/;
+    const ddmmyySpaceMatch = cleanText.match(ddmmyySpacePattern);
+    if (ddmmyySpaceMatch) {
+      const [, day, month, year] = ddmmyySpaceMatch;
+      const fullYear = parseInt(year) > 50 ? `19${year}` : `20${year}`;
+      const standardDate = `${fullYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      const dateObj = new Date(standardDate);
+      
+      if (this.isValidDate(dateObj, parseInt(fullYear), parseInt(month), parseInt(day))) {
+        console.log(`📅 Parsed DD MM YY format: "${cleanText}" -> ${standardDate}`);
+        return { date: standardDate, dayOfWeek: dateObj.getDay() };
+      }
+    }
+    
+    // Format 5: DD-MM-YY (25-07-25)
+    const ddmmyyDashPattern = /^(\d{1,2})-(\d{1,2})-(\d{2})$/;
+    const ddmmyyDashMatch = cleanText.match(ddmmyyDashPattern);
+    if (ddmmyyDashMatch) {
+      const [, day, month, year] = ddmmyyDashMatch;
+      const fullYear = parseInt(year) > 50 ? `19${year}` : `20${year}`;
+      const standardDate = `${fullYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      const dateObj = new Date(standardDate);
+      
+      if (this.isValidDate(dateObj, parseInt(fullYear), parseInt(month), parseInt(day))) {
+        console.log(`📅 Parsed DD-MM-YY format: "${cleanText}" -> ${standardDate}`);
+        return { date: standardDate, dayOfWeek: dateObj.getDay() };
+      }
+    }
+    
+    // Format 6: DD-MMM-YY (25-jul-25)
+    const ddmmmyyPattern = /^(\d{1,2})-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-(\d{2})$/i;
+    const ddmmmyyMatch = cleanText.match(ddmmmyyPattern);
+    if (ddmmmyyMatch) {
+      const [, day, monthName, year] = ddmmmyyMatch;
+      const monthNumber = this.getMonthNumber(monthName);
+      if (monthNumber !== -1) {
+        const fullYear = parseInt(year) > 50 ? `19${year}` : `20${year}`;
+        const standardDate = `${fullYear}-${monthNumber.toString().padStart(2, '0')}-${day.padStart(2, '0')}`;
+        const dateObj = new Date(standardDate);
+        
+        if (this.isValidDate(dateObj, parseInt(fullYear), monthNumber, parseInt(day))) {
+          console.log(`📅 Parsed DD-MMM-YY format: "${cleanText}" -> ${standardDate}`);
+          return { date: standardDate, dayOfWeek: dateObj.getDay() };
+        }
+      }
+    }
+    
+    // DD MM YYYY format (like "01 07 2025")
+    const dayMonthYearPattern = /^(\d{1,2})\s+(\d{1,2})\s+(\d{4})$/;
+    const dayMonthYearMatch = cleanText.match(dayMonthYearPattern);
+    // Fallback: DD MM format (like "01 07") - assume 2025
     const dayMonthPattern = /^(\d{1,2})\s+(\d{1,2})$/;
     const dayMonthMatch = cleanText.match(dayMonthPattern);
     if (dayMonthMatch && parseInt(dayMonthMatch[1]) >= 1 && parseInt(dayMonthMatch[1]) <= 31 && 
@@ -161,6 +239,10 @@ export class BoxParser {
       const standardDate = `2025-${month}-${day}`;
       const dateObj = new Date(standardDate);
       
+      if (this.isValidDate(dateObj, 2025, parseInt(month), parseInt(day))) {
+        console.log(`📅 Parsed DD MM fallback format: "${cleanText}" -> ${standardDate}`);
+        return { date: standardDate, dayOfWeek: dateObj.getDay() };
+      }
       // Validate the date
       if (!this.isValidDate(dateObj, 2025, parseInt(month), parseInt(day))) {
         console.log(`⚠️ Invalid date detected: "${text}" -> ${standardDate}, clearing date field`);
@@ -170,7 +252,7 @@ export class BoxParser {
       return { date: standardDate, dayOfWeek: dateObj.getDay() };
     }
     
-    // Single day number (like "01") - assume July 2025
+    // Fallback: Single day number (like "01") - assume July 2025
     const singleDayPattern = /^(\d{1,2})$/;
     const dayMatch = cleanText.match(singleDayPattern);
     if (dayMatch && parseInt(dayMatch[1]) >= 1 && parseInt(dayMatch[1]) <= 31) {
@@ -184,10 +266,37 @@ export class BoxParser {
         return null;
       }
       
-      return { date: standardDate, dayOfWeek: dateObj.getDay() };
+      
+      if (this.isValidDate(dateObj, 2025, 7, parseInt(day))) {
+        console.log(`📅 Parsed single day fallback format: "${cleanText}" -> ${standardDate}`);
+        return { date: standardDate, dayOfWeek: dateObj.getDay() };
+      }
     }
     
+    console.log(`❌ DATE DEBUG: No pattern matched for: "${cleanText}"`);
     return null;
+  }
+  
+  /**
+   * Convert month name to number (1-12)
+   */
+  private getMonthNumber(monthName: string): number {
+    const months: Record<string, number> = {
+      'jan': 1, 'january': 1,
+      'feb': 2, 'february': 2,
+      'mar': 3, 'march': 3,
+      'apr': 4, 'april': 4,
+      'may': 5,
+      'jun': 6, 'june': 6,
+      'jul': 7, 'july': 7,
+      'aug': 8, 'august': 8,
+      'sep': 9, 'september': 9,
+      'oct': 10, 'october': 10,
+      'nov': 11, 'november': 11,
+      'dec': 12, 'december': 12
+    };
+    
+    return months[monthName.toLowerCase()] || -1;
   }
   
   /**
