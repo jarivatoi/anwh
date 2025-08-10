@@ -84,9 +84,9 @@ export class RosterListGenerator {
                   const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
                   const textWidth = doc.getTextWidth(textToShow);
                   
-                  if (tempX + textWidth > maxWidth && index > 0) {
+                  if (tempX + textWidth > maxWidth && tempX > 0) {
                     totalLines++;
-                    tempX = doc.getTextWidth(staff.name); // Reset with just the name (no comma)
+                    tempX = doc.getTextWidth(staff.name);
                   } else {
                     tempX += textWidth;
                   }
@@ -112,7 +112,7 @@ export class RosterListGenerator {
                   const textWidth = doc.getTextWidth(textToShow);
                   
                   // If text would exceed width, move to next line
-                  if (currentX + textWidth > data.cell.x + maxWidth && index > 0) {
+                  if (currentX + textWidth > data.cell.x + maxWidth && currentX > data.cell.x + 2) {
                     currentX = data.cell.x + 2; // Reset to left margin
                     cellY += lineHeight; // Move down for next line
                     
