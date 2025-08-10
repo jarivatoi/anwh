@@ -78,15 +78,16 @@ export class RosterListGenerator {
                 const maxWidth = data.cell.width - 4;
                 let totalLines = 1;
                 let tempX = 0;
-                
-                // Pre-calculate how many lines we'll need
-                staffNamesData.forEach((staff, index) => {
-                  const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
-                  const textWidth = doc.getTextWidth(textToShow);
-                  
                    // Calculate how much width we lose from comma removal at line breaks
                    let widthReduction = 0;
                    let tempX = 0;
+                   
+                   // Create the full text string to check total width
+                   const fullText = staffNamesData.map((staff, index) => 
+                     index === 0 ? staff.name : `, ${staff.name}`
+                   ).join('');
+                   const fullTextWidth = doc.getTextWidth(fullText);
+                   
                    staffNamesData.forEach((staff, index) => {
                      const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
                      const textWidth = doc.getTextWidth(textToShow);
