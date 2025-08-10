@@ -90,7 +90,6 @@ export class AnnexureGenerator {
       summary.employeeId, // ID number
       this.formatCurrency(summary.salary), // Salary
       this.formatNumber(summary.totalHours), // Hours payable (without night allowance)
-      this.formatNumber(summary.nightDutyHours), // Night allowance hours
       this.formatCurrency(summary.grandTotal)
     ]);
     
