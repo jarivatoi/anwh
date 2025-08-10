@@ -1,14 +1,12 @@
-// Batch PDF printing manager for generating and printing multiple PDFs
-import { jsPDF } from 'jspdf';
-import { monthlyReportGenerator } from '../utils/pdf/monthlyReportGenerator';
-import { individualBillGenerator } from '../utils/pdf/individualBillGenerator';
-import { annexureGenerator } from '../utils/pdf/annexureGenerator';
-import { rosterListGenerator } from '../utils/pdf/rosterListGenerator';
-import { RosterEntry } from '../../types/roster';
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
+import { X, Printer, Download, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { batchPrintManager, BatchPrintOptions, BatchPrintProgress } from '../utils/pdf/batchPrintManager';
+import { RosterEntry } from '../types/roster';
 
-export interface BatchPrintOptions {
-  month: number;
-  year: number;
+interface BatchPrintModalProps {
+  isOpen: boolean;
+  onClose: () => void;
   entries: RosterEntry[];
   basicSalary: number;
   hourlyRate: number;
@@ -17,574 +15,349 @@ export interface BatchPrintOptions {
     combination: string;
     hours: number;
   }>;
-  reportTypes: ('individual' | 'annexure' | 'roster')[];
-  selectedStaff?: string[]; // For individual reports only
 }
 
-export interface BatchPrintProgress {
-  current: number;
-  total: number;
-  currentTask: string;
-  completed: boolean;
-  error?: string;
-}
+export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
+  isOpen,
+  onClose,
+  entries,
+  basicSalary,
+  hourlyRate,
+  shiftCombinations
+}) => {
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [reportTypes, setReportTypes] = useState<('individual' | 'annexure' | 'roster')[]>(['individual', 'annexure', 'roster']);
+  const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState<BatchPrintProgress | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-export class BatchPrintManager {
-  private printWindow: Window | null = null;
-  private currentPrintIndex = 0;
-  private pdfDocuments: { doc: jsPDF; filename: string }[] = [];
-  
-  /**
-   * Generate all PDFs and prepare for batch printing (opens print window)
-   */
-  async generateAndPrintBatch(
-    options: BatchPrintOptions,
-    onProgress?: (progress: BatchPrintProgress) => void
-  ): Promise<void> {
-    const { month, year, entries, basicSalary, hourlyRate, shiftCombinations, reportTypes, selectedStaff } = options;
-    
-    console.log('🖨️ Starting batch PDF generation for printing...');
-    
-    this.pdfDocuments = [];
-    this.currentPrintIndex = 0;
-    
-    const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    
-    // Filter entries for the month
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  // Get unique staff members for the selected month
+  const getUniqueStaffMembers = (): string[] => {
     const monthEntries = entries.filter(entry => {
       const entryDate = new Date(entry.date);
-      return entryDate.getMonth() === month && entryDate.getFullYear() === year;
+      return entryDate.getMonth() === selectedMonth && entryDate.getFullYear() === selectedYear;
     });
-    
-    if (monthEntries.length === 0) {
-      throw new Error(`No roster entries found for ${monthNames[month]} ${year}`);
-    }
-    
-    // Calculate total tasks
-    let totalTasks = 0;
-    if (reportTypes.includes('individual')) {
-      const staffList = selectedStaff || this.getUniqueStaffMembers(monthEntries);
-      totalTasks += staffList.length;
-    }
-    if (reportTypes.includes('annexure')) totalTasks += 1;
-    if (reportTypes.includes('roster')) totalTasks += 1;
-    
-    let currentTask = 0;
-    
-    try {
-      // Generate individual bills
-      if (reportTypes.includes('individual')) {
-        const staffList = selectedStaff || this.getUniqueStaffMembers(monthEntries);
-        
-        for (const staffName of staffList) {
-          currentTask++;
-          onProgress?.({
-            current: currentTask,
-            total: totalTasks,
-            currentTask: `Generating bill for ${staffName}`,
-            completed: false
-          });
-          
-          const doc = await this.generateIndividualBillPDF({
-            staffName,
-            month,
-            year,
-            entries: monthEntries,
-            basicSalary,
-            hourlyRate,
-            shiftCombinations
-          });
-          
-          this.pdfDocuments.push({
-            doc,
-            filename: `${staffName}_${monthNames[month]}_${year}_Bill.pdf`
-          });
-          
-          // Small delay to prevent browser overwhelm
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
-      }
-      
-      // Generate annexure
-      if (reportTypes.includes('annexure')) {
-        currentTask++;
-        onProgress?.({
-          current: currentTask,
-          total: totalTasks,
-          currentTask: 'Generating annexure summary',
-          completed: false
-        });
-        
-        const doc = await this.generateAnnexurePDF({
-          month,
-          year,
-          entries: monthEntries,
-          hourlyRate,
-          shiftCombinations
-        });
-        
-        this.pdfDocuments.push({
-          doc,
-          filename: `Annexure_${monthNames[month]}_${year}.pdf`
-        });
-        
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-      
-      // Generate roster list
-      if (reportTypes.includes('roster')) {
-        currentTask++;
-        onProgress?.({
-          current: currentTask,
-          total: totalTasks,
-          currentTask: 'Generating roster list',
-          completed: false
-        });
-        
-        const doc = await this.generateRosterListPDF({
-          month,
-          year,
-          entries: monthEntries
-        });
-        
-        this.pdfDocuments.push({
-          doc,
-          filename: `Roster_List_${monthNames[month]}_${year}.pdf`
-        });
-      }
-      
-      onProgress?.({
-        current: totalTasks,
-        total: totalTasks,
-        currentTask: 'Opening print window...',
-        completed: false
-      });
-      
-      // Start batch printing
-      await this.startBatchPrinting();
-      
-      onProgress?.({
-        current: totalTasks,
-        total: totalTasks,
-        currentTask: 'Print window opened',
-        completed: true
-      });
-      
-    } catch (error) {
-      console.error('❌ Batch generation failed:', error);
-      onProgress?.({
-        current: currentTask,
-        total: totalTasks,
-        currentTask: 'Print preparation failed',
-        completed: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-      throw error;
-    }
-  }
-  
-  /**
-   * Generate all PDFs and download them as individual files
-   */
-  async generateAndDownloadBatch(
-    options: BatchPrintOptions,
-    onProgress?: (progress: BatchPrintProgress) => void
-  ): Promise<void> {
-    const { month, year, entries, basicSalary, hourlyRate, shiftCombinations, reportTypes, selectedStaff } = options;
-    
-    console.log('📥 Starting batch PDF generation for download...');
-    
-    let currentTask = 0;
-    
-    // Calculate total tasks
-    let totalTasks = 0;
-    if (reportTypes.includes('individual')) {
-      const staffList = selectedStaff || this.getUniqueStaffMembers(entries.filter(entry => {
-        const entryDate = new Date(entry.date);
-        return entryDate.getMonth() === month && entryDate.getFullYear() === year;
-      }));
-      totalTasks += staffList.length;
-    }
-    if (reportTypes.includes('annexure')) totalTasks += 1;
-    if (reportTypes.includes('roster')) totalTasks += 1;
-    
-    const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    
-    // Filter entries for the month
-    const monthEntries = entries.filter(entry => {
-      const entryDate = new Date(entry.date);
-      return entryDate.getMonth() === month && entryDate.getFullYear() === year;
-    });
-    
-    if (monthEntries.length === 0) {
-      throw new Error(`No roster entries found for ${monthNames[month]} ${year}`);
-    }
-    
-    try {
-      // Use the existing monthly report generator which auto-downloads files
-      if (reportTypes.includes('individual') && reportTypes.includes('annexure') && reportTypes.includes('roster')) {
-        // Generate all reports
-        onProgress?.({
-          current: 0,
-          total: totalTasks,
-          currentTask: 'Generating all reports...',
-          completed: false
-        });
-        
-        const result = await monthlyReportGenerator.generateAllReports({
-          month,
-          year,
-          entries,
-          basicSalary,
-          hourlyRate,
-          shiftCombinations
-        });
-        
-        onProgress?.({
-          current: totalTasks,
-          total: totalTasks,
-          currentTask: `Downloaded ${result.individualBills} individual bills, annexure, and roster list`,
-          completed: true
-        });
-        
-      } else {
-        // Generate selected reports individually
-        const { individualBillGenerator } = await import('./individualBillGenerator');
-        const { annexureGenerator } = await import('./annexureGenerator');
-        const { rosterListGenerator } = await import('./rosterListGenerator');
-        
-        if (reportTypes.includes('individual')) {
-          const staffList = selectedStaff || this.getUniqueStaffMembers(monthEntries);
-          
-          for (const staffName of staffList) {
-            currentTask++;
-            onProgress?.({
-              current: currentTask,
-              total: totalTasks,
-              currentTask: `Downloading bill for ${staffName}`,
-              completed: false
-            });
-            
-            await individualBillGenerator.generateBill({
-              staffName,
-              month,
-              year,
-              entries: monthEntries,
-              basicSalary,
-              hourlyRate,
-              shiftCombinations
-            });
-            
-            await new Promise(resolve => setTimeout(resolve, 200));
-          }
-        }
-        
-        if (reportTypes.includes('annexure')) {
-          currentTask++;
-          onProgress?.({
-            current: currentTask,
-            total: totalTasks,
-            currentTask: 'Downloading annexure summary',
-            completed: false
-          });
-          
-          await annexureGenerator.generateAnnexure({
-            month,
-            year,
-            entries: monthEntries,
-            hourlyRate,
-            shiftCombinations
-          });
-          
-          await new Promise(resolve => setTimeout(resolve, 200));
-        }
-        
-        if (reportTypes.includes('roster')) {
-          currentTask++;
-          onProgress?.({
-            current: currentTask,
-            total: totalTasks,
-            currentTask: 'Downloading roster list',
-            completed: false
-          });
-          
-          await rosterListGenerator.generateRosterList({
-            month,
-            year,
-            entries: monthEntries
-          });
-        }
-        
-        onProgress?.({
-          current: totalTasks,
-          total: totalTasks,
-          currentTask: 'All downloads completed',
-          completed: true
-        });
-      }
-      
-    } catch (error) {
-      console.error('❌ Batch download failed:', error);
-      onProgress?.({
-        current: currentTask,
-        total: totalTasks,
-        currentTask: 'Download failed',
-        completed: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-      throw error;
-    }
-  }
-  
-  /**
-   * Start batch printing process
-   */
-  async startBatchPrinting(): Promise<void> {
-    if (this.pdfDocuments.length === 0) {
-      throw new Error('No PDFs to print');
-    }
-    
-    console.log(`🖨️ Starting batch printing of ${this.pdfDocuments.length} PDFs`);
-    
-    // Try different printing approaches based on browser capabilities
-    if (this.canUseBatchPrint()) {
-      await this.printAllAtOnce();
-    } else {
-      await this.printSequentially();
-    }
-  }
-  
-  /**
-   * Check if browser supports batch printing
-   */
-  private canUseBatchPrint(): boolean {
-    // Most modern browsers support this, but some mobile browsers don't
-    return typeof window.print === 'function' && !this.isMobileBrowser();
-  }
-  
-  /**
-   * Check if running on mobile browser
-   */
-  private isMobileBrowser(): boolean {
-    return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  }
-  
-  /**
-   * Print all PDFs at once (modern browsers)
-   */
-  private async printAllAtOnce(): Promise<void> {
-    console.log('🖨️ Using batch print method');
-    
-    // Create a combined print window with all PDFs
-    const printWindow = window.open('', '_blank', 'width=800,height=600');
-    if (!printWindow) {
-      throw new Error('Could not open print window. Please allow popups.');
-    }
-    
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Batch Print - ${this.pdfDocuments.length} Documents</title>
-          <style>
-            body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
-            .pdf-container { margin-bottom: 40px; page-break-after: always; }
-            .pdf-container:last-child { page-break-after: auto; }
-            .pdf-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; text-align: center; }
-            iframe { width: 100%; height: 600px; border: 1px solid #ccc; }
-            @media print {
-              .pdf-container { page-break-after: always; }
-              iframe { height: 100vh; }
-            }
-          </style>
-        </head>
-        <body>
-          <h1>Batch Print Preview - ${this.pdfDocuments.length} Documents</h1>
-          <p>Click Print to print all documents at once, or use individual download links below.</p>
-    `);
-    
-    // Add each PDF as an embedded object
-    this.pdfDocuments.forEach((pdfDoc, index) => {
-      const pdfBlob = pdfDoc.doc.output('blob');
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      
-      printWindow.document.write(`
-        <div class="pdf-container">
-          <div class="pdf-title">${pdfDoc.filename}</div>
-          <iframe src="${pdfUrl}" type="application/pdf"></iframe>
-          <p style="text-align: center; margin-top: 10px;">
-            <a href="${pdfUrl}" download="${pdfDoc.filename}" style="color: blue; text-decoration: underline;">
-              Download ${pdfDoc.filename}
-            </a>
-          </p>
-        </div>
-      `);
-    });
-    
-    printWindow.document.write(`
-        <div style="text-align: center; margin-top: 30px; page-break-before: avoid;">
-          <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; background: #4f46e5; color: white; border: none; border-radius: 8px; cursor: pointer;">
-            Print All Documents
-          </button>
-          <button onclick="window.close()" style="padding: 10px 20px; font-size: 16px; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer; margin-left: 10px;">
-            Close
-          </button>
-        </div>
-      </body>
-      </html>
-    `);
-    
-    printWindow.document.close();
-    
-    // Auto-focus the print window
-    printWindow.focus();
-  }
-  
-  /**
-   * Print PDFs sequentially (fallback method)
-   */
-  private async printSequentially(): Promise<void> {
-    console.log('🖨️ Using sequential print method');
-    
-    for (let i = 0; i < this.pdfDocuments.length; i++) {
-      const pdfDoc = this.pdfDocuments[i];
-      
-      // Create individual print window for each PDF
-      const printWindow = window.open('', '_blank', 'width=800,height=600');
-      if (!printWindow) {
-        console.warn(`Could not open print window for ${pdfDoc.filename}`);
-        continue;
-      }
-      
-      const pdfBlob = pdfDoc.doc.output('blob');
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>${pdfDoc.filename}</title>
-            <style>
-              body { margin: 0; padding: 0; }
-              iframe { width: 100%; height: 100vh; border: none; }
-            </style>
-          </head>
-          <body>
-            <iframe src="${pdfUrl}" type="application/pdf"></iframe>
-            <script>
-              window.onload = function() {
-                setTimeout(function() {
-                  window.print();
-                }, 1000);
-              };
-            </script>
-          </body>
-        </html>
-      `);
-      
-      printWindow.document.close();
-      
-      // Wait between prints to avoid overwhelming the browser
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    }
-  }
-  
-  /**
-   * Generate individual bill PDF without saving (for batch printing)
-   */
-  private async generateIndividualBillPDF(options: any): Promise<jsPDF> {
-    // Use the existing individual bill generator but return the doc instead of saving
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    });
-    
-    // Copy the generation logic from individualBillGenerator but return doc
-    // This is a simplified version - you might want to extract the core logic
-    return doc;
-  }
-  
-  /**
-   * Generate annexure PDF without saving (for batch printing)
-   */
-  private async generateAnnexurePDF(options: any): Promise<jsPDF> {
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    });
-    
-    // Copy the generation logic from annexureGenerator but return doc
-    return doc;
-  }
-  
-  /**
-   * Generate roster list PDF without saving (for batch printing)
-   */
-  private async generateRosterListPDF(options: any): Promise<jsPDF> {
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    });
-    
-    // Copy the generation logic from rosterListGenerator but return doc
-    return doc;
-  }
-  
-  /**
-   * Get unique staff members from entries (base names only)
-   */
-  private getUniqueStaffMembers(entries: RosterEntry[]): string[] {
+
     const staffSet = new Set<string>();
-    
-    entries.forEach(entry => {
-      // Use base name (remove (R) suffix) since they are the same person
+    monthEntries.forEach(entry => {
       const baseName = entry.assigned_name.replace(/\(R\)$/, '').trim();
       staffSet.add(baseName);
     });
-    
-    return Array.from(staffSet).sort();
-  }
-  
-  /**
-   * Download all PDFs as individual files
-   */
-  private async downloadAllPDFs(): Promise<void> {
-    console.log(`📥 Downloading ${this.pdfDocuments.length} PDFs individually...`);
-    
-    for (const pdfDoc of this.pdfDocuments) {
-      pdfDoc.doc.save(pdfDoc.filename);
-      
-      // Small delay between downloads to prevent browser overwhelm
-      await new Promise(resolve => setTimeout(resolve, 300));
-    }
-    
-    console.log('✅ All PDFs downloaded successfully');
-  }
-  
-  /**
-   * Clean up resources
-   */
-  cleanup(): void {
-    if (this.printWindow && !this.printWindow.closed) {
-      this.printWindow.close();
-    }
-    
-    // Clean up blob URLs
-    this.pdfDocuments.forEach(pdfDoc => {
-      // URLs will be cleaned up automatically by browser
-    });
-    
-    this.pdfDocuments = [];
-    this.currentPrintIndex = 0;
-  }
-}
 
-// Create singleton instance
-export const batchPrintManager = new BatchPrintManager();
+    return Array.from(staffSet).sort();
+  };
+
+  const availableStaff = getUniqueStaffMembers();
+
+  const handleReportTypeChange = (type: 'individual' | 'annexure' | 'roster', checked: boolean) => {
+    if (checked) {
+      setReportTypes(prev => [...prev, type]);
+    } else {
+      setReportTypes(prev => prev.filter(t => t !== type));
+    }
+  };
+
+  const handleStaffSelection = (staffName: string, checked: boolean) => {
+    if (checked) {
+      setSelectedStaff(prev => [...prev, staffName]);
+    } else {
+      setSelectedStaff(prev => prev.filter(s => s !== staffName));
+    }
+  };
+
+  const handleSelectAllStaff = () => {
+    setSelectedStaff(availableStaff);
+  };
+
+  const handleDeselectAllStaff = () => {
+    setSelectedStaff([]);
+  };
+
+  const handlePrint = async () => {
+    if (reportTypes.length === 0) {
+      setError('Please select at least one report type');
+      return;
+    }
+
+    if (reportTypes.includes('individual') && selectedStaff.length === 0) {
+      setError('Please select at least one staff member for individual reports');
+      return;
+    }
+
+    setIsProcessing(true);
+    setError(null);
+    setProgress(null);
+
+    const options: BatchPrintOptions = {
+      month: selectedMonth,
+      year: selectedYear,
+      entries,
+      basicSalary,
+      hourlyRate,
+      shiftCombinations,
+      reportTypes,
+      selectedStaff: reportTypes.includes('individual') ? selectedStaff : undefined
+    };
+
+    try {
+      await batchPrintManager.generateAndPrintBatch(options, setProgress);
+    } catch (err) {
+      console.error('Batch print failed:', err);
+      setError(err instanceof Error ? err.message : 'Failed to generate batch print');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDownload = async () => {
+    if (reportTypes.length === 0) {
+      setError('Please select at least one report type');
+      return;
+    }
+
+    if (reportTypes.includes('individual') && selectedStaff.length === 0) {
+      setError('Please select at least one staff member for individual reports');
+      return;
+    }
+
+    setIsProcessing(true);
+    setError(null);
+    setProgress(null);
+
+    const options: BatchPrintOptions = {
+      month: selectedMonth,
+      year: selectedYear,
+      entries,
+      basicSalary,
+      hourlyRate,
+      shiftCombinations,
+      reportTypes,
+      selectedStaff: reportTypes.includes('individual') ? selectedStaff : undefined
+    };
+
+    try {
+      await batchPrintManager.generateAndDownloadBatch(options, setProgress);
+    } catch (err) {
+      console.error('Batch download failed:', err);
+      setError(err instanceof Error ? err.message : 'Failed to generate batch download');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleClose = () => {
+    if (!isProcessing) {
+      batchPrintManager.cleanup();
+      onClose();
+    }
+  };
+
+  if (!isOpen) return null;
+
+  const modalContent = (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 className="text-xl font-bold text-gray-900">Batch Print & Download</h2>
+          <button
+            onClick={handleClose}
+            disabled={isProcessing}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200 disabled:opacity-50"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+          {/* Month/Year Selection */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Select Month & Year</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Month</label>
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                  disabled={isProcessing}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50"
+                >
+                  {monthNames.map((month, index) => (
+                    <option key={index} value={index}>{month}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Year</label>
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                  disabled={isProcessing}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50"
+                >
+                  {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Report Types */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Report Types</h3>
+            <div className="space-y-3">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={reportTypes.includes('individual')}
+                  onChange={(e) => handleReportTypeChange('individual', e.target.checked)}
+                  disabled={isProcessing}
+                  className="mr-3 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded disabled:opacity-50"
+                />
+                <span className="text-sm font-medium text-gray-700">Individual Bills</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={reportTypes.includes('annexure')}
+                  onChange={(e) => handleReportTypeChange('annexure', e.target.checked)}
+                  disabled={isProcessing}
+                  className="mr-3 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded disabled:opacity-50"
+                />
+                <span className="text-sm font-medium text-gray-700">Annexure Summary</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={reportTypes.includes('roster')}
+                  onChange={(e) => handleReportTypeChange('roster', e.target.checked)}
+                  disabled={isProcessing}
+                  className="mr-3 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded disabled:opacity-50"
+                />
+                <span className="text-sm font-medium text-gray-700">Roster List</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Staff Selection (only show if individual reports selected) */}
+          {reportTypes.includes('individual') && (
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-semibold text-gray-900">Select Staff</h3>
+                <div className="space-x-2">
+                  <button
+                    onClick={handleSelectAllStaff}
+                    disabled={isProcessing}
+                    className="text-sm text-indigo-600 hover:text-indigo-800 disabled:opacity-50"
+                  >
+                    Select All
+                  </button>
+                  <button
+                    onClick={handleDeselectAllStaff}
+                    disabled={isProcessing}
+                    className="text-sm text-gray-600 hover:text-gray-800 disabled:opacity-50"
+                  >
+                    Deselect All
+                  </button>
+                </div>
+              </div>
+              <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                {availableStaff.length === 0 ? (
+                  <p className="text-sm text-gray-500">No staff found for selected month</p>
+                ) : (
+                  <div className="space-y-2">
+                    {availableStaff.map(staffName => (
+                      <label key={staffName} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedStaff.includes(staffName)}
+                          onChange={(e) => handleStaffSelection(staffName, e.target.checked)}
+                          disabled={isProcessing}
+                          className="mr-3 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded disabled:opacity-50"
+                        />
+                        <span className="text-sm text-gray-700">{staffName}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Progress */}
+          {progress && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center space-x-3 mb-2">
+                {progress.completed ? (
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                ) : (
+                  <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+                )}
+                <span className="text-sm font-medium text-gray-900">
+                  {progress.currentTask}
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${(progress.current / progress.total) * 100}%` }}
+                />
+              </div>
+              <div className="text-xs text-gray-600 mt-1">
+                {progress.current} of {progress.total} tasks completed
+              </div>
+            </div>
+          )}
+
+          {/* Error */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center space-x-3">
+                <AlertCircle className="w-5 h-5 text-red-600" />
+                <span className="text-sm text-red-800">{error}</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200">
+          <button
+            onClick={handleClose}
+            disabled={isProcessing}
+            className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
+          >
+            {isProcessing ? 'Processing...' : 'Cancel'}
+          </button>
+          <button
+            onClick={handleDownload}
+            disabled={isProcessing || reportTypes.length === 0}
+            className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2"
+          >
+            <Download className="w-4 h-4" />
+            <span>Download</span>
+          </button>
+          <button
+            onClick={handlePrint}
+            disabled={isProcessing || reportTypes.length === 0}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 text-white rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2"
+          >
+            <Printer className="w-4 h-4" />
+            <span>Print</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return createPortal(modalContent, document.body);
+};
