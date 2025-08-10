@@ -130,7 +130,7 @@ export class IndividualBillGenerator {
     doc.text(`Rs ${hourlyRate.toFixed(2)}`, 150, 44);
     
     // Prepare table data for ALL days in the month
-    const tableData = this.prepareAllDaysTableData(staffEntries, month, year, hourlyRate, shiftCombinations, specialDatesInMonth);
+    const tableData = this.prepareAllDaysTableData(staffEntries, staffName, month, year, hourlyRate, shiftCombinations, specialDatesInMonth);
     
     // Create table with compact layout
     autoTable(doc, {
@@ -283,6 +283,7 @@ export class IndividualBillGenerator {
    */
   private prepareAllDaysTableData(
     entries: RosterEntry[], 
+    staffName: string,
     month: number,
     year: number,
     hourlyRate: number, 
