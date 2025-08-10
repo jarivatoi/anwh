@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Server, CheckCircle, Table, Grid, FileText, Upload, Download, Trash2, AlertTriangle, Eye, EyeOff } from 'lucide-react';
+import { Server, CheckCircle, Table, Grid, FileText, Upload, Download, Trash2, AlertTriangle, Eye, EyeOff, Printer } from 'lucide-react';
 import { ViewType, ShiftFilterType } from '../types/roster';
 import { useRosterData } from '../hooks/useRosterData';
 import { RosterTableView } from './RosterTableView';
@@ -14,6 +14,7 @@ import { validateAuthCode, isAdminCode } from '../utils/rosterAuth';
 import { useLongPress } from '../hooks/useLongPress';
 import { pdfExporter } from '../utils/pdfExport';
 import { MonthlyReportsModal } from './MonthlyReportsModal';
+import { BatchPrintModal } from './BatchPrintModal';
 
 interface RosterPanelProps {
   setActiveTab: (tab: 'calendar' | 'settings' | 'data' | 'roster') => void;
@@ -68,6 +69,7 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({
   const [adminName, setAdminName] = useState<string | null>(null);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [showMonthlyReports, setShowMonthlyReports] = useState(false);
+  const [showBatchPrint, setShowBatchPrint] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const { entries: fetchedEntries, loading, error, removeEntry, loadEntries, realtimeStatus } = useRosterData();
@@ -926,6 +928,18 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({
                 <button
                   onClick={() => {
                     setShowQuickActions(false);
+                    setShowBatchPrint(true);
+                  }}
+                  className="w-full flex items-center space-x-3 px-4 py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg font-medium transition-colors duration-200 select-none"
+                  style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
+                >
+                  <Printer className="w-5 h-5" />
+                  <span className="select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}>Batch Print</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setShowQuickActions(false);
                     setClearType('all');
                     setShowClearConfirm(true);
                   }}
@@ -959,6 +973,21 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({
         entries={entries}
         basicSalary={35000} // You can get this from settings if needed
         hourlyRate={201.92} // You can get this from settings if needed
+        shiftCombinations={[
+          { id: '9-4', combination: '9-4', hours: 6.5 },
+          { id: '4-10', combination: '4-10', hours: 5.5 },
+          { id: '12-10', combination: '12-10', hours: 9.5 },
+          { id: 'N', combination: 'N', hours: 12.5 }
+        ]}
+      />
+      
+      {/* Batch Print Modal */}
+      <BatchPrintModal
+        isOpen={showBatchPrint}
+        onClose={() => setShowBatchPrint(false)}
+        entries={entries}
+        basicSalary={35000}
+        hourlyRate={201.92}
         shiftCombinations={[
           { id: '9-4', combination: '9-4', hours: 6.5 },
           { id: '4-10', combination: '4-10', hours: 5.5 },
