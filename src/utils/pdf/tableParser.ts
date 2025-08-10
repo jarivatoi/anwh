@@ -107,42 +107,58 @@ export class TableParser {
    * Extract roster data from a table row
    */
   private extractRowData(row: Array<{text: string, x: number, y: number}>): ParsedEntry | null {
+    // Sort row items by X coordinate (left to right) to process columns in order
+    const sortedItems = [...row].sort((a, b) => a.x - b.x);
+    
+    console.log(`📊 TABLE: Processing row with ${sortedItems.length} items:`, 
+      sortedItems.map(item => `"${item.text}" at x=${item.x}`));
+    
+    // Expected column order: Date, Day, Shift Type, Assigned Staff, Last Edited By, Last Edited At
     let date: string | null = null;
     let shiftType: string | null = null;
     let assignedName: string | null = null;
     
-    // Process each item in the row
-    for (const item of row) {
-      // Try to extract date
-      if (!date) {
-        const dateMatch = this.extractDateFromText(item.text);
+    // Process items in order, trying to identify each column
+    for (let i = 0; i < sortedItems.length; i++) {
+      const item = sortedItems[i];
+      const text = item.text.trim();
+      
+      console.log(`📊 TABLE: Column ${i}: "${text}" at x=${item.x}`);
+      
+      // Column 0: Date (should be first column)
+      if (i === 0 || (!date && i < 3)) {
+        const dateMatch = this.extractDateFromText(text);
         if (dateMatch) {
           date = dateMatch.date;
-          console.log(`📅 TABLE: Found date: ${date} from "${item.text}"`);
+          console.log(`📅 TABLE: Found date in column ${i}: ${date}`);
+          continue;
         }
       }
       
-      // Try to extract shift type
-      if (!shiftType) {
-        const shift = this.identifyShiftTypeFromText(item.text);
+      // Column 2: Shift Type (should be third column, after Date and Day)
+      if (i === 2 || (!shiftType && i < 5)) {
+        const shift = this.identifyShiftTypeFromText(text);
         if (shift) {
           shiftType = shift;
-          console.log(`⏰ TABLE: Found shift: ${shiftType} from "${item.text}"`);
+          console.log(`⏰ TABLE: Found shift in column ${i}: ${shiftType}`);
+          continue;
         }
       }
       
-      // Try to extract staff name
-      if (!assignedName) {
-        const staff = this.findMatchingStaffName(item.text);
+      // Column 3: Assigned Staff (should be fourth column)
+      if (i === 3 || (!assignedName && i < 6)) {
+        const staff = this.findMatchingStaffName(text);
         if (staff) {
           assignedName = staff;
-          console.log(`👤 TABLE: Found staff: ${assignedName} from "${item.text}"`);
+          console.log(`👤 TABLE: Found staff in column ${i}: ${assignedName}`);
+          continue;
         }
       }
     }
     
-    // Only create entry if we have all required data
+    // Create entry if we have all required data
     if (date && shiftType && assignedName) {
+      console.log(`✅ TABLE: Complete entry found - ${assignedName} | ${shiftType} | ${date}`);
       return {
         date,
         shiftType,
@@ -150,11 +166,8 @@ export class TableParser {
       };
     }
     
-    // Log missing data for debugging
-    if (!date || !shiftType || !assignedName) {
-      console.log(`❌ TABLE: Incomplete row data - Date: ${date}, Shift: ${shiftType}, Staff: ${assignedName}`);
-    }
-    
+    // Log what we found for debugging
+    console.log(`❌ TABLE: Incomplete row - Date: ${date || 'missing'}, Shift: ${shiftType || 'missing'}, Staff: ${assignedName || 'missing'}`);
     return null;
   }
   
@@ -163,6 +176,8 @@ export class TableParser {
    */
   private extractDateFromText(text: string): {date: string, dayOfWeek: number} | null {
     const cleanText = text.trim();
+    
+    console.log(`📅 TABLE DATE: Analyzing "${cleanText}"`);
     
     // Format 1: DD/MM/YYYY (01/07/2025)
     const ddmmyyyySlashPattern = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
@@ -173,6 +188,21 @@ export class TableParser {
       const dateObj = new Date(standardDate);
       
       if (this.isValidDate(dateObj, parseInt(year), parseInt(month), parseInt(day))) {
+        console.log(`📅 TABLE DATE: Parsed DD/MM/YYYY: "${cleanText}" -> ${standardDate}`);
+        return { date: standardDate, dayOfWeek: dateObj.getDay() };
+      }
+    }
+    
+    // Format 1b: DD/M/YYYY (01/7/2025) - single digit month
+    const ddmyyyySlashPattern = /^(\d{1,2})\/(\d{1})\/(\d{4})$/;
+    const ddmyyyySlashMatch = cleanText.match(ddmyyyySlashPattern);
+    if (ddmyyyySlashMatch) {
+      const [, day, month, year] = ddmyyyySlashMatch;
+      const standardDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      const dateObj = new Date(standardDate);
+      
+      if (this.isValidDate(dateObj, parseInt(year), parseInt(month), parseInt(day))) {
+        console.log(`📅 TABLE DATE: Parsed DD/M/YYYY: "${cleanText}" -> ${standardDate}`);
         return { date: standardDate, dayOfWeek: dateObj.getDay() };
       }
     }
@@ -186,6 +216,7 @@ export class TableParser {
       const dateObj = new Date(standardDate);
       
       if (this.isValidDate(dateObj, parseInt(year), parseInt(month), parseInt(day))) {
+        console.log(`📅 TABLE DATE: Parsed DD MM YYYY: "${cleanText}" -> ${standardDate}`);
         return { date: standardDate, dayOfWeek: dateObj.getDay() };
       }
     }
@@ -326,61 +357,86 @@ export class TableParser {
   private identifyShiftTypeFromText(text: string): string | null {
     const lowerText = text.toLowerCase();
     
-    // Direct matches for shift types
-    if (lowerText.includes('evening (4-10)') || lowerText.includes('evening \\(4-10\\)')) {
+    console.log(`⏰ TABLE SHIFT: Analyzing "${text}"`);
+    
+    // Handle escaped parentheses from PDF text
+    const unescapedText = text.replace(/\\([()])/g, '$1');
+    const lowerUnescaped = unescapedText.toLowerCase();
+    
+    console.log(`⏰ TABLE SHIFT: Unescaped: "${unescapedText}"`);
+    
+    // Direct matches for shift types (check unescaped text)
+    if (lowerUnescaped.includes('evening (4-10)') || lowerText.includes('evening \\(4-10\\)')) {
+      console.log(`⏰ TABLE SHIFT: Matched Evening (4-10)`);
       return 'Evening Shift (4-10)';
     }
     
-    if (lowerText.includes('morning (9-4)') || lowerText.includes('morning \\(9-4\\)')) {
+    if (lowerUnescaped.includes('morning (9-4)') || lowerText.includes('morning \\(9-4\\)')) {
+      console.log(`⏰ TABLE SHIFT: Matched Morning (9-4)`);
       return 'Morning Shift (9-4)';
     }
     
-    if (lowerText.includes('saturday (12-10)') || lowerText.includes('saturday \\(12-10\\)')) {
+    if (lowerUnescaped.includes('saturday (12-10)') || lowerText.includes('saturday \\(12-10\\)')) {
+      console.log(`⏰ TABLE SHIFT: Matched Saturday (12-10)`);
       return 'Saturday Regular (12-10)';
     }
     
-    if (lowerText.includes('night duty')) {
+    if (lowerUnescaped.includes('night duty') || lowerText.includes('night duty')) {
+      console.log(`⏰ TABLE SHIFT: Matched Night Duty`);
       return 'Night Duty';
     }
     
     // Time-based patterns
-    if (lowerText.includes('4-10') || lowerText.includes('16hrs-22hrs')) {
+    if (lowerUnescaped.includes('4-10') || lowerText.includes('4-10') || lowerText.includes('16hrs-22hrs')) {
+      console.log(`⏰ TABLE SHIFT: Matched 4-10 pattern`);
       return 'Evening Shift (4-10)';
     }
     
-    if (lowerText.includes('9-4') || lowerText.includes('9hrs-16hrs')) {
+    if (lowerUnescaped.includes('9-4') || lowerText.includes('9-4') || lowerText.includes('9hrs-16hrs')) {
+      console.log(`⏰ TABLE SHIFT: Matched 9-4 pattern`);
       return 'Morning Shift (9-4)';
     }
     
-    if (lowerText.includes('12-10') || lowerText.includes('12hrs-22hrs')) {
+    if (lowerUnescaped.includes('12-10') || lowerText.includes('12-10') || lowerText.includes('12hrs-22hrs')) {
+      console.log(`⏰ TABLE SHIFT: Matched 12-10 pattern`);
       return 'Saturday Regular (12-10)';
     }
     
-    if (lowerText.includes('22hrs-9hrs') || lowerText.includes('22-9')) {
+    if (lowerUnescaped.includes('22hrs-9hrs') || lowerText.includes('22hrs-9hrs') || lowerText.includes('22-9')) {
+      console.log(`⏰ TABLE SHIFT: Matched night time pattern`);
       return 'Night Duty';
     }
     
     // Word-based patterns
-    if (lowerText.includes('evening')) {
+    if (lowerUnescaped.includes('evening') || lowerText.includes('evening')) {
+      console.log(`⏰ TABLE SHIFT: Matched evening keyword`);
       return 'Evening Shift (4-10)';
     }
     
-    if (lowerText.includes('morning')) {
+    if (lowerUnescaped.includes('morning') || lowerText.includes('morning')) {
+      console.log(`⏰ TABLE SHIFT: Matched morning keyword`);
       return 'Morning Shift (9-4)';
     }
     
-    if (lowerText.includes('saturday')) {
+    if (lowerUnescaped.includes('saturday') || lowerText.includes('saturday')) {
+      console.log(`⏰ TABLE SHIFT: Matched saturday keyword`);
       return 'Saturday Regular (12-10)';
     }
     
-    if (lowerText.includes('night') || lowerText.includes('duty')) {
+    if (lowerUnescaped.includes('night') || lowerText.includes('night') || 
+        lowerUnescaped.includes('duty') || lowerText.includes('duty')) {
+      console.log(`⏰ TABLE SHIFT: Matched night/duty keyword`);
       return 'Night Duty';
     }
     
-    if (lowerText.includes('sunday') || lowerText.includes('special') || lowerText.includes('holiday')) {
+    if (lowerUnescaped.includes('sunday') || lowerText.includes('sunday') || 
+        lowerUnescaped.includes('special') || lowerText.includes('special') || 
+        lowerUnescaped.includes('holiday') || lowerText.includes('holiday')) {
+      console.log(`⏰ TABLE SHIFT: Matched sunday/special/holiday keyword`);
       return 'Sunday/Public Holiday/Special';
     }
     
+    console.log(`❌ TABLE SHIFT: No match for "${text}"`);
     return null;
   }
   
@@ -390,8 +446,11 @@ export class TableParser {
   private findMatchingStaffName(text: string): string | null {
     const cleanText = text.trim().toUpperCase();
     
+    console.log(`👤 TABLE STAFF: Analyzing "${cleanText}"`);
+    
     // Skip very short text or obvious non-names
     if (cleanText.length < 3) {
+      console.log(`👤 TABLE STAFF: Too short, skipping "${cleanText}"`);
       return null;
     }
     
@@ -400,41 +459,51 @@ export class TableParser {
       /^\d+$/, // Pure numbers
       /^[A-Z]{1,2}$/, // Single/double letters
       /SHIFT/i, /DUTY/i, /MORNING/i, /EVENING/i, /NIGHT/i, /SATURDAY/i, /SUNDAY/i,
-      /HRS/i, /AM/i, /PM/i, /DATE/i, /TIME/i, /SYSTEM/i, /EDITED/i
+      /HRS/i, /AM/i, /PM/i, /DATE/i, /TIME/i, /SYSTEM/i, /EDITED/i, /PAGE/i, /OF/i,
+      /^\d{2}\/\d{2}\/\d{4}$/, // Date patterns
+      /^(MON|TUE|WED|THU|FRI|SAT|SUN)$/i // Day names
     ];
     
     for (const pattern of skipPatterns) {
       if (pattern.test(cleanText)) {
+        console.log(`👤 TABLE STAFF: Skipping pattern match "${cleanText}"`);
         return null;
       }
     }
+    
+    // Handle escaped parentheses in staff names
+    const unescapedText = cleanText.replace(/\\([()])/g, '$1');
     
     // Check against available staff names
     for (const name of availableNames) {
       const nameUpper = name.toUpperCase();
       
       // Exact match (with or without (R))
-      if (cleanText === nameUpper) {
+      if (cleanText === nameUpper || unescapedText === nameUpper) {
+        console.log(`👤 TABLE STAFF: Exact match "${cleanText}" -> ${name}`);
         return name;
       }
       
       // Base name match (without (R) suffix)
       const baseName = nameUpper.replace(/\(R\)$/, '').trim();
-      const cleanTextBase = cleanText.replace(/\(R\)$/, '').trim();
+      const cleanTextBase = unescapedText.replace(/\(R\)$/, '').trim();
       
       if (cleanTextBase === baseName && baseName.length > 3) {
+        console.log(`👤 TABLE STAFF: Base name match "${cleanText}" -> ${name}`);
         return name;
       }
       
       // Partial match for longer names
-      if ((cleanText.includes(nameUpper) && nameUpper.length > 4) ||
-          (nameUpper.includes(cleanText) && cleanText.length > 4) ||
+      if ((unescapedText.includes(nameUpper) && nameUpper.length > 4) ||
+          (nameUpper.includes(unescapedText) && unescapedText.length > 4) ||
           (cleanTextBase.includes(baseName) && baseName.length > 4) ||
           (baseName.includes(cleanTextBase) && cleanTextBase.length > 4)) {
+        console.log(`👤 TABLE STAFF: Partial match "${cleanText}" -> ${name}`);
         return name;
       }
     }
     
+    console.log(`❌ TABLE STAFF: No match for "${cleanText}"`);
     return null;
   }
 }
