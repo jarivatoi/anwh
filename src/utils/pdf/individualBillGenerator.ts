@@ -315,9 +315,8 @@ export class IndividualBillGenerator {
           if (entry.change_description && entry.change_description.includes('Special Date:')) {
             const specialMatch = entry.change_description.match(/Special Date:\s*([^;]+)/);
             if (specialMatch && specialMatch[1].trim()) {
-              const fullRemarks = specialMatch[1].trim();
-              // Only show text before asterisk (*) if asterisk exists
-              remarks = fullRemarks.includes('*') ? fullRemarks.split('*')[0].trim() : fullRemarks;
+              // For individual reports: Show FULL remarks text (including after *)
+              remarks = specialMatch[1].trim();
             }
           }
         });
