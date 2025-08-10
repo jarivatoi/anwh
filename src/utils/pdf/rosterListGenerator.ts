@@ -128,16 +128,31 @@ export class RosterListGenerator {
                      // Single line: Use simple centering
                      cellY = data.cell.y + (data.cell.height / 2) + (lineHeight * 0.25);
                    }
-                    
-                    // Draw the text at current position without comma at start of new line
-                    doc.text(staff.name, currentX, cellY);
-                    currentX += doc.getTextWidth(staff.name);
-                  } else {
-                    // Draw the text at current position
-                    doc.text(textToShow, currentX, cellY);
-                    currentX += textWidth;
-                  }
-                });
+                   
+                   // Draw each staff name with its color
+                   staffNamesData.forEach((staff, index) => {
+                     // Set color for this staff member
+                     const rgb = this.hexToRgb(staff.color);
+                     doc.setTextColor(rgb[0], rgb[1], rgb[2]);
+                     
+                     const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
+                     const textWidth = doc.getTextWidth(textToShow);
+                     
+                     // Check if we need to wrap to next line
+                     if (currentX + textWidth > data.cell.x + maxWidth && currentX > data.cell.x + 2) {
+                       currentLine++;
+                       currentX = data.cell.x + 2;
+                       cellY += lineHeight;
+                       
+                       // Draw the text at current position without comma at start of new line
+                       doc.text(staff.name, currentX, cellY);
+                       currentX += doc.getTextWidth(staff.name);
+                     } else {
+                       // Draw the text at current position
+                       doc.text(textToShow, currentX, cellY);
+                       currentX += textWidth;
+                     }
+                   });
                 
                 // Reset color for other cells
                 doc.setTextColor(0, 0, 0);
