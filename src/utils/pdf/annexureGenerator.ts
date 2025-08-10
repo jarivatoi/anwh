@@ -2,20 +2,18 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { RosterEntry } from '../../types/roster';
 
-export interface AnnexureOptions {
+export interface RosterListOptions {
   month: number;
   year: number;
   entries: RosterEntry[];
-  hourlyRate: number;
-  shiftCombinations: Array<{ id: string; combination: string; hours: number; }>;
 }
 
-export class AnnexureGenerator {
+export class RosterListGenerator {
   
   /**
    * Generate roster list matching the PDF template format - all on one page
    */
-  async generateAnnexure(options: AnnexureOptions): Promise<void> {
+  async generateRosterList(options: RosterListOptions): Promise<void> {
     const { month, year, entries } = options;
     
     console.log('📄 Generating roster list');
@@ -468,4 +466,4 @@ export class AnnexureGenerator {
 }
 
 // Create singleton instance
-export const annexureGenerator = new AnnexureGenerator();
+export const rosterListGenerator = new RosterListGenerator();
