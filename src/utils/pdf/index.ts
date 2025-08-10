@@ -47,16 +47,36 @@ class PDFRosterParser {
           listEntries: listEntries.length
         });
         
-        // Use the approach that found more valid entries
-        const pageEntries = listEntries.length > boxEntries.length ? listEntries : boxEntries;
-        console.log(`📄 Page ${pageNum}: Using ${listEntries.length > boxEntries.length ? 'list' : 'box'} parser (${pageEntries.length} entries)`);
+        // Use the approach that found more valid entries (with valid dates)
+        const validListEntries = listEntries.filter(entry => entry.date && entry.date !== '' && entry.date !== null);
+        const validBoxEntries = boxEntries.filter(entry => entry.date && entry.date !== '' && entry.date !== null);
+        
+        const pageEntries = validListEntries.length > validBoxEntries.length ? listEntries : boxEntries;
+        console.log(`📄 Page ${pageNum}: Using ${validListEntries.length > validBoxEntries.length ? 'list' : 'box'} parser (${pageEntries.length} total entries, ${validListEntries.length > validBoxEntries.length ? validListEntries.length : validBoxEntries.length} valid)`);
         
         allParsedEntries.push(...pageEntries);
       }
 
       // Build final entries
       result.entries = allParsedEntries
-        .filter(entry => entry.date && entry.date !== '' && entry.date !== null) // Filter out entries with missing dates
+        .filter(entry => {
+          // Filter out entries with missing required fields
+          const hasDate = entry.date && entry.date !== '' && entry.date !== null;
+          const hasShift = entry.shiftType && entry.shiftType !== '' && entry.shiftType !== null;
+          const hasStaff = entry.assignedName && entry.assignedName !== '' && entry.assignedName !== null;
+          
+          if (!hasDate) {
+            console.log(`❌ FILTERING OUT: Missing date - ${entry.assignedName || 'unknown'} | ${entry.shiftType || 'unknown shift'}`);
+          }
+          if (!hasShift) {
+            console.log(`❌ FILTERING OUT: Missing shift - ${entry.assignedName || 'unknown'} | ${entry.date || 'unknown date'}`);
+          }
+          if (!hasStaff) {
+            console.log(`❌ FILTERING OUT: Missing staff - ${entry.date || 'unknown date'} | ${entry.shiftType || 'unknown shift'}`);
+          }
+          
+          return hasDate && hasShift && hasStaff;
+        })
         .map(entry => ({
           date: entry.date,
           shiftType: entry.shiftType,
@@ -64,33 +84,22 @@ class PDFRosterParser {
           changeDescription: 'Imported from PDF'
         }));
       
-      // Add warnings for entries with missing fields (check before filtering)
-      allParsedEntries.forEach(entry => {
-        if (!entry.date || entry.date === '' || entry.date === null) {
-          result.warnings.push(`Entry for ${entry.assignedName || 'unknown'} - ${entry.shiftType || 'unknown shift'}: Missing date`);
-        }
-        if (!entry.shiftType || entry.shiftType === '' || entry.shiftType === null) {
-          result.warnings.push(`Entry for ${entry.assignedName || 'unknown'} on ${entry.date || 'unknown date'}: Missing shift type`);
-        }
-        if (!entry.assignedName || entry.assignedName === '' || entry.assignedName === null) {
-          result.warnings.push(`Entry on ${entry.date || 'unknown date'} - ${entry.shiftType || 'unknown shift'}: Missing staff name`);
+      // Remove duplicate entries (same date, shift, and staff)
+      const uniqueEntries = new Map<string, typeof result.entries[0]>();
+      result.entries.forEach(entry => {
+        const key = `${entry.date}-${entry.shiftType}-${entry.assignedName}`;
+        if (!uniqueEntries.has(key)) {
+          uniqueEntries.set(key, entry);
+        } else {
+          console.log(`🔄 DUPLICATE REMOVED: ${entry.assignedName} | ${entry.shiftType} | ${entry.date}`);
         }
       });
+      result.entries = Array.from(uniqueEntries.values());
       
       // DEBUGGING: Analyze what we found vs what we expected
       console.log('📊 PARSING ANALYSIS:');
       console.log(`📊 Total parsed entries: ${allParsedEntries.length}`);
-      console.log(`📊 Valid entries (after filtering): ${result.entries.length}`);
-      
-      // Show entries that were filtered out
-      const filteredOut = allParsedEntries.filter(entry => !entry.date || entry.date === '' || entry.date === null);
-      if (filteredOut.length > 0) {
-        console.log(`📊 FILTERED OUT ${filteredOut.length} entries with missing dates:`);
-        filteredOut.forEach((entry, index) => {
-          console.log(`${index + 1}. ${entry.assignedName || 'NO NAME'} | ${entry.shiftType || 'NO SHIFT'} | ${entry.date || 'NO DATE'}`);
-        });
-      }
-      console.log(`📊 Final unique entries: ${result.entries.length}`);
+      console.log(`📊 Valid entries (after filtering and deduplication): ${result.entries.length}`);
       
       // Group by date to see which dates are missing entries
       const entriesByDate = result.entries.reduce((groups, entry) => {
