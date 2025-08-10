@@ -100,8 +100,8 @@ export class AnnexureGenerator {
       head: [['S.No', 'NAME (Full Name)', 'ID NUMBER', 'SALARY', 'NO OF HRS PAYABLE (Hrs)', 'NIGHT ALLOWANCE (Hrs)', 'AMOUNT']],
       body: tableData,
       styles: {
-        fontSize: 8,
-        cellPadding: 2,
+        fontSize: 9,
+        cellPadding: 2.5,
         overflow: 'linebreak',
         halign: 'center',
         valign: 'middle'
@@ -110,11 +110,11 @@ export class AnnexureGenerator {
         fillColor: [220, 220, 220],
         textColor: [0, 0, 0],
         fontStyle: 'bold',
-        fontSize: 9,
+        fontSize: 10,
         halign: 'center',
         valign: 'middle'
-      },
-      columnStyles: {
+        cellPadding: 3.5,
+        minCellHeight: 20
         0: { cellWidth: 15, halign: 'center' }, // S.No
         1: { cellWidth: 40, halign: 'left' },   // NAME (Full Name)
         2: { cellWidth: 35, halign: 'center' }, // ID NUMBER
@@ -123,16 +123,7 @@ export class AnnexureGenerator {
         5: { cellWidth: 25, halign: 'center' }, // NIGHT ALLOWANCE (Hrs)
         6: { cellWidth: 30, halign: 'right' }   // AMOUNT
       },
-      margin: { left: 15, right: 15 },
-      theme: 'grid',
-      tableLineWidth: 0.3,
-      tableLineColor: [0, 0, 0]
-    });
-    
-    // Add grand totals at the bottom
-    const grandTotalDays = staffSummaries.reduce((sum, s) => sum + s.totalDays, 0);
-    const grandTotalHours = staffSummaries.reduce((sum, s) => sum + s.totalHours, 0);
-    const grandTotalSalary = staffSummaries.reduce((sum, s) => sum + s.salary, 0);
+      margin: { left: 8, right: 8 },
     const grandNightDutyHours = staffSummaries.reduce((sum, s) => sum + s.nightDutyHours, 0);
     const grandSubtotal = staffSummaries.reduce((sum, s) => sum + s.totalAmount, 0);
     const grandNightAllowance = staffSummaries.reduce((sum, s) => sum + s.nightAllowance, 0);
@@ -157,6 +148,18 @@ export class AnnexureGenerator {
     doc.text(`Generated on: ${new Date().toLocaleString()}`, 15, doc.internal.pageSize.getHeight() - 15);
     doc.text('X-ray AN WH System', doc.internal.pageSize.getWidth() - 15, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
     doc.text('X-ray ANWH System', doc.internal.pageSize.getWidth() - 15, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
+    // Add certification section at the bottom
+    const certificationY = finalY + 50;
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text('Certified Correct as per Attendance.', 15, certificationY);
+    doc.text('Principal Medical Imaging Technologist', 15, certificationY + 10);
+    
+    // Signature line
+    doc.text('Signature: ________________________________', 15, certificationY + 25);
+    doc.text('Date: ____________________', 15, certificationY + 35);
+    
     // Save
     const filename = `Annexure_${monthNames[month]}_${year}.pdf`;
     doc.save(filename);
