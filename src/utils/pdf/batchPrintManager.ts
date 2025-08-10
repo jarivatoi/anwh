@@ -620,7 +620,7 @@ export class BatchPrintManager {
    * Download all PDFs as individual files
    */
   private async downloadAllPDFs(): Promise<void> {
-    console.log(`📥 Downloading ${this.pdfDocuments.length} PDFs individually...`);
+    console.log(`Downloading ${this.pdfDocuments.length} PDFs individually...`);
     
     for (const pdfDoc of this.pdfDocuments) {
       pdfDoc.doc.save(pdfDoc.filename);
