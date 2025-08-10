@@ -734,7 +734,13 @@ function App() {
               onExportData={handleExportData}
             />
           ) : (
-            <RosterPanel key={refreshKey} setActiveTab={setActiveTab} onOpenCalendarExportModal={handleOpenCalendarExportModal} />
+            <RosterPanel 
+              key={refreshKey} 
+              setActiveTab={setActiveTab} 
+              onOpenCalendarExportModal={handleOpenCalendarExportModal}
+              selectedDate={currentDate}
+              onDateChange={handleDateChange}
+            />
           )}
         </div>
 
