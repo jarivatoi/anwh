@@ -60,7 +60,7 @@ export class ListParser {
     const rows: Array<Array<{text: string, x: number, y: number}>> = [];
     let currentRow: Array<{text: string, x: number, y: number}> = [];
     let currentY: number | null = null;
-    const yTolerance = 5; // Items within 5 pixels are considered same row
+    const yTolerance = 15; // Increased tolerance for multiline remarks (items within 15 pixels are considered same row)
     
     for (const item of sortedItems) {
       if (currentY === null || Math.abs(item.y - currentY) <= yTolerance) {
@@ -83,6 +83,61 @@ export class ListParser {
     if (currentRow.length > 0) {
       currentRow.sort((a, b) => a.x - b.x);
       rows.push(currentRow);
+    }
+    
+    // Post-process to merge multiline remarks
+    return this.mergeMultilineRemarks(rows);
+  }
+  
+  /**
+   * Merge multiline remarks that appear on consecutive rows
+   */
+  private mergeMultilineRemarks(rows: Array<Array<{text: string, x: number, y: number}>>): Array<Array<{text: string, x: number, y: number}>> {
+    const mergedRows: Array<Array<{text: string, x: number, y: number}>> = [];
+    
+    for (let i = 0; i < rows.length; i++) {
+      const currentRow = rows[i];
+      
+      // Check if this row has remarks (column 6+) and if the next row might be continuation
+      if (currentRow.length >= 7 && i < rows.length - 1) {
+        const nextRow = rows[i + 1];
+        
+        // Check if next row looks like a continuation of remarks
+        if (this.isRemarksContinuation(currentRow, nextRow)) {
+          console.log(`📝 MULTILINE: Merging row ${i + 1} with row ${i + 2} for multiline remarks`);
+          
+          // Merge the remarks from next row into current row
+          const continuationText = nextRow
+            .filter(item => this.isPotentialRemarksText(item.text))
+            .map(item => item.text.trim())
+            .join(' ');
+          
+          if (continuationText) {
+            // Find the remarks column in current row and append continuation
+            const remarksColumnIndex = 6;
+            if (currentRow.length > remarksColumnIndex) {
+              // Append continuation text to the last remarks item
+              const lastRemarksIndex = currentRow.length - 1;
+              currentRow[lastRemarksIndex] = {
+                ...currentRow[lastRemarksIndex],
+                text: currentRow[lastRemarksIndex].text + ' ' + continuationText
+              };
+            } else {
+              // Add continuation as new remarks item
+              currentRow.push({
+                text: continuationText,
+                x: nextRow[0].x,
+                y: nextRow[0].y
+              });
+            }
+          }
+          
+          // Skip the next row since we merged it
+          i++;
+        }
+      }
+      
+      mergedRows.push(currentRow);
     }
     
     return rows;
@@ -151,10 +206,9 @@ export class ListParser {
       }
     }
     
-    // STEP 4: Check for remarks in last column (index 6 if 7 columns, or search for special date info)
+    // STEP 4: Collect multiline remarks from column 6 onwards
     let remarks: string | null = null;
     if (row.length >= 7) {
-      // Collect all text from column 6 onwards for multiline remarks
       const remarksTexts = row.slice(6).map(item => item.text.trim()).filter(text => 
         text && text !== '' && text.toLowerCase() !== 'remarks'
       );
@@ -372,6 +426,76 @@ export class ListParser {
     
     console.log(`❌ DATE DEBUG: No pattern matched for: "${cleanText}"`);
     return null;
+  }
+  
+  /**
+   * Check if next row is a continuation of remarks from current row
+   */
+  private isRemarksContinuation(currentRow: Array<{text: string, x: number, y: number}>, nextRow: Array<{text: string, x: number, y: number}>): boolean {
+    // Next row should have fewer items (likely just continuation text)
+    if (nextRow.length >= currentRow.length) {
+      return false;
+    }
+    
+    // Next row should not have date, shift, or staff info (indicating it's not a new entry)
+    const hasDate = nextRow.some(item => this.extractDateFromText(item.text));
+    const hasShift = nextRow.some(item => this.identifyShiftTypeFromText(item.text));
+    const hasStaff = nextRow.some(item => this.findMatchingStaffName(item.text));
+    
+    if (hasDate || hasShift || hasStaff) {
+      return false;
+    }
+    
+    // Next row should contain text that looks like remarks continuation
+    const hasRemarksText = nextRow.some(item => this.isPotentialRemarksText(item.text));
+    
+    // Current row should have remarks in column 6+
+    const currentHasRemarks = currentRow.length >= 7;
+    
+    return currentHasRemarks && hasRemarksText;
+  }
+  
+  /**
+   * Check if text could be part of remarks (contains common keywords or is descriptive text)
+   */
+  private isPotentialRemarksText(text: string): boolean {
+    const lowerText = text.toLowerCase().trim();
+    
+    // Skip very short text
+    if (lowerText.length < 3) {
+      return false;
+    }
+    
+    // Skip obvious non-remarks patterns
+    const skipPatterns = [
+      /^\d+$/, // Pure numbers
+      /^[A-Z]{1,3}$/, // Short abbreviations
+      /SHIFT/i, /DUTY/i, /MORNING/i, /EVENING/i, /NIGHT/i, /SATURDAY/i, /SUNDAY/i,
+      /DATE/i, /TIME/i, /STAFF/i, /EDITED/i, /LAST/i, /BY/i, /AT/i
+    ];
+    
+    for (const pattern of skipPatterns) {
+      if (pattern.test(lowerText)) {
+        return false;
+      }
+    }
+    
+    // Check for common remarks keywords
+    const remarksKeywords = [
+      'public', 'holiday', 'cyclone', 'testing', 'working', 'fine',
+      'emergency', 'special', 'event', 'celebration', 'festival',
+      'is', 'on', 'that', 'everything', 'and', 'the', 'for'
+    ];
+    
+    const hasRemarksKeyword = remarksKeywords.some(keyword => lowerText.includes(keyword));
+    
+    // Text with asterisk is likely remarks
+    const hasAsterisk = text.includes('*');
+    
+    // Long descriptive text is likely remarks
+    const isLongText = text.length >= 8 && /^[A-Za-z\s*]+$/.test(text);
+    
+    return hasRemarksKeyword || hasAsterisk || isLongText;
   }
   
   /**
