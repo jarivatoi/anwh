@@ -293,6 +293,9 @@ export const syncRosterToCalendar = (
   const { calendarLabel, schedule, specialDates, setSchedule, setSpecialDates } = options;
   const { date, shiftType, assignedName, editorName, action } = rosterChange;
   
+  // Check if we're in batch import mode
+  const isBatchImport = (window as any).batchImportMode === true;
+  
   console.log('🔄 ROSTER SYNC: Sync triggered with data:', {
     date,
     shiftType,
@@ -300,6 +303,7 @@ export const syncRosterToCalendar = (
     editorName,
     action,
     calendarLabel,
+    isBatchImport,
     currentScheduleKeys: Object.keys(schedule).length,
     currentSpecialDates: Object.keys(specialDates).length,
     currentScheduleForDate: schedule[date] || []
@@ -327,6 +331,19 @@ export const syncRosterToCalendar = (
   }
   
   console.log(`✅ ROSTER SYNC: Base names match - proceeding with sync (${assignedName} matches ${calendarLabel})`);
+  
+  // Track imports for batch notification
+  if (isBatchImport) {
+    if (!(window as any).batchImportStats) {
+      (window as any).batchImportStats = {
+        count: 0,
+        staffName: calendarLabel,
+        dates: new Set<string>()
+      };
+    }
+    (window as any).batchImportStats.count++;
+    (window as any).batchImportStats.dates.add(date);
+  }
   
   // Handle removal action
   if (action === 'removed') {
@@ -415,51 +432,54 @@ export const syncRosterToCalendar = (
   console.log(`🔍 ROSTER SYNC: Calendar updated: ${calendarUpdated}, Final schedule keys: ${Object.keys(schedule).length}`);
   
   if (calendarUpdated) {
-    // Show enhanced addition notification
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-      position: fixed;
-      top: 80px;
-      right: 20px;
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: white;
-      padding: 16px 20px;
-      border-radius: 12px;
-      box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
-      z-index: 999999;
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 14px;
-      font-weight: 500;
-      max-width: 320px;
-      animation: slideInRight 0.3s ease-out;
-      border: 2px solid rgba(255, 255, 255, 0.2);
-    `;
-    
-    notification.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-        <div style="width: 8px; height: 8px; background: white; border-radius: 50%; opacity: 0.9;"></div>
-        <strong style="font-size: 15px;">Calendar Updated</strong>
-      </div>
-      <div style="font-size: 13px; line-height: 1.4; opacity: 0.95;">
-        <strong>${assignedName}</strong> added to <strong>${calendarLabel}</strong>'s calendar<br>
-        📅 <strong>${date}</strong> - ${shiftType}
-        ${(needsSpecial || isRosterSpecialDate) ? '<br>📌 Date marked as special' : ''}
-      </div>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Auto-remove after 3 seconds
-    setTimeout(() => {
-      if (document.body.contains(notification)) {
-        notification.style.animation = 'slideInRight 0.3s ease-out reverse';
-        setTimeout(() => {
-          if (document.body.contains(notification)) {
-            document.body.removeChild(notification);
-          }
-        }, 300);
-      }
-    }, 3000);
+    // Only show individual notifications if NOT in batch import mode
+    if (!isBatchImport) {
+      // Show enhanced addition notification
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 16px 20px;
+        border-radius: 12px;
+        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        z-index: 999999;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        max-width: 320px;
+        animation: slideInRight 0.3s ease-out;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+      `;
+      
+      notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <div style="width: 8px; height: 8px; background: white; border-radius: 50%; opacity: 0.9;"></div>
+          <strong style="font-size: 15px;">Calendar Updated</strong>
+        </div>
+        <div style="font-size: 13px; line-height: 1.4; opacity: 0.95;">
+          <strong>${assignedName}</strong> added to <strong>${calendarLabel}</strong>'s calendar<br>
+          📅 <strong>${date}</strong> - ${shiftType}
+          ${(needsSpecial || isRosterSpecialDate) ? '<br>📌 Date marked as special' : ''}
+        </div>
+      `;
+      
+      document.body.appendChild(notification);
+      
+      // Auto-remove after 3 seconds
+      setTimeout(() => {
+        if (document.body.contains(notification)) {
+          notification.style.animation = 'slideInRight 0.3s ease-out reverse';
+          setTimeout(() => {
+            if (document.body.contains(notification)) {
+              document.body.removeChild(notification);
+            }
+          }, 300);
+        }
+      }, 3000);
+    }
   }
   
   return calendarUpdated;

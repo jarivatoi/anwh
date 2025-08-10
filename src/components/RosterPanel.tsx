@@ -136,6 +136,14 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
     try {
       console.log('📄 Starting PDF import with', entries.length, 'entries...');
       
+      // Enable batch import mode to suppress individual notifications
+      (window as any).batchImportMode = true;
+      (window as any).batchImportStats = {
+        count: 0,
+        staffName: '',
+        dates: new Set<string>()
+      };
+      
       let successCount = 0;
       let errorCount = 0;
       let importedMonth: number | null = null;
@@ -143,7 +151,7 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
       
       for (const entry of entries) {
         try {
-          await addRosterEntry(entry);
+          await addRosterEntry(entry, 'PDF Import');
           successCount++;
           
           // Track the month/year of imported entries
@@ -157,6 +165,18 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
           errorCount++;
         }
       }
+      
+      // Disable batch import mode
+      (window as any).batchImportMode = false;
+      
+      // Show summary notification
+      const stats = (window as any).batchImportStats;
+      if (stats && stats.count > 0) {
+        this.showBatchImportNotification(stats.count, stats.staffName, stats.dates.size);
+      }
+      
+      // Clear batch stats
+      (window as any).batchImportStats = null;
       
       // Refresh data
       await loadEntries();
@@ -176,6 +196,9 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
       showSuccess(`PDF import completed: ${successCount} entries added${errorCount > 0 ? `, ${errorCount} failed` : ''}`);
     } catch (error) {
       console.error('❌ PDF import failed:', error);
+      // Make sure to disable batch mode on error
+      (window as any).batchImportMode = false;
+      (window as any).batchImportStats = null;
       alert('PDF import failed. Please try again.');
     }
   };
@@ -295,6 +318,54 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
     } finally {
       setIsExportingPDF(false);
     }
+  };
+  
+  // Method to show batch import notification
+  const showBatchImportNotification = (count: number, staffName: string, uniqueDates: number) => {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      padding: 20px 24px;
+      border-radius: 16px;
+      box-shadow: 0 12px 30px rgba(16, 185, 129, 0.5);
+      z-index: 999999;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      max-width: 380px;
+      animation: slideInRight 0.4s ease-out;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+    `;
+    
+    notification.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+        <div style="width: 12px; height: 12px; background: white; border-radius: 50%; opacity: 0.9;"></div>
+        <strong style="font-size: 17px;">PDF Import Complete</strong>
+      </div>
+      <div style="font-size: 14px; line-height: 1.5; opacity: 0.95;">
+        <strong>${count} entries</strong> imported for <strong>${staffName}</strong><br>
+        📅 <strong>${uniqueDates} dates</strong> updated in calendar<br>
+        🎯 Navigated to imported month
+      </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 5 seconds (longer for summary)
+    setTimeout(() => {
+      if (document.body.contains(notification)) {
+        notification.style.animation = 'slideInRight 0.4s ease-out reverse';
+        setTimeout(() => {
+          if (document.body.contains(notification)) {
+            document.body.removeChild(notification);
+          }
+        }, 400);
+      }
+    }, 5000);
   };
 
   return (
