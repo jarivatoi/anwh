@@ -129,6 +129,12 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
 
   // Auto-scroll to today's date only when switching to this tab
   useEffect(() => {
+    // Skip auto-scroll if we're in the middle of a PDF import
+    if ((window as any).disableAutoScroll) {
+      console.log('🔍 TABLE TAB-SWITCH AUTO-SCROLL: Skipping due to PDF import in progress');
+      return;
+    }
+    
     console.log('🔍 TABLE TAB-SWITCH AUTO-SCROLL: Effect triggered');
     
     // Only auto-scroll if we haven't done it yet for this tab switch

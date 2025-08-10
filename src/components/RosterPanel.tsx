@@ -138,6 +138,7 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
       
       // Enable batch import mode to suppress individual notifications
       (window as any).batchImportMode = true;
+      (window as any).disableAutoScroll = true; // Disable auto-scroll during import
       (window as any).batchImportStats = {
         count: 0,
         staffName: adminName || 'Unknown',
@@ -168,6 +169,7 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
       
       // Disable batch import mode
       (window as any).batchImportMode = false;
+      (window as any).disableAutoScroll = false; // Re-enable auto-scroll after import
       
       // Show summary notification
       const stats = (window as any).batchImportStats;
