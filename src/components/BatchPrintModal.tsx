@@ -348,7 +348,14 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-center space-x-3">
                 <AlertCircle className="w-5 h-5 text-red-600" />
-                <span className="text-sm text-red-800">{error}</span>
+                <div className="flex-1">
+                  <span className="text-sm text-red-800">{error}</span>
+                  {error.includes('popup') && (
+                    <div className="text-xs text-red-600 mt-1">
+                      💡 Tip: Use the "Download" button instead, or enable popups for this site in your browser settings.
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -375,9 +382,10 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
             onClick={handlePrint}
             disabled={isProcessing || reportTypes.length === 0}
             className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 text-white rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2"
+            title="Generate PDFs for printing (may download if popups are blocked)"
           >
             <Printer className="w-4 h-4" />
-            <span>Print</span>
+            <span>Print/Download</span>
           </button>
         </div>
       </div>

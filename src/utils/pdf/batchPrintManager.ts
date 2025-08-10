@@ -352,47 +352,57 @@ export class BatchPrintManager {
     
     console.log(`🖨️ Starting batch printing of ${this.pdfDocuments.length} PDFs`);
     
-    // Try different printing approaches based on browser capabilities
-    if (this.canUseBatchPrint()) {
-      await this.printAllAtOnce();
-    } else {
-      await this.printSequentially();
+    // Always use the fallback download approach since popups are blocked
+    console.log('🖨️ Using download fallback due to popup restrictions');
+    await this.downloadAllPDFs();
+  }
+  
+  /**
+   * Download all PDFs as individual files (fallback when popups are blocked)
+   */
+  private async downloadAllPDFs(): Promise<void> {
+    console.log(`📥 Downloading ${this.pdfDocuments.length} PDFs individually...`);
+    
+    for (const pdfDoc of this.pdfDocuments) {
+      pdfDoc.doc.save(pdfDoc.filename);
+      
+      // Small delay between downloads to prevent browser overwhelm
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+    
+    console.log('✅ All PDFs downloaded successfully');
+  }
+  
+  /**
+   * Try to open print window with better popup handling
+   */
+  private async tryPrintWithPopup(): Promise<void> {
+    try {
+      // Try to open print window
+      this.printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+      
+      if (!this.printWindow) {
+        throw new Error('Could not open print window. Please allow popups.');
+      }
+      
+      console.log('🖨️ Print window opened successfully');
+      await this.setupPrintWindow();
+      
+    } catch (error) {
+      console.log('🖨️ Print window failed, falling back to downloads');
+      // Fallback to downloads
+      await this.downloadAllPDFs();
     }
   }
   
   /**
-   * Check if browser supports batch printing
+   * Setup the print window with all PDFs
    */
-  private canUseBatchPrint(): boolean {
-    // Most modern browsers support this, but some mobile browsers don't
-    return typeof window.print === 'function' && !this.isMobileBrowser();
-  }
-  
-  /**
-   * Check if running on mobile browser
-   */
-  private isMobileBrowser(): boolean {
-    return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  }
-  
-  /**
-   * Print all PDFs at once (modern browsers)
-   */
-  private async printAllAtOnce(): Promise<void> {
-    console.log('🖨️ Using batch print method');
-    
-    // Create a combined print window with all PDFs
-    this.printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
-    if (!this.printWindow) {
-      throw new Error('Could not open print window. Please allow popups.');
-    }
-    
-    console.log('🖨️ Print window opened successfully');
-    
+  private async setupPrintWindow(): Promise<void> {
     // Wait for window to be ready
     await new Promise(resolve => setTimeout(resolve, 100));
     
-    this.printWindow.document.write(`
+    this.printWindow!.document.write(`
       <html>
         <head>
           <title>Batch Print - ${this.pdfDocuments.length} Documents</title>
@@ -438,7 +448,7 @@ export class BatchPrintManager {
       // Convert PDF to HTML content for better print compatibility
       const htmlContent = await this.convertPdfToHtml(pdfDoc.doc);
       
-      this.printWindow.document.write(`
+      this.printWindow!.document.write(`
         <div class="pdf-container">
           <div class="pdf-content">
             ${htmlContent}
@@ -447,12 +457,12 @@ export class BatchPrintManager {
       `);
     }
     
-    this.printWindow.document.write(`
+    this.printWindow!.document.write(`
       </body>
       </html>
     `);
     
-    this.printWindow.document.close();
+    this.printWindow!.document.close();
     console.log('🖨️ Print window document closed, adding event listeners...');
     
     // Wait for content to load, then add event listeners
@@ -460,15 +470,15 @@ export class BatchPrintManager {
     
     // Add event listeners after document is ready
     try {
-      const printBtn = this.printWindow.document.getElementById('printAllBtn');
-      const closeBtn = this.printWindow.document.getElementById('closeBtn');
+      const printBtn = this.printWindow!.document.getElementById('printAllBtn');
+      const closeBtn = this.printWindow!.document.getElementById('closeBtn');
       
       console.log('🖨️ Found buttons:', { printBtn: !!printBtn, closeBtn: !!closeBtn });
       
       if (printBtn) {
         printBtn.addEventListener('click', () => {
           console.log('🖨️ Print button clicked');
-          this.printWindow?.print();
+          this.printWindow!.print();
         });
         console.log('✅ Print button event listener added');
       }
@@ -476,7 +486,7 @@ export class BatchPrintManager {
       if (closeBtn) {
         closeBtn.addEventListener('click', () => {
           console.log('🔒 Close button clicked');
-          this.printWindow?.close();
+          this.printWindow!.close();
         });
         console.log('✅ Close button event listener added');
       }
@@ -487,7 +497,7 @@ export class BatchPrintManager {
     }
     
     // Auto-focus the print window
-    this.printWindow.focus();
+    this.printWindow!.focus();
     console.log('🖨️ Print window focused');
   }
   
@@ -549,22 +559,6 @@ export class BatchPrintManager {
             <script>
               window.onload = function() {
                 setTimeout(function() {
-                  window.print();
-                }, 1000);
-              };
-            </script>
-          </body>
-        </html>
-      `);
-      
-      printWindow.document.close();
-      
-      // Wait between prints to avoid overwhelming the browser
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    }
-  }
-  
-  /**
    * Generate individual bill PDF for batch printing
    */
   private async generateIndividualBillPDF(options: {
