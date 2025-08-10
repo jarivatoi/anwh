@@ -142,7 +142,8 @@ export class IndividualBillGenerator {
         cellPadding: 1,
         overflow: 'linebreak',
         halign: 'center',
-        valign: 'middle'
+        valign: 'middle',
+        fontStyle: 'bold'
       },
       headStyles: {
         fillColor: [220, 220, 220],

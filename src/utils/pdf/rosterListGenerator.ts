@@ -152,7 +152,8 @@ export class RosterListGenerator {
           halign: 'left',
           valign: 'middle',
           lineWidth: 0.25,
-          lineColor: [0, 0, 0]
+          lineColor: [0, 0, 0],
+          fontStyle: 'bold'
         },
         headStyles: {
           fillColor: [220, 220, 220],
@@ -166,7 +167,8 @@ export class RosterListGenerator {
         },
         bodyStyles: {
           lineWidth: 0.25,
-          lineColor: [0, 0, 0]
+          lineColor: [0, 0, 0],
+          fontStyle: 'bold'
         },
         columnStyles: {
           0: { cellWidth: 35, halign: 'left', valign: 'middle' },   // Date (fixed width)

@@ -71,7 +71,8 @@ export class PDFExporter {
           fontSize: 8,
           cellPadding: 2,
           overflow: 'linebreak',
-          halign: 'center'
+          halign: 'center',
+          fontStyle: 'bold'
         },
         headStyles: {
           fillColor: [79, 70, 229], // Indigo color
