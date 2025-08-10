@@ -226,6 +226,50 @@ export class BoxParser {
       }
     }
     
+    // Format 7: DD/MM/YYYY (25/07/2025)
+    const ddmmyyyySlashPattern = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+    const ddmmyyyySlashMatch = cleanText.match(ddmmyyyySlashPattern);
+    if (ddmmyyyySlashMatch) {
+      const [, day, month, year] = ddmmyyyySlashMatch;
+      const standardDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      const dateObj = new Date(standardDate);
+      
+      if (this.isValidDate(dateObj, parseInt(year), parseInt(month), parseInt(day))) {
+        console.log(`📅 Parsed DD/MM/YYYY format: "${cleanText}" -> ${standardDate}`);
+        return { date: standardDate, dayOfWeek: dateObj.getDay() };
+      }
+    }
+    
+    // Format 8: DD/MM/YY (25/07/25 or 25/7/25)
+    const ddmmyySlashPattern = /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/;
+    const ddmmyySlashMatch = cleanText.match(ddmmyySlashPattern);
+    if (ddmmyySlashMatch) {
+      const [, day, month, year] = ddmmyySlashMatch;
+      const fullYear = parseInt(year) > 50 ? `19${year}` : `20${year}`;
+      const standardDate = `${fullYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      const dateObj = new Date(standardDate);
+      
+      if (this.isValidDate(dateObj, parseInt(fullYear), parseInt(month), parseInt(day))) {
+        console.log(`📅 Parsed DD/MM/YY format: "${cleanText}" -> ${standardDate}`);
+        return { date: standardDate, dayOfWeek: dateObj.getDay() };
+      }
+    }
+    
+    // Format 9: D/M/YY (25/7/25) - single digit month
+    const dmyySlashPattern = /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/;
+    const dmyySlashMatch = cleanText.match(dmyySlashPattern);
+    if (dmyySlashMatch) {
+      const [, day, month, year] = dmyySlashMatch;
+      const fullYear = parseInt(year) > 50 ? `19${year}` : `20${year}`;
+      const standardDate = `${fullYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      const dateObj = new Date(standardDate);
+      
+      if (this.isValidDate(dateObj, parseInt(fullYear), parseInt(month), parseInt(day))) {
+        console.log(`📅 Parsed D/M/YY format: "${cleanText}" -> ${standardDate}`);
+        return { date: standardDate, dayOfWeek: dateObj.getDay() };
+      }
+    }
+    
     // DD MM YYYY format (like "01 07 2025")
     const dayMonthYearPattern = /^(\d{1,2})\s+(\d{1,2})\s+(\d{4})$/;
     const dayMonthYearMatch = cleanText.match(dayMonthYearPattern);
