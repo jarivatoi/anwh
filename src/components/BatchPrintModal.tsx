@@ -185,9 +185,9 @@ export class BatchPrintManager {
       throw error;
     }
   }
-
+  
   /**
-   * Generate all PDFs and download them
+   * Generate all PDFs and prepare for batch downloading
    */
   async generateAndDownloadBatch(
     options: BatchPrintOptions,
@@ -195,9 +195,10 @@ export class BatchPrintManager {
   ): Promise<void> {
     const { month, year, entries, basicSalary, hourlyRate, shiftCombinations, reportTypes, selectedStaff } = options;
     
-    console.log('📥 Starting batch PDF generation and download...');
+    console.log('📥 Starting batch PDF generation and downloading...');
     
     this.pdfDocuments = [];
+    this.currentPrintIndex = 0;
     
     const monthNames = [
       'January', 'February', 'March', 'April', 'May', 'June',
@@ -314,7 +315,7 @@ export class BatchPrintManager {
         completed: false
       });
       
-      // Download all PDFs
+      // Start batch downloading
       await this.downloadAllPDFs();
       
       onProgress?.({
@@ -325,11 +326,11 @@ export class BatchPrintManager {
       });
       
     } catch (error) {
-      console.error('❌ Batch download failed:', error);
+      console.error('❌ Batch generation failed:', error);
       onProgress?.({
         current: currentTask,
         total: totalTasks,
-        currentTask: 'Download failed',
+        currentTask: 'Generation failed',
         completed: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       });
