@@ -81,21 +81,16 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
   };
 
   const handlePrint = async () => {
-    console.log('🖨️ BatchPrintModal: Print button clicked');
-    
     if (reportTypes.length === 0) {
-      console.log('❌ BatchPrintModal: No report types selected');
       setError('Please select at least one report type');
       return;
     }
 
     if (reportTypes.includes('individual') && selectedStaff.length === 0) {
-      console.log('❌ BatchPrintModal: No staff selected for individual reports');
       setError('Please select at least one staff member for individual reports');
       return;
     }
 
-    console.log('🖨️ BatchPrintModal: Starting print process...');
     setIsProcessing(true);
     setError(null);
     setProgress(null);
@@ -112,9 +107,7 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
     };
 
     try {
-      console.log('🖨️ BatchPrintModal: Starting print process with options:', options);
       await batchPrintManager.generateAndPrintBatch(options, setProgress);
-      console.log('✅ BatchPrintModal: Print process completed successfully');
     } catch (err) {
       console.error('Batch print failed:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to generate batch print';
@@ -125,26 +118,20 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
       }
     } finally {
       setIsProcessing(false);
-      console.log('🖨️ BatchPrintModal: Print process finished, isProcessing set to false');
     }
   };
 
   const handleDownload = async () => {
-    console.log('📥 BatchPrintModal: Download button clicked');
-    
     if (reportTypes.length === 0) {
-      console.log('❌ BatchPrintModal: No report types selected');
       setError('Please select at least one report type');
       return;
     }
 
     if (reportTypes.includes('individual') && selectedStaff.length === 0) {
-      console.log('❌ BatchPrintModal: No staff selected for individual reports');
       setError('Please select at least one staff member for individual reports');
       return;
     }
 
-    console.log('📥 BatchPrintModal: Starting download process...');
     setIsProcessing(true);
     setError(null);
     setProgress(null);
@@ -161,26 +148,19 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
     };
 
     try {
-      console.log('📥 BatchPrintModal: Calling generateAndDownloadBatch with options:', options);
       await batchPrintManager.generateAndDownloadBatch(options, setProgress);
-      console.log('✅ BatchPrintModal: Download process completed successfully');
     } catch (err) {
       console.error('Batch download failed:', err);
       setError(err instanceof Error ? err.message : 'Failed to generate batch download');
     } finally {
       setIsProcessing(false);
-      console.log('📥 BatchPrintModal: Download process finished, isProcessing set to false');
     }
   };
 
   const handleClose = () => {
-    console.log('🔒 BatchPrintModal: Close button clicked');
     if (!isProcessing) {
-      console.log('🔒 BatchPrintModal: Cleaning up and closing modal');
       batchPrintManager.cleanup();
       onClose();
-    } else {
-      console.log('⚠️ BatchPrintModal: Cannot close while processing');
     }
   };
 
@@ -348,14 +328,7 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-center space-x-3">
                 <AlertCircle className="w-5 h-5 text-red-600" />
-                <div className="flex-1">
-                  <span className="text-sm text-red-800">{error}</span>
-                  {error.includes('popup') && (
-                    <div className="text-xs text-red-600 mt-1">
-                      💡 Tip: Use the "Download" button instead, or enable popups for this site in your browser settings.
-                    </div>
-                  )}
-                </div>
+                <span className="text-sm text-red-800">{error}</span>
               </div>
             </div>
           )}
