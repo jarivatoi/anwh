@@ -62,6 +62,12 @@ export class IndividualBillGenerator {
     
     console.log(`📄 Filtered ${staffEntries.length} entries for ${staffName} in ${monthNames[month]} ${year}`);
     
+   // Debug: Log all entries for this staff to see their change_description
+   console.log(`🔍 DEBUG: All entries for ${staffName}:`);
+   staffEntries.forEach((entry, index) => {
+     console.log(`  ${index + 1}. Date: ${entry.date}, Shift: ${entry.shift_type}, Change: "${entry.change_description}"`);
+   });
+   
     // Get staff information
     const staffInfo = getStaffInfo(staffName);
     const staffSalary = getStaffSalary(staffName);
@@ -315,9 +321,14 @@ export class IndividualBillGenerator {
           if (entry.change_description && entry.change_description.includes('Special Date:')) {
             const specialMatch = entry.change_description.match(/Special Date:\s*([^;]+)/);
             if (specialMatch && specialMatch[1].trim()) {
+             console.log(`📝 Found special date info for ${entry.assigned_name} on ${entry.date}:`, specialMatch[1].trim());
               // For individual reports: Show FULL remarks text (including after *)
               remarks = specialMatch[1].trim();
+           } else {
+             console.log(`❌ Special date pattern found but no content for ${entry.assigned_name} on ${entry.date}`);
             }
+         } else {
+           console.log(`❌ No special date info found for ${entry.assigned_name} on ${entry.date}, change_description:`, entry.change_description);
           }
         });
         
