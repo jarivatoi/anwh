@@ -140,7 +140,7 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
       (window as any).batchImportMode = true;
       (window as any).batchImportStats = {
         count: 0,
-        staffName: '',
+        staffName: editorName,
         dates: new Set<string>()
       };
       
@@ -172,7 +172,7 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
       // Show summary notification
       const stats = (window as any).batchImportStats;
       if (stats && stats.count > 0) {
-        this.showBatchImportNotification(stats.count, stats.staffName, stats.dates.size);
+        showBatchImportNotification(stats.count, stats.staffName, stats.dates.size);
       }
       
       // Clear batch stats
@@ -184,13 +184,15 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
       
       // Navigate to imported month
       if (importedMonth !== null && importedYear !== null) {
-        // Switch to calendar tab and navigate to imported month
-        setActiveTab('calendar');
-        
         // Dispatch event to navigate calendar to imported month
         window.dispatchEvent(new CustomEvent('navigateToMonth', {
           detail: { month: importedMonth, year: importedYear }
         }));
+        
+        // Switch to calendar tab after navigation
+        setTimeout(() => {
+          setActiveTab('calendar');
+        }, 500);
       }
       
       showSuccess(`PDF import completed: ${successCount} entries added${errorCount > 0 ? `, ${errorCount} failed` : ''}`);
@@ -199,7 +201,10 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
       // Make sure to disable batch mode on error
       (window as any).batchImportMode = false;
       (window as any).batchImportStats = null;
-      alert('PDF import failed. Please try again.');
+      
+      // Show detailed error message
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`PDF import failed: ${errorMessage}\n\nPlease check:\n• PDF file format\n• Network connection\n• Database access`);
     }
   };
 
@@ -320,7 +325,7 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
     }
   };
   
-  // Method to show batch import notification
+  // Method to show batch import notification - moved outside component
   const showBatchImportNotification = (count: number, staffName: string, uniqueDates: number) => {
     const notification = document.createElement('div');
     notification.style.cssText = `

@@ -33,7 +33,7 @@ export const fetchRosterEntries = async (): Promise<RosterEntry[]> => {
 
 export const addRosterEntry = async (formData: RosterFormData, editorName: string): Promise<RosterEntry> => {
   if (!supabase) {
-    throw new Error('Supabase not available. Please configure your Supabase credentials in .env file or src/lib/supabase.ts');
+    throw new Error('Database not available. Please check your connection.');
   }
 
   try {
@@ -79,7 +79,11 @@ export const addRosterEntry = async (formData: RosterFormData, editorName: strin
     return data;
   } catch (error) {
     console.error('❌ Network error adding roster entry:', error);
-    throw error;
+    // Re-throw with more specific error message
+    if (error instanceof Error) {
+      throw new Error(`Import failed: ${error.message}`);
+    }
+    throw new Error('Import failed: Network or database error');
   }
 };
 
