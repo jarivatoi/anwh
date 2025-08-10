@@ -130,7 +130,7 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
         
       } else if (reportType === 'individual') {
         // Generate individual bill for selected staff
-        if (!selectedStaff) {
+        if (!selectedStaff || selectedStaff.trim() === '') {
           throw new Error('Please select a staff member for individual report');
         }
         
