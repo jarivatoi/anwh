@@ -117,7 +117,7 @@ export class RosterListGenerator {
                   const rgbColor = this.hexToRgb(staff.color);
                   doc.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
                   
-                  // Format text with comma separator
+                   cellY += lineHeight * 0.9; // Reduce line spacing to prevent touching borders
                   const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
                   const textWidth = doc.getTextWidth(textToShow);
                   
