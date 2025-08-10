@@ -95,7 +95,17 @@ export class RosterListGenerator {
                 // Calculate starting Y position for vertical centering
                 const totalHeight = totalLines * lineHeight;
                 const cellCenterY = data.cell.y + (data.cell.height / 2);
-                const textStartY = cellCenterY - (totalHeight / 2) + (lineHeight * 0.75); // 0.75 accounts for text baseline
+               
+               // Use different centering for single vs multi-line
+               let textStartY;
+               if (totalLines === 1) {
+                 // For single line: center the line in the cell
+                 textStartY = cellCenterY + (lineHeight * 0.25); // Slight adjustment for text baseline
+               } else {
+                 // For multi-line: center the entire text block
+                 textStartY = cellCenterY - (totalHeight / 2) + (lineHeight * 0.75);
+               }
+               
                 let cellY = textStartY;
                 
                 // Set font to match table
