@@ -56,21 +56,6 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
   const [showMonthlyReports, setShowMonthlyReports] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Sync with parent selectedDate
-  useEffect(() => {
-    if (parentSelectedDate) {
-      setSelectedDate(parentSelectedDate);
-    }
-  }, [parentSelectedDate]);
-
-  // Update parent when local date changes
-  const handleDateChange = (newDate: Date) => {
-    setSelectedDate(newDate);
-    if (parentOnDateChange) {
-      parentOnDateChange(newDate);
-    }
-  };
-
   const { entries: fetchedEntries, loading, error, removeEntry, loadEntries, realtimeStatus } = useRosterData();
 
 
@@ -519,7 +504,7 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
             realtimeStatus={realtimeStatus}
             onRefresh={loadEntries}
             selectedDate={selectedDate}
-            onDateChange={setSelectedDate}
+            onDateChange={handleDateChange}
           />
         ) : activeView === 'log' ? (
           <RosterLogView
