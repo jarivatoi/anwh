@@ -95,17 +95,7 @@ export class RosterListGenerator {
                 // Calculate starting Y position for vertical centering
                 const totalHeight = totalLines * lineHeight;
                 const cellCenterY = data.cell.y + (data.cell.height / 2);
-               
-               // Use different centering for single vs multi-line
-               let textStartY;
-               if (totalLines === 1) {
-                 // For single line: center the line in the cell
-                 textStartY = cellCenterY + (lineHeight * 0.25); // Slight adjustment for text baseline
-               } else {
-                 // For multi-line: center the entire text block
-                 textStartY = cellCenterY - (totalHeight / 2) + (lineHeight * 0.75);
-               }
-               
+                const textStartY = cellCenterY - (totalHeight / 2) + (lineHeight * 0.75); // 0.75 accounts for text baseline
                 let cellY = textStartY;
                 
                 // Set font to match table
@@ -117,7 +107,7 @@ export class RosterListGenerator {
                   const rgbColor = this.hexToRgb(staff.color);
                   doc.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
                   
-                   cellY += lineHeight * 0.9; // Reduce line spacing to prevent touching borders
+                  // Format text with comma separator
                   const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
                   const textWidth = doc.getTextWidth(textToShow);
                   
