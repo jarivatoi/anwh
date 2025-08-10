@@ -80,7 +80,6 @@ export class RosterListGenerator {
                 let tempX = 0;
                    // Calculate how much width we lose from comma removal at line breaks
                    let widthReduction = 0;
-                   let tempX = 0;
                    
                    // Create the full text string to check total width
                    const fullText = staffNamesData.map((staff, index) => 
@@ -104,6 +103,10 @@ export class RosterListGenerator {
                    // Adjust the full text width by subtracting the lost commas
                    const adjustedTextWidth = fullTextWidth - widthReduction;
                    
+                staffNamesData.forEach((staff, index) => {
+                  const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
+                  const textWidth = doc.getTextWidth(textToShow);
+                  
                   if (tempX + textWidth > maxWidth && tempX > 0) {
                     totalLines++;
                     tempX = doc.getTextWidth(staff.name);
@@ -115,10 +118,10 @@ export class RosterListGenerator {
                 const totalHeight = totalLines * lineHeight;
                    
                    // Create the full text string to check total width
-                   const fullText = staffNamesData.map((staff, index) => 
+                   const fullText2 = staffNamesData.map((staff, index) => 
                      index === 0 ? staff.name : `, ${staff.name}`
                    ).join('');
-                   const fullTextWidth = doc.getTextWidth(fullText);
+                   const fullTextWidth2 = doc.getTextWidth(fullText2);
                    
                    // Determine if this is multi-line based on text width vs cell width
                    const isMultiLine = adjustedTextWidth > maxWidth;
@@ -126,26 +129,26 @@ export class RosterListGenerator {
                    let cellY;
                    if (isMultiLine) {
                      // Multi-line: Calculate proper centering
-                     let totalLines = 1;
-                     let tempX = 0;
+                     let totalLines2 = 1;
+                     let tempX2 = 0;
                      
                      // Calculate how many lines we'll need
                      staffNamesData.forEach((staff, index) => {
                        const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
                        const textWidth = doc.getTextWidth(textToShow);
                        
-                       if (tempX + textWidth > maxWidth && tempX > 0) {
-                         totalLines++;
-                         tempX = doc.getTextWidth(staff.name);
+                       if (tempX2 + textWidth > maxWidth && tempX2 > 0) {
+                         totalLines2++;
+                         tempX2 = doc.getTextWidth(staff.name);
                        } else {
-                         tempX += textWidth;
+                         tempX2 += textWidth;
                        }
                      });
                      
                      // Calculate starting Y position for multi-line centering
-                     const totalHeight = totalLines * lineHeight;
+                     const totalHeight2 = totalLines2 * lineHeight;
                      const cellCenterY = data.cell.y + (data.cell.height / 2);
-                     cellY = cellCenterY - (totalHeight / 2) + (lineHeight * 0.75);
+                     cellY = cellCenterY - (totalHeight2 / 2) + (lineHeight * 0.75);
                    } else {
                      // Single line: Use simple centering
                      cellY = data.cell.y + (data.cell.height / 2) + (lineHeight * 0.25);
