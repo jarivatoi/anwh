@@ -1,469 +1,439 @@
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { RosterEntry } from '../../types/roster';
+import React, { useState, useEffect, useCallback } from 'react';
+import { X, Check } from 'lucide-react';
+import { SHIFTS } from '../constants';
+import { DaySchedule, SpecialDates } from '../types';
 
-export interface RosterListOptions {
-  month: number;
-  year: number;
-  entries: RosterEntry[];
+interface ShiftModalProps {
+  selectedDate: string | null;
+  schedule: DaySchedule;
+  specialDates: SpecialDates;
+  onToggleShift: (shiftId: string) => void;
+  onToggleSpecialDate: (dateKey: string, isSpecial: boolean) => void;
+  onClose: () => void;
 }
 
-export class RosterListGenerator {
-  
-  /**
-   * Generate roster list matching the PDF template format - all on one page
-   */
-  async generateRosterList(options: RosterListOptions): Promise<void> {
-    const { month, year, entries } = options;
-    
-    console.log('📄 Generating roster list');
-    
-    // Create PDF document - A4 portrait
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    });
-    
-    const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    
-    // Header
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`X-Ray Roster for month of ${monthNames[month]} ${year}`, doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
-    
-    // Filter entries for the specified month/year
-    const monthEntries = entries.filter(entry => {
-      const entryDate = new Date(entry.date);
-      return entryDate.getMonth() === month && entryDate.getFullYear() === year;
-    });
-    
-    console.log(`📄 Filtered ${monthEntries.length} entries for ${monthNames[month]} ${year}`);
-    
-    if (monthEntries.length === 0) {
-      // Show "No data" message
-      doc.setFontSize(14);
-      doc.text('No roster entries found for this month', doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
-    } else {
-      // Create table data with colored text
-      const tableData = this.createColoredTableData(monthEntries);
-      
-      // Create table with new column structure
-      autoTable(doc, {
-        startY: 35,
-        head: [['Date', 'Shift', 'Staff Names', 'Remarks']],
-        body: tableData,
-        willDrawCell: (data) => {
-          // Clear staff names column content to prevent default rendering
-          if (data.column.index === 2 && data.section === 'body') {
-            data.cell.text = [];
-          }
-        },
-        didDrawCell: (data) => {
-          // Only draw custom colored text for staff names column in body
-          if (data.column.index === 2 && data.section === 'body' && data.row.index >= 0) {
-            // Get the staff data for this specific row
-            if (data.row.index < tableData.length) {
-              const originalRow = tableData[data.row.index];
-              const staffNamesData = this.getStaffNamesForRow(originalRow[0], originalRow[1], entries);
-              
-              if (staffNamesData && staffNamesData.length > 0) {
-                // Start drawing from left edge of cell with proper margin
-                let currentX = data.cell.x + 2;
-                let currentLine = 0;
-                const lineHeight = 2.5;
-                const maxWidth = data.cell.width - 6; // Increased margin for better spacing
-                let totalLines = 1;
-                let tempX = 0;
-                
-                // Pre-calculate how many lines we'll need
-                staffNamesData.forEach((staff, index) => {
-                  const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
-                  // Use smaller font for width calculation
-                  doc.setFontSize(7);
-                  const textWidth = doc.getTextWidth(textToShow);
-                  
-                  if (tempX + textWidth > maxWidth && index > 0) {
-                    totalLines++;
-                    tempX = doc.getTextWidth(staff.name); // Reset with just the name (no comma)
-                  } else {
-                    tempX += textWidth;
-                  }
-                });
-                
-                // Calculate starting Y position for vertical centering
-                const totalHeight = totalLines * lineHeight;
-                let cellY = data.cell.y + (data.cell.height / 2) - (totalHeight / 2) + 2;
-                
-                // Set font to match table
-                doc.setFontSize(7);
-                doc.setFont('helvetica', 'normal');
-                
-                staffNamesData.forEach((staff, index) => {
-                  // Set individual color for this staff member
-                  const rgbColor = this.hexToRgb(staff.color);
-                  doc.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
-                  
-                  // Format text with comma separator (but not at start of new lines)
-                  const isFirstOnLine = currentX === data.cell.x + 2;
-                  const textToShow = (index === 0 || isFirstOnLine) ? staff.name : `, ${staff.name}`;
-                  
-                  // Calculate width including potential comma at end of line
-                  const textWidth = doc.getTextWidth(textToShow);
-                  const commaWidth = doc.getTextWidth(',');
-                  const willNeedCommaAtEnd = index < staffNamesData.length - 1; // Not the last name
-                  const totalWidthNeeded = textWidth + (willNeedCommaAtEnd ? commaWidth : 0);
-                  
-                  // Check if text (including comma) would exceed cell width (with 4mm margin)
-                  
-                  // If text (including comma) would exceed width, move to next line
-                  if (currentX + totalWidthNeeded > data.cell.x + data.cell.width - 8 && index > 0) {
-                    // Add comma after the PREVIOUS name (the last name on the current line)
-                    doc.text(',', currentX, cellY);
-                    
-                    currentX = data.cell.x + 3; // Reset to left margin
-                    cellY += lineHeight; // Move down for next line
-                    
-                    // Recalculate text without comma for new line
-                    const newLineText = staff.name;
-                    const newLineWidth = doc.getTextWidth(newLineText);
-                    
-                    // Draw the text at current position (no comma at start of line)
-                    doc.text(newLineText, currentX, cellY);
-                    currentX += newLineWidth;
-                  } else {
-                    // Draw the text at current position
-                    doc.text(textToShow, currentX, cellY);
-                    currentX += textWidth;
-                  }
-                });
-                
-                // Reset color for other cells
-                doc.setTextColor(0, 0, 0);
-              }
-            }
-          }
-        },
-        styles: {
-          fontSize: 8,
-          cellPadding: 2,
-          overflow: 'linebreak',
-          halign: 'left',
-          valign: 'middle',
-          lineWidth: 0.25,
-          lineColor: [0, 0, 0]
-        },
-        headStyles: {
-          fillColor: [220, 220, 220],
-          textColor: [0, 0, 0],
-          fontStyle: 'bold',
-          fontSize: 9,
-          halign: 'center',
-          valign: 'middle',
-          lineWidth: 0.25,
-          lineColor: [0, 0, 0]
-        },
-        bodyStyles: {
-          lineWidth: 0.25,
-          lineColor: [0, 0, 0]
-        },
-        columnStyles: {
-          0: { cellWidth: 35, halign: 'left', valign: 'middle' },   // Date (fixed width)
-          1: { cellWidth: 45, halign: 'left', valign: 'middle' },   // Shift (fixed width)
-          2: { cellWidth: 80, halign: 'left', valign: 'middle' },   // Staff Names (80mm width)
-          3: { halign: 'center', valign: 'middle' }   // Remarks (center aligned)
-        },
-        tableLineWidth: 0.25,
-        tableLineColor: [0, 0, 0]
-      });
-    }
-    
-    // Footer
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.text(`Generated on: ${new Date().toLocaleString()}`, 10, doc.internal.pageSize.getHeight() - 15);
-    doc.text(`Total Entries: ${monthEntries.length}`, doc.internal.pageSize.getWidth() - 10, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
-    
-    // Save
-    const filename = `Roster_List_${monthNames[month]}_${year}.pdf`;
-    doc.save(filename);
-    
-    console.log('✅ Roster list generated:', filename);
-  }
-  
-  /**
-   * Prepare roster table data in new tabular format
-   */
-  private prepareRosterTableData(entries: RosterEntry[]): string[][] {
-    // Group entries by date and shift type
-    const groupedData: Record<string, Record<string, RosterEntry[]>> = {};
-    
-    entries.forEach(entry => {
-      const dateKey = entry.date;
-      const shiftType = entry.shift_type;
-      
-      if (!groupedData[dateKey]) {
-        groupedData[dateKey] = {};
-      }
-      if (!groupedData[dateKey][shiftType]) {
-        groupedData[dateKey][shiftType] = [];
-      }
-      groupedData[dateKey][shiftType].push(entry);
-    });
-    
-    // Convert to table rows
-    const tableData: string[][] = [];
-    
-    // Sort dates
-    const sortedDates = Object.keys(groupedData).sort();
-    
-    sortedDates.forEach(date => {
-      const shiftData = groupedData[date];
-      
-      // Define shift order for consistent display
-      const shiftOrder = [
-        'Morning Shift (9-4)',
-        'Saturday Regular (12-10)', 
-        'Evening Shift (4-10)',
-        'Night Duty',
-        'Sunday/Public Holiday/Special'
-      ];
-      
-      // Process shifts in order
-      shiftOrder.forEach(shiftType => {
-        const shiftEntries = shiftData[shiftType];
-        if (!shiftEntries || shiftEntries.length === 0) return;
-        
-        // Get staff names with color indicators
-        const staffNamesWithColors = this.formatStaffNamesWithColors(shiftEntries);
-        
-        // Get remarks from special date info
-        const remarks = this.extractRemarks(shiftEntries);
-        
-        // Format shift type for display
-        const formattedShift = this.formatShiftTypeForList(shiftType);
-        
-        tableData.push([
-          this.formatDateForList(date),  // DDD dd-mmm-yyyy
-          formattedShift,                // Shift type
-          staffNamesWithColors,          // Staff names with color indicators
-          remarks                        // Remarks
-        ]);
-      });
-    });
-    
-    return tableData;
-  }
-  
-  /**
-   * Format staff names with actual text colors based on their edit status
-   */
-  private formatStaffNamesWithColors(entries: RosterEntry[]): { text: string; color: number[] }[] {
-    return entries.map(entry => {
-      const staffName = entry.assigned_name;
-      const textColor = this.getTextColor(entry);
-      
-      return {
-        text: staffName,
-        color: this.hexToRgb(textColor)
-      };
-    });
-  }
-  
-  /**
-   * Get actual text color for staff name based on edit status
-   */
-  private getTextColor(entry: RosterEntry): string {
-    // HIGHEST PRIORITY: Admin-set text color
-    if (entry.text_color) {
-      return entry.text_color;
-    }
-    
-    // Check if entry has been reverted to original
-    const hasBeenReverted = () => {
-      if (!entry.change_description) return false;
-      
-      // Check if we have original PDF assignment stored
-      const originalPdfMatch = entry.change_description.match(/\(Original PDF: ([^)]+)\)/);
-      if (originalPdfMatch) {
-        let originalPdfAssignment = originalPdfMatch[1].trim();
-        
-        // Fix missing closing parenthesis if it exists
-        if (originalPdfAssignment.includes('(R') && !originalPdfAssignment.includes('(R)')) {
-          originalPdfAssignment = originalPdfAssignment.replace('(R', '(R)');
-        }
-        
-        // Check if current assignment matches original PDF assignment (reverted to original)
-        return entry.assigned_name === originalPdfAssignment;
-      }
-      
-      return false;
-    };
-    
-    // Check if entry has been edited (name changed)
-    const hasBeenEdited = entry.change_description && 
-                         entry.change_description.includes('Name changed from') &&
-                         entry.last_edited_by;
+export const ShiftModal: React.FC<ShiftModalProps> = ({
+  selectedDate,
+  schedule,
+  specialDates,
+  onToggleShift,
+  onToggleSpecialDate,
+  onClose
+}) => {
+  const [isSpecialDate, setIsSpecialDate] = useState(false);
+  const [localSchedule, setLocalSchedule] = useState<Record<string, string[]>>({});
 
-    if (hasBeenReverted()) {
-      return '#059669'; // Green for reverted entries (back to original PDF by ADMIN)
-    } else if (hasBeenEdited) {
-      return '#dc2626'; // Red for edited entries (by non-ADMIN users)
+  // Initialize special date state when modal opens
+  useEffect(() => {
+    if (selectedDate) {
+      setIsSpecialDate(specialDates[selectedDate] === true);
+      setLocalSchedule(schedule);
+    }
+  }, [selectedDate, specialDates, schedule]);
+
+  // Update local schedule when parent schedule changes
+  useEffect(() => {
+    setLocalSchedule(schedule);
+  }, [schedule]);
+
+  const handleShiftToggle = (shiftId: string) => {
+    if (!selectedDate) return;
+    
+    const currentShifts = localSchedule[selectedDate] || [];
+    
+    // Update local state immediately for instant visual feedback
+    if (currentShifts.includes(shiftId)) {
+      // Remove shift
+      const updatedShifts = currentShifts.filter(id => id !== shiftId);
+      setLocalSchedule(prev => ({
+        ...prev,
+        [selectedDate]: updatedShifts
+      }));
     } else {
-      return '#000000'; // Black for original entries
-    }
-  }
-  
-  /**
-   * Convert hex color to RGB array for jsPDF
-   */
-  private hexToRgb(hex: string): number[] {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? [
-      parseInt(result[1], 16),
-      parseInt(result[2], 16),
-      parseInt(result[3], 16)
-    ] : [0, 0, 0]; // Default to black if parsing fails
-  }
-  
-  /**
-   * Get staff names data for a specific row during PDF generation
-   */
-  private getStaffNamesForRow(date: string, shiftType: string, entries: RosterEntry[]): { name: string; color: string }[] {
-    // Find entries that match this date and shift
-    const matchingEntries = entries.filter(entry => {
-      const formattedDate = this.formatDateForList(entry.date);
-      const formattedShift = this.formatShiftTypeForList(entry.shift_type);
-      return formattedDate === date && formattedShift === shiftType;
-    });
-    
-    return matchingEntries.map(entry => ({
-      name: entry.assigned_name,
-      color: this.getTextColor(entry)
-    }));
-  }
-  
-  /**
-   * Create table data with combined staff names but individual colors
-   */
-  private createColoredTableData(entries: RosterEntry[]): any[] {
-    // Group entries by date and shift type
-    const groupedData: Record<string, Record<string, RosterEntry[]>> = {};
-    
-    entries.forEach(entry => {
-      const dateKey = entry.date;
-      const shiftType = entry.shift_type;
-      
-      if (!groupedData[dateKey]) {
-        groupedData[dateKey] = {};
-      }
-      if (!groupedData[dateKey][shiftType]) {
-        groupedData[dateKey][shiftType] = [];
-      }
-      groupedData[dateKey][shiftType].push(entry);
-    });
-    
-    // Convert to table rows with colored text
-    const tableData: any[] = [];
-    
-    // Sort dates
-    const sortedDates = Object.keys(groupedData).sort();
-    
-    sortedDates.forEach(date => {
-      const shiftData = groupedData[date];
-      
-      // Define shift order for consistent display
-      const shiftOrder = [
-        'Morning Shift (9-4)',
-        'Saturday Regular (12-10)', 
-        'Evening Shift (4-10)',
-        'Night Duty',
-        'Sunday/Public Holiday/Special'
-      ];
-      
-      // Process shifts in order
-      shiftOrder.forEach(shiftType => {
-        const shiftEntries = shiftData[shiftType];
-        if (!shiftEntries || shiftEntries.length === 0) return;
-        
-        // Get remarks from special date info
-        const remarks = this.extractRemarks(shiftEntries);
-        
-        // Format shift type for display
-        const formattedShift = this.formatShiftTypeForList(shiftType);
-        
-        // Combine all staff names with individual colors
-        const staffNamesWithColors = shiftEntries.map(entry => ({
-          name: entry.assigned_name,
-          color: this.getTextColor(entry)
+      // Add shift if allowed
+      if (canSelectShift(shiftId, selectedDate)) {
+        setLocalSchedule(prev => ({
+          ...prev,
+          [selectedDate]: [...currentShifts, shiftId]
         }));
-        
-        // Create single row with combined staff names
-        const row = [
-          this.formatDateForList(date),
-          formattedShift,
-          staffNamesWithColors.map(s => s.name).join(', '), // Convert to string for display
-          remarks
-        ];
-        
-        tableData.push(row);
-      });
-    });
-    
-    return tableData;
-  }
-  
-  /**
-   * Extract remarks from entries (special date info)
-   */
-  private extractRemarks(entries: RosterEntry[]): string {
-    // Look for special date information in change descriptions
-    for (const entry of entries) {
-      if (entry.change_description && entry.change_description.includes('Special Date:')) {
-        const match = entry.change_description.match(/Special Date:\s*([^;]+)/);
-        if (match && match[1].trim()) {
-          // Only show text before asterisk (*) if asterisk exists
-          const fullRemarks = match[1].trim();
-          return fullRemarks.includes('*') ? fullRemarks.split('*')[0].trim() : fullRemarks;
-        }
       }
     }
-    return ''; // No special remarks
-  }
-  
-  /**
-   * Format date as DDD dd-mmm-yyyy (e.g., "Mon 01-Jul-2025")
-   */
-  private formatDateForList(dateString: string): string {
+    
+    // Then call parent handler for persistence
+    onToggleShift(shiftId);
+  };
+
+  // Function to scroll back to the edited date when modal closes
+  const handleCloseWithFocus = useCallback(() => {
+    if (selectedDate) {
+      // Parse the date to get the day number
+      const dateObj = new Date(selectedDate);
+      const dayNumber = dateObj.getDate();
+      
+      // Close the modal first
+      onClose();
+      
+      // Use setTimeout to ensure modal is closed before scrolling
+      setTimeout(() => {
+        // Find the date element using the data-day attribute
+        const dateElement = document.querySelector(`[data-day="${dayNumber}"]`) as HTMLElement;
+        
+        if (dateElement) {
+          console.log(`📍 Scrolling back to date ${dayNumber}`);
+          
+          // Scroll the element into view with smooth behavior
+          dateElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',    // Center the element vertically
+            inline: 'center'    // Center the element horizontally
+          });
+          
+          // Optional: Add a brief highlight effect to show which date was edited
+          dateElement.style.transition = 'all 0.3s ease';
+          dateElement.style.transform = 'scale(1.05)';
+          dateElement.style.boxShadow = '0 0 20px rgba(99, 102, 241, 0.5)';
+          
+          // Remove highlight after animation
+          setTimeout(() => {
+            dateElement.style.transform = '';
+            dateElement.style.boxShadow = '';
+          }, 600);
+        } else {
+          console.warn(`⚠️ Could not find date element for day ${dayNumber}`);
+        }
+      }, 100); // Small delay to ensure modal close animation completes
+    } else {
+      // Fallback to normal close if no selected date
+      onClose();
+    }
+  }, [selectedDate, onClose]);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (selectedDate) {
+      // Disable body scroll
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = '0';
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.bottom = '0';
+    }
+
+    return () => {
+      // Re-enable body scroll
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.bottom = '';
+    };
+  }, [selectedDate]);
+
+  // Close modal when clicking outside
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      handleCloseWithFocus();
+    }
+  };
+
+  // Close modal on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleCloseWithFocus();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [handleCloseWithFocus]);
+
+  if (!selectedDate) return null;
+
+  const canSelectShift = (shiftId: string, dateKey: string) => {
+    const currentShifts = localSchedule[dateKey] || [];
+    
+    // 9-4 and 12-10 cannot overlap
+    if (shiftId === '9-4' && currentShifts.includes('12-10')) return false;
+    if (shiftId === '12-10' && currentShifts.includes('9-4')) return false;
+    
+    // 12-10 and 4-10 cannot overlap
+    if (shiftId === '12-10' && currentShifts.includes('4-10')) return false;
+    if (shiftId === '4-10' && currentShifts.includes('12-10')) return false;
+    
+    return true;
+  };
+
+  const getDayOfWeek = (dateString: string) => {
     const date = new Date(dateString);
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return date.getDay(); // 0 = Sunday, 6 = Saturday
+  };
+
+  const getValidShiftsForDate = (dateString: string, isSpecial: boolean) => {
+    const dayOfWeek = getDayOfWeek(dateString);
+    const validShiftIds: string[] = [];
+    
+    // Special date logic
+    if (isSpecial) {
+      // On special dates, allow 9-4, 4-10, and N (but not 12-10)
+      validShiftIds.push('9-4', '4-10', 'N');
+    } else {
+      // Regular day logic
+      if (dayOfWeek === 6) { // Saturday
+        validShiftIds.push('12-10', 'N');
+      } else if (dayOfWeek === 0) { // Sunday
+        validShiftIds.push('9-4', '4-10', 'N');
+      } else { // Weekdays (Monday-Friday)
+        validShiftIds.push('4-10', 'N');
+      }
+    }
+    
+    // Filter SHIFTS array to only include valid shifts
+    return SHIFTS.filter(shift => validShiftIds.includes(shift.id));
+  };
+
+  const formatDateDisplay = (dateString: string) => {
+    const date = new Date(dateString);
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     
     const dayName = dayNames[date.getDay()];
     const day = date.getDate().toString().padStart(2, '0');
-    const monthName = monthNames[date.getMonth()];
+    const month = monthNames[date.getMonth()];
     const year = date.getFullYear();
     
-    return `${dayName} ${day}-${monthName}-${year}`;
-  }
-  
-  /**
-   * Format shift type for list display
-   */
-  private formatShiftTypeForList(shiftType: string): string {
-    const shortNames: Record<string, string> = {
-      'Morning Shift (9-4)': 'Morning Shift (9-4)',
-      'Evening Shift (4-10)': 'Evening Shift (4-10)', 
-      'Saturday Regular (12-10)': 'Saturday Regular (12-10)',
-      'Night Duty': 'Night Duty',
-      'Sunday/Public Holiday/Special': 'Sunday/Public Holiday/Special'
+    return {
+      dayName,
+      dateString: `${day}-${month}-${year}`
     };
-    return shortNames[shiftType] || shiftType;
-  }
-}
+  };
 
-// Create singleton instance
-export const rosterListGenerator = new RosterListGenerator();
+  const handleSpecialDateToggle = async () => {
+    const newSpecialState = !isSpecialDate;
+    setIsSpecialDate(newSpecialState);
+    
+    // Update parent state immediately
+    onToggleSpecialDate(selectedDate, newSpecialState);
+    
+    const currentShifts = schedule[selectedDate] || [];
+    
+    if (newSpecialState) {
+      // If we're ENABLING special date status, remove any 12-10 shifts (not allowed on special dates)
+      if (currentShifts.includes('12-10')) {
+        onToggleShift('12-10'); // This will remove the 12-10 shift
+      }
+    } else {
+      // If we're DISABLING special date status, remove any 9-4 shifts that are no longer valid
+      const dayOfWeek = getDayOfWeek(selectedDate);
+      
+      // If it's not Sunday and we're removing special date status, remove 9-4 shifts
+      if (dayOfWeek !== 0 && currentShifts.includes('9-4')) {
+        onToggleShift('9-4'); // This will remove the 9-4 shift
+      }
+    }
+  };
+
+  const { dayName, dateString } = formatDateDisplay(selectedDate);
+  const dayOfWeek = getDayOfWeek(selectedDate);
+  const isSunday = dayOfWeek === 0;
+  
+  // Get only valid shifts for this date
+  const validShifts = getValidShiftsForDate(selectedDate, isSpecialDate);
+
+  return (
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto"
+      onClick={handleBackdropClick}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 99999, // Higher z-index to ensure it's above everything
+        // CRITICAL: Enable touch scrolling on the backdrop
+        WebkitOverflowScrolling: 'touch',
+        touchAction: 'pan-y', // Allow vertical panning (scrolling)
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+        padding: window.innerWidth > window.innerHeight ? '4px' : '16px',
+        paddingTop: window.innerWidth > window.innerHeight ? '2px' : '16px'
+      }}
+    >
+      <div 
+        className="bg-white rounded-2xl shadow-2xl max-w-md w-full select-none" 
+        style={{ 
+          userSelect: 'none', 
+          WebkitUserSelect: 'none',
+          WebkitTouchCallout: 'none',
+          marginTop: window.innerWidth > window.innerHeight ? '2px' : '2rem',
+          marginBottom: window.innerWidth > window.innerHeight ? '2px' : '2rem',
+          maxWidth: window.innerWidth > window.innerHeight ? '95vw' : '28rem',
+          maxHeight: window.innerWidth > window.innerHeight ? '98vh' : 'none',
+          transform: 'translate3d(0, 0, 0)',
+          backfaceVisibility: 'hidden'
+        }}
+        onClick={(e) => {
+          // Prevent modal from closing when clicking inside
+          e.stopPropagation();
+        }}
+      >
+        {/* Header with close button and auto-save indicator */}
+        <div className="relative pb-4 border-b border-gray-200 flex-shrink-0" style={{
+          padding: window.innerWidth > window.innerHeight ? '8px' : '24px'
+        }}>
+          <button
+            onClick={handleCloseWithFocus}
+            className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200 select-none z-10"
+            style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
+          >
+            <X className="w-5 h-5" />
+          </button>
+          
+          {/* Auto-save indicator */}
+          <div className="flex items-center justify-center space-x-2 mb-4">
+            <Check className="w-4 h-4 text-green-600" />
+            <span className="text-sm text-green-600 font-medium select-none">Changes saved automatically</span>
+          </div>
+
+          {/* Date info - centered */}
+          <div className="text-center">
+            <h3 className="text-xl font-bold text-gray-900 mb-1 select-none">
+              {dayName}
+            </h3>
+            <p className="text-lg text-gray-700 select-none">
+              {dateString}
+            </p>
+          </div>
+        </div>
+
+        {/* Scrollable content with ENHANCED TOUCH SUPPORT */}
+        <div 
+          className="overflow-y-auto flex-1"
+          style={{
+            // CRITICAL: Enable smooth touch scrolling
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y', // Allow vertical panning (scrolling)
+            overscrollBehavior: 'contain', // Prevent scroll chaining to parent
+            maxHeight: window.innerWidth > window.innerHeight ? 'calc(98vh - 100px)' : '70vh',
+            padding: window.innerWidth > window.innerHeight ? '8px' : '24px'
+          }}
+        >
+          {/* Special Date Checkbox - only show if not Sunday */}
+          {(
+            <div className="flex items-center justify-center space-x-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg mb-4">
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isSpecialDate}
+                  onChange={handleSpecialDateToggle}
+                  className="w-4 h-4 text-yellow-600 focus:ring-yellow-500 focus:ring-2 rounded"
+                />
+                <span className="text-sm font-medium text-yellow-800 select-none">
+                  Special Date
+                </span>
+              </label>
+            </div>
+          )}
+          
+          {/* Sunday info message - only show if NOT special */}
+          {isSunday && !isSpecialDate && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg mb-4">
+              <p className="text-xs text-blue-800 text-center select-none">
+                <strong>Sunday:</strong> Available shifts for this day
+              </p>
+            </div>
+          )}
+          
+          {/* Special date info message */}
+          {isSpecialDate && (
+            <div className="p-2 bg-yellow-100 border border-yellow-300 rounded-lg mb-4">
+              <p className="text-xs text-yellow-800 text-center select-none">
+                <strong>Special Date:</strong> {isSunday ? 'Sunday marked as special' : 'Available shifts for this special day'}
+              </p>
+            </div>
+          )}
+
+          {/* Show day type and available shifts count */}
+          <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg mb-4">
+            <p className="text-sm text-gray-700 text-center select-none">
+              <strong>
+                {isSpecialDate ? 'Special Date' : 
+                 dayOfWeek === 0 ? 'Sunday' :
+                 dayOfWeek === 6 ? 'Saturday' : 'Weekday'}
+              </strong> • {validShifts.length} shift{validShifts.length !== 1 ? 's' : ''} available
+            </p>
+          </div>
+
+          {/* Shift options - ONLY VALID SHIFTS */}
+          <div className="space-y-3 mb-6">
+            {validShifts.map(shift => {
+              const isSelected = (localSchedule[selectedDate] || []).includes(shift.id);
+              const canSelect = canSelectShift(shift.id, selectedDate);
+              const isDisabled = !isSelected && !canSelect;
+
+              return (
+                <button
+                  key={shift.id}
+                  onClick={() => handleShiftToggle(shift.id)}
+                  disabled={isDisabled}
+                  className={`w-full p-4 rounded-lg border-2 text-center transition-all duration-200 select-none ${
+                    isSelected
+                      ? `${shift.color} border-current shadow-md transform scale-[1.02]`
+                      : isDisabled
+                        ? 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed opacity-50'
+                        : 'bg-white border-gray-300 hover:border-gray-400 hover:bg-gray-50 active:bg-gray-100'
+                  }`}
+                  style={{ 
+                    userSelect: 'none', 
+                    WebkitUserSelect: 'none',
+                    // CRITICAL: Fix touch events
+                    touchAction: 'manipulation'
+                  }}
+                >
+                  <div className="flex justify-between items-center">
+                    <div className="text-left flex-1">
+                      <div className="font-semibold select-none">{shift.label}</div>
+                      <div className="text-sm opacity-75 select-none">{shift.time}</div>
+                      {isDisabled && (
+                        <div className="text-xs mt-1 text-red-500 select-none">
+                          Cannot combine with current shifts
+                        </div>
+                      )}
+                    </div>
+                    {isSelected && (
+                      <div className="w-6 h-6 bg-current rounded-full flex items-center justify-center">
+                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Show what shifts are not available and why */}
+          {!isSpecialDate && (
+            <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+              <p className="text-xs text-gray-600 text-center select-none">
+                {dayOfWeek === 6 ? (
+                  <>Not showing: Sunday/Special (9-4) and Evening (4-10) - only available on Sundays or Special dates</>
+                ) : dayOfWeek === 0 ? (
+                  <>Not showing: Saturday Regular (12-10) - only available on Saturdays</>
+                ) : (
+                  <>Not showing: Saturday Regular (12-10) and Sunday/Special (9-4) - only available on weekends or special dates</>
+                )}
+              </p>
+            </div>
+          )}
+
+          {/* Add extra padding at bottom to ensure all content is accessible */}
+          <div className="h-8" />
+        </div>
+      </div>
+    </div>
+  );
+};

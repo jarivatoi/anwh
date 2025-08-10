@@ -1,37 +1,60 @@
 import React, { useState } from 'react';
-import { Edit, Info, Eye, EyeOff } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { RosterEntry } from '../types/roster';
-import { ScrollingText } from './ScrollingText';
-import { validateAuthCode, availableNames, isAdminCode } from '../utils/rosterAuth';
+import { StaffSelectionModal } from './StaffSelectionModal';
+import { validateAuthCode, availableNames } from '../utils/rosterAuth';
 import { updateRosterEntry } from '../utils/rosterApi';
+import { useLongPress } from '../hooks/useLongPress';
+import { ScrollingText } from './ScrollingText';
 
 interface RosterCardItemProps {
   entry: RosterEntry;
-  onUpdate: (updatedEntry: RosterEntry) => void;
-  onShowDetails: (entry: RosterEntry) => void;
-  allEntriesForShift: RosterEntry[];
-  isSpecialDate: boolean;
-  specialDateInfo: string | null;
+  onUpdate?: (updatedEntry: RosterEntry) => void;
+  onShowDetails?: (entry: RosterEntry) => void;
+  allEntriesForShift?: RosterEntry[];
+  isSpecialDate?: boolean;
+  specialDateInfo?: string;
 }
 
 export const RosterCardItem: React.FC<RosterCardItemProps> = ({
   entry,
   onUpdate,
   onShowDetails,
-  allEntriesForShift,
-  isSpecialDate,
+  allEntriesForShift = [],
+  isSpecialDate = false,
   specialDateInfo
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showStaffModal, setShowStaffModal] = useState(false);
   const [authCode, setAuthCode] = useState('');
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [authError, setAuthError] = useState('');
-  const [selectedName, setSelectedName] = useState(entry.assigned_name);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Check if entry has been edited
+  // Prevent body scroll when auth modal is open
+  React.useEffect(() => {
+    if (showAuthModal) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = '0';
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.bottom = '0';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.bottom = '';
+    };
+  }, [showAuthModal]);
+
+  // Check if entry has been edited (name changed)
   const hasBeenEdited = (entry: RosterEntry) => {
     return entry.change_description && 
            entry.change_description.includes('Name changed from') &&
@@ -42,28 +65,32 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
   const hasBeenReverted = (entry: RosterEntry) => {
     if (!entry.change_description) return false;
     
+    // Check if we have original PDF assignment stored
     const originalPdfMatch = entry.change_description.match(/\(Original PDF: ([^)]+)\)/);
     if (originalPdfMatch) {
       let originalPdfAssignment = originalPdfMatch[1].trim();
       
+      // Fix missing closing parenthesis if it exists
       if (originalPdfAssignment.includes('(R') && !originalPdfAssignment.includes('(R)')) {
         originalPdfAssignment = originalPdfAssignment.replace('(R', '(R)');
       }
       
+      // Check if current assignment matches original PDF assignment (reverted to original)
       return entry.assigned_name === originalPdfAssignment;
     }
     
     return false;
   };
 
-  // Get text color based on entry status
-  const getTextColor = (entry: RosterEntry) => {
+  // Get text color based on edit status
+  const getTextColor = () => {
+    // HIGHEST PRIORITY: Admin-set text color
     if (entry.text_color) {
       return entry.text_color;
     }
     
     if (hasBeenReverted(entry)) {
-      return '#059669'; // Green for reverted entries
+      return '#059669'; // Green for reverted entries (back to original PDF)
     } else if (hasBeenEdited(entry)) {
       return '#dc2626'; // Red for edited entries
     } else {
@@ -71,13 +98,21 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
     }
   };
 
-  // Handle edit click
-  const handleEditClick = () => {
-    setShowAuthModal(true);
-  };
+  const longPressHandlers = useLongPress({
+    onLongPress: () => {
+      console.log('🔥 Long press detected on entry:', entry.id);
+      setShowAuthModal(true);
+    },
+    onDoublePress: () => {
+      if (hasBeenEdited(entry) && onShowDetails && entry.last_edited_by !== 'ADMIN') {
+        console.log('👆👆 Double press detected on edited entry:', entry.id);
+        onShowDetails(entry);
+      }
+    },
+    delay: 5000
+  });
 
-  // Handle authentication
-  const handleAuthSubmit = async () => {
+  const handleAuthSubmit = () => {
     const editorName = validateAuthCode(authCode);
     if (!editorName) {
       setAuthError('Invalid authentication code');
@@ -85,101 +120,264 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
     }
     
     setShowAuthModal(false);
-    setIsEditing(true);
+    setShowStaffModal(true);
     setAuthError('');
   };
 
-  // Handle save changes
-  const handleSaveChanges = async () => {
-    if (!selectedName || selectedName === entry.assigned_name) {
-      setIsEditing(false);
+  const handleStaffSelect = async (newStaffName: string) => {
+    await handleStaffSelectWithColor(newStaffName);
+  };
+
+  const handleStaffSelectWithColor = async (newStaffName: string, textColor?: string) => {
+    if (newStaffName === entry.assigned_name) {
+      setShowStaffModal(false);
       return;
     }
-    
+
     setIsUpdating(true);
-    
+    setIsEditing(true);
     try {
       const editorName = validateAuthCode(authCode);
       if (!editorName) return;
 
       const updatedEntry = await updateRosterEntry(entry.id, {
-        assigned_name: selectedName,
-        change_description: `Name changed from "${entry.assigned_name}" to "${selectedName}" by ${editorName}`,
-        last_edited_by: editorName,
-        last_edited_at: new Date().toISOString()
-      });
-      
-      onUpdate(updatedEntry);
-      setIsEditing(false);
+        date: entry.date,
+        shiftType: entry.shift_type,
+        assignedName: newStaffName,
+        changeDescription: `Name changed from "${entry.assigned_name}" to "${newStaffName}"`,
+        textColor: textColor
+      }, editorName);
+
+      if (onUpdate) {
+        onUpdate(updatedEntry);
+      }
+
+      setShowStaffModal(false);
       setAuthCode('');
-      
     } catch (error) {
       console.error('Failed to update entry:', error);
       alert('Failed to update entry. Please try again.');
     } finally {
       setIsUpdating(false);
+      // Keep editing animation for a bit longer to show the change
+      setTimeout(() => setIsEditing(false), 1000);
     }
   };
 
-  // Handle cancel edit
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-    setSelectedName(entry.assigned_name);
+  const handleCancelAuth = () => {
+    setShowAuthModal(false);
     setAuthCode('');
     setAuthError('');
   };
 
+  const handleCancelStaffSelection = () => {
+    setShowStaffModal(false);
+    setAuthCode('');
+  };
+
   return (
     <>
-      <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded group">
-        <div className="flex-1 min-w-0">
-          <ScrollingText 
-            text={entry.assigned_name}
-            className="text-sm font-medium"
-            style={{ color: getTextColor(entry) }}
-          />
-        </div>
+      <div
+        {...longPressHandlers}
+        style={{
+          padding: '4px 2px',
+          margin: 0,
+          textAlign: 'center',
+          fontSize: window.innerWidth > window.innerHeight ? '10px' : '12px',
+          fontWeight: '500',
+          color: getTextColor(),
+          cursor: 'pointer',
+          touchAction: 'manipulation',
+          WebkitTapHighlightColor: 'transparent',
+          border: 'none',
+          outline: 'none',
+          background: 'transparent',
+          width: '100%',
+          maxWidth: '100%',
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '32px',
+          position: 'relative',
+          zIndex: 60,
+          // Add pulsing animation only for special dates with actual info
+         animation: isEditing ? 'goldenPulse 1.2s ease-in-out infinite' :
+                   (isSpecialDate && specialDateInfo && specialDateInfo.trim()) ? 'pulse 2s ease-in-out infinite' : 'none',
+         transform: isEditing ? 'scale(1.05)' : 'scale(1)',
+         transition: 'all 0.4s ease-out',
+         boxShadow: isEditing ? '0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.4), inset 0 0 10px rgba(255, 215, 0, 0.2)' : 'none',
+         backgroundColor: isEditing ? 'rgba(255, 215, 0, 0.15)' : 'transparent',
+         borderRadius: isEditing ? '6px' : '0',
+         border: isEditing ? '2px solid #ffd700' : 'none'
+        }}
+      >
+        <ScrollingText 
+          text={entry.assigned_name}
+          className="text-center w-full"
+          style={{
+            color: getTextColor(),
+            fontWeight: '500',
+            fontSize: 'inherit',
+            textAlign: 'center',
+            width: '100%',
+            border: 'none',
+            outline: 'none',
+            filter: isEditing ? 'brightness(1.2) contrast(1.1)' : 'none',
+            textShadow: isEditing ? '0 0 8px rgba(255, 215, 0, 0.6)' : 'none'
+          }}
+        />
         
-        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          {hasBeenEdited(entry) && (
-            <div className="w-2 h-2 bg-red-500 rounded-full" title="Modified" />
-          )}
-          {hasBeenReverted(entry) && (
-            <div className="w-2 h-2 bg-green-500 rounded-full" title="Reverted to original" />
-          )}
-          {isSpecialDate && (
-            <Info className="w-3 h-3 text-purple-500" title={specialDateInfo || 'Special date'} />
-          )}
-          
-          <button
-            onClick={handleEditClick}
-            className="p-1 text-gray-400 hover:text-indigo-600 transition-colors"
-            title="Edit entry"
-          >
-            <Edit className="w-3 h-3" />
-          </button>
-        </div>
+        {/* Golden sparkle effects */}
+        {isEditing && (
+          <>
+            <div
+              style={{
+                position: 'absolute',
+                top: '2px',
+                left: '2px',
+                width: '4px',
+                height: '4px',
+                backgroundColor: '#ffd700',
+                borderRadius: '50%',
+                animation: 'sparkle1 2s ease-in-out infinite',
+                zIndex: 65
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '2px',
+                right: '8px',
+                width: '3px',
+                height: '3px',
+                backgroundColor: '#ffed4e',
+                borderRadius: '50%',
+                animation: 'sparkle2 2.5s ease-in-out infinite',
+                zIndex: 65
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '1px',
+                width: '2px',
+                height: '2px',
+                backgroundColor: '#fbbf24',
+                borderRadius: '50%',
+                animation: 'sparkle3 1.8s ease-in-out infinite',
+                zIndex: 65
+              }}
+            />
+          </>
+        )}
       </div>
+      
+      {/* Add CSS animations */}
+      <style jsx>{`
+        @keyframes goldenPulse {
+          0%, 100% {
+            opacity: 1;
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.4);
+          }
+          50% {
+            opacity: 0.9;
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 1), 0 0 60px rgba(255, 215, 0, 0.6);
+          }
+        }
+        
+        @keyframes goldenDot {
+          0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
+          }
+          50% {
+            opacity: 0.7;
+            transform: scale(1.3);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 1);
+          }
+        }
+        
+        @keyframes sparkle1 {
+          0%, 100% {
+            opacity: 0;
+            transform: scale(0) rotate(0deg);
+          }
+          25% {
+            opacity: 1;
+            transform: scale(1) rotate(90deg);
+          }
+          50% {
+            opacity: 0.8;
+            transform: scale(1.2) rotate(180deg);
+          }
+          75% {
+            opacity: 0.6;
+            transform: scale(0.8) rotate(270deg);
+          }
+        }
+        
+        @keyframes sparkle2 {
+          0%, 100% {
+            opacity: 0;
+            transform: scale(0);
+          }
+          30% {
+            opacity: 1;
+            transform: scale(1.5);
+          }
+          60% {
+            opacity: 0.7;
+            transform: scale(1);
+          }
+        }
+        
+        @keyframes sparkle3 {
+          0%, 100% {
+            opacity: 0;
+            transform: scale(0) translateY(0);
+          }
+          40% {
+            opacity: 1;
+            transform: scale(1.8) translateY(-2px);
+          }
+          80% {
+            opacity: 0.5;
+            transform: scale(1) translateY(0);
+          }
+        }
+      `}</style>
 
       {/* Authentication Modal */}
       {showAuthModal && createPortal(
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50"
+          className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center p-4"
           style={{
             position: 'fixed',
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            zIndex: 2147483647,
-            backgroundColor: 'rgba(0, 0, 0, 0.95)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '16px'
+            zIndex: 999999999,
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            pointerEvents: 'auto'
+          }}
+          onWheel={(e) => e.preventDefault()}
+          onScroll={(e) => e.preventDefault()}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.target === e.currentTarget) {
+              handleCancelAuth();
+            }
           }}
         >
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
             <div className="p-6">
               <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
                 Authentication Required
@@ -202,10 +400,18 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
                           newCode[index] = newValue;
                           setAuthCode(newCode.join(''));
                           
+                          // Auto-focus next input
                           if (newValue && index < 3) {
                             const nextInput = document.querySelector(`input[data-index="${index + 1}"]`) as HTMLInputElement;
                             if (nextInput) nextInput.focus();
                           }
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        // Handle backspace to go to previous input
+                        if (e.key === 'Backspace' && !authCode[index] && index > 0) {
+                          const prevInput = document.querySelector(`input[data-index="${index - 1}"]`) as HTMLInputElement;
+                          if (prevInput) prevInput.focus();
                         }
                       }}
                       data-index={index}
@@ -223,6 +429,10 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
                     onMouseUp={() => setShowPassword(false)}
                     onMouseLeave={() => setShowPassword(false)}
                     className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200 rounded-lg ml-2"
+                    style={{
+                      touchAction: 'manipulation',
+                      WebkitTapHighlightColor: 'transparent'
+                    }}
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -237,11 +447,7 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
               
               <div className="flex space-x-3">
                 <button
-                  onClick={() => {
-                    setShowAuthModal(false);
-                    setAuthCode('');
-                    setAuthError('');
-                  }}
+                  onClick={handleCancelAuth}
                   className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200"
                 >
                   Cancel
@@ -260,78 +466,17 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
         document.body
       )}
 
-      {/* Name Selection Modal */}
-      {isEditing && createPortal(
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 2147483647,
-            backgroundColor: 'rgba(0, 0, 0, 0.95)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '16px'
-          }}
-        >
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-96 flex flex-col">
-            <div className="p-6 border-b border-gray-200">
-              <h3 className="text-xl font-bold text-gray-900 text-center">
-                Select Staff Member
-              </h3>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="space-y-2">
-                {availableNames.map(name => (
-                  <label key={name} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="staffName"
-                      value={name}
-                      checked={selectedName === name}
-                      onChange={(e) => setSelectedName(e.target.value)}
-                      className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
-                    />
-                    <span className="text-sm font-medium text-gray-900">{name}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            
-            <div className="p-6 border-t border-gray-200">
-              <div className="flex space-x-3">
-                <button
-                  onClick={handleCancelEdit}
-                  disabled={isUpdating}
-                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSaveChanges}
-                  disabled={isUpdating || !selectedName}
-                  className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center justify-center space-x-2"
-                >
-                  {isUpdating ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <span>Save Changes</span>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+      {/* Staff Selection Modal */}
+      <StaffSelectionModal
+        isOpen={showStaffModal}
+        entry={entry}
+        availableStaff={availableNames}
+        allEntriesForShift={allEntriesForShift}
+        onSelectStaff={handleStaffSelect}
+        onSelectStaffWithColor={handleStaffSelectWithColor}
+        onClose={handleCancelStaffSelection}
+        authCode={authCode}
+      />
     </>
   );
 };

@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { X, Star, Calendar, AlertTriangle } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { X, Star, Calendar, FileText, AlertTriangle } from 'lucide-react';
+import { updateAllStaffRemarksForDate } from '../utils/rosterApi';
+import { validateAuthCode } from '../utils/rosterAuth';
 
 interface SpecialDateModalProps {
   isOpen: boolean;
   date: string | null;
-  currentSpecialInfo: {
-    isSpecial: boolean;
-    info: string;
-  };
+  currentSpecialInfo?: { isSpecial: boolean; info: string };
   onSave: (isSpecial: boolean, info: string) => Promise<void>;
   onClose: () => void;
-  authCode: string;
+  authCode?: string;
 }
 
 export const SpecialDateModal: React.FC<SpecialDateModalProps> = ({
@@ -22,13 +22,24 @@ export const SpecialDateModal: React.FC<SpecialDateModalProps> = ({
   authCode
 }) => {
   const [isSpecial, setIsSpecial] = useState(false);
-  const [specialInfo, setSpecialInfo] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Initialize state when modal opens
+  useEffect(() => {
+    if (isOpen && currentSpecialInfo) {
+      setIsSpecial(currentSpecialInfo.isSpecial);
+      setInfo(currentSpecialInfo.info || '');
+    } else if (isOpen) {
+      setIsSpecial(false);
+      setInfo('');
+    }
+  }, [isOpen, currentSpecialInfo]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
-    if (isOpen && document.body) {
+    if (isOpen) {
       document.body.style.overflow = 'hidden';
       document.body.style.position = 'fixed';
       document.body.style.top = '0';
@@ -38,21 +49,19 @@ export const SpecialDateModal: React.FC<SpecialDateModalProps> = ({
     }
 
     return () => {
-      if (document.body) {
-        document.body.style.overflow = '';
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.left = '';
-        document.body.style.right = '';
-        document.body.style.bottom = '';
-      }
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.bottom = '';
     };
   }, [isOpen]);
 
   // Close on escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen && !isLoading) {
+      if (e.key === 'Escape' && isOpen) {
         onClose();
       }
     };
@@ -61,17 +70,7 @@ export const SpecialDateModal: React.FC<SpecialDateModalProps> = ({
       document.addEventListener('keydown', handleEscape);
       return () => document.removeEventListener('keydown', handleEscape);
     }
-  }, [isOpen, isLoading, onClose]);
-
-  // Reset state when modal opens
-  useEffect(() => {
-    if (isOpen && currentSpecialInfo) {
-      setIsSpecial(currentSpecialInfo.isSpecial);
-      setSpecialInfo(currentSpecialInfo.info);
-      setIsLoading(false);
-      setError(null);
-    }
-  }, [isOpen, currentSpecialInfo]);
+  }, [isOpen, onClose]);
 
   if (!isOpen || !date) return null;
 
@@ -82,73 +81,83 @@ export const SpecialDateModal: React.FC<SpecialDateModalProps> = ({
     
     const dayName = dayNames[date.getDay()];
     const day = date.getDate();
-    const monthName = monthNames[date.getMonth()];
+    const month = monthNames[date.getMonth()];
     const year = date.getFullYear();
     
-    return `${dayName}, ${day} ${monthName} ${year}`;
+    return `${dayName}, ${month} ${day}, ${year}`;
   };
 
-  const handleSave = async () => {
-    if (isLoading) return;
+  const handleSave = () => {
+    if (isSaving) return;
     
-    setIsLoading(true);
-    setError(null);
+    setIsSaving(true);
+    setSaveError(null);
     
-    try {
-      await onSave(isSpecial, specialInfo);
+    onSave(isSpecial, isSpecial ? info : '') // Clear info when removing special status
+      .then(() => {
+        onClose();
+      })
+      .catch((error) => {
+        console.error('Failed to save special date:', error);
+        setSaveError(error instanceof Error ? error.message : 'Failed to save special date');
+      })
+      .finally(() => {
+        setIsSaving(false);
+      });
+  };
+
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
       onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save special date');
-      setIsLoading(false);
     }
   };
 
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && !isLoading) {
-      onClose();
-    }
-  };
-
-  return (
+  return createPortal(
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]"
-      onClick={handleOverlayClick}
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      onClick={handleBackdropClick}
       style={{
         position: 'fixed',
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
-        zIndex: 9999
+        zIndex: 99999,
+        WebkitOverflowScrolling: 'touch',
+        touchAction: 'pan-y'
       }}
     >
       <div 
-        className="bg-white rounded-2xl shadow-2xl max-w-md w-full select-none"
+        className="bg-white rounded-2xl shadow-2xl max-w-md w-full"
         style={{ 
-          userSelect: 'none', 
-          WebkitUserSelect: 'none'
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          WebkitTouchCallout: 'none',
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column'
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="relative p-6 pb-4 border-b border-gray-200">
-          {!isLoading && (
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
+        <div className="relative p-6 pb-4 border-b border-gray-200 flex-shrink-0">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+          >
+            <X className="w-5 h-5" />
+          </button>
           
           <div className="flex items-center justify-center space-x-3 mb-4">
-            <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-              <Star className="w-6 h-6 text-yellow-600" />
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+              isSpecial ? 'bg-red-100' : 'bg-blue-100'
+            }`}>
+              <Star className={`w-6 h-6 ${isSpecial ? 'text-red-600' : 'text-blue-600'}`} />
             </div>
           </div>
 
           <h3 className="text-xl font-bold text-gray-900 mb-2 text-center">
-            Special Date
+            Mark Special Date
           </h3>
           
           <div className="flex items-center justify-center space-x-2 text-gray-600">
@@ -158,81 +167,112 @@ export const SpecialDateModal: React.FC<SpecialDateModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-6">
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center space-x-2">
-                <AlertTriangle className="w-4 h-4 text-red-600" />
-                <span className="text-sm text-red-700">{error}</span>
+        <div 
+          className="flex-1 overflow-y-auto p-6"
+          style={{
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y'
+          }}
+        >
+          <div className="space-y-6">
+            {saveError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-center space-x-2">
+                  <AlertTriangle className="w-4 h-4 text-red-600" />
+                  <span className="text-sm text-red-700">{saveError}</span>
+                </div>
               </div>
-            </div>
-          )}
-
-          <div className="space-y-4">
+            )}
+            
             {/* Special Date Toggle */}
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div>
-                <label className="text-sm font-medium text-gray-700">
-                  Mark as Special Date
-                </label>
-                <p className="text-xs text-gray-500 mt-1">
-                  Special dates allow different shift combinations
-                </p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
+            <div className="flex items-center justify-center space-x-3 p-4 bg-gray-50 rounded-lg">
+              <label className="flex items-center space-x-3 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={isSpecial}
                   onChange={(e) => setIsSpecial(e.target.checked)}
-                  className="sr-only"
-                  disabled={isLoading}
+                  className="w-5 h-5 text-red-600 focus:ring-red-500 focus:ring-2 rounded"
                 />
-                <div className={`w-11 h-6 rounded-full transition-colors duration-200 ${
-                  isSpecial ? 'bg-yellow-500' : 'bg-gray-300'
-                }`}>
-                  <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-200 ${
-                    isSpecial ? 'translate-x-5' : 'translate-x-0'
-                  } mt-0.5 ml-0.5`} />
-                </div>
+                <span className="text-lg font-medium text-gray-800">
+                  Mark as Special Date
+                </span>
               </label>
             </div>
 
-            {/* Special Date Info */}
+            {/* Info about special dates */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <AlertTriangle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h4 className="font-medium text-blue-800 mb-2">Special Date Effects:</h4>
+                  <ul className="text-sm text-blue-700 space-y-1">
+                    <li>• Date will appear red and pulsating in the table</li>
+                    <li>• Info text will be added to all staff remarks for this date</li>
+                    <li>• Helps identify important dates (holidays, events, etc.)</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Info Field - Only show when special is checked */}
             {isSpecial && (
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <FileText className="w-4 h-4 inline mr-2" />
                   Special Date Information
                 </label>
                 <textarea
-                  value={specialInfo}
-                  onChange={(e) => setSpecialInfo(e.target.value)}
-                  placeholder="Enter reason for special date (e.g., Public Holiday, Emergency, etc.)"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none"
+                  value={info}
+                  onChange={(e) => setInfo(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
                   rows={3}
-                  disabled={isLoading}
+                  placeholder="Enter information about this special date (e.g., 'Public Holiday - Independence Day')"
+                  maxLength={200}
                 />
-                <p className="text-xs text-gray-500">
-                  This information will appear in reports and exports
-                </p>
+                <div className="text-xs text-gray-500 mt-1">
+                  {info.length}/200 characters • This will be added to all staff remarks for this date
+                </div>
+              </div>
+            )}
+
+            {/* Preview */}
+            {isSpecial && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <h4 className="font-medium text-red-800 mb-2">Preview:</h4>
+                <div className="text-sm text-red-700">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div className="w-4 h-4 bg-red-500 rounded animate-pulse" />
+                    <span className="font-medium">{formatDate(date)} - Special Date</span>
+                  </div>
+                  {info && (
+                    <div className="bg-white p-2 rounded border">
+                      <span className="text-gray-700">Staff remarks: "{info}"</span>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
+        </div>
 
-          {/* Action Buttons */}
-          <div className="flex space-x-3 mt-6">
+        {/* Footer */}
+        <div className="border-t border-gray-200 p-6 flex-shrink-0">
+          <div className="flex space-x-3">
             <button
               onClick={onClose}
-              disabled={isLoading}
-              className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSaving}
+              className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
-              disabled={isLoading}
-              className="flex-1 px-4 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              disabled={isSaving}
+              className={`flex-1 px-4 py-3 ${
+                isSpecial ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
+              } text-white rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center justify-center space-x-2`}
             >
-              {isLoading ? (
+              {isSaving ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   <span>Saving...</span>
@@ -240,13 +280,14 @@ export const SpecialDateModal: React.FC<SpecialDateModalProps> = ({
               ) : (
                 <>
                   <Star className="w-4 h-4" />
-                  <span>Save</span>
+                  <span>{isSpecial ? 'Mark Special' : 'Remove Special'}</span>
                 </>
               )}
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
