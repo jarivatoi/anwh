@@ -416,10 +416,10 @@ export class BatchPrintManager {
             <p>Click Print to print all documents. PDFs are embedded as HTML content for better printing compatibility.</p>
           </div>
           <div class="print-buttons">
-            <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; background: #4f46e5; color: white; border: none; border-radius: 8px; cursor: pointer;">
+            <button id="printAllBtn" style="padding: 10px 20px; font-size: 16px; background: #4f46e5; color: white; border: none; border-radius: 8px; cursor: pointer;">
               Print All Documents
             </button>
-            <button onclick="window.close()" style="padding: 10px 20px; font-size: 16px; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer; margin-left: 10px;">
+            <button id="closeBtn" style="padding: 10px 20px; font-size: 16px; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer; margin-left: 10px;">
               Close
             </button>
           </div>
@@ -448,8 +448,32 @@ export class BatchPrintManager {
     
     printWindow.document.close();
     
-    // Wait for content to load before focusing
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Wait for content to load, then add event listeners
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Add event listeners after document is ready
+    try {
+      const printBtn = printWindow.document.getElementById('printAllBtn');
+      const closeBtn = printWindow.document.getElementById('closeBtn');
+      
+      if (printBtn) {
+        printBtn.addEventListener('click', () => {
+          console.log('🖨️ Print button clicked');
+          printWindow.print();
+        });
+      }
+      
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+          console.log('🔒 Close button clicked');
+          printWindow.close();
+        });
+      }
+      
+      console.log('✅ Event listeners added to print window buttons');
+    } catch (error) {
+      console.error('❌ Failed to add event listeners:', error);
+    }
     
     // Auto-focus the print window
     printWindow.focus();
