@@ -5,6 +5,7 @@ export interface ParsedEntry {
   date: string;
   shiftType: string;
   assignedName: string;
+  changeDescription?: string;
 }
 
 export class ListParser {
@@ -205,11 +206,20 @@ export class ListParser {
     
     console.log(`✅ EXTRACTED ENTRY: ${assignedName} | ${shiftType} | ${date}`);
     
-    return {
+    const entry: ParsedEntry = {
       date,
       shiftType,
       assignedName
     };
+    
+    // Add remarks to change description if found
+    if (remarks) {
+      (entry as any).changeDescription = `Special Date: ${remarks}; Imported from PDF`;
+    } else {
+      (entry as any).changeDescription = 'Imported from PDF';
+    }
+    
+    return entry;
   }
   
   /**

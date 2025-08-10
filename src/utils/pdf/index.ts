@@ -81,7 +81,7 @@ class PDFRosterParser {
           date: entry.date,
           shiftType: entry.shiftType,
           assignedName: entry.assignedName,
-          changeDescription: 'Imported from PDF'
+          changeDescription: entry.changeDescription || 'Imported from PDF'
         }));
       
       // Remove duplicate entries (same date, shift, and staff)

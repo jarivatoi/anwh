@@ -5,6 +5,7 @@ export interface ParsedEntry {
   date: string;
   shiftType: string;
   assignedName: string;
+  changeDescription?: string;
 }
 
 export class BoxParser {
