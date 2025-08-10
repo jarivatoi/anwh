@@ -136,6 +136,21 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
     try {
       console.log('📄 Starting PDF import with', entries.length, 'entries...');
       
+     // Navigate to imported month IMMEDIATELY so user can see the table updating
+     if (entries.length > 0) {
+       const firstEntryDate = new Date(entries[0].date);
+       const importedMonth = firstEntryDate.getMonth();
+       const importedYear = firstEntryDate.getFullYear();
+       
+       console.log(`📅 Navigating to imported month immediately: ${importedMonth + 1}/${importedYear}`);
+       setSelectedDate(new Date(importedYear, importedMonth, 1));
+       
+       // Also dispatch event for other components
+       window.dispatchEvent(new CustomEvent('navigateToMonth', {
+         detail: { month: importedMonth, year: importedYear }
+       }));
+     }
+     
       // Enable batch import mode to suppress individual notifications
       (window as any).batchImportMode = true;
       (window as any).disableAutoScroll = true; // Disable auto-scroll during import
@@ -147,20 +162,11 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
       
       let successCount = 0;
       let errorCount = 0;
-      let importedMonth: number | null = null;
-      let importedYear: number | null = null;
       
       for (const entry of entries) {
         try {
           await addRosterEntry(entry, 'PDF Import');
           successCount++;
-          
-          // Track the month/year of imported entries
-          if (importedMonth === null) {
-            const entryDate = new Date(entry.date);
-            importedMonth = entryDate.getMonth();
-            importedYear = entryDate.getFullYear();
-          }
         } catch (error) {
           console.error('❌ Failed to import entry:', entry, error);
           errorCount++;
@@ -185,20 +191,6 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
       setRefreshKey(prev => prev + 1);
       
       showSuccess(`PDF import completed: ${successCount} entries added${errorCount > 0 ? `, ${errorCount} failed` : ''}`);
-      
-      // Navigate to imported month AFTER showing success message
-      if (importedMonth !== null && importedYear !== null) {
-        setTimeout(() => {
-          console.log(`📅 Navigating to imported month: ${importedMonth + 1}/${importedYear}`);
-          // Update the selected date in RosterPanel
-          setSelectedDate(new Date(importedYear, importedMonth, 1));
-          
-          // Also dispatch event for other components
-          window.dispatchEvent(new CustomEvent('navigateToMonth', {
-            detail: { month: importedMonth, year: importedYear }
-          }));
-        }, 1000); // Wait 1 second after success message
-      }
     } catch (error) {
       console.error('❌ PDF import failed:', error);
       // Make sure to disable batch mode on error
