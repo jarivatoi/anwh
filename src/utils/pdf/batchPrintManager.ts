@@ -409,17 +409,6 @@ export class BatchPrintManager {
               body { margin: 0; padding: 0; }
             }
           </style>
-          <script>
-            function printAllDocuments() {
-              console.log('Print button clicked');
-              window.print();
-            }
-            
-            function closeWindow() {
-              console.log('Close button clicked');
-              window.close();
-            }
-          </script>
         </head>
         <body>
           <div class="header-info">
@@ -427,10 +416,10 @@ export class BatchPrintManager {
             <p>Click Print to print all documents. PDFs are embedded as HTML content for better printing compatibility.</p>
           </div>
           <div class="print-buttons">
-            <button onclick="printAllDocuments()" style="padding: 10px 20px; font-size: 16px; background: #4f46e5; color: white; border: none; border-radius: 8px; cursor: pointer;">
+            <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; background: #4f46e5; color: white; border: none; border-radius: 8px; cursor: pointer;">
               Print All Documents
             </button>
-            <button onclick="closeWindow()" style="padding: 10px 20px; font-size: 16px; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer; margin-left: 10px;">
+            <button onclick="window.close()" style="padding: 10px 20px; font-size: 16px; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer; margin-left: 10px;">
               Close
             </button>
           </div>
@@ -458,6 +447,9 @@ export class BatchPrintManager {
     `);
     
     printWindow.document.close();
+    
+    // Wait for content to load before focusing
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     // Auto-focus the print window
     printWindow.focus();
