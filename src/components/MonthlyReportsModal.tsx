@@ -1,658 +1,469 @@
-import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { X, Download, FileText, Users, List, Calendar, CheckCircle, AlertTriangle, User, Eye, EyeOff } from 'lucide-react';
-import { monthlyReportGenerator } from '../utils/pdf/monthlyReportGenerator';
-import { individualBillGenerator } from '../utils/pdf/individualBillGenerator';
-import { annexureGenerator } from '../utils/pdf/annexureGenerator';
-import { rosterListGenerator } from '../utils/pdf/rosterListGenerator';
-import { RosterEntry } from '../types/roster';
-import { availableNames, sortByGroup } from '../utils/rosterAuth';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { RosterEntry } from '../../types/roster';
 
-interface MonthlyReportsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+export interface RosterListOptions {
+  month: number;
+  year: number;
   entries: RosterEntry[];
-  basicSalary: number;
-  hourlyRate: number;
-  shiftCombinations: Array<{
-    id: string;
-    combination: string;
-    hours: number;
-  }>;
 }
 
-export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
-  isOpen,
-  onClose,
-  entries,
-  basicSalary,
-  hourlyRate,
-  shiftCombinations
-}) => {
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [reportType, setReportType] = useState<'all' | 'individual' | 'annexure' | 'roster'>('all');
-  const [selectedStaff, setSelectedStaff] = useState<string>('');
-  const [generationResult, setGenerationResult] = useState<{
-    individualBills: number;
-    annexureGenerated: boolean;
-    rosterListGenerated: boolean;
-    reportType: string;
-    staffName?: string;
-  } | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
-
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.top = '0';
-      document.body.style.left = '0';
-      document.body.style.right = '0';
-      document.body.style.bottom = '0';
-    }
-
-    return () => {
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.left = '';
-      document.body.style.right = '';
-      document.body.style.bottom = '';
-    };
-  }, [isOpen]);
-
-  // Reset state when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setIsGenerating(false);
-      setGenerationResult(null);
-      setError(null);
-      setReportType('all');
-      setSelectedStaff('');
-    }
-  }, [isOpen]);
-
-  // Close on escape key
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen && !isGenerating) {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-      return () => document.removeEventListener('keydown', handleEscape);
-    }
-  }, [isOpen, isGenerating, onClose]);
-
-  const handleGenerateReports = async () => {
-    setIsGenerating(true);
-    setError(null);
-    setGenerationResult(null);
+export class RosterListGenerator {
+  
+  /**
+   * Generate roster list matching the PDF template format - all on one page
+   */
+  async generateRosterList(options: RosterListOptions): Promise<void> {
+    const { month, year, entries } = options;
     
-    try {
-      console.log('🚀 Starting monthly report generation...');
-      
-      // Filter entries for the month
-      const monthEntries = entries.filter(entry => {
-        const entryDate = new Date(entry.date);
-        return entryDate.getMonth() === selectedMonth && entryDate.getFullYear() === selectedYear;
-      });
-      
-      if (monthEntries.length === 0) {
-        throw new Error(`No roster entries found for ${formatMonthYear()}`);
-      }
-      
-      let result = {
-        individualBills: 0,
-        annexureGenerated: false,
-        rosterListGenerated: false,
-        reportType: reportType,
-        staffName: selectedStaff
-      };
-      
-      if (reportType === 'all') {
-        // Generate all reports
-        const allResult = await monthlyReportGenerator.generateAllReports({
-          month: selectedMonth,
-          year: selectedYear,
-          entries,
-          basicSalary,
-          hourlyRate,
-          shiftCombinations
-        });
-        result = { ...allResult, reportType: 'all' };
-        
-      } else if (reportType === 'individual') {
-        // Generate individual bill for selected staff
-        if (!selectedStaff) {
-          throw new Error('Please select a staff member for individual report');
-        }
-        
-        await individualBillGenerator.generateBill({
-          staffName: selectedStaff,
-          month: selectedMonth,
-          year: selectedYear,
-          entries: monthEntries,
-          basicSalary,
-          hourlyRate,
-          shiftCombinations
-        });
-        
-        result.individualBills = 1;
-        
-      } else if (reportType === 'annexure') {
-        // Generate annexure only
-        await annexureGenerator.generateAnnexure({
-          month: selectedMonth,
-          year: selectedYear,
-          entries: monthEntries,
-          hourlyRate,
-          shiftCombinations
-        });
-        
-        result.annexureGenerated = true;
-        
-      } else if (reportType === 'roster') {
-        // Generate roster list only
-        await rosterListGenerator.generateRosterList({
-          month: selectedMonth,
-          year: selectedYear,
-          entries: monthEntries
-        });
-        
-        result.rosterListGenerated = true;
-      }
-      
-      setGenerationResult(result);
-      console.log('✅ Monthly reports generated successfully:', result);
-      
-    } catch (error) {
-      console.error('❌ Monthly report generation failed:', error);
-      setError(error instanceof Error ? error.message : 'Failed to generate reports');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && !isGenerating) {
-      onClose();
-    }
-  };
-
-  const formatMonthYear = () => {
+    console.log('📄 Generating roster list');
+    
+    // Create PDF document - A4 portrait
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+    
     const monthNames = [
       'January', 'February', 'March', 'April', 'May', 'June',
       'July', 'August', 'September', 'October', 'November', 'December'
     ];
-    return `${monthNames[selectedMonth]} ${selectedYear}`;
-  };
-
-  // Get count of entries for selected month
-  const getMonthEntryCount = () => {
-    return entries.filter(entry => {
-      const entryDate = new Date(entry.date);
-      return entryDate.getMonth() === selectedMonth && entryDate.getFullYear() === selectedYear;
-    }).length;
-  };
-
-  // Get unique staff members for the selected month
-  const getStaffForMonth = () => {
+    
+    // Header
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`X-Ray Roster for month of ${monthNames[month]} ${year}`, doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+    
+    // Filter entries for the specified month/year
     const monthEntries = entries.filter(entry => {
       const entryDate = new Date(entry.date);
-      return entryDate.getMonth() === selectedMonth && entryDate.getFullYear() === selectedYear;
+      return entryDate.getMonth() === month && entryDate.getFullYear() === year;
     });
     
-    const staffSet = new Set<string>();
-    monthEntries.forEach(entry => {
-      // Remove (R) suffix to show only base names for individual bills
-      const baseName = entry.assigned_name.replace(/\(R\)$/, '').trim();
-      staffSet.add(baseName);
-    });
+    console.log(`📄 Filtered ${monthEntries.length} entries for ${monthNames[month]} ${year}`);
     
-    // Sort the base names
-    return Array.from(staffSet).sort();
-  };
-  if (!isOpen) return null;
-
-  return createPortal(
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-      onClick={handleBackdropClick}
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 99999,
-        WebkitOverflowScrolling: 'touch',
-        touchAction: 'pan-y'
-      }}
-    >
-      <div 
-        className="bg-white rounded-2xl shadow-2xl max-w-lg w-full"
-        style={{ 
-          userSelect: 'none',
-          WebkitUserSelect: 'none',
-          WebkitTouchCallout: 'none',
-          maxHeight: '90vh',
-          display: 'flex',
-          flexDirection: 'column'
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="relative p-6 pb-4 border-b border-gray-200 flex-shrink-0">
-          {!isGenerating && (
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
-          
-          <div className="flex items-center justify-center space-x-3 mb-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-              <FileText className="w-6 h-6 text-blue-600" />
-            </div>
-          </div>
-
-          <h3 className="text-xl font-bold text-gray-900 mb-2 text-center">
-            Monthly Reports Generator
-          </h3>
-          
-          <p className="text-sm text-gray-600 text-center">
-            Generate end-of-month reports for all staff
-          </p>
-        </div>
-
-        {/* Content */}
-        <div 
-          className="flex-1 overflow-y-auto p-6"
-          style={{
-            WebkitOverflowScrolling: 'touch',
-            touchAction: 'pan-y'
-          }}
-        >
-          {!generationResult && !error && (
-            <div className="space-y-6">
-              {/* Month/Year Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Select Month and Year
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <select
-                      value={selectedMonth}
-                      onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                      disabled={isGenerating}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
-                    >
-                      {[
-                        'January', 'February', 'March', 'April', 'May', 'June',
-                        'July', 'August', 'September', 'October', 'November', 'December'
-                      ].map((month, index) => (
-                        <option key={index} value={index}>{month}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <select
-                      value={selectedYear}
-                      onChange={(e) => setSelectedYear(Number(e.target.value))}
-                      disabled={isGenerating}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
-                    >
-                      {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(year => (
-                        <option key={year} value={year}>{year}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+    if (monthEntries.length === 0) {
+      // Show "No data" message
+      doc.setFontSize(14);
+      doc.text('No roster entries found for this month', doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
+    } else {
+      // Create table data with colored text
+      const tableData = this.createColoredTableData(monthEntries);
+      
+      // Create table with new column structure
+      autoTable(doc, {
+        startY: 35,
+        head: [['Date', 'Shift', 'Staff Names', 'Remarks']],
+        body: tableData,
+        willDrawCell: (data) => {
+          // Clear staff names column content to prevent default rendering
+          if (data.column.index === 2 && data.section === 'body') {
+            data.cell.text = [];
+          }
+        },
+        didDrawCell: (data) => {
+          // Only draw custom colored text for staff names column in body
+          if (data.column.index === 2 && data.section === 'body' && data.row.index >= 0) {
+            // Get the staff data for this specific row
+            if (data.row.index < tableData.length) {
+              const originalRow = tableData[data.row.index];
+              const staffNamesData = this.getStaffNamesForRow(originalRow[0], originalRow[1], entries);
+              
+              if (staffNamesData && staffNamesData.length > 0) {
+                // Start drawing from left edge of cell with proper margin
+                let currentX = data.cell.x + 2;
+                let currentLine = 0;
+                const lineHeight = 2.5;
+                const maxWidth = data.cell.width - 6; // Increased margin for better spacing
+                let totalLines = 1;
+                let tempX = 0;
                 
-                <div className="mt-2 text-sm text-gray-600 text-center">
-                  {getMonthEntryCount()} entries found for {formatMonthYear()}
-                </div>
-              </div>
+                // Pre-calculate how many lines we'll need
+                staffNamesData.forEach((staff, index) => {
+                  const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
+                  // Use smaller font for width calculation
+                  doc.setFontSize(7);
+                  const textWidth = doc.getTextWidth(textToShow);
+                  
+                  if (tempX + textWidth > maxWidth && index > 0) {
+                    totalLines++;
+                    tempX = doc.getTextWidth(staff.name); // Reset with just the name (no comma)
+                  } else {
+                    tempX += textWidth;
+                  }
+                });
+                
+                // Calculate starting Y position for vertical centering
+                const totalHeight = totalLines * lineHeight;
+                let cellY = data.cell.y + (data.cell.height / 2) - (totalHeight / 2) + 2;
+                
+                // Set font to match table
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'normal');
+                
+                staffNamesData.forEach((staff, index) => {
+                  // Set individual color for this staff member
+                  const rgbColor = this.hexToRgb(staff.color);
+                  doc.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
+                  
+                  // Format text with comma separator (but not at start of new lines)
+                  const isFirstOnLine = currentX === data.cell.x + 2;
+                  const textToShow = (index === 0 || isFirstOnLine) ? staff.name : `, ${staff.name}`;
+                  
+                  // Calculate width including potential comma at end of line
+                  const textWidth = doc.getTextWidth(textToShow);
+                  const commaWidth = doc.getTextWidth(',');
+                  const willNeedCommaAtEnd = index < staffNamesData.length - 1; // Not the last name
+                  const totalWidthNeeded = textWidth + (willNeedCommaAtEnd ? commaWidth : 0);
+                  
+                  // Check if text (including comma) would exceed cell width (with 4mm margin)
+                  
+                  // If text (including comma) would exceed width, move to next line
+                  if (currentX + totalWidthNeeded > data.cell.x + data.cell.width - 8 && index > 0) {
+                    // Add comma after the PREVIOUS name (the last name on the current line)
+                    doc.text(',', currentX, cellY);
+                    
+                    currentX = data.cell.x + 3; // Reset to left margin
+                    cellY += lineHeight; // Move down for next line
+                    
+                    // Recalculate text without comma for new line
+                    const newLineText = staff.name;
+                    const newLineWidth = doc.getTextWidth(newLineText);
+                    
+                    // Draw the text at current position (no comma at start of line)
+                    doc.text(newLineText, currentX, cellY);
+                    currentX += newLineWidth;
+                  } else {
+                    // Draw the text at current position
+                    doc.text(textToShow, currentX, cellY);
+                    currentX += textWidth;
+                  }
+                });
+                
+                // Reset color for other cells
+                doc.setTextColor(0, 0, 0);
+              }
+            }
+          }
+        },
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+          overflow: 'linebreak',
+          halign: 'left',
+          valign: 'middle',
+          lineWidth: 0.25,
+          lineColor: [0, 0, 0]
+        },
+        headStyles: {
+          fillColor: [220, 220, 220],
+          textColor: [0, 0, 0],
+          fontStyle: 'bold',
+          fontSize: 9,
+          halign: 'center',
+          valign: 'middle',
+          lineWidth: 0.25,
+          lineColor: [0, 0, 0]
+        },
+        bodyStyles: {
+          lineWidth: 0.25,
+          lineColor: [0, 0, 0]
+        },
+        columnStyles: {
+          0: { cellWidth: 35, halign: 'left', valign: 'middle' },   // Date (fixed width)
+          1: { cellWidth: 45, halign: 'left', valign: 'middle' },   // Shift (fixed width)
+          2: { cellWidth: 80, halign: 'left', valign: 'middle' },   // Staff Names (80mm width)
+          3: { halign: 'center', valign: 'middle' }   // Remarks (center aligned)
+        },
+        tableLineWidth: 0.25,
+        tableLineColor: [0, 0, 0]
+      });
+    }
+    
+    // Footer
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 10, doc.internal.pageSize.getHeight() - 15);
+    doc.text(`Total Entries: ${monthEntries.length}`, doc.internal.pageSize.getWidth() - 10, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
+    
+    // Save
+    const filename = `Roster_List_${monthNames[month]}_${year}.pdf`;
+    doc.save(filename);
+    
+    console.log('✅ Roster list generated:', filename);
+  }
+  
+  /**
+   * Prepare roster table data in new tabular format
+   */
+  private prepareRosterTableData(entries: RosterEntry[]): string[][] {
+    // Group entries by date and shift type
+    const groupedData: Record<string, Record<string, RosterEntry[]>> = {};
+    
+    entries.forEach(entry => {
+      const dateKey = entry.date;
+      const shiftType = entry.shift_type;
+      
+      if (!groupedData[dateKey]) {
+        groupedData[dateKey] = {};
+      }
+      if (!groupedData[dateKey][shiftType]) {
+        groupedData[dateKey][shiftType] = [];
+      }
+      groupedData[dateKey][shiftType].push(entry);
+    });
+    
+    // Convert to table rows
+    const tableData: string[][] = [];
+    
+    // Sort dates
+    const sortedDates = Object.keys(groupedData).sort();
+    
+    sortedDates.forEach(date => {
+      const shiftData = groupedData[date];
+      
+      // Define shift order for consistent display
+      const shiftOrder = [
+        'Morning Shift (9-4)',
+        'Saturday Regular (12-10)', 
+        'Evening Shift (4-10)',
+        'Night Duty',
+        'Sunday/Public Holiday/Special'
+      ];
+      
+      // Process shifts in order
+      shiftOrder.forEach(shiftType => {
+        const shiftEntries = shiftData[shiftType];
+        if (!shiftEntries || shiftEntries.length === 0) return;
+        
+        // Get staff names with color indicators
+        const staffNamesWithColors = this.formatStaffNamesWithColors(shiftEntries);
+        
+        // Get remarks from special date info
+        const remarks = this.extractRemarks(shiftEntries);
+        
+        // Format shift type for display
+        const formattedShift = this.formatShiftTypeForList(shiftType);
+        
+        tableData.push([
+          this.formatDateForList(date),  // DDD dd-mmm-yyyy
+          formattedShift,                // Shift type
+          staffNamesWithColors,          // Staff names with color indicators
+          remarks                        // Remarks
+        ]);
+      });
+    });
+    
+    return tableData;
+  }
+  
+  /**
+   * Format staff names with actual text colors based on their edit status
+   */
+  private formatStaffNamesWithColors(entries: RosterEntry[]): { text: string; color: number[] }[] {
+    return entries.map(entry => {
+      const staffName = entry.assigned_name;
+      const textColor = this.getTextColor(entry);
+      
+      return {
+        text: staffName,
+        color: this.hexToRgb(textColor)
+      };
+    });
+  }
+  
+  /**
+   * Get actual text color for staff name based on edit status
+   */
+  private getTextColor(entry: RosterEntry): string {
+    // HIGHEST PRIORITY: Admin-set text color
+    if (entry.text_color) {
+      return entry.text_color;
+    }
+    
+    // Check if entry has been reverted to original
+    const hasBeenReverted = () => {
+      if (!entry.change_description) return false;
+      
+      // Check if we have original PDF assignment stored
+      const originalPdfMatch = entry.change_description.match(/\(Original PDF: ([^)]+)\)/);
+      if (originalPdfMatch) {
+        let originalPdfAssignment = originalPdfMatch[1].trim();
+        
+        // Fix missing closing parenthesis if it exists
+        if (originalPdfAssignment.includes('(R') && !originalPdfAssignment.includes('(R)')) {
+          originalPdfAssignment = originalPdfAssignment.replace('(R', '(R)');
+        }
+        
+        // Check if current assignment matches original PDF assignment (reverted to original)
+        return entry.assigned_name === originalPdfAssignment;
+      }
+      
+      return false;
+    };
+    
+    // Check if entry has been edited (name changed)
+    const hasBeenEdited = entry.change_description && 
+                         entry.change_description.includes('Name changed from') &&
+                         entry.last_edited_by;
 
-              {/* Report Type Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Select Report Type
-                </label>
-                <div className="space-y-3">
-                  <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
-                    <input
-                      type="radio"
-                      value="all"
-                      checked={reportType === 'all'}
-                      onChange={(e) => setReportType(e.target.value as any)}
-                      className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                    />
-                    <div className="flex items-center space-x-2">
-                      <FileText className="w-5 h-5 text-blue-600" />
-                      <div>
-                        <div className="font-medium text-gray-900">All Reports</div>
-                        <div className="text-sm text-gray-600">Generate all three report types</div>
-                      </div>
-                    </div>
-                  </label>
-                  
-                  <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
-                    <input
-                      type="radio"
-                      value="individual"
-                      checked={reportType === 'individual'}
-                      onChange={(e) => setReportType(e.target.value as any)}
-                      className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                    />
-                    <div className="flex items-center space-x-2">
-                      <User className="w-5 h-5 text-green-600" />
-                      <div>
-                        <div className="font-medium text-gray-900">Individual Staff Bill</div>
-                        <div className="text-sm text-gray-600">Generate bill for one staff member</div>
-                      </div>
-                    </div>
-                  </label>
-                  
-                  <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
-                    <input
-                      type="radio"
-                      value="annexure"
-                      checked={reportType === 'annexure'}
-                      onChange={(e) => setReportType(e.target.value as any)}
-                      className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                    />
-                    <div className="flex items-center space-x-2">
-                      <Users className="w-5 h-5 text-purple-600" />
-                      <div>
-                        <div className="font-medium text-gray-900">Annexure (All Staff Summary)</div>
-                        <div className="text-sm text-gray-600">Combined summary for all staff</div>
-                      </div>
-                    </div>
-                  </label>
-                  
-                  <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
-                    <input
-                      type="radio"
-                      value="roster"
-                      checked={reportType === 'roster'}
-                      onChange={(e) => setReportType(e.target.value as any)}
-                      className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                    />
-                    <div className="flex items-center space-x-2">
-                      <List className="w-5 h-5 text-orange-600" />
-                      <div>
-                        <div className="font-medium text-gray-900">Roster List</div>
-                        <div className="text-sm text-gray-600">Simple list of name, date, and shift</div>
-                      </div>
-                    </div>
-                  </label>
-                </div>
-              </div>
+    if (hasBeenReverted()) {
+      return '#059669'; // Green for reverted entries (back to original PDF by ADMIN)
+    } else if (hasBeenEdited) {
+      return '#dc2626'; // Red for edited entries (by non-ADMIN users)
+    } else {
+      return '#000000'; // Black for original entries
+    }
+  }
+  
+  /**
+   * Convert hex color to RGB array for jsPDF
+   */
+  private hexToRgb(hex: string): number[] {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? [
+      parseInt(result[1], 16),
+      parseInt(result[2], 16),
+      parseInt(result[3], 16)
+    ] : [0, 0, 0]; // Default to black if parsing fails
+  }
+  
+  /**
+   * Get staff names data for a specific row during PDF generation
+   */
+  private getStaffNamesForRow(date: string, shiftType: string, entries: RosterEntry[]): { name: string; color: string }[] {
+    // Find entries that match this date and shift
+    const matchingEntries = entries.filter(entry => {
+      const formattedDate = this.formatDateForList(entry.date);
+      const formattedShift = this.formatShiftTypeForList(entry.shift_type);
+      return formattedDate === date && formattedShift === shiftType;
+    });
+    
+    return matchingEntries.map(entry => ({
+      name: entry.assigned_name,
+      color: this.getTextColor(entry)
+    }));
+  }
+  
+  /**
+   * Create table data with combined staff names but individual colors
+   */
+  private createColoredTableData(entries: RosterEntry[]): any[] {
+    // Group entries by date and shift type
+    const groupedData: Record<string, Record<string, RosterEntry[]>> = {};
+    
+    entries.forEach(entry => {
+      const dateKey = entry.date;
+      const shiftType = entry.shift_type;
+      
+      if (!groupedData[dateKey]) {
+        groupedData[dateKey] = {};
+      }
+      if (!groupedData[dateKey][shiftType]) {
+        groupedData[dateKey][shiftType] = [];
+      }
+      groupedData[dateKey][shiftType].push(entry);
+    });
+    
+    // Convert to table rows with colored text
+    const tableData: any[] = [];
+    
+    // Sort dates
+    const sortedDates = Object.keys(groupedData).sort();
+    
+    sortedDates.forEach(date => {
+      const shiftData = groupedData[date];
+      
+      // Define shift order for consistent display
+      const shiftOrder = [
+        'Morning Shift (9-4)',
+        'Saturday Regular (12-10)', 
+        'Evening Shift (4-10)',
+        'Night Duty',
+        'Sunday/Public Holiday/Special'
+      ];
+      
+      // Process shifts in order
+      shiftOrder.forEach(shiftType => {
+        const shiftEntries = shiftData[shiftType];
+        if (!shiftEntries || shiftEntries.length === 0) return;
+        
+        // Get remarks from special date info
+        const remarks = this.extractRemarks(shiftEntries);
+        
+        // Format shift type for display
+        const formattedShift = this.formatShiftTypeForList(shiftType);
+        
+        // Combine all staff names with individual colors
+        const staffNamesWithColors = shiftEntries.map(entry => ({
+          name: entry.assigned_name,
+          color: this.getTextColor(entry)
+        }));
+        
+        // Create single row with combined staff names
+        const row = [
+          this.formatDateForList(date),
+          formattedShift,
+          staffNamesWithColors.map(s => s.name).join(', '), // Convert to string for display
+          remarks
+        ];
+        
+        tableData.push(row);
+      });
+    });
+    
+    return tableData;
+  }
+  
+  /**
+   * Extract remarks from entries (special date info)
+   */
+  private extractRemarks(entries: RosterEntry[]): string {
+    // Look for special date information in change descriptions
+    for (const entry of entries) {
+      if (entry.change_description && entry.change_description.includes('Special Date:')) {
+        const match = entry.change_description.match(/Special Date:\s*([^;]+)/);
+        if (match && match[1].trim()) {
+          // Only show text before asterisk (*) if asterisk exists
+          const fullRemarks = match[1].trim();
+          return fullRemarks.includes('*') ? fullRemarks.split('*')[0].trim() : fullRemarks;
+        }
+      }
+    }
+    return ''; // No special remarks
+  }
+  
+  /**
+   * Format date as DDD dd-mmm-yyyy (e.g., "Mon 01-Jul-2025")
+   */
+  private formatDateForList(dateString: string): string {
+    const date = new Date(dateString);
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    const dayName = dayNames[date.getDay()];
+    const day = date.getDate().toString().padStart(2, '0');
+    const monthName = monthNames[date.getMonth()];
+    const year = date.getFullYear();
+    
+    return `${dayName} ${day}-${monthName}-${year}`;
+  }
+  
+  /**
+   * Format shift type for list display
+   */
+  private formatShiftTypeForList(shiftType: string): string {
+    const shortNames: Record<string, string> = {
+      'Morning Shift (9-4)': 'Morning Shift (9-4)',
+      'Evening Shift (4-10)': 'Evening Shift (4-10)', 
+      'Saturday Regular (12-10)': 'Saturday Regular (12-10)',
+      'Night Duty': 'Night Duty',
+      'Sunday/Public Holiday/Special': 'Sunday/Public Holiday/Special'
+    };
+    return shortNames[shiftType] || shiftType;
+  }
+}
 
-              {/* Staff Selection - Only show when Individual Report is selected */}
-              {reportType === 'individual' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Select Staff Member
-                  </label>
-                  <select
-                    value={selectedStaff}
-                    onChange={(e) => setSelectedStaff(e.target.value)}
-                    disabled={isGenerating}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
-                  >
-                    <option value="">Select staff member</option>
-                    {getStaffForMonth().map(staffName => (
-                      <option key={staffName} value={staffName}>{staffName}</option>
-                    ))}
-                  </select>
-                  
-                  {selectedStaff && (
-                    <div className="mt-2 text-sm text-gray-600 text-center">
-                      Will generate individual bill for {selectedStaff}
-                    </div>
-                  )}
-                </div>
-              )}
-              {/* Report Types Info */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-medium text-gray-800 mb-3">
-                  {reportType === 'all' ? 'Reports to Generate:' : 'Selected Report:'}
-                </h4>
-                <div className="space-y-3">
-                  {(reportType === 'all' || reportType === 'individual') && (
-                    <div className="flex items-center space-x-3">
-                      <User className="w-5 h-5 text-green-600" />
-                      <div>
-                        <div className="font-medium text-gray-900">
-                          {reportType === 'individual' ? `Individual Bill - ${selectedStaff || 'Select staff'}` : 'Individual Staff Bills'}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          {reportType === 'individual' ? 'One PDF for selected staff member' : 'One PDF per staff member with their work summary'}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {(reportType === 'all' || reportType === 'annexure') && (
-                    <div className="flex items-center space-x-3">
-                      <Users className="w-5 h-5 text-purple-600" />
-                      <div>
-                        <div className="font-medium text-gray-900">Annexure (All Staff Summary)</div>
-                        <div className="text-sm text-gray-600">Combined summary for all staff members</div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {(reportType === 'all' || reportType === 'roster') && (
-                    <div className="flex items-center space-x-3">
-                      <List className="w-5 h-5 text-orange-600" />
-                      <div>
-                        <div className="font-medium text-gray-900">Roster List</div>
-                        <div className="text-sm text-gray-600">Simple list showing name, date, and shift</div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Warning if no entries */}
-              {(getMonthEntryCount() === 0 || (reportType === 'individual' && !selectedStaff)) && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                  <div className="flex items-center space-x-2">
-                    <AlertTriangle className="w-5 h-5 text-amber-600" />
-                    <span className="text-sm text-amber-800 font-medium">
-                      {getMonthEntryCount() === 0 
-                        ? `No entries found for ${formatMonthYear()}`
-                        : 'Please select a staff member for individual report'
-                      }
-                    </span>
-                  </div>
-                  <p className="text-sm text-amber-700 mt-1">
-                    {getMonthEntryCount() === 0 
-                      ? 'Please select a different month or ensure roster data exists.'
-                      : 'Choose a staff member from the dropdown above.'
-                    }
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Generation Progress */}
-          {isGenerating && (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-              </div>
-              <h4 className="text-lg font-medium text-gray-900 mb-2">
-                Generating Reports
-              </h4>
-              <p className="text-gray-600 mb-4">
-                Creating PDFs for {formatMonthYear()}...
-              </p>
-              <div className="space-y-2 text-sm text-gray-500">
-                <p>• Generating individual staff bills</p>
-                <p>• Creating annexure summary</p>
-                <p>• Preparing roster list</p>
-              </div>
-            </div>
-          )}
-
-          {/* Results */}
-          {generationResult && (
-            <div className="space-y-6">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="w-8 h-8 text-green-600" />
-                </div>
-                <h4 className="text-lg font-medium text-gray-900 mb-2">
-                  Reports Generated Successfully!
-                </h4>
-                <p className="text-gray-600">
-                  All reports for {formatMonthYear()} have been created
-                </p>
-              </div>
-              
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h5 className="font-medium text-green-800 mb-3">Generation Summary:</h5>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-green-700">Report Type:</span>
-                    <span className="text-green-800 font-medium capitalize">{generationResult.reportType}</span>
-                  </div>
-                  
-                  {generationResult.reportType === 'individual' && generationResult.staffName && (
-                    <div className="flex justify-between">
-                      <span className="text-green-700">Staff Member:</span>
-                      <span className="text-green-800 font-medium">{generationResult.staffName}</span>
-                    </div>
-                  )}
-                  
-                  {generationResult.individualBills > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-green-700">Individual Bills:</span>
-                      <span className="text-green-800 font-medium">{generationResult.individualBills} files</span>
-                    </div>
-                  )}
-                  
-                  {generationResult.reportType === 'all' || generationResult.reportType === 'annexure' ? (
-                    <div className="flex justify-between">
-                      <span className="text-green-700">Annexure:</span>
-                      <span className="text-green-800 font-medium">
-                        {generationResult.annexureGenerated ? '✅ Generated' : '❌ Failed'}
-                      </span>
-                    </div>
-                  ) : null}
-                  
-                  {generationResult.reportType === 'all' || generationResult.reportType === 'roster' ? (
-                    <div className="flex justify-between">
-                      <span className="text-green-700">Roster List:</span>
-                      <span className="text-green-800 font-medium">
-                        {generationResult.rosterListGenerated ? '✅ Generated' : '❌ Failed'}
-                      </span>
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-              
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h5 className="font-medium text-blue-800 mb-2">Files Generated:</h5>
-                <ul className="text-sm text-blue-700 space-y-1">
-                  {generationResult.individualBills > 0 && (
-                    <li>• {generationResult.individualBills} individual staff bill{generationResult.individualBills > 1 ? 's' : ''}</li>
-                  )}
-                  {generationResult.annexureGenerated && (
-                    <li>• 1 annexure summary (all staff)</li>
-                  )}
-                  {generationResult.rosterListGenerated && (
-                    <li>• 1 roster list (name, date, shift)</li>
-                  )}
-                </ul>
-                <p className="text-sm text-blue-600 mt-2">
-                  Check your downloads folder for all PDF files.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Error */}
-          {error && (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertTriangle className="w-8 h-8 text-red-600" />
-              </div>
-              <h4 className="text-lg font-medium text-gray-900 mb-2">
-                Generation Failed
-              </h4>
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-sm text-red-700">{error}</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="border-t border-gray-200 p-6 flex-shrink-0">
-          <div className="flex space-x-3">
-            <button
-              onClick={onClose}
-              disabled={isGenerating}
-              className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
-            >
-              {generationResult ? 'Close' : 'Cancel'}
-            </button>
-            
-            {!generationResult && !error && (
-              <button
-                onClick={handleGenerateReports}
-                disabled={isGenerating || getMonthEntryCount() === 0 || (reportType === 'individual' && !selectedStaff)}
-                className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
-              >
-                {isGenerating ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Generating...</span>
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-4 h-4" />
-                    <span>
-                      {reportType === 'all' ? 'Generate All Reports' :
-                       reportType === 'individual' ? 'Generate Individual Bill' :
-                       reportType === 'annexure' ? 'Generate Annexure' : 'Generate Roster List'}
-                    </span>
-                  </>
-                )}
-              </button>
-            )}
-            
-            {(generationResult || error) && (
-              <button
-                onClick={() => {
-                  setGenerationResult(null);
-                  setError(null);
-                }}
-                className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200"
-              >
-                Generate Again
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-};
+// Create singleton instance
+export const rosterListGenerator = new RosterListGenerator();

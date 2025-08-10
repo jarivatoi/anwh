@@ -1,769 +1,469 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Calendar } from './components/Calendar';
-import { ShiftModal } from './components/ShiftModal';
-import { SettingsPanel } from './components/SettingsPanel';
-import { MenuPanel } from './components/MenuPanel';
-import { ClearDateModal } from './components/ClearDateModal';
-import { DeleteMonthModal } from './components/DeleteMonthModal';
-import { CalendarExportModal } from './components/CalendarExportModal';
-import TabNavigation from './components/TabNavigation';
-import { useScheduleCalculations } from './hooks/useScheduleCalculations';
-import { useIndexedDB, useScheduleData } from './hooks/useIndexedDB';
-import { workScheduleDB } from './utils/indexedDB';
-import { DEFAULT_SHIFT_COMBINATIONS } from './constants';
-import { AddToHomescreen } from './utils/addToHomescreen';
-import { DaySchedule, SpecialDates, Settings, ExportData } from './types';
-import { gsap } from 'gsap';
-import { RosterPanel } from './components/RosterPanel';
-import { syncRosterToCalendar } from './utils/rosterCalendarSync';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { RosterEntry } from '../../types/roster';
 
-function App() {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'calendar' | 'settings' | 'data' | 'roster'>('calendar');
-  const [showCalendarExportModal, setShowCalendarExportModal] = useState(false);
-  
-  // Add artificial loading delay for better UX
-  const [artificialLoading, setArtificialLoading] = useState(true);
-  const [loadingProgress, setLoadingProgress] = useState(0);
-  const [smoothProgress, setSmoothProgress] = useState(0);
-  const [showMainApp, setShowMainApp] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
-
-  // Use IndexedDB hooks
-  const { schedule, specialDates, setSchedule, setSpecialDates, isLoading: dataLoading, error: dataError, refreshData } = useScheduleData();
-  const [scheduleTitle, setScheduleTitle, { isLoading: titleLoading, refresh: refreshTitle }] = useIndexedDB<string>('scheduleTitle', 'Work Schedule', 'metadata');
-  const [settings, setSettings, { isLoading: settingsLoading, refresh: refreshSettings }] = useIndexedDB<Settings>('workSettings', {
-    basicSalary: 35000,
-    hourlyRate: 201.92,
-    shiftCombinations: DEFAULT_SHIFT_COMBINATIONS
-  });
-
-  // Debug logging for settings
-  console.log('🔧 App component - Settings state:', {
-    settings,
-    hasSettings: !!settings,
-    hasShiftCombinations: !!settings?.shiftCombinations,
-    combinationsCount: settings?.shiftCombinations?.length || 0,
-    settingsLoading,
-    basicSalary: settings?.basicSalary,
-    hourlyRate: settings?.hourlyRate
-  });
-
-  // Add refreshKey state
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  // Pass specialDates to the calculation hook with refreshKey dependency
-  const { totalAmount, monthToDateAmount } = useScheduleCalculations(schedule, settings, specialDates, currentDate, refreshKey);
-
-  const currentMonth = currentDate.getMonth();
-  const currentYear = currentDate.getFullYear();
-
-  // Check if data is loading
-  const isDataLoading = false; // Remove database dependency for initial load
-
-  // Add artificial loading delay to ensure users can read the loading screen
-  useEffect(() => {
-    let animationFrame: number;
-    let startTime: number;
-    const duration = 3000; // 3 seconds
-    
-    const animate = (currentTime: number) => {
-      if (!startTime) startTime = currentTime;
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      
-      // Smooth easing function for natural progress
-      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-      const smoothedProgress = Math.round(easeOutQuart * 100);
-      
-      setSmoothProgress(smoothedProgress);
-      
-      if (progress < 1) {
-        animationFrame = requestAnimationFrame(animate);
-      } else {
-        setSmoothProgress(100);
-        setTimeout(() => {
-          setArtificialLoading(false);
-          setShowMainApp(true);
-        }, 100); // Small delay after reaching 100%
-      }
-    };
-    
-    animationFrame = requestAnimationFrame(animate);
-    
-    return () => {
-      if (animationFrame) {
-        cancelAnimationFrame(animationFrame);
-      }
-    };
-  }, []);
-
-  // Only use artificial loading for initial screen
-  const isLoading = artificialLoading;
-
-  // Initialize Add to Home Screen functionality
-  useEffect(() => {
-    if (showMainApp) {
-      console.log('🏠 Creating AddToHomescreen instance...');
-      
-      // Create AddToHomescreen instance
-      const addToHomescreenInstance = new AddToHomescreen({
-        appName: 'X-ray ANWH',
-        appIconUrl: 'https://jarivatoi.github.io/anwh/Icon.PNG',
-        maxModalDisplayCount: 1, // Only show once
-        skipFirstVisit: false, // Show on first visit
-        startDelay: 3000, // 3 seconds delay for first visit
-        lifespan: 20000,
-        mustShowCustomPrompt: false, // Use normal detection logic
-        displayPace: 999999 // Very large number to prevent showing again
-      });
-      
-      // Check if can prompt (now async)
-      const checkAndShow = async () => {
-        console.log('⏰ Checking if can prompt...');
-        
-        const canShow = await addToHomescreenInstance.canPrompt();
-        console.log('Debug info:', {
-          isStandalone: addToHomescreenInstance.isStandalone(),
-          canPrompt: canShow,
-          localStorage: localStorage.getItem('addToHomescreenInstallPromptShown'),
-          modalCount: localStorage.getItem('addToHomescreenModalCount'),
-          permanentlyDismissed: localStorage.getItem('addToHomescreenPermanentlyDismissed')
-        });
-        
-        if (canShow) {
-          console.log('✅ Showing Add to Homescreen prompt after 3 seconds');
-          setTimeout(() => {
-            addToHomescreenInstance.show();
-          }, 3000); // 3 second delay
-        } else {
-          console.log('❌ Cannot show Add to Homescreen prompt - conditions not met');
-        }
-      };
-      
-      checkAndShow();
-    }
-  }, [showMainApp]);
-
-  // Listen for navigation to specific month
-  useEffect(() => {
-    const handleNavigateToMonth = (event: CustomEvent) => {
-      const { month, year } = event.detail;
-      console.log(`📅 Navigating to month: ${month + 1}/${year}`);
-      setCurrentDate(new Date(year, month, 1));
-      
-      // Debug: Log current schedule state when navigating
-      console.log('📅 Current schedule state when navigating:', {
-        scheduleKeys: Object.keys(schedule),
-        scheduleEntries: Object.entries(schedule).slice(0, 5),
-        specialDatesKeys: Object.keys(specialDates),
-        targetMonth: month + 1,
-        targetYear: year
-      });
-    };
-
-    window.addEventListener('navigateToMonth', handleNavigateToMonth as EventListener);
-    return () => window.removeEventListener('navigateToMonth', handleNavigateToMonth as EventListener);
-  }, [schedule, specialDates]);
-  
-  // Handle bulk calendar updates from calendar export
-  useEffect(() => {
-    const handleBulkCalendarUpdate = (event: CustomEvent) => {
-      const { calendarUpdates, specialDateUpdates, editorName, source } = event.detail;
-      console.log('🔄 APP: Received bulk calendar update:', {
-        calendarUpdates,
-        specialDateUpdates,
-        editorName,
-        source
-      });
-      
-      // Confirm receipt
-      window.dispatchEvent(new CustomEvent('bulkUpdateReceived'));
-      
-      // Update schedule with bulk data
-      setSchedule(prev => {
-        const newSchedule = { ...prev };
-        Object.entries(calendarUpdates).forEach(([date, shifts]) => {
-          // Merge with existing shifts for this date
-          const existingShifts = newSchedule[date] || [];
-          const allShifts = [...existingShifts];
-          
-          shifts.forEach(shift => {
-            if (!allShifts.includes(shift)) {
-              allShifts.push(shift);
-            }
-          });
-          
-          newSchedule[date] = allShifts;
-          console.log(`📅 APP: Updated ${date} with shifts:`, allShifts);
-        });
-        console.log('📅 APP: Final schedule after bulk update:', Object.keys(newSchedule).length, 'dates');
-        return newSchedule;
-      });
-      
-      // Update special dates
-      setSpecialDates(prev => {
-        const newSpecialDates = { ...prev };
-        Object.entries(specialDateUpdates).forEach(([date, isSpecial]) => {
-          newSpecialDates[date] = isSpecial;
-          console.log(`📌 APP: Updated ${date} special status:`, isSpecial);
-        });
-        console.log('📌 APP: Final special dates after bulk update:', Object.keys(newSpecialDates).length, 'dates');
-        return newSpecialDates;
-      });
-      
-      // Force refresh calculations
-      setRefreshKey(prev => prev + 1);
-      console.log('🔄 APP: Forced refresh after bulk update');
-    };
-
-    window.addEventListener('bulkCalendarUpdate', handleBulkCalendarUpdate as EventListener);
-    return () => window.removeEventListener('bulkCalendarUpdate', handleBulkCalendarUpdate as EventListener);
-  }, [setSchedule, setSpecialDates]);
-  
-  // Listen for tab switch requests
-  useEffect(() => {
-    const handleSwitchToCalendar = () => {
-      console.log('📅 Switching to calendar tab');
-      setActiveTab('calendar');
-      // Force refresh when switching to calendar after export
-      setRefreshKey(prev => prev + 1);
-      console.log('🔄 Forced refresh when switching to calendar');
-    };
-
-    const handleCloseCalendarExportModal = () => {
-      console.log('📅 Closing calendar export modal');
-      setShowCalendarExportModal(false);
-    };
-
-    const handleDebugCalendarState = () => {
-      console.log('🔍 APP: Current calendar state debug:', {
-        scheduleKeys: Object.keys(schedule),
-        scheduleEntries: Object.entries(schedule).slice(0, 10),
-        specialDatesKeys: Object.keys(specialDates),
-        currentMonth: currentDate.getMonth(),
-        currentYear: currentDate.getFullYear()
-      });
-    };
-    window.addEventListener('switchToCalendarTab', handleSwitchToCalendar);
-    window.addEventListener('closeCalendarExportModal', handleCloseCalendarExportModal);
-    window.addEventListener('debugCalendarState', handleDebugCalendarState);
-    return () => {
-      window.removeEventListener('switchToCalendarTab', handleSwitchToCalendar);
-      window.removeEventListener('closeCalendarExportModal', handleCloseCalendarExportModal);
-      window.removeEventListener('debugCalendarState', handleDebugCalendarState);
-    };
-  }, [schedule, specialDates, currentDate]);
-  // Initialize content animation when component mounts
-  useEffect(() => {
-    if (contentRef.current && showMainApp) {
-      console.log('🎨 Initializing main app animations');
-      gsap.fromTo(contentRef.current,
-        {
-          opacity: 0,
-          y: 30,
-          scale: 0.95,
-          force3D: true
-        },
-        {
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          duration: 0.8,
-          ease: "power2.out",
-          force3D: true
-        }
-      );
-    }
-  }, [showMainApp]);
-
-  const handleTabChange = (newTab: 'calendar' | 'settings' | 'data' | 'roster') => {
-    // Immediately update the active tab state for instant UI feedback
-    setActiveTab(newTab);
-  };
-
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    setCurrentDate(new Date(currentYear, currentMonth + (direction === 'next' ? 1 : -1), 1));
-  };
-
-  const formatDateKey = (day: number) => {
-    return `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-  };
-
-  const handleDateClick = (day: number) => {
-    const dateKey = formatDateKey(day);
-    setSelectedDate(dateKey);
-    setShowModal(true);
-  };
-
-  const canSelectShift = (shiftId: string, dateKey: string) => {
-    const currentShifts = schedule[dateKey] || [];
-    
-    // 9-4 and 12-10 cannot overlap
-    if (shiftId === '9-4' && currentShifts.includes('12-10')) return false;
-    if (shiftId === '12-10' && currentShifts.includes('9-4')) return false;
-    
-    // 12-10 and 4-10 cannot overlap
-    if (shiftId === '12-10' && currentShifts.includes('4-10')) return false;
-    if (shiftId === '4-10' && currentShifts.includes('12-10')) return false;
-    
-    return true;
-  };
-
-  const toggleShift = (shiftId: string) => {
-    if (!selectedDate) return;
-    
-    const currentShifts = schedule[selectedDate] || [];
-    
-    if (currentShifts.includes(shiftId)) {
-      // Remove shift
-      const updatedShifts = currentShifts.filter(id => id !== shiftId);
-      setSchedule(prev => ({
-        ...prev,
-        [selectedDate]: updatedShifts.length > 0 ? updatedShifts : []
-      }));
-    } else {
-      // Add shift if allowed
-      if (canSelectShift(shiftId, selectedDate)) {
-        setSchedule(prev => ({
-          ...prev,
-          [selectedDate]: [...currentShifts, shiftId]
-        }));
-      }
-    }
-    
-    // FIXED: Force refresh calculations when shifts change
-    setRefreshKey(prev => prev + 1);
-  };
-
-  // Handle roster to calendar synchronization
-  const handleRosterCalendarSync = useCallback((event: CustomEvent) => {
-    const rosterChange = event.detail;
-    
-    console.log('🔄 APP: Received roster calendar sync event:', rosterChange);
-    
-    const syncResult = syncRosterToCalendar(rosterChange, {
-      calendarLabel: scheduleTitle, // Use the calendar title as the label
-      schedule,
-      specialDates,
-      setSchedule,
-      setSpecialDates,
-      entries: [] // Pass empty array since we don't have roster entries in App.tsx
-    });
-    
-    console.log('🔄 APP: Sync result:', syncResult);
-    
-    if (syncResult) {
-      // Force refresh calculations after sync
-      setRefreshKey(prev => prev + 1);
-      console.log('🔄 APP: Forced refresh key update after sync');
-    }
-  }, [scheduleTitle, schedule, specialDates, setSchedule, setSpecialDates]);
-
-  // Handle force calendar refresh
-  const handleForceCalendarRefresh = useCallback(() => {
-    console.log('🔄 APP: Force calendar refresh triggered');
-    setRefreshKey(prev => prev + 1);
-  }, []);
-
-  // Listen for roster changes
-  useEffect(() => {
-    window.addEventListener('rosterCalendarSync', handleRosterCalendarSync as EventListener);
-    window.addEventListener('forceCalendarRefresh', handleForceCalendarRefresh as EventListener);
-    return () => {
-      window.removeEventListener('rosterCalendarSync', handleRosterCalendarSync as EventListener);
-      window.removeEventListener('forceCalendarRefresh', handleForceCalendarRefresh as EventListener);
-    };
-  }, [handleRosterCalendarSync, handleForceCalendarRefresh]);
-
-  // Handle showing clear date modal
-  const toggleSpecialDate = useCallback((dateKey: string, isSpecial: boolean) => {
-    setSpecialDates(prev => {
-      const newSpecialDates = { ...prev };
-      if (isSpecial) {
-        newSpecialDates[dateKey] = true;
-      } else {
-        delete newSpecialDates[dateKey];
-      }
-      return newSpecialDates;
-    });
-  }, [setSpecialDates]);
-
-  // Reset month function
-  const handleResetMonth = useCallback(async (year: number, month: number, specificDay?: number, showAlert: boolean = true) => {
-    try {
-      if (specificDay) {
-        console.log(`🗑️ Clearing specific date: ${specificDay}/${month + 1}/${year}`);
-        
-        // Clear only the specific date
-        const dateKey = `${year}-${(month + 1).toString().padStart(2, '0')}-${specificDay.toString().padStart(2, '0')}`;
-        
-        // Clear schedule data for this specific date
-        setSchedule(prev => {
-          const newSchedule = { ...prev };
-          delete newSchedule[dateKey];
-          return newSchedule;
-        });
-        
-        // Clear special date marking for this specific date
-        setSpecialDates(prev => {
-          const newSpecialDates = { ...prev };
-          delete newSpecialDates[dateKey];
-          return newSpecialDates;
-        });
-        
-        // Force refresh calculations
-        setRefreshKey(prev => prev + 1);
-        
-        console.log(`✅ Successfully cleared date ${specificDay}/${month + 1}/${year}`);
-        return;
-      }
-      
-      console.log(`🗑️ Resetting month data for ${month + 1}/${year}`);
-      
-      // Create date keys for the entire month
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      const monthDateKeys: string[] = [];
-      
-      for (let day = 1; day <= daysInMonth; day++) {
-        const dateKey = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-        monthDateKeys.push(dateKey);
-      }
-      
-      // Clear schedule data for the month
-      setSchedule(prev => {
-        const newSchedule = { ...prev };
-        monthDateKeys.forEach(dateKey => {
-          delete newSchedule[dateKey];
-        });
-        return newSchedule;
-      });
-      
-      // Clear special dates for the month
-      setSpecialDates(prev => {
-        const newSpecialDates = { ...prev };
-        monthDateKeys.forEach(dateKey => {
-          delete newSpecialDates[dateKey];
-        });
-        return newSpecialDates;
-      });
-      
-      // Force refresh calculations
-      setRefreshKey(prev => prev + 1);
-      
-      console.log(`✅ Successfully reset month data for ${month + 1}/${year}`);
-      
-      // Show success feedback only if requested
-      if (showAlert) {
-        const monthNames = [
-          'January', 'February', 'March', 'April', 'May', 'June',
-          'July', 'August', 'September', 'October', 'November', 'December'
-        ];
-        
-        alert(`✅ Successfully cleared all data for ${monthNames[month]} ${year}`);
-      }
-      
-    } catch (error) {
-      console.error('❌ Error resetting month:', error);
-      alert('❌ Error resetting month data. Please try again.');
-    }
-  }, [setSchedule, setSpecialDates]);
-
-  // Handle showing delete month modal
-  const closeModal = () => {
-    setShowModal(false);
-    setSelectedDate(null);
-  };
-
-  const updateBasicSalary = useCallback((salary: number) => {
-    const hourlyRate = (salary * 12) / 52 / 40;
-    console.log('💰 Updating salary:', { salary, hourlyRate });
-    setSettings(prev => ({
-      ...prev,
-      basicSalary: salary,
-      hourlyRate: hourlyRate
-    }));
-  }, [setSettings]);
-
-  const updateShiftHours = useCallback((combinationId: string, hours: number) => {
-    console.log('⏰ Updating shift hours:', { combinationId, hours });
-    setSettings(prev => ({
-      ...prev,
-      shiftCombinations: prev.shiftCombinations.map(combo =>
-        combo.id === combinationId ? { ...combo, hours } : combo
-      )
-    }));
-  }, [setSettings]);
-
-  const handleExportData = async () => {
-    try {
-      const exportData = await workScheduleDB.exportAllData();
-      console.log('📦 Export data with filename:', exportData.filename);
-      
-      const dataStr = JSON.stringify(exportData, null, 2);
-      const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(dataBlob);
-      
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = exportData.filename || 'ANWH_export.json';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Export failed:', error);
-      alert('Export failed. Please try again.');
-    }
-  };
-
-  const handleImportData = async (data: any) => {
-    try {
-      console.log('🔄 Starting import process with data:', data);
-      
-      // Import data to IndexedDB
-      await workScheduleDB.importAllData(data);
-      console.log('✅ Data imported to IndexedDB');
-      
-      // Show loading state during refresh
-      console.log('🔄 Refreshing all data from database...');
-      
-      // Refresh all data with proper error handling
-      const refreshPromises = [
-        refreshData().catch(err => console.error('Failed to refresh schedule data:', err)),
-        refreshSettings().catch(err => console.error('Failed to refresh settings:', err)),
-        refreshTitle().catch(err => console.error('Failed to refresh title:', err))
-      ];
-      
-      await Promise.allSettled(refreshPromises);
-      console.log('✅ All data refresh attempts completed');
-      
-      // Force multiple calculation refreshes with delays
-      const triggerRefresh = (delay: number, label: string) => {
-        setTimeout(() => {
-          console.log(`🔄 ${label} refresh key update`);
-          setRefreshKey(prev => prev + 1);
-        }, delay);
-      };
-      
-      // Immediate refresh
-      setRefreshKey(prev => prev + 1);
-      
-      // Staggered refreshes
-      triggerRefresh(200, 'First delayed');
-      triggerRefresh(500, 'Second delayed');
-      triggerRefresh(1000, 'Final delayed');
-
-      // Redirect to calendar tab instead of reloading
-      setTimeout(() => {
-        setActiveTab('calendar');
-      }, 1200); // Wait for all refreshes to complete
-      
-      const version = data.version || '1.0';
-      if (version === '1.0') {
-        alert('Data imported successfully! Note: This was an older format file. Special date information was not available and has been reset.');
-      } else {
-        alert('Data imported successfully!');
-      }
-    } catch (error) {
-      console.error('Import failed:', error);
-      alert('Error importing data. Please check the file format.');
-    }
-  };
-
-  const handleDateChange = (date: Date) => {
-    setCurrentDate(date);
-  };
-
-  const handleTitleUpdate = (newTitle: string) => {
-    setScheduleTitle(newTitle);
-  };
-
-  const handleOpenCalendarExportModal = () => {
-    console.log('🔄 APP: Opening calendar export modal');
-    setShowCalendarExportModal(true);
-  };
-
-  const handleCloseCalendarExportModal = () => {
-    console.log('🔄 APP: Closing calendar export modal');
-    setShowCalendarExportModal(false);
-  };
-
-  // Show error if data loading failed
-  if (dataError && showMainApp) {
-    console.log('❌ Showing error screen:', dataError);
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">Database Error</h2>
-          <p className="text-gray-700 mb-6">{dataError}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-200"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Show enhanced loading screen with longer duration
-  if (!showMainApp) {
-    console.log('⏳ Data still loading, showing enhanced loading screen');
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-indigo-100" style={{ 
-        minHeight: '100vh', 
-        minHeight: '-webkit-fill-available',
-        width: '100vw',
-        height: '100vh',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 9999
-      }}>
-        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
-          <div className="flex items-center justify-center space-x-3 mb-6">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-          </div>
-          
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Work Schedule Calendar
-          </h2>
-          
-          <p className="text-lg text-gray-700 mb-6">
-            Created by NARAYYA
-          </p>
-          
-          <div className="flex items-center justify-center space-x-2 mb-6">
-            <div className="w-8 h-8 border-4 border-gray-200 border-t-indigo-600 rounded-full animate-spin"></div>
-            <span className="text-gray-600 text-lg">Loading your workspace...</span>
-          </div>
-          
-          <div className="space-y-3 text-base text-gray-600">
-            <p>• Initializing offline database</p>
-            <p>• Loading schedule data</p>
-            <p>• Preparing settings</p>
-            <p>• Calculating amounts</p>
-            <p>• Setting up interface</p>
-          </div>
-          
-          <div className="mt-8 w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-gradient-to-r from-blue-400 to-purple-600 h-2 rounded-full transition-all duration-100 ease-out" 
-              style={{ 
-                width: `${smoothProgress}%`,
-                transition: 'width 0.1s ease-out'
-              }}
-            ></div>
-          </div>
-          
-          <div className="mt-2 text-center">
-            <span className="text-sm text-gray-600 font-mono tabular-nums">{smoothProgress}%</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Main app interface - show when data is ready
-  console.log('🎯 Showing main app interface');
-  return (
-    <>
-      <div 
-        className="min-h-screen bg-black select-none p-4"
-        style={{ 
-          minHeight: '100vh',
-          backfaceVisibility: 'hidden',
-          marginTop: '0px',
-          paddingTop: 'env(safe-area-inset-top)',
-          paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
-          paddingLeft: 'max(1rem, env(safe-area-inset-left))',
-          paddingRight: 'max(1rem, env(safe-area-inset-right))',
-          backgroundColor: 'white !important', // Match navigation tab color
-          // Remove overflow restrictions for mobile
-          WebkitOverflowScrolling: 'touch', // Enable smooth iOS scrolling
-          touchAction: 'pan-y' // Allow vertical touch scrolling
-        }}
-      >
-        {/* Tab Navigation */}
-        <div className="sticky top-0 z-50 bg-white">
-          <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} />
-        </div>
-        
-        {/* Content with smooth transitions */}
-        <div 
-          ref={contentRef}
-          style={{
-            transform: 'translate3d(0,0,0)',
-            backfaceVisibility: 'hidden'
-          }}
-        >
-          {activeTab === 'calendar' ? (
-            <Calendar
-              currentDate={currentDate}
-              schedule={schedule}
-              specialDates={specialDates}
-              onDateClick={handleDateClick}
-              onNavigateMonth={navigateMonth}
-              totalAmount={totalAmount}
-              monthToDateAmount={monthToDateAmount}
-              onDateChange={handleDateChange}
-              scheduleTitle={scheduleTitle}
-              onTitleUpdate={handleTitleUpdate}
-              setSchedule={setSchedule}
-              setSpecialDates={setSpecialDates}
-            />
-          ) : activeTab === 'settings' ? (
-            <SettingsPanel
-              settings={settings}
-              onUpdateBasicSalary={updateBasicSalary}
-              onUpdateShiftHours={updateShiftHours}
-            />
-          ) : activeTab === 'data' ? (
-            <MenuPanel
-              onImportData={handleImportData}
-              onExportData={handleExportData}
-            />
-          ) : (
-            <RosterPanel key={refreshKey} setActiveTab={setActiveTab} onOpenCalendarExportModal={handleOpenCalendarExportModal} />
-          )}
-        </div>
-
-        {/* Modals - Outside of any scrollable content */}
-        {showModal && (
-          <>
-            <ShiftModal
-              selectedDate={selectedDate}
-              schedule={schedule}
-              specialDates={specialDates}
-              onToggleShift={toggleShift}
-              onToggleSpecialDate={toggleSpecialDate}
-              onClose={closeModal}
-            />
-            <RosterPanel setActiveTab={setActiveTab} onOpenCalendarExportModal={handleOpenCalendarExportModal} />
-          </>
-        )}
-
-        {/* Calendar Export Modal */}
-        <CalendarExportModal
-          isOpen={showCalendarExportModal}
-          onClose={handleCloseCalendarExportModal}
-          currentMonth={currentMonth}
-          currentYear={currentYear}
-        />
-
-      </div>
-    </>
-  );
+export interface RosterListOptions {
+  month: number;
+  year: number;
+  entries: RosterEntry[];
 }
 
-export default App;
+export class RosterListGenerator {
+  
+  /**
+   * Generate roster list matching the PDF template format - all on one page
+   */
+  async generateRosterList(options: RosterListOptions): Promise<void> {
+    const { month, year, entries } = options;
+    
+    console.log('📄 Generating roster list');
+    
+    // Create PDF document - A4 portrait
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+    
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    
+    // Header
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`X-Ray Roster for month of ${monthNames[month]} ${year}`, doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+    
+    // Filter entries for the specified month/year
+    const monthEntries = entries.filter(entry => {
+      const entryDate = new Date(entry.date);
+      return entryDate.getMonth() === month && entryDate.getFullYear() === year;
+    });
+    
+    console.log(`📄 Filtered ${monthEntries.length} entries for ${monthNames[month]} ${year}`);
+    
+    if (monthEntries.length === 0) {
+      // Show "No data" message
+      doc.setFontSize(14);
+      doc.text('No roster entries found for this month', doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
+    } else {
+      // Create table data with colored text
+      const tableData = this.createColoredTableData(monthEntries);
+      
+      // Create table with new column structure
+      autoTable(doc, {
+        startY: 35,
+        head: [['Date', 'Shift', 'Staff Names', 'Remarks']],
+        body: tableData,
+        willDrawCell: (data) => {
+          // Clear staff names column content to prevent default rendering
+          if (data.column.index === 2 && data.section === 'body') {
+            data.cell.text = [];
+          }
+        },
+        didDrawCell: (data) => {
+          // Only draw custom colored text for staff names column in body
+          if (data.column.index === 2 && data.section === 'body' && data.row.index >= 0) {
+            // Get the staff data for this specific row
+            if (data.row.index < tableData.length) {
+              const originalRow = tableData[data.row.index];
+              const staffNamesData = this.getStaffNamesForRow(originalRow[0], originalRow[1], entries);
+              
+              if (staffNamesData && staffNamesData.length > 0) {
+                // Start drawing from left edge of cell with proper margin
+                let currentX = data.cell.x + 2;
+                let currentLine = 0;
+                const lineHeight = 2.5;
+                const maxWidth = data.cell.width - 6; // Increased margin for better spacing
+                let totalLines = 1;
+                let tempX = 0;
+                
+                // Pre-calculate how many lines we'll need
+                staffNamesData.forEach((staff, index) => {
+                  const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
+                  // Use smaller font for width calculation
+                  doc.setFontSize(7);
+                  const textWidth = doc.getTextWidth(textToShow);
+                  
+                  if (tempX + textWidth > maxWidth && index > 0) {
+                    totalLines++;
+                    tempX = doc.getTextWidth(staff.name); // Reset with just the name (no comma)
+                  } else {
+                    tempX += textWidth;
+                  }
+                });
+                
+                // Calculate starting Y position for vertical centering
+                const totalHeight = totalLines * lineHeight;
+                let cellY = data.cell.y + (data.cell.height / 2) - (totalHeight / 2) + 2;
+                
+                // Set font to match table
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'normal');
+                
+                staffNamesData.forEach((staff, index) => {
+                  // Set individual color for this staff member
+                  const rgbColor = this.hexToRgb(staff.color);
+                  doc.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
+                  
+                  // Format text with comma separator (but not at start of new lines)
+                  const isFirstOnLine = currentX === data.cell.x + 2;
+                  const textToShow = (index === 0 || isFirstOnLine) ? staff.name : `, ${staff.name}`;
+                  
+                  // Calculate width including potential comma at end of line
+                  const textWidth = doc.getTextWidth(textToShow);
+                  const commaWidth = doc.getTextWidth(',');
+                  const willNeedCommaAtEnd = index < staffNamesData.length - 1; // Not the last name
+                  const totalWidthNeeded = textWidth + (willNeedCommaAtEnd ? commaWidth : 0);
+                  
+                  // Check if text (including comma) would exceed cell width (with 4mm margin)
+                  
+                  // If text (including comma) would exceed width, move to next line
+                  if (currentX + totalWidthNeeded > data.cell.x + data.cell.width - 8 && index > 0) {
+                    // Add comma after the PREVIOUS name (the last name on the current line)
+                    doc.text(',', currentX, cellY);
+                    
+                    currentX = data.cell.x + 3; // Reset to left margin
+                    cellY += lineHeight; // Move down for next line
+                    
+                    // Recalculate text without comma for new line
+                    const newLineText = staff.name;
+                    const newLineWidth = doc.getTextWidth(newLineText);
+                    
+                    // Draw the text at current position (no comma at start of line)
+                    doc.text(newLineText, currentX, cellY);
+                    currentX += newLineWidth;
+                  } else {
+                    // Draw the text at current position
+                    doc.text(textToShow, currentX, cellY);
+                    currentX += textWidth;
+                  }
+                });
+                
+                // Reset color for other cells
+                doc.setTextColor(0, 0, 0);
+              }
+            }
+          }
+        },
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+          overflow: 'linebreak',
+          halign: 'left',
+          valign: 'middle',
+          lineWidth: 0.25,
+          lineColor: [0, 0, 0]
+        },
+        headStyles: {
+          fillColor: [220, 220, 220],
+          textColor: [0, 0, 0],
+          fontStyle: 'bold',
+          fontSize: 9,
+          halign: 'center',
+          valign: 'middle',
+          lineWidth: 0.25,
+          lineColor: [0, 0, 0]
+        },
+        bodyStyles: {
+          lineWidth: 0.25,
+          lineColor: [0, 0, 0]
+        },
+        columnStyles: {
+          0: { cellWidth: 35, halign: 'left', valign: 'middle' },   // Date (fixed width)
+          1: { cellWidth: 45, halign: 'left', valign: 'middle' },   // Shift (fixed width)
+          2: { cellWidth: 80, halign: 'left', valign: 'middle' },   // Staff Names (80mm width)
+          3: { halign: 'center', valign: 'middle' }   // Remarks (center aligned)
+        },
+        tableLineWidth: 0.25,
+        tableLineColor: [0, 0, 0]
+      });
+    }
+    
+    // Footer
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 10, doc.internal.pageSize.getHeight() - 15);
+    doc.text(`Total Entries: ${monthEntries.length}`, doc.internal.pageSize.getWidth() - 10, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
+    
+    // Save
+    const filename = `Roster_List_${monthNames[month]}_${year}.pdf`;
+    doc.save(filename);
+    
+    console.log('✅ Roster list generated:', filename);
+  }
+  
+  /**
+   * Prepare roster table data in new tabular format
+   */
+  private prepareRosterTableData(entries: RosterEntry[]): string[][] {
+    // Group entries by date and shift type
+    const groupedData: Record<string, Record<string, RosterEntry[]>> = {};
+    
+    entries.forEach(entry => {
+      const dateKey = entry.date;
+      const shiftType = entry.shift_type;
+      
+      if (!groupedData[dateKey]) {
+        groupedData[dateKey] = {};
+      }
+      if (!groupedData[dateKey][shiftType]) {
+        groupedData[dateKey][shiftType] = [];
+      }
+      groupedData[dateKey][shiftType].push(entry);
+    });
+    
+    // Convert to table rows
+    const tableData: string[][] = [];
+    
+    // Sort dates
+    const sortedDates = Object.keys(groupedData).sort();
+    
+    sortedDates.forEach(date => {
+      const shiftData = groupedData[date];
+      
+      // Define shift order for consistent display
+      const shiftOrder = [
+        'Morning Shift (9-4)',
+        'Saturday Regular (12-10)', 
+        'Evening Shift (4-10)',
+        'Night Duty',
+        'Sunday/Public Holiday/Special'
+      ];
+      
+      // Process shifts in order
+      shiftOrder.forEach(shiftType => {
+        const shiftEntries = shiftData[shiftType];
+        if (!shiftEntries || shiftEntries.length === 0) return;
+        
+        // Get staff names with color indicators
+        const staffNamesWithColors = this.formatStaffNamesWithColors(shiftEntries);
+        
+        // Get remarks from special date info
+        const remarks = this.extractRemarks(shiftEntries);
+        
+        // Format shift type for display
+        const formattedShift = this.formatShiftTypeForList(shiftType);
+        
+        tableData.push([
+          this.formatDateForList(date),  // DDD dd-mmm-yyyy
+          formattedShift,                // Shift type
+          staffNamesWithColors,          // Staff names with color indicators
+          remarks                        // Remarks
+        ]);
+      });
+    });
+    
+    return tableData;
+  }
+  
+  /**
+   * Format staff names with actual text colors based on their edit status
+   */
+  private formatStaffNamesWithColors(entries: RosterEntry[]): { text: string; color: number[] }[] {
+    return entries.map(entry => {
+      const staffName = entry.assigned_name;
+      const textColor = this.getTextColor(entry);
+      
+      return {
+        text: staffName,
+        color: this.hexToRgb(textColor)
+      };
+    });
+  }
+  
+  /**
+   * Get actual text color for staff name based on edit status
+   */
+  private getTextColor(entry: RosterEntry): string {
+    // HIGHEST PRIORITY: Admin-set text color
+    if (entry.text_color) {
+      return entry.text_color;
+    }
+    
+    // Check if entry has been reverted to original
+    const hasBeenReverted = () => {
+      if (!entry.change_description) return false;
+      
+      // Check if we have original PDF assignment stored
+      const originalPdfMatch = entry.change_description.match(/\(Original PDF: ([^)]+)\)/);
+      if (originalPdfMatch) {
+        let originalPdfAssignment = originalPdfMatch[1].trim();
+        
+        // Fix missing closing parenthesis if it exists
+        if (originalPdfAssignment.includes('(R') && !originalPdfAssignment.includes('(R)')) {
+          originalPdfAssignment = originalPdfAssignment.replace('(R', '(R)');
+        }
+        
+        // Check if current assignment matches original PDF assignment (reverted to original)
+        return entry.assigned_name === originalPdfAssignment;
+      }
+      
+      return false;
+    };
+    
+    // Check if entry has been edited (name changed)
+    const hasBeenEdited = entry.change_description && 
+                         entry.change_description.includes('Name changed from') &&
+                         entry.last_edited_by;
+
+    if (hasBeenReverted()) {
+      return '#059669'; // Green for reverted entries (back to original PDF by ADMIN)
+    } else if (hasBeenEdited) {
+      return '#dc2626'; // Red for edited entries (by non-ADMIN users)
+    } else {
+      return '#000000'; // Black for original entries
+    }
+  }
+  
+  /**
+   * Convert hex color to RGB array for jsPDF
+   */
+  private hexToRgb(hex: string): number[] {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? [
+      parseInt(result[1], 16),
+      parseInt(result[2], 16),
+      parseInt(result[3], 16)
+    ] : [0, 0, 0]; // Default to black if parsing fails
+  }
+  
+  /**
+   * Get staff names data for a specific row during PDF generation
+   */
+  private getStaffNamesForRow(date: string, shiftType: string, entries: RosterEntry[]): { name: string; color: string }[] {
+    // Find entries that match this date and shift
+    const matchingEntries = entries.filter(entry => {
+      const formattedDate = this.formatDateForList(entry.date);
+      const formattedShift = this.formatShiftTypeForList(entry.shift_type);
+      return formattedDate === date && formattedShift === shiftType;
+    });
+    
+    return matchingEntries.map(entry => ({
+      name: entry.assigned_name,
+      color: this.getTextColor(entry)
+    }));
+  }
+  
+  /**
+   * Create table data with combined staff names but individual colors
+   */
+  private createColoredTableData(entries: RosterEntry[]): any[] {
+    // Group entries by date and shift type
+    const groupedData: Record<string, Record<string, RosterEntry[]>> = {};
+    
+    entries.forEach(entry => {
+      const dateKey = entry.date;
+      const shiftType = entry.shift_type;
+      
+      if (!groupedData[dateKey]) {
+        groupedData[dateKey] = {};
+      }
+      if (!groupedData[dateKey][shiftType]) {
+        groupedData[dateKey][shiftType] = [];
+      }
+      groupedData[dateKey][shiftType].push(entry);
+    });
+    
+    // Convert to table rows with colored text
+    const tableData: any[] = [];
+    
+    // Sort dates
+    const sortedDates = Object.keys(groupedData).sort();
+    
+    sortedDates.forEach(date => {
+      const shiftData = groupedData[date];
+      
+      // Define shift order for consistent display
+      const shiftOrder = [
+        'Morning Shift (9-4)',
+        'Saturday Regular (12-10)', 
+        'Evening Shift (4-10)',
+        'Night Duty',
+        'Sunday/Public Holiday/Special'
+      ];
+      
+      // Process shifts in order
+      shiftOrder.forEach(shiftType => {
+        const shiftEntries = shiftData[shiftType];
+        if (!shiftEntries || shiftEntries.length === 0) return;
+        
+        // Get remarks from special date info
+        const remarks = this.extractRemarks(shiftEntries);
+        
+        // Format shift type for display
+        const formattedShift = this.formatShiftTypeForList(shiftType);
+        
+        // Combine all staff names with individual colors
+        const staffNamesWithColors = shiftEntries.map(entry => ({
+          name: entry.assigned_name,
+          color: this.getTextColor(entry)
+        }));
+        
+        // Create single row with combined staff names
+        const row = [
+          this.formatDateForList(date),
+          formattedShift,
+          staffNamesWithColors.map(s => s.name).join(', '), // Convert to string for display
+          remarks
+        ];
+        
+        tableData.push(row);
+      });
+    });
+    
+    return tableData;
+  }
+  
+  /**
+   * Extract remarks from entries (special date info)
+   */
+  private extractRemarks(entries: RosterEntry[]): string {
+    // Look for special date information in change descriptions
+    for (const entry of entries) {
+      if (entry.change_description && entry.change_description.includes('Special Date:')) {
+        const match = entry.change_description.match(/Special Date:\s*([^;]+)/);
+        if (match && match[1].trim()) {
+          // Only show text before asterisk (*) if asterisk exists
+          const fullRemarks = match[1].trim();
+          return fullRemarks.includes('*') ? fullRemarks.split('*')[0].trim() : fullRemarks;
+        }
+      }
+    }
+    return ''; // No special remarks
+  }
+  
+  /**
+   * Format date as DDD dd-mmm-yyyy (e.g., "Mon 01-Jul-2025")
+   */
+  private formatDateForList(dateString: string): string {
+    const date = new Date(dateString);
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    const dayName = dayNames[date.getDay()];
+    const day = date.getDate().toString().padStart(2, '0');
+    const monthName = monthNames[date.getMonth()];
+    const year = date.getFullYear();
+    
+    return `${dayName} ${day}-${monthName}-${year}`;
+  }
+  
+  /**
+   * Format shift type for list display
+   */
+  private formatShiftTypeForList(shiftType: string): string {
+    const shortNames: Record<string, string> = {
+      'Morning Shift (9-4)': 'Morning Shift (9-4)',
+      'Evening Shift (4-10)': 'Evening Shift (4-10)', 
+      'Saturday Regular (12-10)': 'Saturday Regular (12-10)',
+      'Night Duty': 'Night Duty',
+      'Sunday/Public Holiday/Special': 'Sunday/Public Holiday/Special'
+    };
+    return shortNames[shiftType] || shiftType;
+  }
+}
+
+// Create singleton instance
+export const rosterListGenerator = new RosterListGenerator();

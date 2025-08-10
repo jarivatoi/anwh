@@ -1,175 +1,469 @@
-import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { RosterEntry } from '../../types/roster';
 
-export interface RosterImageExportOptions {
+export interface RosterListOptions {
   month: number;
   year: number;
-  title?: string;
+  entries: RosterEntry[];
 }
 
-export class RosterImageExporter {
+export class RosterListGenerator {
   
   /**
-   * Export roster table as image to PDF
+   * Generate roster list matching the PDF template format - all on one page
    */
-  async exportRosterAsImage(options: RosterImageExportOptions): Promise<void> {
-    const { month, year, title = 'X-ray ANWH Roster' } = options;
+  async generateRosterList(options: RosterListOptions): Promise<void> {
+    const { month, year, entries } = options;
     
-    console.log('📸 Starting roster image export...');
+    console.log('📄 Generating roster list');
+    
+    // Create PDF document - A4 portrait
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
     
     const monthNames = [
       'January', 'February', 'March', 'April', 'May', 'June',
       'July', 'August', 'September', 'October', 'November', 'December'
     ];
     
-    try {
-      // Find the roster table element
-      const tableElement = document.querySelector('table') as HTMLElement;
-      if (!tableElement) {
-        throw new Error('Roster table not found. Please make sure you are on the Table View.');
-      }
+    // Header
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`X-Ray Roster for month of ${monthNames[month]} ${year}`, doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+    
+    // Filter entries for the specified month/year
+    const monthEntries = entries.filter(entry => {
+      const entryDate = new Date(entry.date);
+      return entryDate.getMonth() === month && entryDate.getFullYear() === year;
+    });
+    
+    console.log(`📄 Filtered ${monthEntries.length} entries for ${monthNames[month]} ${year}`);
+    
+    if (monthEntries.length === 0) {
+      // Show "No data" message
+      doc.setFontSize(14);
+      doc.text('No roster entries found for this month', doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
+    } else {
+      // Create table data with colored text
+      const tableData = this.createColoredTableData(monthEntries);
       
-      console.log('📸 Found roster table, preparing for capture...');
-      
-      // Store original styles to restore later
-      const originalStyles = new Map<Element, string>();
-      
-      // Temporarily disable animations and optimize for capture
-      const elementsToOptimize = document.querySelectorAll('*');
-      elementsToOptimize.forEach(element => {
-        const htmlElement = element as HTMLElement;
-        originalStyles.set(element, htmlElement.style.cssText);
-        
-        // Disable animations and transitions
-        htmlElement.style.animation = 'none';
-        htmlElement.style.transition = 'none';
-        htmlElement.style.transform = 'none';
-        
-        // Fix text rendering for better PDF quality
-        if (htmlElement.style.fontSize) {
-          const currentSize = parseInt(htmlElement.style.fontSize);
-          if (currentSize > 8) {
-            htmlElement.style.fontSize = Math.max(8, currentSize * 0.85) + 'px';
+      // Create table with new column structure
+      autoTable(doc, {
+        startY: 35,
+        head: [['Date', 'Shift', 'Staff Names', 'Remarks']],
+        body: tableData,
+        willDrawCell: (data) => {
+          // Clear staff names column content to prevent default rendering
+          if (data.column.index === 2 && data.section === 'body') {
+            data.cell.text = [];
           }
-        }
-        
-        // Convert scrolling text to normal wrapped text
-        if (htmlElement.classList.contains('scrolling-text') || 
-            htmlElement.style.animation?.includes('scroll')) {
-          htmlElement.style.whiteSpace = 'normal';
-          htmlElement.style.wordWrap = 'break-word';
-          htmlElement.style.overflow = 'visible';
-          htmlElement.style.textOverflow = 'clip';
-          htmlElement.style.lineHeight = '1.2';
-        }
-        
-        // Handle special date text - only show text before asterisk
-        if (htmlElement.textContent && htmlElement.textContent.includes('*')) {
-          const textBeforeAsterisk = htmlElement.textContent.split('*')[0].trim();
-          if (textBeforeAsterisk) {
-            htmlElement.textContent = textBeforeAsterisk;
+        },
+        didDrawCell: (data) => {
+          // Only draw custom colored text for staff names column in body
+          if (data.column.index === 2 && data.section === 'body' && data.row.index >= 0) {
+            // Get the staff data for this specific row
+            if (data.row.index < tableData.length) {
+              const originalRow = tableData[data.row.index];
+              const staffNamesData = this.getStaffNamesForRow(originalRow[0], originalRow[1], entries);
+              
+              if (staffNamesData && staffNamesData.length > 0) {
+                // Start drawing from left edge of cell with proper margin
+                let currentX = data.cell.x + 2;
+                let currentLine = 0;
+                const lineHeight = 2.5;
+                const maxWidth = data.cell.width - 6; // Increased margin for better spacing
+                let totalLines = 1;
+                let tempX = 0;
+                
+                // Pre-calculate how many lines we'll need
+                staffNamesData.forEach((staff, index) => {
+                  const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
+                  // Use smaller font for width calculation
+                  doc.setFontSize(7);
+                  const textWidth = doc.getTextWidth(textToShow);
+                  
+                  if (tempX + textWidth > maxWidth && index > 0) {
+                    totalLines++;
+                    tempX = doc.getTextWidth(staff.name); // Reset with just the name (no comma)
+                  } else {
+                    tempX += textWidth;
+                  }
+                });
+                
+                // Calculate starting Y position for vertical centering
+                const totalHeight = totalLines * lineHeight;
+                let cellY = data.cell.y + (data.cell.height / 2) - (totalHeight / 2) + 2;
+                
+                // Set font to match table
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'normal');
+                
+                staffNamesData.forEach((staff, index) => {
+                  // Set individual color for this staff member
+                  const rgbColor = this.hexToRgb(staff.color);
+                  doc.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
+                  
+                  // Format text with comma separator (but not at start of new lines)
+                  const isFirstOnLine = currentX === data.cell.x + 2;
+                  const textToShow = (index === 0 || isFirstOnLine) ? staff.name : `, ${staff.name}`;
+                  
+                  // Calculate width including potential comma at end of line
+                  const textWidth = doc.getTextWidth(textToShow);
+                  const commaWidth = doc.getTextWidth(',');
+                  const willNeedCommaAtEnd = index < staffNamesData.length - 1; // Not the last name
+                  const totalWidthNeeded = textWidth + (willNeedCommaAtEnd ? commaWidth : 0);
+                  
+                  // Check if text (including comma) would exceed cell width (with 4mm margin)
+                  
+                  // If text (including comma) would exceed width, move to next line
+                  if (currentX + totalWidthNeeded > data.cell.x + data.cell.width - 8 && index > 0) {
+                    // Add comma after the PREVIOUS name (the last name on the current line)
+                    doc.text(',', currentX, cellY);
+                    
+                    currentX = data.cell.x + 3; // Reset to left margin
+                    cellY += lineHeight; // Move down for next line
+                    
+                    // Recalculate text without comma for new line
+                    const newLineText = staff.name;
+                    const newLineWidth = doc.getTextWidth(newLineText);
+                    
+                    // Draw the text at current position (no comma at start of line)
+                    doc.text(newLineText, currentX, cellY);
+                    currentX += newLineWidth;
+                  } else {
+                    // Draw the text at current position
+                    doc.text(textToShow, currentX, cellY);
+                    currentX += textWidth;
+                  }
+                });
+                
+                // Reset color for other cells
+                doc.setTextColor(0, 0, 0);
+              }
+            }
           }
-        }
+        },
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+          overflow: 'linebreak',
+          halign: 'left',
+          valign: 'middle',
+          lineWidth: 0.25,
+          lineColor: [0, 0, 0]
+        },
+        headStyles: {
+          fillColor: [220, 220, 220],
+          textColor: [0, 0, 0],
+          fontStyle: 'bold',
+          fontSize: 9,
+          halign: 'center',
+          valign: 'middle',
+          lineWidth: 0.25,
+          lineColor: [0, 0, 0]
+        },
+        bodyStyles: {
+          lineWidth: 0.25,
+          lineColor: [0, 0, 0]
+        },
+        columnStyles: {
+          0: { cellWidth: 35, halign: 'left', valign: 'middle' },   // Date (fixed width)
+          1: { cellWidth: 45, halign: 'left', valign: 'middle' },   // Shift (fixed width)
+          2: { cellWidth: 80, halign: 'left', valign: 'middle' },   // Staff Names (80mm width)
+          3: { halign: 'center', valign: 'middle' }   // Remarks (center aligned)
+        },
+        tableLineWidth: 0.25,
+        tableLineColor: [0, 0, 0]
       });
-      
-      // Force layout recalculation
-      tableElement.offsetHeight;
-      
-      console.log('📸 Capturing table as image...');
-      
-      // Capture the table with high quality settings
-      const canvas = await html2canvas(tableElement, {
-        scale: 3, // Higher resolution for better text quality
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        removeContainer: true,
-        imageTimeout: 15000,
-        logging: false,
-        width: tableElement.scrollWidth,
-        height: tableElement.scrollHeight,
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: window.innerWidth,
-        windowHeight: window.innerHeight,
-        ignoreElements: (element) => {
-          // Ignore spinning elements and animations
-          return element.classList.contains('animate-spin') || 
-                 element.classList.contains('animate-pulse') ||
-                 element.style.animation?.includes('spin') ||
-                 element.style.animation?.includes('pulse');
-        }
-      });
-      
-      console.log('📸 Image captured, creating PDF...');
-      
-      // Create PDF document
-      const doc = new jsPDF({
-        orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-      
-      // Calculate dimensions to fit the image on the page
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const margin = 10;
-      const availableWidth = pageWidth - (margin * 2);
-      const availableHeight = pageHeight - (margin * 3) - 20; // Extra space for title
-      
-      // Calculate scaling to fit image on page
-      const imageAspectRatio = canvas.width / canvas.height;
-      const availableAspectRatio = availableWidth / availableHeight;
-      
-      let imageWidth, imageHeight;
-      if (imageAspectRatio > availableAspectRatio) {
-        // Image is wider, scale by width
-        imageWidth = availableWidth;
-        imageHeight = availableWidth / imageAspectRatio;
-      } else {
-        // Image is taller, scale by height
-        imageHeight = availableHeight;
-        imageWidth = availableHeight * imageAspectRatio;
-      }
-      
-      // Center the image on the page
-      const imageX = (pageWidth - imageWidth) / 2;
-      const imageY = margin + 20; // Leave space for title
-      
-      // Add title
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`${title} - ${monthNames[month]} ${year}`, pageWidth / 2, 15, { align: 'center' });
-      
-      // Add the image to PDF
-      const imageData = canvas.toDataURL('image/png', 1.0);
-      doc.addImage(imageData, 'PNG', imageX, imageY, imageWidth, imageHeight);
-      
-      // Add footer
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.text(`Generated on: ${new Date().toLocaleString()}`, margin, pageHeight - 5);
-      
-      // Restore original styles
-      originalStyles.forEach((originalStyle, element) => {
-        (element as HTMLElement).style.cssText = originalStyle;
-      });
-      
-      // Force layout recalculation after restoring styles
-      tableElement.offsetHeight;
-      
-      // Save the PDF
-      const filename = `Roster_Image_${monthNames[month]}_${year}.pdf`;
-      doc.save(filename);
-      
-      console.log('✅ Roster image export completed:', filename);
-      
-    } catch (error) {
-      console.error('❌ Roster image export failed:', error);
-      throw error;
     }
+    
+    // Footer
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 10, doc.internal.pageSize.getHeight() - 15);
+    doc.text(`Total Entries: ${monthEntries.length}`, doc.internal.pageSize.getWidth() - 10, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
+    
+    // Save
+    const filename = `Roster_List_${monthNames[month]}_${year}.pdf`;
+    doc.save(filename);
+    
+    console.log('✅ Roster list generated:', filename);
+  }
+  
+  /**
+   * Prepare roster table data in new tabular format
+   */
+  private prepareRosterTableData(entries: RosterEntry[]): string[][] {
+    // Group entries by date and shift type
+    const groupedData: Record<string, Record<string, RosterEntry[]>> = {};
+    
+    entries.forEach(entry => {
+      const dateKey = entry.date;
+      const shiftType = entry.shift_type;
+      
+      if (!groupedData[dateKey]) {
+        groupedData[dateKey] = {};
+      }
+      if (!groupedData[dateKey][shiftType]) {
+        groupedData[dateKey][shiftType] = [];
+      }
+      groupedData[dateKey][shiftType].push(entry);
+    });
+    
+    // Convert to table rows
+    const tableData: string[][] = [];
+    
+    // Sort dates
+    const sortedDates = Object.keys(groupedData).sort();
+    
+    sortedDates.forEach(date => {
+      const shiftData = groupedData[date];
+      
+      // Define shift order for consistent display
+      const shiftOrder = [
+        'Morning Shift (9-4)',
+        'Saturday Regular (12-10)', 
+        'Evening Shift (4-10)',
+        'Night Duty',
+        'Sunday/Public Holiday/Special'
+      ];
+      
+      // Process shifts in order
+      shiftOrder.forEach(shiftType => {
+        const shiftEntries = shiftData[shiftType];
+        if (!shiftEntries || shiftEntries.length === 0) return;
+        
+        // Get staff names with color indicators
+        const staffNamesWithColors = this.formatStaffNamesWithColors(shiftEntries);
+        
+        // Get remarks from special date info
+        const remarks = this.extractRemarks(shiftEntries);
+        
+        // Format shift type for display
+        const formattedShift = this.formatShiftTypeForList(shiftType);
+        
+        tableData.push([
+          this.formatDateForList(date),  // DDD dd-mmm-yyyy
+          formattedShift,                // Shift type
+          staffNamesWithColors,          // Staff names with color indicators
+          remarks                        // Remarks
+        ]);
+      });
+    });
+    
+    return tableData;
+  }
+  
+  /**
+   * Format staff names with actual text colors based on their edit status
+   */
+  private formatStaffNamesWithColors(entries: RosterEntry[]): { text: string; color: number[] }[] {
+    return entries.map(entry => {
+      const staffName = entry.assigned_name;
+      const textColor = this.getTextColor(entry);
+      
+      return {
+        text: staffName,
+        color: this.hexToRgb(textColor)
+      };
+    });
+  }
+  
+  /**
+   * Get actual text color for staff name based on edit status
+   */
+  private getTextColor(entry: RosterEntry): string {
+    // HIGHEST PRIORITY: Admin-set text color
+    if (entry.text_color) {
+      return entry.text_color;
+    }
+    
+    // Check if entry has been reverted to original
+    const hasBeenReverted = () => {
+      if (!entry.change_description) return false;
+      
+      // Check if we have original PDF assignment stored
+      const originalPdfMatch = entry.change_description.match(/\(Original PDF: ([^)]+)\)/);
+      if (originalPdfMatch) {
+        let originalPdfAssignment = originalPdfMatch[1].trim();
+        
+        // Fix missing closing parenthesis if it exists
+        if (originalPdfAssignment.includes('(R') && !originalPdfAssignment.includes('(R)')) {
+          originalPdfAssignment = originalPdfAssignment.replace('(R', '(R)');
+        }
+        
+        // Check if current assignment matches original PDF assignment (reverted to original)
+        return entry.assigned_name === originalPdfAssignment;
+      }
+      
+      return false;
+    };
+    
+    // Check if entry has been edited (name changed)
+    const hasBeenEdited = entry.change_description && 
+                         entry.change_description.includes('Name changed from') &&
+                         entry.last_edited_by;
+
+    if (hasBeenReverted()) {
+      return '#059669'; // Green for reverted entries (back to original PDF by ADMIN)
+    } else if (hasBeenEdited) {
+      return '#dc2626'; // Red for edited entries (by non-ADMIN users)
+    } else {
+      return '#000000'; // Black for original entries
+    }
+  }
+  
+  /**
+   * Convert hex color to RGB array for jsPDF
+   */
+  private hexToRgb(hex: string): number[] {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? [
+      parseInt(result[1], 16),
+      parseInt(result[2], 16),
+      parseInt(result[3], 16)
+    ] : [0, 0, 0]; // Default to black if parsing fails
+  }
+  
+  /**
+   * Get staff names data for a specific row during PDF generation
+   */
+  private getStaffNamesForRow(date: string, shiftType: string, entries: RosterEntry[]): { name: string; color: string }[] {
+    // Find entries that match this date and shift
+    const matchingEntries = entries.filter(entry => {
+      const formattedDate = this.formatDateForList(entry.date);
+      const formattedShift = this.formatShiftTypeForList(entry.shift_type);
+      return formattedDate === date && formattedShift === shiftType;
+    });
+    
+    return matchingEntries.map(entry => ({
+      name: entry.assigned_name,
+      color: this.getTextColor(entry)
+    }));
+  }
+  
+  /**
+   * Create table data with combined staff names but individual colors
+   */
+  private createColoredTableData(entries: RosterEntry[]): any[] {
+    // Group entries by date and shift type
+    const groupedData: Record<string, Record<string, RosterEntry[]>> = {};
+    
+    entries.forEach(entry => {
+      const dateKey = entry.date;
+      const shiftType = entry.shift_type;
+      
+      if (!groupedData[dateKey]) {
+        groupedData[dateKey] = {};
+      }
+      if (!groupedData[dateKey][shiftType]) {
+        groupedData[dateKey][shiftType] = [];
+      }
+      groupedData[dateKey][shiftType].push(entry);
+    });
+    
+    // Convert to table rows with colored text
+    const tableData: any[] = [];
+    
+    // Sort dates
+    const sortedDates = Object.keys(groupedData).sort();
+    
+    sortedDates.forEach(date => {
+      const shiftData = groupedData[date];
+      
+      // Define shift order for consistent display
+      const shiftOrder = [
+        'Morning Shift (9-4)',
+        'Saturday Regular (12-10)', 
+        'Evening Shift (4-10)',
+        'Night Duty',
+        'Sunday/Public Holiday/Special'
+      ];
+      
+      // Process shifts in order
+      shiftOrder.forEach(shiftType => {
+        const shiftEntries = shiftData[shiftType];
+        if (!shiftEntries || shiftEntries.length === 0) return;
+        
+        // Get remarks from special date info
+        const remarks = this.extractRemarks(shiftEntries);
+        
+        // Format shift type for display
+        const formattedShift = this.formatShiftTypeForList(shiftType);
+        
+        // Combine all staff names with individual colors
+        const staffNamesWithColors = shiftEntries.map(entry => ({
+          name: entry.assigned_name,
+          color: this.getTextColor(entry)
+        }));
+        
+        // Create single row with combined staff names
+        const row = [
+          this.formatDateForList(date),
+          formattedShift,
+          staffNamesWithColors.map(s => s.name).join(', '), // Convert to string for display
+          remarks
+        ];
+        
+        tableData.push(row);
+      });
+    });
+    
+    return tableData;
+  }
+  
+  /**
+   * Extract remarks from entries (special date info)
+   */
+  private extractRemarks(entries: RosterEntry[]): string {
+    // Look for special date information in change descriptions
+    for (const entry of entries) {
+      if (entry.change_description && entry.change_description.includes('Special Date:')) {
+        const match = entry.change_description.match(/Special Date:\s*([^;]+)/);
+        if (match && match[1].trim()) {
+          // Only show text before asterisk (*) if asterisk exists
+          const fullRemarks = match[1].trim();
+          return fullRemarks.includes('*') ? fullRemarks.split('*')[0].trim() : fullRemarks;
+        }
+      }
+    }
+    return ''; // No special remarks
+  }
+  
+  /**
+   * Format date as DDD dd-mmm-yyyy (e.g., "Mon 01-Jul-2025")
+   */
+  private formatDateForList(dateString: string): string {
+    const date = new Date(dateString);
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    const dayName = dayNames[date.getDay()];
+    const day = date.getDate().toString().padStart(2, '0');
+    const monthName = monthNames[date.getMonth()];
+    const year = date.getFullYear();
+    
+    return `${dayName} ${day}-${monthName}-${year}`;
+  }
+  
+  /**
+   * Format shift type for list display
+   */
+  private formatShiftTypeForList(shiftType: string): string {
+    const shortNames: Record<string, string> = {
+      'Morning Shift (9-4)': 'Morning Shift (9-4)',
+      'Evening Shift (4-10)': 'Evening Shift (4-10)', 
+      'Saturday Regular (12-10)': 'Saturday Regular (12-10)',
+      'Night Duty': 'Night Duty',
+      'Sunday/Public Holiday/Special': 'Sunday/Public Holiday/Special'
+    };
+    return shortNames[shiftType] || shiftType;
   }
 }
 
 // Create singleton instance
-export const rosterImageExporter = new RosterImageExporter();
+export const rosterListGenerator = new RosterListGenerator();
