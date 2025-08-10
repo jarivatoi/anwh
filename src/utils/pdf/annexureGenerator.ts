@@ -150,7 +150,6 @@ export class AnnexureGenerator {
     doc.setFontSize(8);
     doc.text(`Generated on: ${new Date().toLocaleString()}`, 15, doc.internal.pageSize.getHeight() - 15);
     doc.text('X-ray AN WH System', doc.internal.pageSize.getWidth() - 15, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
-    doc.text('X-ray ANWH System', doc.internal.pageSize.getWidth() - 15, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
     // Save
     const filename = `Annexure_${monthNames[month]}_${year}.pdf`;
     doc.save(filename);
