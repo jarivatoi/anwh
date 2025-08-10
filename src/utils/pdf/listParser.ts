@@ -118,13 +118,111 @@ export class ListParser {
     
     console.log(`📋 EXTRACTING ROW DATA:`, row.map(item => `"${item.text}"`).join(' | '));
     
-    // Expected column order: Date, Day, Shift Type, Assigned Staff, Last Edited By, Last Edited At
+    // Expected column order from PDF: Date, Day, Shift Type, Assigned Staff, Last Edited By, Last Edited At
     let date: string | null = null;
     let shiftType: string | null = null;
     let assignedName: string | null = null;
     
-    // STEP 1: Find date (usually in first column)
-    for (let i = 0; i < Math.min(3, row.length); i++) {
+    // STEP 1: Find date (should be in first column - index 0)
+    if (row.length > 0) {
+      const dateMatch = this.extractDateFromText(row[0].text);
+      if (dateMatch) {
+        date = dateMatch.date;
+        console.log(`📅 Found date in column 1: ${date}`);
+      }
+    }
+    
+    // STEP 2: Find shift type (should be in third column - index 2, after Date and Day)
+    if (row.length > 2) {
+      const shift = this.identifyShiftTypeFromText(row[2].text);
+      if (shift) {
+        shiftType = shift;
+        console.log(`⏰ Found shift in column 3: ${shiftType}`);
+      }
+    }
+    
+    // STEP 3: Find staff name (should be in fourth column - index 3)
+    if (row.length > 3) {
+      const staff = this.findMatchingStaffName(row[3].text);
+      if (staff) {
+        assignedName = staff;
+        console.log(`👤 Found staff in column 4: ${assignedName}`);
+      }
+    }
+    
+    // FALLBACK: If we didn't find data in expected columns, search all columns
+    if (!date) {
+      console.log(`📅 Date not found in column 1, searching all columns...`);
+      for (let i = 0; i < Math.min(3, row.length); i++) {
+        const dateMatch = this.extractDateFromText(row[i].text);
+        if (dateMatch) {
+          date = dateMatch.date;
+          console.log(`📅 Found date in column ${i + 1}: ${date}`);
+          break;
+        }
+      }
+    }
+    
+    if (!shiftType) {
+      console.log(`⏰ Shift not found in column 3, searching all columns...`);
+      for (let i = 0; i < row.length; i++) {
+        const shift = this.identifyShiftTypeFromText(row[i].text);
+        if (shift) {
+          shiftType = shift;
+          console.log(`⏰ Found shift in column ${i + 1}: ${shiftType}`);
+          break;
+        }
+      }
+    }
+    
+    if (!assignedName) {
+      console.log(`👤 Staff not found in column 4, searching all columns...`);
+      for (let i = 0; i < row.length; i++) {
+        const staff = this.findMatchingStaffName(row[i].text);
+        if (staff) {
+          assignedName = staff;
+          console.log(`👤 Found staff in column ${i + 1}: ${assignedName}`);
+          break;
+        }
+      }
+    }
+    
+    // Validate that we found all required fields
+    if (!date || !shiftType || !assignedName) {
+      console.log(`❌ Missing required fields: date=${date}, shift=${shiftType}, staff=${assignedName}`);
+      return null;
+    }
+    
+    console.log(`✅ EXTRACTED ENTRY: ${assignedName} | ${shiftType} | ${date}`);
+    
+    return {
+      date,
+      shiftType,
+      assignedName
+    };
+  }
+  
+  /**
+   * Extract date from text - handles all the specified formats
+   */
+  private extractDateFromText(text: string): {date: string, dayOfWeek: number} | null {
+    const cleanText = text.trim();
+    
+    console.log(`📅 DATE DEBUG: Analyzing text: "${cleanText}"`);
+    
+    // Format 0: DD/MM/YYYY (01/07/2025) - PRIORITY FORMAT for this PDF
+    const ddmmyyyySlashPattern = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+    const ddmmyyyySlashMatch = cleanText.match(ddmmyyyySlashPattern);
+    if (ddmmyyyySlashMatch) {
+      const [, day, month, year] = ddmmyyyySlashMatch;
+      const standardDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      const dateObj = new Date(standardDate);
+      
+      if (this.isValidDate(dateObj, parseInt(year), parseInt(month), parseInt(day))) {
+        console.log(`📅 Parsed DD/MM/YYYY format: "${cleanText}" -> ${standardDate}`);
+        return { date: standardDate, dayOfWeek: dateObj.getDay() };
+      }
+    }
       const dateMatch = this.extractDateFromText(row[i].text);
       if (dateMatch) {
         date = dateMatch.date;
