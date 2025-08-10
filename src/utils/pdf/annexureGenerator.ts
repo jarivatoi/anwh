@@ -124,6 +124,8 @@ export class AnnexureGenerator {
         6: { cellWidth: 30, halign: 'right' }   // AMOUNT
       },
       margin: { left: 8, right: 8 },
+    }
+    )
     const grandNightDutyHours = staffSummaries.reduce((sum, s) => sum + s.nightDutyHours, 0);
     const grandSubtotal = staffSummaries.reduce((sum, s) => sum + s.totalAmount, 0);
     const grandNightAllowance = staffSummaries.reduce((sum, s) => sum + s.nightAllowance, 0);
