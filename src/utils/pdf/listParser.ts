@@ -116,13 +116,15 @@ export class ListParser {
       return null;
     }
     
+    console.log(`📋 EXTRACTING ROW DATA:`, row.map(item => `"${item.text}"`).join(' | '));
+    
     // Expected column order: Date, Day, Shift Type, Assigned Staff, Last Edited By, Last Edited At
     let date: string | null = null;
     let shiftType: string | null = null;
     let assignedName: string | null = null;
     
     // STEP 1: Find date (usually in first column)
-    for (let i = 0; i < Math.min(2, row.length); i++) {
+    for (let i = 0; i < Math.min(3, row.length); i++) {
       const dateMatch = this.extractDateFromText(row[i].text);
       if (dateMatch) {
         date = dateMatch.date;
@@ -157,6 +159,8 @@ export class ListParser {
       return null;
     }
     
+    console.log(`✅ EXTRACTED ENTRY: ${assignedName} | ${shiftType} | ${date}`);
+    
     return {
       date,
       shiftType,
@@ -172,11 +176,25 @@ export class ListParser {
     
     console.log(`📅 DATE DEBUG: Analyzing text: "${cleanText}"`);
     
-    // Format 1: DD/MM/YYYY (01/07/2025)
+    // Format 0: DD/MM/YYYY (01/07/2025) - PRIORITY FORMAT for this PDF
     const ddmmyyyySlashPattern = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
     const ddmmyyyySlashMatch = cleanText.match(ddmmyyyySlashPattern);
     if (ddmmyyyySlashMatch) {
       const [, day, month, year] = ddmmyyyySlashMatch;
+      const standardDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      const dateObj = new Date(standardDate);
+      
+      if (this.isValidDate(dateObj, parseInt(year), parseInt(month), parseInt(day))) {
+        console.log(`📅 Parsed DD/MM/YYYY format: "${cleanText}" -> ${standardDate}`);
+        return { date: standardDate, dayOfWeek: dateObj.getDay() };
+      }
+    }
+    
+    // Format 1: DD/MM/YYYY (01/07/2025)
+    const ddmmyyyySlashPattern2 = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+    const ddmmyyyySlashMatch2 = cleanText.match(ddmmyyyySlashPattern2);
+    if (ddmmyyyySlashMatch2) {
+      const [, day, month, year] = ddmmyyyySlashMatch2;
       const standardDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
       const dateObj = new Date(standardDate);
       
@@ -352,13 +370,22 @@ export class ListParser {
   private isHeaderRow(row: Array<{text: string, x: number, y: number}>): boolean {
     const rowText = row.map(item => item.text.toLowerCase()).join(' ');
     
+    console.log(`📋 HEADER CHECK: Row text: "${rowText}"`);
+    
     // Check for common header patterns
     const headerPatterns = [
-      'date', 'day', 'shift type', 'assigned staff', 'last edited'
+      'date', 'day', 'shift type', 'assigned staff', 'last edited', 'staff', 'type'
     ];
     
-    // If row contains header keywords, it's likely a header
-    return headerPatterns.some(pattern => rowText.includes(pattern));
+    // If row contains multiple header keywords, it's likely a header
+    const headerKeywordCount = headerPatterns.filter(pattern => 
+      rowText.includes(pattern)
+    ).length;
+    
+    const isHeader = headerKeywordCount >= 2;
+    console.log(`📋 HEADER CHECK: Found ${headerKeywordCount} header keywords, isHeader: ${isHeader}`);
+    
+    return isHeader;
   }
   
   /**
@@ -369,7 +396,20 @@ export class ListParser {
     
     console.log(`🔍 SHIFT DEBUG: Analyzing text: "${text}"`);
     
-    // Direct shift type matches (most common in list format)
+    // PRIORITY 1: Exact parenthetical matches (most common in this PDF format)
+    if (lowerText.includes('evening') && lowerText.includes('(4-10)')) {
+      return 'Evening Shift (4-10)';
+    }
+    
+    if (lowerText.includes('morning') && lowerText.includes('(9-4)')) {
+      return 'Morning Shift (9-4)';
+    }
+    
+    if (lowerText.includes('saturday') && lowerText.includes('(12-10)')) {
+      return 'Saturday Regular (12-10)';
+    }
+    
+    // PRIORITY 2: Direct shift type matches (most common in list format)
     if (lowerText.includes('evening') && lowerText.includes('4-10')) {
       return 'Evening Shift (4-10)';
     }
@@ -390,7 +430,7 @@ export class ListParser {
       return 'Sunday/Public Holiday/Special';
     }
     
-    // Fallback patterns
+    // PRIORITY 3: Fallback patterns
     if (lowerText.includes('4-10') || lowerText.includes('16-22')) {
       return 'Evening Shift (4-10)';
     }
@@ -417,8 +457,11 @@ export class ListParser {
   private findMatchingStaffName(text: string): string | null {
     const cleanText = text.trim().toUpperCase();
     
+    console.log(`👤 STAFF DEBUG: Analyzing text: "${cleanText}"`);
+    
     // Skip very short text or obvious non-names
     if (cleanText.length < 3) {
+      console.log(`👤 STAFF DEBUG: Text too short: "${cleanText}"`);
       return null;
     }
     
@@ -427,11 +470,12 @@ export class ListParser {
       /^\d+$/, // Pure numbers
       /^[A-Z]{1,2}$/, // Single/double letters
       /SHIFT/i, /DUTY/i, /MORNING/i, /EVENING/i, /NIGHT/i, /SATURDAY/i, /SUNDAY/i,
-      /HRS/i, /AM/i, /PM/i, /DATE/i, /TIME/i, /SYSTEM/i, /EDITED/i
+      /HRS/i, /AM/i, /PM/i, /DATE/i, /TIME/i, /SYSTEM/i, /EDITED/i, /LAST/i, /BY/i, /AT/i
     ];
     
     for (const pattern of skipPatterns) {
       if (pattern.test(cleanText)) {
+        console.log(`👤 STAFF DEBUG: Skipping pattern match: "${cleanText}" matches ${pattern}`);
         return null;
       }
     }
