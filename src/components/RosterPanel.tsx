@@ -140,7 +140,7 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
       (window as any).batchImportMode = true;
       (window as any).batchImportStats = {
         count: 0,
-        staffName: editorName,
+        staffName: adminName || 'Unknown',
         dates: new Set<string>()
       };
       
