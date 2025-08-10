@@ -14,16 +14,34 @@ export class RosterListGenerator {
    * Generate roster list matching the PDF template format - all on one page
    */
   async generateRosterList(options: RosterListOptions): Promise<void> {
-    const { month, year, entries } = options;
-    
-    console.log('📄 Generating roster list');
-    
-    // Create PDF document - A4 portrait
+    // Create PDF document
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
       format: 'a4'
     });
+    
+    // Generate content
+    await this.generateRosterListContent(doc, options);
+    
+    // Generate filename and save
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const filename = `Roster_List_${monthNames[options.month]}_${options.year}.pdf`;
+    doc.save(filename);
+    
+    console.log('✅ Roster list generated:', filename);
+  }
+  
+  /**
+   * Generate roster list content into provided PDF document (for batch printing)
+   */
+  async generateRosterListContent(doc: jsPDF, options: RosterListOptions): Promise<void> {
+    const { month, year, entries } = options;
+    
+    console.log('📄 Generating roster list');
     
     const monthNames = [
       'January', 'February', 'March', 'April', 'May', 'June',
@@ -186,12 +204,6 @@ export class RosterListGenerator {
     doc.setFontSize(8);
     doc.text(`Generated on: ${new Date().toLocaleString()}`, 10, doc.internal.pageSize.getHeight() - 15);
     doc.text(`Total Entries: ${monthEntries.length}`, doc.internal.pageSize.getWidth() - 10, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
-    
-    // Save
-    const filename = `Roster_List_${monthNames[month]}_${year}.pdf`;
-    doc.save(filename);
-    
-    console.log('✅ Roster list generated:', filename);
   }
   
   /**

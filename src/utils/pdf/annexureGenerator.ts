@@ -41,16 +41,34 @@ export class AnnexureGenerator {
    * Generate annexure matching the exact PDF format
    */
   async generateAnnexure(options: AnnexureOptions): Promise<void> {
-    const { month, year, entries, hourlyRate, shiftCombinations } = options;
-    
-    console.log('📄 Generating annexure for all staff');
-    
-    // Create PDF document - A4 portrait to match the original
+    // Create PDF document
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
       format: 'a4'
     });
+    
+    // Generate content
+    await this.generateAnnexureContent(doc, options);
+    
+    // Generate filename and save
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const filename = `Annexure_${monthNames[options.month]}_${options.year}.pdf`;
+    doc.save(filename);
+    
+    console.log('✅ Annexure generated:', filename);
+  }
+  
+  /**
+   * Generate annexure content into provided PDF document (for batch printing)
+   */
+  async generateAnnexureContent(doc: jsPDF, options: AnnexureOptions): Promise<void> {
+    const { month, year, entries, hourlyRate, shiftCombinations } = options;
+    
+    console.log('📄 Generating annexure for all staff');
     
     const monthNames = [
       'January', 'February', 'March', 'April', 'May', 'June',
@@ -150,11 +168,6 @@ export class AnnexureGenerator {
     doc.setFontSize(8);
     doc.text(`Generated on: ${new Date().toLocaleString()}`, 15, doc.internal.pageSize.getHeight() - 15);
     doc.text('X-ray ANWH System', doc.internal.pageSize.getWidth() - 15, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
-    // Save
-    const filename = `Annexure_${monthNames[month]}_${year}.pdf`;
-    doc.save(filename);
-    
-    console.log('✅ Annexure generated:', filename);
   }
   
   

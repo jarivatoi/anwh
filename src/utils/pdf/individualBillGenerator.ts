@@ -41,18 +41,36 @@ export class IndividualBillGenerator {
    * Generate individual bill for a specific staff member matching the exact PDF format
    */
   async generateBill(options: IndividualBillOptions): Promise<void> {
-    // Explicitly declare staffName to ensure proper scope
-    const staffName = options.staffName;
-    const { month, year, entries, basicSalary, hourlyRate, shiftCombinations } = options;
-    
-    console.log('📄 Starting individual bill generation for:', staffName);
-    
-    // Create PDF document - A4 portrait
+    // Create PDF document
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
       format: 'a4'
     });
+    
+    // Generate content
+    await this.generateBillContent(doc, options);
+    
+    // Generate filename and save
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const filename = `${options.staffName}_${monthNames[options.month]}_${options.year}_Bill.pdf`;
+    doc.save(filename);
+    
+    console.log('✅ Individual bill generated:', filename);
+  }
+  
+  /**
+   * Generate bill content into provided PDF document (for batch printing)
+   */
+  async generateBillContent(doc: jsPDF, options: IndividualBillOptions): Promise<void> {
+    // Explicitly declare staffName to ensure proper scope
+    const staffName = options.staffName;
+    const { month, year, entries, basicSalary, hourlyRate, shiftCombinations } = options;
+    
+    console.log('📄 Starting individual bill generation for:', staffName);
     
     const monthNames = [
       'January', 'February', 'March', 'April', 'May', 'June',
@@ -186,14 +204,6 @@ export class IndividualBillGenerator {
     const pageHeight = doc.internal.pageSize.getHeight();
     doc.text('X-ray ANWH System', doc.internal.pageSize.getWidth() - 15, pageHeight - 15, { align: 'right' });
     doc.text(`Generated on: ${new Date().toLocaleString()}`, doc.internal.pageSize.getWidth() - 15, pageHeight - 10, { align: 'right' });
-    
-    // Generate filename
-    const filename = `${staffName}_${monthNames[month]}_${year}_Bill.pdf`;
-    
-    // Save the PDF
-    doc.save(filename);
-    
-    console.log('✅ Individual bill generated:', filename);
   }
   
   /**

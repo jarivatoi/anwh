@@ -494,47 +494,79 @@ export class BatchPrintManager {
   }
   
   /**
-   * Generate individual bill PDF without saving (for batch printing)
+   * Generate individual bill PDF for batch printing
    */
-  private async generateIndividualBillPDF(options: any): Promise<jsPDF> {
-    // Use the existing individual bill generator but return the doc instead of saving
+  private async generateIndividualBillPDF(options: {
+    staffName: string;
+    month: number;
+    year: number;
+    entries: RosterEntry[];
+    basicSalary: number;
+    hourlyRate: number;
+    shiftCombinations: Array<{id: string, combination: string, hours: number}>;
+  }): Promise<jsPDF> {
+    const { individualBillGenerator } = await import('./individualBillGenerator');
+    
+    // Create a new PDF document
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
       format: 'a4'
     });
     
-    // Copy the generation logic from individualBillGenerator but return doc
-    // This is a simplified version - you might want to extract the core logic
+    // Generate the bill content using the existing generator logic
+    await individualBillGenerator.generateBillContent(doc, options);
+    
     return doc;
   }
   
   /**
-   * Generate annexure PDF without saving (for batch printing)
+   * Generate annexure PDF for batch printing
    */
-  private async generateAnnexurePDF(options: any): Promise<jsPDF> {
+  private async generateAnnexurePDF(options: {
+    month: number;
+    year: number;
+    entries: RosterEntry[];
+    hourlyRate: number;
+    shiftCombinations: Array<{id: string, combination: string, hours: number}>;
+  }): Promise<jsPDF> {
+    const { annexureGenerator } = await import('./annexureGenerator');
+    
+    // Create a new PDF document
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
       format: 'a4'
     });
     
-    // Copy the generation logic from annexureGenerator but return doc
+    // Generate the annexure content using the existing generator logic
+    await annexureGenerator.generateAnnexureContent(doc, options);
+    
     return doc;
   }
   
   /**
-   * Generate roster list PDF without saving (for batch printing)
+   * Generate roster list PDF for batch printing
    */
-  private async generateRosterListPDF(options: any): Promise<jsPDF> {
+  private async generateRosterListPDF(options: {
+    month: number;
+    year: number;
+    entries: RosterEntry[];
+  }): Promise<jsPDF> {
+    const { rosterListGenerator } = await import('./rosterListGenerator');
+    
+    // Create a new PDF document
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
       format: 'a4'
     });
     
-    // Copy the generation logic from rosterListGenerator but return doc
+    // Generate the roster list content using the existing generator logic
+    await rosterListGenerator.generateRosterListContent(doc, options);
+    
     return doc;
+  }
   }
   
   /**
