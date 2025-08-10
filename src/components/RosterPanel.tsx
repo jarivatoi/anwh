@@ -18,20 +18,34 @@ import { MonthlyReportsModal } from './MonthlyReportsModal';
 interface RosterPanelProps {
   setActiveTab: (tab: 'calendar' | 'settings' | 'data' | 'roster') => void;
   onOpenCalendarExportModal: () => void;
+  selectedDate?: Date;
+  onDateChange?: (date: Date) => void;
 }
 
-export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCalendarExportModal }) => {
+export const RosterPanel: React.FC<RosterPanelProps> = ({ 
+  setActiveTab, 
+  onOpenCalendarExportModal, 
+  selectedDate: propSelectedDate, 
+  onDateChange: propOnDateChange 
+}) => {
   const [activeView, setActiveView] = useState<ViewType>('table');
   const [selectedShiftFilter, setSelectedShiftFilter] = useState<ShiftFilterType>('all');
-  const [selectedDate, setSelectedDate] = useState(() => {
-    // Try to restore from sessionStorage first
-    const savedDate = sessionStorage.getItem('rosterSelectedDate');
-    if (savedDate) {
-      return new Date(savedDate);
+  const [selectedDate, setSelectedDate] = useState(propSelectedDate || new Date());
+  // Sync with parent date state
+  useEffect(() => {
+    if (propSelectedDate) {
+      setSelectedDate(propSelectedDate);
     }
-    // Otherwise use current date
-    return new Date();
-  });
+  }, [propSelectedDate]);
+
+  // Handle date changes and propagate to parent
+  const handleDateChange = (newDate: Date) => {
+    setSelectedDate(newDate);
+    if (propOnDateChange) {
+      propOnDateChange(newDate);
+    }
+  };
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -146,7 +160,7 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
         
         // Force immediate state update
         const importedDate = new Date(importedYear, importedMonth, 1);
-        setSelectedDate(importedDate);
+        handleDateChange(importedDate);
         
         // CRITICAL: Also update the child component dates by calling their onDateChange
         // This ensures both table and card views navigate to the imported month
@@ -493,7 +507,7 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
             realtimeStatus={realtimeStatus}
             onRefresh={loadEntries}
             selectedDate={selectedDate}
-            onDateChange={setSelectedDate}
+            onDateChange={handleDateChange}
             onExportToCalendar={onOpenCalendarExportModal}
             setActiveTab={setActiveTab}
           />

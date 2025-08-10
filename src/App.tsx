@@ -738,6 +738,8 @@ function App() {
               key={refreshKey} 
               setActiveTab={setActiveTab} 
               onOpenCalendarExportModal={handleOpenCalendarExportModal}
+             selectedDate={currentDate}
+             onDateChange={setCurrentDate}
               selectedDate={currentDate}
               onDateChange={handleDateChange}
             />
