@@ -43,6 +43,7 @@ class PDFRosterParser {
 
       // Build final entries
       result.entries = allParsedEntries
+        .filter(entry => entry.date && entry.date !== '') // Filter out entries with missing dates
         .map(entry => ({
           date: entry.date,
           shiftType: entry.shiftType,

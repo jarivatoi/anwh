@@ -28,11 +28,11 @@ export class BoxParser {
       
       // Find date by going UP from this specific staff member
       const date = this.findDateAboveStaff(textItems, staff);
-      const dateValue = date ? date.date : ''; // Use empty string if no date found
+      const dateValue = date || null; // Use null if no date found
       
       // Find shift by going LEFT from this specific staff member
       const shift = this.findShiftInFirstColumn(textItems, staff);
-      const shiftValue = shift || ''; // Use empty string if no shift found
+      const shiftValue = shift || null; // Use null if no shift found
       
       entries.push({
         date: dateValue,
@@ -85,7 +85,7 @@ export class BoxParser {
     for (const item of itemsAbove) {
       const dateMatch = this.extractDateFromText(item.text);
       if (dateMatch) {
-        return dateMatch.date || null; // Return null if date is empty
+        return dateMatch.date;
       }
     }
     
@@ -148,10 +148,7 @@ export class BoxParser {
       }
       // Invalid date - return null to skip this entry
       console.log(`⚠️ Invalid date detected: "${text}" -> ${standardDate}, clearing date field`);
-      return {
-        date: '',
-        dayOfWeek: 0
-      };
+      return null;
     }
     
     // DD MM format (like "01 07") - assume 2025
@@ -167,10 +164,7 @@ export class BoxParser {
       // Validate the date
       if (!this.isValidDate(dateObj, 2025, parseInt(month), parseInt(day))) {
         console.log(`⚠️ Invalid date detected: "${text}" -> ${standardDate}, clearing date field`);
-        return {
-          date: '',
-          dayOfWeek: 0
-        };
+        return null;
       }
       
       return { date: standardDate, dayOfWeek: dateObj.getDay() };
@@ -187,10 +181,7 @@ export class BoxParser {
       // Validate the date (check if July 2025 has this day)
       if (!this.isValidDate(dateObj, 2025, 7, parseInt(day))) {
         console.log(`⚠️ Invalid date detected: "${text}" -> ${standardDate}, clearing date field`);
-        return {
-          date: '',
-          dayOfWeek: 0
-        };
+        return null;
       }
       
       return { date: standardDate, dayOfWeek: dateObj.getDay() };
