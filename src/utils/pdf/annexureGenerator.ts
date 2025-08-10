@@ -97,11 +97,11 @@ export class AnnexureGenerator {
     // Create table matching the original format
     autoTable(doc, {
       startY: 35,
-      head: [['S.No', 'NAME (Full Name)', 'ID NUMBER', 'SALARY', 'NO OF HRS PAYABLE (Hrs)', 'NIGHT ALLOWANCE (Hrs)', 'AMOUNT']],
+      head: [['S.No', 'NAME\n(Full Name)', 'ID\nNUMBER', 'SALARY', 'NO OF HRS\nPAYABLE\n(Hrs)', 'NIGHT\nALLOWANCE\n(Hrs)', 'AMOUNT']],
       body: tableData,
       styles: {
-        fontSize: 9,
-        cellPadding: 2.5,
+        fontSize: 8,
+        cellPadding: 2,
         overflow: 'linebreak',
         halign: 'center',
         valign: 'middle'
@@ -110,22 +110,23 @@ export class AnnexureGenerator {
         fillColor: [220, 220, 220],
         textColor: [0, 0, 0],
         fontStyle: 'bold',
-        fontSize: 10,
+        fontSize: 9,
         halign: 'center',
-        valign: 'middle'
-        cellPadding: 3.5,
-        minCellHeight: 20
-        0: { cellWidth: 15, halign: 'center' }, // S.No
-        1: { cellWidth: 40, halign: 'left' },   // NAME (Full Name)
-        2: { cellWidth: 35, halign: 'center' }, // ID NUMBER
-        3: { cellWidth: 25, halign: 'right' },  // SALARY
-        4: { cellWidth: 25, halign: 'center' }, // NO OF HRS PAYABLE
-        5: { cellWidth: 25, halign: 'center' }, // NIGHT ALLOWANCE (Hrs)
-        6: { cellWidth: 30, halign: 'right' }   // AMOUNT
+        valign: 'middle',
+        cellPadding: 3,
+        minCellHeight: 18
       },
-      margin: { left: 8, right: 8 },
-    }
-    )
+      margin: { left: 10, right: 10 },
+      theme: 'grid',
+      tableLineWidth: 0.3,
+      tableLineColor: [0, 0, 0],
+      tableWidth: 'auto'
+    });
+    
+    // Add grand totals at the bottom
+    const grandTotalDays = staffSummaries.reduce((sum, s) => sum + s.totalDays, 0);
+    const grandTotalHours = staffSummaries.reduce((sum, s) => sum + s.totalHours, 0);
+    const grandTotalSalary = staffSummaries.reduce((sum, s) => sum + s.salary, 0);
     const grandNightDutyHours = staffSummaries.reduce((sum, s) => sum + s.nightDutyHours, 0);
     const grandSubtotal = staffSummaries.reduce((sum, s) => sum + s.totalAmount, 0);
     const grandNightAllowance = staffSummaries.reduce((sum, s) => sum + s.nightAllowance, 0);
@@ -149,19 +150,6 @@ export class AnnexureGenerator {
     doc.setFontSize(8);
     doc.text(`Generated on: ${new Date().toLocaleString()}`, 15, doc.internal.pageSize.getHeight() - 15);
     doc.text('X-ray AN WH System', doc.internal.pageSize.getWidth() - 15, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
-    doc.text('X-ray ANWH System', doc.internal.pageSize.getWidth() - 15, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
-    // Add certification section at the bottom
-    const certificationY = finalY + 50;
-    
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.text('Certified Correct as per Attendance.', 15, certificationY);
-    doc.text('Principal Medical Imaging Technologist', 15, certificationY + 10);
-    
-    // Signature line
-    doc.text('Signature: ________________________________', 15, certificationY + 25);
-    doc.text('Date: ____________________', 15, certificationY + 35);
-    
     // Save
     const filename = `Annexure_${monthNames[month]}_${year}.pdf`;
     doc.save(filename);
