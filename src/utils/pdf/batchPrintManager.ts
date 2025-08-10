@@ -382,15 +382,17 @@ export class BatchPrintManager {
     console.log('🖨️ Using batch print method');
     
     // Create a combined print window with all PDFs
-    const printWindow = window.open('', '_blank', 'width=800,height=600');
-    if (!printWindow) {
+    this.printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+    if (!this.printWindow) {
       throw new Error('Could not open print window. Please allow popups.');
     }
+    
+    console.log('🖨️ Print window opened successfully');
     
     // Wait for window to be ready
     await new Promise(resolve => setTimeout(resolve, 100));
     
-    printWindow.document.write(`
+    this.printWindow.document.write(`
       <html>
         <head>
           <title>Batch Print - ${this.pdfDocuments.length} Documents</title>
@@ -425,14 +427,18 @@ export class BatchPrintManager {
           </div>
     `);
     
+    console.log('🖨️ Writing PDF content to print window...');
+    
     // Add each PDF as HTML content instead of iframe
     for (let i = 0; i < this.pdfDocuments.length; i++) {
       const pdfDoc = this.pdfDocuments[i];
       
+      console.log(`🖨️ Converting PDF ${i + 1}/${this.pdfDocuments.length}: ${pdfDoc.filename}`);
+      
       // Convert PDF to HTML content for better print compatibility
       const htmlContent = await this.convertPdfToHtml(pdfDoc.doc);
       
-      printWindow.document.write(`
+      this.printWindow.document.write(`
         <div class="pdf-container">
           <div class="pdf-content">
             ${htmlContent}
@@ -441,33 +447,38 @@ export class BatchPrintManager {
       `);
     }
     
-    printWindow.document.write(`
+    this.printWindow.document.write(`
       </body>
       </html>
     `);
     
-    printWindow.document.close();
+    this.printWindow.document.close();
+    console.log('🖨️ Print window document closed, adding event listeners...');
     
     // Wait for content to load, then add event listeners
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
     // Add event listeners after document is ready
     try {
-      const printBtn = printWindow.document.getElementById('printAllBtn');
-      const closeBtn = printWindow.document.getElementById('closeBtn');
+      const printBtn = this.printWindow.document.getElementById('printAllBtn');
+      const closeBtn = this.printWindow.document.getElementById('closeBtn');
+      
+      console.log('🖨️ Found buttons:', { printBtn: !!printBtn, closeBtn: !!closeBtn });
       
       if (printBtn) {
         printBtn.addEventListener('click', () => {
           console.log('🖨️ Print button clicked');
-          printWindow.print();
+          this.printWindow?.print();
         });
+        console.log('✅ Print button event listener added');
       }
       
       if (closeBtn) {
         closeBtn.addEventListener('click', () => {
           console.log('🔒 Close button clicked');
-          printWindow.close();
+          this.printWindow?.close();
         });
+        console.log('✅ Close button event listener added');
       }
       
       console.log('✅ Event listeners added to print window buttons');
@@ -476,7 +487,8 @@ export class BatchPrintManager {
     }
     
     // Auto-focus the print window
-    printWindow.focus();
+    this.printWindow.focus();
+    console.log('🖨️ Print window focused');
   }
   
   /**

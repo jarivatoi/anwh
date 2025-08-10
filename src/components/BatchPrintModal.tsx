@@ -107,7 +107,9 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
     };
 
     try {
+      console.log('🖨️ BatchPrintModal: Starting print process with options:', options);
       await batchPrintManager.generateAndPrintBatch(options, setProgress);
+      console.log('✅ BatchPrintModal: Print process completed successfully');
     } catch (err) {
       console.error('Batch print failed:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to generate batch print';
