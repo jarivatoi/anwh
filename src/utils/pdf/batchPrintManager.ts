@@ -387,44 +387,46 @@ export class BatchPrintManager {
       throw new Error('Could not open print window. Please allow popups.');
     }
     
+    // Wait for window to be ready
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     printWindow.document.write(`
       <html>
         <head>
           <title>Batch Print - ${this.pdfDocuments.length} Documents</title>
           <style>
             body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
-            .pdf-container { margin-bottom: 40px; page-break-after: always; }
+            .pdf-container { margin-bottom: 40px; page-break-after: always; min-height: 600px; }
             .pdf-container:last-child { page-break-after: auto; }
             .pdf-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; text-align: center; }
-            iframe { width: 100%; height: 600px; border: 1px solid #ccc; }
+            .pdf-content { width: 100%; min-height: 600px; border: 1px solid #ccc; background: white; padding: 20px; }
             @media print {
               .pdf-container { page-break-after: always; }
-              iframe { height: 100vh; }
+              .pdf-content { height: auto; min-height: 100vh; }
             }
           </style>
         </head>
         <body>
           <h1>Batch Print Preview - ${this.pdfDocuments.length} Documents</h1>
-          <p>Click Print to print all documents at once, or use individual download links below.</p>
+          <p>Click Print to print all documents. PDFs are embedded as HTML content for better printing compatibility.</p>
     `);
     
-    // Add each PDF as an embedded object
-    this.pdfDocuments.forEach((pdfDoc, index) => {
-      const pdfBlob = pdfDoc.doc.output('blob');
-      const pdfUrl = URL.createObjectURL(pdfBlob);
+    // Add each PDF as HTML content instead of iframe
+    for (let i = 0; i < this.pdfDocuments.length; i++) {
+      const pdfDoc = this.pdfDocuments[i];
+      
+      // Convert PDF to HTML content for better print compatibility
+      const htmlContent = await this.convertPdfToHtml(pdfDoc.doc);
       
       printWindow.document.write(`
         <div class="pdf-container">
           <div class="pdf-title">${pdfDoc.filename}</div>
-          <iframe src="${pdfUrl}" type="application/pdf"></iframe>
-          <p style="text-align: center; margin-top: 10px;">
-            <a href="${pdfUrl}" download="${pdfDoc.filename}" style="color: blue; text-decoration: underline;">
-              Download ${pdfDoc.filename}
-            </a>
-          </p>
+          <div class="pdf-content">
+            ${htmlContent}
+          </div>
         </div>
       `);
-    });
+    }
     
     printWindow.document.write(`
         <div style="text-align: center; margin-top: 30px; page-break-before: avoid;">
@@ -443,6 +445,36 @@ export class BatchPrintManager {
     
     // Auto-focus the print window
     printWindow.focus();
+    
+    // Auto-trigger print after content loads
+    setTimeout(() => {
+      if (printWindow && !printWindow.closed) {
+        printWindow.print();
+      }
+    }, 1000);
+  }
+  
+  /**
+   * Convert PDF document to HTML content for better print compatibility
+   */
+  private async convertPdfToHtml(doc: jsPDF): Promise<string> {
+    try {
+      // Get the PDF as data URL
+      const pdfDataUrl = doc.output('datauristring');
+      
+      // Create an embedded PDF object that browsers can print
+      return `
+        <object data="${pdfDataUrl}" type="application/pdf" width="100%" height="600px">
+          <embed src="${pdfDataUrl}" type="application/pdf" width="100%" height="600px" />
+          <p>Your browser does not support PDF viewing. 
+             <a href="${pdfDataUrl}" download="document.pdf">Download the PDF</a> instead.
+          </p>
+        </object>
+      `;
+    } catch (error) {
+      console.error('Failed to convert PDF to HTML:', error);
+      return '<p>Error loading PDF content. Please try downloading instead.</p>';
+    }
   }
   
   /**
@@ -461,8 +493,7 @@ export class BatchPrintManager {
         continue;
       }
       
-      const pdfBlob = pdfDoc.doc.output('blob');
-      const pdfUrl = URL.createObjectURL(pdfBlob);
+      const pdfDataUrl = pdfDoc.doc.output('datauristring');
       
       printWindow.document.write(`
         <html>
@@ -470,11 +501,14 @@ export class BatchPrintManager {
             <title>${pdfDoc.filename}</title>
             <style>
               body { margin: 0; padding: 0; }
-              iframe { width: 100%; height: 100vh; border: none; }
+              object, embed { width: 100%; height: 100vh; border: none; }
             </style>
           </head>
           <body>
-            <iframe src="${pdfUrl}" type="application/pdf"></iframe>
+            <object data="${pdfDataUrl}" type="application/pdf" width="100%" height="100%">
+              <embed src="${pdfDataUrl}" type="application/pdf" width="100%" height="100%" />
+              <p>PDF cannot be displayed. <a href="${pdfDataUrl}" download="${pdfDoc.filename}">Download instead</a></p>
+            </object>
             <script>
               window.onload = function() {
                 setTimeout(function() {
