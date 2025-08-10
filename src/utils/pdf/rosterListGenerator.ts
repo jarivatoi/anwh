@@ -56,6 +56,90 @@ export class RosterListGenerator {
         startY: 35,
         head: [['Date', 'Shift', 'Staff Names', 'Remarks']],
         body: tableData,
+        willDrawCell: (data) => {
+          // Clear staff names column content to prevent default rendering
+          if (data.column.index === 2 && data.section === 'body') {
+            data.cell.text = [];
+          }
+        },
+        didDrawCell: (data) => {
+          // Only draw custom colored text for staff names column in body
+          if (data.column.index === 2 && data.section === 'body' && data.row.index >= 0) {
+            // Get the staff data for this specific row
+            if (data.row.index < tableData.length) {
+              const originalRow = tableData[data.row.index];
+              const staffNamesData = this.getStaffNamesForRow(originalRow[0], originalRow[1], entries);
+              
+              if (staffNamesData && staffNamesData.length > 0) {
+                // Start drawing from left edge of cell with proper margin
+                let currentX = data.cell.x + 2;
+                let currentLine = 0;
+                const lineHeight = 3;
+                const maxWidth = data.cell.width - 4;
+                let totalLines = 1;
+                let tempX = 0;
+                
+                // Pre-calculate how many lines we'll need
+                staffNamesData.forEach((staff, index) => {
+                  const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
+                  const textWidth = doc.getTextWidth(textToShow);
+                  
+                  if (tempX + textWidth > maxWidth && index > 0) {
+                    totalLines++;
+                    tempX = doc.getTextWidth(staff.name); // Reset with just the name (no comma)
+                  } else {
+                    tempX += textWidth;
+                  }
+                });
+                
+                // Calculate starting Y position for vertical centering
+                const totalHeight = totalLines * lineHeight;
+                let cellY = data.cell.y + (data.cell.height / 2) - (totalHeight / 2) + 3;
+                
+                // Set font to match table
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'normal');
+                
+                staffNamesData.forEach((staff, index) => {
+                  // Set individual color for this staff member
+                  const rgbColor = this.hexToRgb(staff.color);
+                  doc.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
+                  
+                  // Format text with comma separator (but not at start of new lines)
+                  const isFirstOnLine = currentX === data.cell.x + 2;
+                  const textToShow = (index === 0 || isFirstOnLine) ? staff.name : `, ${staff.name}`;
+                  const textWidth = doc.getTextWidth(textToShow);
+                  
+                  // Check if text would exceed cell width (with 4mm margin)
+                  
+                  // If text would exceed width, move to next line
+                  if (currentX + textWidth > data.cell.x + maxWidth && index > 0) {
+                    // Add comma at the end of current line before wrapping
+                    doc.text(',', currentX, cellY);
+                    
+                    currentX = data.cell.x + 2; // Reset to left margin
+                    cellY += lineHeight; // Move down for next line
+                    
+                    // Recalculate text without comma for new line
+                    const newLineText = staff.name;
+                    const newLineWidth = doc.getTextWidth(newLineText);
+                    
+                    // Draw the text at current position (no comma at start of line)
+                    doc.text(newLineText, currentX, cellY);
+                    currentX += newLineWidth;
+                  } else {
+                    // Draw the text at current position
+                    doc.text(textToShow, currentX, cellY);
+                    currentX += textWidth;
+                  }
+                });
+                
+                // Reset color for other cells
+                doc.setTextColor(0, 0, 0);
+              }
+            }
+          }
+        },
         styles: {
           fontSize: 8,
           cellPadding: 2,
@@ -161,6 +245,164 @@ export class RosterListGenerator {
           staffNamesWithColors,          // Staff names with color indicators
           remarks                        // Remarks
         ]);
+      });
+    });
+    
+    return tableData;
+  }
+  
+  /**
+   * Format staff names with actual text colors based on their edit status
+   */
+  private formatStaffNamesWithColors(entries: RosterEntry[]): { text: string; color: number[] }[] {
+    return entries.map(entry => {
+      const staffName = entry.assigned_name;
+      const textColor = this.getTextColor(entry);
+      
+      return {
+        text: staffName,
+        color: this.hexToRgb(textColor)
+      };
+    });
+  }
+  
+  /**
+   * Get actual text color for staff name based on edit status
+   */
+  private getTextColor(entry: RosterEntry): string {
+    // HIGHEST PRIORITY: Admin-set text color
+    if (entry.text_color) {
+      return entry.text_color;
+    }
+    
+    // Check if entry has been reverted to original
+    const hasBeenReverted = () => {
+      if (!entry.change_description) return false;
+      
+      // Check if we have original PDF assignment stored
+      const originalPdfMatch = entry.change_description.match(/\(Original PDF: ([^)]+)\)/);
+      if (originalPdfMatch) {
+        let originalPdfAssignment = originalPdfMatch[1].trim();
+        
+        // Fix missing closing parenthesis if it exists
+        if (originalPdfAssignment.includes('(R') && !originalPdfAssignment.includes('(R)')) {
+          originalPdfAssignment = originalPdfAssignment.replace('(R', '(R)');
+        }
+        
+        // Check if current assignment matches original PDF assignment (reverted to original)
+        return entry.assigned_name === originalPdfAssignment;
+      }
+      
+      return false;
+    };
+    
+    // Check if entry has been edited (name changed)
+    const hasBeenEdited = entry.change_description && 
+                         entry.change_description.includes('Name changed from') &&
+                         entry.last_edited_by;
+
+    if (hasBeenReverted()) {
+      return '#059669'; // Green for reverted entries (back to original PDF by ADMIN)
+    } else if (hasBeenEdited) {
+      return '#dc2626'; // Red for edited entries (by non-ADMIN users)
+    } else {
+      return '#000000'; // Black for original entries
+    }
+  }
+  
+  /**
+   * Convert hex color to RGB array for jsPDF
+   */
+  private hexToRgb(hex: string): number[] {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? [
+      parseInt(result[1], 16),
+      parseInt(result[2], 16),
+      parseInt(result[3], 16)
+    ] : [0, 0, 0]; // Default to black if parsing fails
+  }
+  
+  /**
+   * Get staff names data for a specific row during PDF generation
+   */
+  private getStaffNamesForRow(date: string, shiftType: string, entries: RosterEntry[]): { name: string; color: string }[] {
+    // Find entries that match this date and shift
+    const matchingEntries = entries.filter(entry => {
+      const formattedDate = this.formatDateForList(entry.date);
+      const formattedShift = this.formatShiftTypeForList(entry.shift_type);
+      return formattedDate === date && formattedShift === shiftType;
+    });
+    
+    return matchingEntries.map(entry => ({
+      name: entry.assigned_name,
+      color: this.getTextColor(entry)
+    }));
+  }
+  
+  /**
+   * Create table data with combined staff names but individual colors
+   */
+  private createColoredTableData(entries: RosterEntry[]): any[] {
+    // Group entries by date and shift type
+    const groupedData: Record<string, Record<string, RosterEntry[]>> = {};
+    
+    entries.forEach(entry => {
+      const dateKey = entry.date;
+      const shiftType = entry.shift_type;
+      
+      if (!groupedData[dateKey]) {
+        groupedData[dateKey] = {};
+      }
+      if (!groupedData[dateKey][shiftType]) {
+        groupedData[dateKey][shiftType] = [];
+      }
+      groupedData[dateKey][shiftType].push(entry);
+    });
+    
+    // Convert to table rows with colored text
+    const tableData: any[] = [];
+    
+    // Sort dates
+    const sortedDates = Object.keys(groupedData).sort();
+    
+    sortedDates.forEach(date => {
+      const shiftData = groupedData[date];
+      
+      // Define shift order for consistent display
+      const shiftOrder = [
+        'Morning Shift (9-4)',
+        'Saturday Regular (12-10)', 
+        'Evening Shift (4-10)',
+        'Night Duty',
+        'Sunday/Public Holiday/Special'
+      ];
+      
+      // Process shifts in order
+      shiftOrder.forEach(shiftType => {
+        const shiftEntries = shiftData[shiftType];
+        if (!shiftEntries || shiftEntries.length === 0) return;
+        
+        // Get remarks from special date info
+        const remarks = this.extractRemarks(shiftEntries);
+        
+        // Format shift type for display
+        const formattedShift = this.formatShiftTypeForList(shiftType);
+        
+        // Combine all staff names with individual colors
+        const staffNamesWithColors = shiftEntries.map(entry => ({
+          name: entry.assigned_name,
+          color: this.getTextColor(entry)
+        }));
+        
+        // Create single row with combined staff names
+        const row = [
+          this.formatDateForList(date),
+          formattedShift,
+          staffNamesWithColors.map(s => s.name).join(', '), // Convert to string for display
+          remarks
+        ];
+        
+        tableData.push(row);
       });
     });
     
