@@ -84,7 +84,6 @@ export class AnnexureGenerator {
       startY: 35,
       head: [['S.No', 'NAME\n(Full Name)', 'ID\nNUMBER', 'SALARY', 'NO OF HRS\nPAYABLE\n(Hrs)', 'NIGHT\nALLOWANCE\n(Hrs)', 'AMOUNT']],
       body: tableData,
-      halign: 'center',
       styles: {
         fontSize: 8,
         cellPadding: 2,
@@ -104,10 +103,9 @@ export class AnnexureGenerator {
       },
       margin: { left: 5, right: 5 },
       theme: 'grid',
-      halign: 'center',
+      tableWidth: 'auto',
       tableLineWidth: 0.3,
       tableLineColor: [0, 0, 0],
-      tableWidth: 'wrap',
       columnStyles: {},
       didParseCell: function(data) {
         // Auto-adjust font size based on content length
