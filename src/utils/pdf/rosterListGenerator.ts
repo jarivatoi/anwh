@@ -95,7 +95,9 @@ export class RosterListGenerator {
                 const totalHeight = totalLines * lineHeight;
                    
                    // Create the full text string to check total width
-                   const fullText = staffNamesData.map(staff => staff.name).join('');
+                   const fullText = staffNamesData.map((staff, index) => 
+                     index === 0 ? staff.name : `, ${staff.name}`
+                   ).join('');
                    const fullTextWidth = doc.getTextWidth(fullText);
                    
                    // Determine if this is multi-line based on text width vs cell width
