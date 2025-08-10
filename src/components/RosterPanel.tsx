@@ -136,20 +136,29 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
     try {
       console.log('📄 Starting PDF import with', entries.length, 'entries...');
       
-     // Navigate to imported month IMMEDIATELY so user can see the table updating
-     if (entries.length > 0) {
-       const firstEntryDate = new Date(entries[0].date);
-       const importedMonth = firstEntryDate.getMonth();
-       const importedYear = firstEntryDate.getFullYear();
-       
-       console.log(`📅 Navigating to imported month immediately: ${importedMonth + 1}/${importedYear}`);
-       setSelectedDate(new Date(importedYear, importedMonth, 1));
-       
-       // Also dispatch event for other components
-       window.dispatchEvent(new CustomEvent('navigateToMonth', {
-         detail: { month: importedMonth, year: importedYear }
-       }));
-     }
+      // Navigate to imported month IMMEDIATELY so user can see the table updating
+      if (entries.length > 0) {
+        const firstEntryDate = new Date(entries[0].date);
+        const importedMonth = firstEntryDate.getMonth();
+        const importedYear = firstEntryDate.getFullYear();
+        
+        console.log(`📅 Navigating to imported month immediately: ${importedMonth + 1}/${importedYear}`);
+        
+        // Force immediate state update
+        const importedDate = new Date(importedYear, importedMonth, 1);
+        setSelectedDate(importedDate);
+        
+        // Force immediate re-render by updating refresh key
+        setRefreshKey(prev => prev + 1);
+        
+        // Also dispatch event for other components
+        window.dispatchEvent(new CustomEvent('navigateToMonth', {
+          detail: { month: importedMonth, year: importedYear }
+        }));
+        
+        // Wait a moment to ensure navigation is complete before starting import
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
      
       // Enable batch import mode to suppress individual notifications
       (window as any).batchImportMode = true;
