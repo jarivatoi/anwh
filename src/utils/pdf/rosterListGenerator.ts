@@ -105,28 +105,18 @@ export class RosterListGenerator {
                   const rgbColor = this.hexToRgb(staff.color);
                   doc.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
                   
-                  // Format text with comma separator (but not at start of new lines)
-                  const isFirstOnLine = currentX === data.cell.x + 2;
-                  const textToShow = (index === 0 || isFirstOnLine) ? staff.name : `, ${staff.name}`;
+                  // Format text with comma separator
+                  const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
                   const textWidth = doc.getTextWidth(textToShow);
-                  
-                  // Check if text would exceed cell width (with 4mm margin)
                   
                   // If text would exceed width, move to next line
                   if (currentX + textWidth > data.cell.x + maxWidth && index > 0) {
-                    // Add comma at the end of current line before wrapping (with small spacing)
-                    doc.text(',', currentX - 1, cellY);
-                    
                     currentX = data.cell.x + 2; // Reset to left margin
                     cellY += lineHeight; // Move down for next line
                     
-                    // Recalculate text without comma for new line
-                    const newLineText = staff.name;
-                    const newLineWidth = doc.getTextWidth(newLineText);
-                    
-                    // Draw the text at current position (no comma at start of line)
-                    doc.text(newLineText, currentX, cellY);
-                    currentX += newLineWidth;
+                    // Draw the text at current position without comma at start of new line
+                    doc.text(staff.name, currentX, cellY);
+                    currentX += doc.getTextWidth(staff.name);
                   } else {
                     // Draw the text at current position
                     doc.text(textToShow, currentX, cellY);
