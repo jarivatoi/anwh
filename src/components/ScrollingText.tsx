@@ -1,21 +1,27 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { gsap } from 'gsap';
+import { ScrollingTextAnimator } from '../utils/scrollingTextAnimator';
 
 interface ScrollingTextProps {
   text?: string;
   className?: string;
   children?: React.ReactNode;
+  pauseDuration?: number;
+  scrollDuration?: number;
+  easing?: string;
 }
 
 export const ScrollingText: React.FC<ScrollingTextProps> = ({ 
   text, 
   className = '', 
-  children 
+  children,
+  pauseDuration = 2,
+  scrollDuration = 4,
+  easing = 'power2.inOut'
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const [needsScrolling, setNeedsScrolling] = useState(false);
-  const animationRef = useRef<gsap.core.Timeline | null>(null);
+  const animatorRef = useRef<ScrollingTextAnimator | null>(null);
 
   useEffect(() => {
     const checkAndAnimate = () => {
@@ -24,14 +30,11 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
       const container = containerRef.current;
       const textElement = textRef.current;
       
-      // Reset any existing animation
-      if (animationRef.current) {
-        animationRef.current.kill();
-        animationRef.current = null;
+      // Stop any existing animation
+      if (animatorRef.current) {
+        animatorRef.current.stop();
+        animatorRef.current = null;
       }
-      
-      // Reset text position
-      gsap.set(textElement, { x: 0 });
       
       // Force layout recalculation
       container.offsetWidth;
@@ -41,57 +44,32 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
       const containerWidth = container.offsetWidth;
       const textWidth = textElement.scrollWidth;
       
-      console.log('📏 ScrollingText dimensions:', {
-        containerWidth,
-        textWidth,
-        needsScrolling: textWidth > containerWidth,
-        text: text || 'children content'
-      });
+      const currentText = text || 'children content';
+      const hasSpaces = currentText.includes(' ');
+      const isLongText = currentText.length > 30;
       
       if (textWidth > containerWidth) {
         setNeedsScrolling(true);
         
-        // Calculate scroll distance (how much text extends beyond container)
-        const scrollDistance = textWidth - containerWidth + 2; // Add 2px end padding
+        // Use enhanced timing for longer text with spaces
+        const enhancedPauseDuration = (hasSpaces && isLongText) ? pauseDuration + 1 : pauseDuration;
+        const enhancedScrollDuration = (hasSpaces && isLongText) ? scrollDuration + 1 : scrollDuration;
+        const enhancedEasing = (hasSpaces && isLongText) ? 'power1.inOut' : easing;
         
-        // Create GSAP timeline with your specified timing
-        const timeline = gsap.timeline({ 
-          repeat: -1, // Infinite loop
-          ease: "power2.inOut"
+        // Create animator with TweenMax-style enhanced timing
+        animatorRef.current = ScrollingTextAnimator.create({
+          container,
+          textElement,
+          text: currentText,
+          pauseDuration: enhancedPauseDuration,
+          scrollDuration: enhancedScrollDuration,
+          easing: enhancedEasing
         });
         
-        // 1s pause at start
-        timeline.to(textElement, {
-          duration: 1,
-          x: 0
-        });
-        
-        // 2.5s scroll to end
-        timeline.to(textElement, {
-          duration: 2.5,
-          x: -scrollDistance,
-          ease: "power2.inOut"
-        });
-        
-        // 1s pause at end
-        timeline.to(textElement, {
-          duration: 1,
-          x: -scrollDistance
-        });
-        
-        // 2.5s scroll back to start
-        timeline.to(textElement, {
-          duration: 2.5,
-          x: 0,
-          ease: "power2.inOut"
-        });
-        
-        animationRef.current = timeline;
-        
-        console.log('🎬 Started scrolling animation for text:', text || 'children');
+        console.log('🎬 Started enhanced TweenMax animation for text:', currentText);
       } else {
         setNeedsScrolling(false);
-        console.log('✅ Text fits in container, no scrolling needed');
+        console.log('✅ Text fits in container, no animation needed');
       }
     };
 
@@ -122,19 +100,19 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
       window.removeEventListener('resize', handleResize);
       observer.disconnect();
       
-      if (animationRef.current) {
-        animationRef.current.kill();
-        animationRef.current = null;
+      if (animatorRef.current) {
+        animatorRef.current.stop();
+        animatorRef.current = null;
       }
     };
-  }, [text, children]);
+  }, [text, children, pauseDuration, scrollDuration, easing]);
 
   // Cleanup animation on unmount
   useEffect(() => {
     return () => {
-      if (animationRef.current) {
-        animationRef.current.kill();
-        animationRef.current = null;
+      if (animatorRef.current) {
+        animatorRef.current.stop();
+        animatorRef.current = null;
       }
     };
   }, []);
