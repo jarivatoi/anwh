@@ -2,6 +2,7 @@
 import { RosterFormData } from '../../types/roster';
 import { PDFLoader } from './pdfLoader';
 import { BoxParser } from './boxParser';
+import { ListParser } from './listParser';
 
 export interface ParsedRosterData {
   entries: RosterFormData[];
@@ -12,6 +13,7 @@ export interface ParsedRosterData {
 class PDFRosterParser {
   private pdfLoader = new PDFLoader();
   private boxParser = new BoxParser();
+  private listParser = new ListParser();
 
   async parsePDF(file: File): Promise<ParsedRosterData> {
     const result: ParsedRosterData = {
@@ -36,8 +38,19 @@ class PDFRosterParser {
         const page = await pdf.getPage(pageNum);
         const textItems = await this.pdfLoader.extractTextFromPage(page);
         
-        // Use box-based parsing approach
-        const pageEntries = this.boxParser.parsePageAsBoxes(textItems);
+        // Try both parsing approaches and use the one that finds more entries
+        const boxEntries = this.boxParser.parsePageAsBoxes(textItems);
+        const listEntries = this.listParser.parsePageAsList(textItems);
+        
+        console.log(`📄 Page ${pageNum} parsing results:`, {
+          boxEntries: boxEntries.length,
+          listEntries: listEntries.length
+        });
+        
+        // Use the approach that found more valid entries
+        const pageEntries = listEntries.length > boxEntries.length ? listEntries : boxEntries;
+        console.log(`📄 Page ${pageNum}: Using ${listEntries.length > boxEntries.length ? 'list' : 'box'} parser (${pageEntries.length} entries)`);
+        
         allParsedEntries.push(...pageEntries);
       }
 
