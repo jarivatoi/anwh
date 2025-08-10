@@ -1,6 +1,6 @@
 // Batch PDF printing manager for generating and printing multiple PDFs
 import { jsPDF } from 'jspdf';
-import { monthlyReportGenerator } from '../utils/pdf/monthlyReportGenerator';
+import { monthlyReportGenerator } from './monthlyReportGenerator';
 import { individualBillGenerator } from './individualBillGenerator';
 import { annexureGenerator } from './annexureGenerator';
 import { rosterListGenerator } from './rosterListGenerator';
@@ -255,9 +255,9 @@ export class BatchPrintManager {
         
       } else {
         // Generate selected reports individually
-        const { individualBillGenerator } = await import('./individualBillGenerator');
-        const { annexureGenerator } = await import('./annexureGenerator');
-        const { rosterListGenerator } = await import('./rosterListGenerator');
+        const { individualBillGenerator } = await import('../utils/pdf/individualBillGenerator');
+        const { annexureGenerator } = await import('../utils/pdf/annexureGenerator');
+        const { rosterListGenerator } = await import('../utils/pdf/rosterListGenerator');
         
         if (reportTypes.includes('individual')) {
           const staffList = selectedStaff || this.getUniqueStaffMembers(monthEntries);
