@@ -184,20 +184,21 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
       await loadEntries();
       setRefreshKey(prev => prev + 1);
       
-      // Navigate to imported month
-      if (importedMonth !== null && importedYear !== null) {
-        // Dispatch event to navigate calendar to imported month
-        window.dispatchEvent(new CustomEvent('navigateToMonth', {
-          detail: { month: importedMonth, year: importedYear }
-        }));
-        
-        // Switch to calendar tab after navigation
-        setTimeout(() => {
-          setActiveTab('calendar');
-        }, 500);
-      }
-      
       showSuccess(`PDF import completed: ${successCount} entries added${errorCount > 0 ? `, ${errorCount} failed` : ''}`);
+      
+      // Navigate to imported month AFTER showing success message
+      if (importedMonth !== null && importedYear !== null) {
+        setTimeout(() => {
+          console.log(`📅 Navigating to imported month: ${importedMonth + 1}/${importedYear}`);
+          // Update the selected date in RosterPanel
+          setSelectedDate(new Date(importedYear, importedMonth, 1));
+          
+          // Also dispatch event for other components
+          window.dispatchEvent(new CustomEvent('navigateToMonth', {
+            detail: { month: importedMonth, year: importedYear }
+          }));
+        }, 1000); // Wait 1 second after success message
+      }
     } catch (error) {
       console.error('❌ PDF import failed:', error);
       // Make sure to disable batch mode on error
