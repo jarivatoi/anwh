@@ -12,6 +12,8 @@ export interface ScrollingTextOptions {
 export class ScrollingTextAnimator {
   private timeline: gsap.core.Timeline | null = null;
   private options: Required<ScrollingTextOptions>;
+  private isPaused: boolean = false;
+  private scrollTimeout: NodeJS.Timeout | null = null;
 
   constructor(options: ScrollingTextOptions) {
     this.options = {
@@ -20,6 +22,37 @@ export class ScrollingTextAnimator {
       easing: 'power2.inOut',
       ...options
     };
+  }
+
+  pause(): void {
+    if (this.timeline && !this.isPaused) {
+      this.timeline.pause();
+      this.isPaused = true;
+      console.log('⏸️ ScrollingText animation paused');
+    }
+  }
+
+  resume(): void {
+    if (this.timeline && this.isPaused) {
+      this.timeline.resume();
+      this.isPaused = false;
+      console.log('▶️ ScrollingText animation resumed');
+    }
+  }
+
+  handleScrollStart(): void {
+    this.pause();
+    
+    // Clear any existing timeout
+    if (this.scrollTimeout) {
+      clearTimeout(this.scrollTimeout);
+    }
+    
+    // Set timeout to resume after scroll stops
+    this.scrollTimeout = setTimeout(() => {
+      this.resume();
+      this.scrollTimeout = null;
+    }, 150); // Resume 150ms after scroll stops
   }
 
   start(): void {
