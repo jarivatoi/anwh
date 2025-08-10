@@ -82,7 +82,7 @@ export class ScrollingTextAnimator {
     }
     
     // Calculate scroll distance with padding
-    const scrollDistance = textWidth - containerWidth + 20; // Extra padding for readability
+    const scrollDistance = textWidth - containerWidth; // No padding - exact fit
     
     // Create TweenMax timeline for longer text with spaces
     this.timeline = gsap.timeline({ 
