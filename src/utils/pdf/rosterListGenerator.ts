@@ -94,7 +94,7 @@ export class RosterListGenerator {
                 
                 // Calculate starting Y position for vertical centering
                 const totalHeight = totalLines * lineHeight;
-               let cellY = data.cell.y + (data.cell.height / 2) - (totalHeight / 2) + (lineHeight * 0.7);
+               let cellY = data.cell.y + (data.cell.height / 2) - (totalHeight / 2) + (data.row.index === 0 && totalLines > 1 ? (lineHeight / 2) : (lineHeight * 0.7));
                 
                 // Set font to match table
                 doc.setFontSize(8);
