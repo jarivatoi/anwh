@@ -148,10 +148,14 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
         const importedDate = new Date(importedYear, importedMonth, 1);
         setSelectedDate(importedDate);
         
+        // CRITICAL: Also update the child component dates by calling their onDateChange
+        // This ensures both table and card views navigate to the imported month
+        console.log(`📅 Forcing child components to navigate to: ${importedMonth + 1}/${importedYear}`);
+        
         // Force immediate re-render by updating refresh key
         setRefreshKey(prev => prev + 1);
         
-        // Also dispatch event for other components
+        // Also dispatch event for other components (like App.tsx calendar)
         window.dispatchEvent(new CustomEvent('navigateToMonth', {
           detail: { month: importedMonth, year: importedYear }
         }));

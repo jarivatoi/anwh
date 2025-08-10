@@ -27,6 +27,19 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   selectedDate,
   onDateChange
 }) => {
+  // Listen for navigation events from parent components
+  useEffect(() => {
+    const handleNavigateToMonth = (event: CustomEvent) => {
+      const { month, year } = event.detail;
+      console.log(`📅 RosterCardView: Received navigation event to ${month + 1}/${year}`);
+      const newDate = new Date(year, month, 1);
+      onDateChange(newDate);
+    };
+
+    window.addEventListener('navigateToMonth', handleNavigateToMonth as EventListener);
+    return () => window.removeEventListener('navigateToMonth', handleNavigateToMonth as EventListener);
+  }, [onDateChange]);
+
 
   // All hooks must be declared at the top level before any conditional returns
   const [selectedEntry, setSelectedEntry] = useState<RosterEntry | null>(null);

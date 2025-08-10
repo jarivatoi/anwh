@@ -32,6 +32,19 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   onExportToCalendar,
   setActiveTab
 }) => {
+  // Listen for navigation events from parent components
+  useEffect(() => {
+    const handleNavigateToMonth = (event: CustomEvent) => {
+      const { month, year } = event.detail;
+      console.log(`📅 RosterTableView: Received navigation event to ${month + 1}/${year}`);
+      const newDate = new Date(year, month, 1);
+      onDateChange(newDate);
+    };
+
+    window.addEventListener('navigateToMonth', handleNavigateToMonth as EventListener);
+    return () => window.removeEventListener('navigateToMonth', handleNavigateToMonth as EventListener);
+  }, [onDateChange]);
+
   // All state declarations
   const [selectedEntry, setSelectedEntry] = useState<RosterEntry | null>(null);
   const [showModal, setShowModal] = useState(false);
