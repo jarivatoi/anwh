@@ -154,10 +154,13 @@ export class ListParser {
     // STEP 4: Check for remarks in last column (index 6 if 7 columns, or search for special date info)
     let remarks: string | null = null;
     if (row.length >= 7) {
-      const remarksText = row[6].text.trim();
-      if (remarksText && remarksText !== '' && remarksText.toLowerCase() !== 'remarks') {
-        remarks = remarksText;
-        console.log(`📝 Found remarks in column 7: ${remarks}`);
+      // Collect all text from column 6 onwards for multiline remarks
+      const remarksTexts = row.slice(6).map(item => item.text.trim()).filter(text => 
+        text && text !== '' && text.toLowerCase() !== 'remarks'
+      );
+      if (remarksTexts.length > 0) {
+        remarks = remarksTexts.join(' ').trim();
+        console.log(`📝 Found multiline remarks: ${remarks}`);
       }
     }
     

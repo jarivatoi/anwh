@@ -51,6 +51,9 @@ export class BoxParser {
   private findAllStaffNames(textItems: Array<{text: string, x: number, y: number}>): Array<{name: string, x: number, y: number}> {
     const staffNames: Array<{name: string, x: number, y: number}> = [];
     
+    // Also collect potential multiline remarks while finding staff
+    const remarksItems: Array<{text: string, x: number, y: number}> = [];
+    
     for (const item of textItems) {
       const matchedName = this.findMatchingStaffName(item.text);
       if (matchedName) {
@@ -59,10 +62,27 @@ export class BoxParser {
           x: item.x,
           y: item.y
         });
+      } else if (this.isPotentialRemarksText(item.text)) {
+        remarksItems.push(item);
       }
     }
     
     return staffNames;
+  }
+  
+  /**
+   * Check if text could be part of remarks (contains common keywords)
+   */
+  private isPotentialRemarksText(text: string): boolean {
+    const lowerText = text.toLowerCase();
+    const remarksKeywords = [
+      'public', 'holiday', 'cyclone', 'testing', 'working', 'fine',
+      'emergency', 'special', 'event', 'celebration', 'festival'
+    ];
+    
+    return remarksKeywords.some(keyword => lowerText.includes(keyword)) ||
+           text.includes('*') || // Text with asterisk
+           /^[A-Za-z\s]{10,}/.test(text); // Long text strings
   }
   
   /**
