@@ -125,23 +125,16 @@ export class MonthlyReportGenerator {
     const staffSet = new Set<string>();
     
     entries.forEach(entry => {
-      // Use the exact assigned name from the entry
-      staffSet.add(entry.assigned_name);
+      // Use base name (remove (R) suffix) since they are the same person
+      const baseName = entry.assigned_name.replace(/\(R\)$/, '').trim();
+      staffSet.add(baseName);
     });
     
     // Convert to array and sort
     const staffArray = Array.from(staffSet);
     
-    // Sort with (R) names first, then alphabetically
+    // Sort alphabetically by base name
     return staffArray.sort((a, b) => {
-      const aHasR = a.includes('(R)');
-      const bHasR = b.includes('(R)');
-      
-      // (R) names come first
-      if (aHasR && !bHasR) return -1;
-      if (!aHasR && bHasR) return 1;
-      
-      // If both have same (R) status, sort alphabetically
       return a.localeCompare(b);
     });
   }

@@ -265,7 +265,7 @@ export class IndividualBillGenerator {
     year: number
   ): RosterEntry[] {
     return entries.filter(entry => {
-      // Check if entry belongs to this staff member (match base names)
+      // Check if entry belongs to this staff member (match base names - both NARAYYA and NARAYYA(R) should match NARAYYA)
       const entryBaseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
       const staffBaseName = staffName.replace(/\(R\)$/, '').trim().toUpperCase();
       

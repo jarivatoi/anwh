@@ -188,6 +188,7 @@ export class AnnexureGenerator {
     entries.forEach(entry => {
       const entryDate = new Date(entry.date);
       if (entryDate.getMonth() === month && entryDate.getFullYear() === year) {
+        // Use base name (remove (R) suffix) to group same person together
         const baseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
         if (!staffGroups[baseName]) {
           staffGroups[baseName] = [];
@@ -237,10 +238,8 @@ export class AnnexureGenerator {
       const nightAllowance = nightDutyHours * hourlyRate;
       const grandTotal =  totalAmount + nightAllowance;
       
-      // Find the actual staff name (with (R) if applicable)
-      const actualStaffName = availableNames.find(name => 
-        name.replace(/\(R\)$/, '').trim().toUpperCase() === baseName
-      ) || baseName;
+      // Use base name for staff name (no (R) suffix needed since they're the same person)
+      const actualStaffName = baseName;
       
       // Get staff info for full name, ID, and salary
       const staffInfo = this.getStaffInfo(actualStaffName);
@@ -288,24 +287,12 @@ export class AnnexureGenerator {
       { code: 'T16G', name: 'TEELUCK', title: 'SMIT', salary: 59300, employeeId: '', firstName: '', surname: 'TEELUCK' },
       { code: 'V160', name: 'VEERASAWMY', title: 'SMIT', salary: 59300, employeeId: 'V16046642044100', firstName: 'Goindah', surname: 'VEERASAWMY' },
       
-      // Radiographers (R) - same data as regular staff
-      { code: 'B16R', name: 'BHEKUR(R)', title: 'MIT', salary: 47510, employeeId: 'B16048123000915', firstName: 'Yashdev', surname: 'BHEKUR' },
-      { code: 'B19R', name: 'BHOLLOORAM(R)', title: 'MIT', salary: 47510, employeeId: 'B19118118005356', firstName: 'Sawan', surname: 'BHOLLOORAM' },
-      { code: 'D28R', name: 'DHUNNY(R)', title: 'MIT', salary: 30060, employeeId: '0280876127778', firstName: 'Leetarvind', surname: 'DHUNNY' },
-      { code: 'D07R', name: 'DOMUN(R)', title: 'SMIT', salary: 59300, employeeId: 'D07027340003110', firstName: 'Shamir', surname: 'DOMUN' },
-      { code: 'H30R', name: 'FOKEERCHAND(R)', title: 'MIT', salary: 37185, employeeId: 'H30038612000061', firstName: 'Needeema', surname: 'FOKEERCHAND' },
-      { code: 'H13R', name: 'HOSENBUX(R)', title: 'MIT', salary: 48810, employeeId: 'H13038118012901', firstName: 'Zameer', surname: 'HOSENBUX' },
-      { code: 'S06R', name: 'GHOORAN(R)', title: 'MIT', salary: 38010, employeeId: 'S06781460103939', firstName: 'Bibi Sharinaaz', surname: 'SAMTALLY-GHOORAN' },
-      { code: 'J14R', name: 'JUMMUN(R)', title: 'MIT', salary: 47510, employeeId: 'J14037926000909', firstName: 'Bibi Nawsheen', surname: 'JUMMUN' },
-      { code: 'M17R', name: 'MAUDHOO(R)', title: 'MIT', salary: 38010, employeeId: 'M17038026006966', firstName: 'Chandanee', surname: 'MAUDHOO' },
-      { code: 'N28R', name: 'NARAYYA(R)', title: 'MIT', salary: 38010, employeeId: 'N28088124016266', firstName: 'Viraj', surname: 'NARAYYA' },
-      { code: 'P09R', name: 'PITTEA(R)', title: 'SMIT', salary: 59300, employeeId: 'P09117119004134', firstName: 'Pokhiraj', surname: 'PITTEA' },
-      { code: 'R21R', name: 'RUNGADOO(R)', title: 'SMIT', salary: 59300, employeeId: 'R21057240011866', firstName: 'Manee', surname: 'RUNGADOO' },
-      { code: 'T16R', name: 'TEELUCK(R)', title: 'SMIT', salary: 59300, employeeId: '', firstName: '', surname: 'TEELUCK' },
-      { code: 'V16R', name: 'VEERASAWMY(R)', title: 'SMIT', salary: 59300, employeeId: 'V16046642044100', firstName: 'Goindah', surname: 'VEERASAWMY' }
+      // Only use base staff data (no (R) duplicates needed since they're the same person)
     ];
     
-    return authCodes.find(auth => auth.name === staffName) || null;
+    // Match by base name (remove (R) suffix for matching)
+    const baseStaffName = staffName.replace(/\(R\)$/, '').trim().toUpperCase();
+    return authCodes.find(auth => auth.name.toUpperCase() === baseStaffName) || null;
   }
 }
 
