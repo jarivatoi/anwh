@@ -31,8 +31,10 @@ export class AnnexureGenerator {
    */
   private formatCurrency(value: number): string {
     if (value === 0) return '';
-    const formatted = value % 1 === 0 ? value.toString() : value.toFixed(2).replace(/\.?0+$/, '');
-    return `Rs ${formatted}`;
+    return `Rs ${value.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`;
   }
 
   /**
