@@ -352,25 +352,8 @@ export class BatchPrintManager {
     
     console.log(`🖨️ Starting batch printing of ${this.pdfDocuments.length} PDFs`);
     
-    // Always use the fallback download approach since popups are blocked
-    console.log('🖨️ Using download fallback due to popup restrictions');
-    await this.downloadAllPDFs();
-  }
-  
-  /**
-   * Download all PDFs as individual files (fallback when popups are blocked)
-   */
-  private async downloadAllPDFs(): Promise<void> {
-    console.log(`📥 Downloading ${this.pdfDocuments.length} PDFs individually...`);
-    
-    for (const pdfDoc of this.pdfDocuments) {
-      pdfDoc.doc.save(pdfDoc.filename);
-      
-      // Small delay between downloads to prevent browser overwhelm
-      await new Promise(resolve => setTimeout(resolve, 300));
-    }
-    
-    console.log('✅ All PDFs downloaded successfully');
+    // Try to open print window first
+    await this.tryPrintWithPopup();
   }
   
   /**
@@ -393,6 +376,22 @@ export class BatchPrintManager {
       // Fallback to downloads
       await this.downloadAllPDFs();
     }
+  }
+  
+  /**
+   * Download all PDFs as individual files (fallback when popups are blocked)
+   */
+  private async downloadAllPDFs(): Promise<void> {
+    console.log(`📥 Downloading ${this.pdfDocuments.length} PDFs individually...`);
+    
+    for (const pdfDoc of this.pdfDocuments) {
+      pdfDoc.doc.save(pdfDoc.filename);
+      
+      // Small delay between downloads to prevent browser overwhelm
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+    
+    console.log('✅ All PDFs downloaded successfully');
   }
   
   /**
@@ -428,10 +427,10 @@ export class BatchPrintManager {
             <p>Click Print to print all documents. PDFs are embedded as HTML content for better printing compatibility.</p>
           </div>
           <div class="print-buttons">
-            <button id="printAllBtn" style="padding: 10px 20px; font-size: 16px; background: #4f46e5; color: white; border: none; border-radius: 8px; cursor: pointer;">
+            <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; background: #4f46e5; color: white; border: none; border-radius: 8px; cursor: pointer;">
               Print All Documents
             </button>
-            <button id="closeBtn" style="padding: 10px 20px; font-size: 16px; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer; margin-left: 10px;">
+            <button onclick="window.close()" style="padding: 10px 20px; font-size: 16px; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer; margin-left: 10px;">
               Close
             </button>
           </div>
@@ -463,38 +462,7 @@ export class BatchPrintManager {
     `);
     
     this.printWindow!.document.close();
-    console.log('🖨️ Print window document closed, adding event listeners...');
-    
-    // Wait for content to load, then add event listeners
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Add event listeners after document is ready
-    try {
-      const printBtn = this.printWindow!.document.getElementById('printAllBtn');
-      const closeBtn = this.printWindow!.document.getElementById('closeBtn');
-      
-      console.log('🖨️ Found buttons:', { printBtn: !!printBtn, closeBtn: !!closeBtn });
-      
-      if (printBtn) {
-        printBtn.addEventListener('click', () => {
-          console.log('🖨️ Print button clicked');
-          this.printWindow!.print();
-        });
-        console.log('✅ Print button event listener added');
-      }
-      
-      if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-          console.log('🔒 Close button clicked');
-          this.printWindow!.close();
-        });
-        console.log('✅ Close button event listener added');
-      }
-      
-      console.log('✅ Event listeners added to print window buttons');
-    } catch (error) {
-      console.error('❌ Failed to add event listeners:', error);
-    }
+    console.log('🖨️ Print window document closed');
     
     // Auto-focus the print window
     this.printWindow!.focus();

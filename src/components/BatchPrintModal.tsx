@@ -382,10 +382,9 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
             onClick={handlePrint}
             disabled={isProcessing || reportTypes.length === 0}
             className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 text-white rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2"
-            title="Generate PDFs for printing (may download if popups are blocked)"
           >
             <Printer className="w-4 h-4" />
-            <span>Print/Download</span>
+            <span>Print</span>
           </button>
         </div>
       </div>
