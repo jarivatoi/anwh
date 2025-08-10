@@ -84,6 +84,25 @@ export class RosterListGenerator {
                   const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
                   const textWidth = doc.getTextWidth(textToShow);
                   
+                   // Calculate how much width we lose from comma removal at line breaks
+                   let widthReduction = 0;
+                   let tempX = 0;
+                   staffNamesData.forEach((staff, index) => {
+                     const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
+                     const textWidth = doc.getTextWidth(textToShow);
+                     
+                     if (tempX + textWidth > maxWidth && tempX > 0) {
+                       // This name will wrap to new line, so we lose the comma
+                       widthReduction += doc.getTextWidth(', ');
+                       tempX = doc.getTextWidth(staff.name);
+                     } else {
+                       tempX += textWidth;
+                     }
+                   });
+                   
+                   // Adjust the full text width by subtracting the lost commas
+                   const adjustedTextWidth = fullTextWidth - widthReduction;
+                   
                   if (tempX + textWidth > maxWidth && tempX > 0) {
                     totalLines++;
                     tempX = doc.getTextWidth(staff.name);
@@ -101,7 +120,7 @@ export class RosterListGenerator {
                    const fullTextWidth = doc.getTextWidth(fullText);
                    
                    // Determine if this is multi-line based on text width vs cell width
-                   const isMultiLine = fullTextWidth > maxWidth;
+                   const isMultiLine = adjustedTextWidth > maxWidth;
                    
                    let cellY;
                    if (isMultiLine) {
