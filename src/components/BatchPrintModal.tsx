@@ -1,6 +1,6 @@
 // Batch PDF printing manager for generating and printing multiple PDFs
 import { jsPDF } from 'jspdf';
-import { monthlyReportGenerator } from './monthlyReportGenerator';
+import { monthlyReportGenerator } from '../utils/pdf/monthlyReportGenerator';
 import { individualBillGenerator } from './individualBillGenerator';
 import { annexureGenerator } from './annexureGenerator';
 import { rosterListGenerator } from './rosterListGenerator';
