@@ -108,12 +108,17 @@ export class RosterListGenerator {
                   // Format text with comma separator (but not at start of new lines)
                   const isFirstOnLine = currentX === data.cell.x + 2;
                   const textToShow = (index === 0 || isFirstOnLine) ? staff.name : `, ${staff.name}`;
+                  
+                  // Calculate width including potential comma at end of line
                   const textWidth = doc.getTextWidth(textToShow);
+                  const commaWidth = doc.getTextWidth(',');
+                  const willNeedCommaAtEnd = index < staffNamesData.length - 1; // Not the last name
+                  const totalWidthNeeded = textWidth + (willNeedCommaAtEnd ? commaWidth : 0);
                   
-                  // Check if text would exceed cell width (with 4mm margin)
+                  // Check if text (including comma) would exceed cell width (with 4mm margin)
                   
-                  // If text would exceed width, move to next line
-                  if (currentX + textWidth > data.cell.x + maxWidth && index > 0) {
+                  // If text (including comma) would exceed width, move to next line
+                  if (currentX + totalWidthNeeded > data.cell.x + maxWidth && index > 0) {
                     // Add comma after the PREVIOUS name (the last name on the current line)
                     doc.text(',', currentX, cellY);
                     
