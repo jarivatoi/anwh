@@ -149,7 +149,7 @@ export class AnnexureGenerator {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     
-    doc.text(`Certified correct as per annexture: _______________________', 15, doc.internal.pageSize.getHeight() - );
+    doc.text(`Certified correct as per annexture: ________________________, 15, doc.internal.pageSize.getHeight() - 15);
 
     
     doc.text(`Generated on: ${new Date().toLocaleString()}`, 15, doc.internal.pageSize.getHeight() - 15);
