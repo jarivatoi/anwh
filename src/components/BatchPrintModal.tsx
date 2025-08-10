@@ -81,16 +81,21 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
   };
 
   const handlePrint = async () => {
+    console.log('🖨️ BatchPrintModal: Print button clicked');
+    
     if (reportTypes.length === 0) {
+      console.log('❌ BatchPrintModal: No report types selected');
       setError('Please select at least one report type');
       return;
     }
 
     if (reportTypes.includes('individual') && selectedStaff.length === 0) {
+      console.log('❌ BatchPrintModal: No staff selected for individual reports');
       setError('Please select at least one staff member for individual reports');
       return;
     }
 
+    console.log('🖨️ BatchPrintModal: Starting print process...');
     setIsProcessing(true);
     setError(null);
     setProgress(null);
@@ -120,20 +125,26 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
       }
     } finally {
       setIsProcessing(false);
+      console.log('🖨️ BatchPrintModal: Print process finished, isProcessing set to false');
     }
   };
 
   const handleDownload = async () => {
+    console.log('📥 BatchPrintModal: Download button clicked');
+    
     if (reportTypes.length === 0) {
+      console.log('❌ BatchPrintModal: No report types selected');
       setError('Please select at least one report type');
       return;
     }
 
     if (reportTypes.includes('individual') && selectedStaff.length === 0) {
+      console.log('❌ BatchPrintModal: No staff selected for individual reports');
       setError('Please select at least one staff member for individual reports');
       return;
     }
 
+    console.log('📥 BatchPrintModal: Starting download process...');
     setIsProcessing(true);
     setError(null);
     setProgress(null);
@@ -150,19 +161,26 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
     };
 
     try {
+      console.log('📥 BatchPrintModal: Calling generateAndDownloadBatch with options:', options);
       await batchPrintManager.generateAndDownloadBatch(options, setProgress);
+      console.log('✅ BatchPrintModal: Download process completed successfully');
     } catch (err) {
       console.error('Batch download failed:', err);
       setError(err instanceof Error ? err.message : 'Failed to generate batch download');
     } finally {
       setIsProcessing(false);
+      console.log('📥 BatchPrintModal: Download process finished, isProcessing set to false');
     }
   };
 
   const handleClose = () => {
+    console.log('🔒 BatchPrintModal: Close button clicked');
     if (!isProcessing) {
+      console.log('🔒 BatchPrintModal: Cleaning up and closing modal');
       batchPrintManager.cleanup();
       onClose();
+    } else {
+      console.log('⚠️ BatchPrintModal: Cannot close while processing');
     }
   };
 
