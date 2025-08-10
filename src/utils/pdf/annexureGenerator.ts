@@ -90,13 +90,14 @@ export class AnnexureGenerator {
       summary.employeeId, // ID number
       this.formatCurrency(summary.salary), // Salary
       this.formatNumber(summary.totalHours), // Hours payable (without night allowance)
+      this.formatNumber(summary.nightDutyHours), // Night allowance hours
       this.formatCurrency(summary.grandTotal)
     ]);
     
     // Create table matching the original format
     autoTable(doc, {
       startY: 35,
-      head: [['S.No', 'NAME (Full Name)', 'ID NUMBER', 'SALARY', 'NO OF HRS PAYABLE (Hrs)', 'AMOUNT']],
+      head: [['S.No', 'NAME (Full Name)', 'ID NUMBER', 'SALARY', 'NO OF HRS PAYABLE (Hrs)', 'NIGHT ALLOWANCE (Hrs)', 'AMOUNT']],
       body: tableData,
       styles: {
         fontSize: 6,
@@ -120,7 +121,8 @@ export class AnnexureGenerator {
         2: { cellWidth: 25, halign: 'center' }, // ID NUMBER - reduced for portrait
         3: { cellWidth: 20, halign: 'right' },  // SALARY
         4: { cellWidth: 20, halign: 'center' }, // NO OF HRS PAYABLE
-        5: { cellWidth: 25, halign: 'right' }   // AMOUNT
+        5: { cellWidth: 20, halign: 'center' }, // NIGHT ALLOWANCE (Hrs)
+        6: { cellWidth: 25, halign: 'right' }   // AMOUNT
       },
       margin: { left: 15, right: 15 },
       theme: 'grid',
