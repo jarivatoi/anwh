@@ -100,8 +100,8 @@ export class AnnexureGenerator {
       head: [['S.No', 'NAME\n(Full Name)', 'ID\nNUMBER', 'SALARY', 'NO OF HRS\nPAYABLE\n(Hrs)', 'NIGHT\nALLOWANCE\n(Hrs)', 'AMOUNT']],
       body: tableData,
       styles: {
-        fontSize: 8,
-        cellPadding: 2,
+        fontSize: 'auto',
+        cellPadding: 'auto',
         overflow: 'linebreak',
         halign: 'center',
         valign: 'middle'
@@ -110,17 +110,31 @@ export class AnnexureGenerator {
         fillColor: [220, 220, 220],
         textColor: [0, 0, 0],
         fontStyle: 'bold',
-        fontSize: 9,
+        fontSize: 'auto',
         halign: 'center',
         valign: 'middle',
-        cellPadding: 3,
-        minCellHeight: 18
+        cellPadding: 'auto',
+        minCellHeight: 'auto'
       },
-      margin: { left: 10, right: 10 },
+      margin: { left: 5, right: 5 },
       theme: 'grid',
       tableLineWidth: 0.3,
       tableLineColor: [0, 0, 0],
-      tableWidth: 'auto'
+      tableWidth: 'wrap',
+      columnStyles: {},
+      didParseCell: function(data) {
+        // Auto-adjust font size based on content length
+        if (data.section === 'body') {
+          const cellText = data.cell.text.join(' ');
+          if (cellText.length > 20) {
+            data.cell.styles.fontSize = 6;
+          } else if (cellText.length > 10) {
+            data.cell.styles.fontSize = 7;
+          } else {
+            data.cell.styles.fontSize = 8;
+          }
+        }
+      }
     });
     
     // Add grand totals at the bottom
