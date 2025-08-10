@@ -97,7 +97,7 @@ export class AnnexureGenerator {
     // Create table matching the original format
     autoTable(doc, {
       startY: 35,
-      head: [['S.No', 'NAME (Full Name)', 'ID NUMBER', 'SALARY', 'NO OF HRS PAYABLE (Hrs)', 'NIGHT ALLOWANCE (Hrs)', 'AMOUNT']],
+      head: [['S.No', 'NAME\n(Full Name)', 'ID\nNUMBER', 'SALARY', 'NO OF HRS\nPAYABLE\n(Hrs)', 'NIGHT\nALLOWANCE\n(Hrs)', 'AMOUNT']],
       body: tableData,
       styles: {
         fontSize: 6,
@@ -113,7 +113,8 @@ export class AnnexureGenerator {
         fontSize: 7,
         halign: 'center',
         valign: 'middle',
-        cellPadding: 1.5
+        cellPadding: 2,
+        minCellHeight: 15
       },
       columnStyles: {
         0: { halign: 'center' }, // S.No
