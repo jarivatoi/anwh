@@ -14,7 +14,6 @@ import { validateAuthCode, isAdminCode } from '../utils/rosterAuth';
 import { useLongPress } from '../hooks/useLongPress';
 import { pdfExporter } from '../utils/pdfExport';
 import { MonthlyReportsModal } from './MonthlyReportsModal';
-import { rosterImageExporter } from '../utils/rosterImageExport';
 
 interface RosterPanelProps {
   setActiveTab: (tab: 'calendar' | 'settings' | 'data' | 'roster') => void;
@@ -56,7 +55,6 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [showMonthlyReports, setShowMonthlyReports] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [isExportingRosterImage, setIsExportingRosterImage] = useState(false);
 
   const { entries: fetchedEntries, loading, error, removeEntry, loadEntries, realtimeStatus } = useRosterData();
 
@@ -296,33 +294,6 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
       alert('Failed to export PDF. Please try again.');
     } finally {
       setIsExportingPDF(false);
-    }
-  };
-
-  const handleExportRosterImage = async () => {
-    setIsExportingRosterImage(true);
-    
-    try {
-      console.log('📸 Starting roster image export...');
-      
-      // Use current selected date for month/year
-      const month = selectedDate.getMonth();
-      const year = selectedDate.getFullYear();
-      
-      await rosterImageExporter.exportRosterAsImage({
-        month: month,
-        year: year,
-        title: 'X-ray ANWH Roster'
-      });
-      
-      showSuccess('Roster image exported successfully! Check your downloads folder.');
-      console.log('✅ Roster image export completed');
-      
-    } catch (error) {
-      console.error('❌ Roster image export failed:', error);
-      alert('Failed to export roster image. Please try again and make sure you are on the Table View.');
-    } finally {
-      setIsExportingRosterImage(false);
     }
   };
 
@@ -857,23 +828,14 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
                 <button
                   onClick={() => {
                     setShowQuickActions(false);
-                    handleExportRosterImage();
+                    // TODO: Add roster export functionality
+                    console.log('Export Roster clicked');
                   }}
-                  disabled={isExportingRosterImage}
                   className="w-full flex items-center space-x-3 px-4 py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg font-medium transition-colors duration-200 select-none"
                   style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
                 >
-                  {isExportingRosterImage ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-                      <span className="select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}>Exporting Image...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-5 h-5" />
-                      <span className="select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}>Export Roster</span>
-                    </>
-                  )}
+                  <Download className="w-5 h-5" />
+                  <span className="select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}>Export Roster</span>
                 </button>
                 
                 <button
