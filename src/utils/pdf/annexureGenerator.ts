@@ -466,4 +466,4 @@ export class RosterListGenerator {
 }
 
 // Create singleton instance
-export const rosterListGenerator = new RosterListGenerator();
+export const annexureGenerator = new RosterListGenerator();
