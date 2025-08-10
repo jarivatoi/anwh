@@ -342,7 +342,9 @@ export class IndividualBillGenerator {
           dayHours += shiftHours;
         });
         
-        console.log(`📝 Remarks for ${staffName} on ${dateKey}: "${remarks}"`);
+        // Only show text before asterisk (*) if asterisk exists
+        const finalRemarks = remarks.includes('*') ? remarks.split('*')[0].trim() : remarks;
+        console.log(`📝 Remarks for ${staffName} on ${dateKey}: "${finalRemarks}" (original: "${remarks}")`);
         
         totalHours += dayHours;
         
@@ -359,7 +361,7 @@ export class IndividualBillGenerator {
           eveningCheck,
           nightCheck,
           this.formatNumber(dayHours),
-          remarks // Special date info or blank
+          finalRemarks // Special date info (only before *) or blank
         ]);
       } else {
         // This day has no shifts - show empty row
