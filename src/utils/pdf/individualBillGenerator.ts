@@ -41,7 +41,9 @@ export class IndividualBillGenerator {
    * Generate individual bill for a specific staff member matching the exact PDF format
    */
   async generateBill(options: IndividualBillOptions): Promise<void> {
-    const { staffName, month, year, entries, basicSalary, hourlyRate, shiftCombinations } = options;
+    // Explicitly declare staffName to ensure proper scope
+    const staffName = options.staffName;
+    const { month, year, entries, basicSalary, hourlyRate, shiftCombinations } = options;
     
     console.log('📄 Starting individual bill generation for:', staffName);
     
