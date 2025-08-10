@@ -62,11 +62,31 @@ export class IndividualBillGenerator {
     
     console.log(`📄 Filtered ${staffEntries.length} entries for ${staffName} in ${monthNames[month]} ${year}`);
     
-   // Debug: Log all entries for this staff to see their change_description
-   console.log(`🔍 DEBUG: All entries for ${staffName}:`);
-   staffEntries.forEach((entry, index) => {
-     console.log(`  ${index + 1}. Date: ${entry.date}, Shift: ${entry.shift_type}, Change: "${entry.change_description}"`);
-   });
+    // Debug: Log all entries for this staff to see their change_description
+    console.log(`🔍 DEBUG: All entries for ${staffName}:`);
+    staffEntries.forEach((entry, index) => {
+      console.log(`  ${index + 1}. Date: ${entry.date}, Shift: ${entry.shift_type}, Change: "${entry.change_description}"`);
+    });
+    
+    // CRITICAL: Also check for special dates by looking at ALL entries for each date
+    console.log(`🔍 DEBUG: Checking for special dates in the month...`);
+    const allMonthEntries = entries.filter(entry => {
+      const entryDate = new Date(entry.date);
+      return entryDate.getMonth() === month && entryDate.getFullYear() === year;
+    });
+    
+    const specialDatesInMonth = new Map<string, string>();
+    allMonthEntries.forEach(entry => {
+      if (entry.change_description && entry.change_description.includes('Special Date:')) {
+        const match = entry.change_description.match(/Special Date:\s*([^;]+)/);
+        if (match && match[1].trim()) {
+          specialDatesInMonth.set(entry.date, match[1].trim());
+          console.log(`🌟 Found special date: ${entry.date} - "${match[1].trim()}"`);
+        }
+      }
+    });
+    
+    console.log(`🌟 Total special dates found in month: ${specialDatesInMonth.size}`);
    
     // Get staff information
     const staffInfo = getStaffInfo(staffName);
@@ -108,7 +128,7 @@ export class IndividualBillGenerator {
     doc.text(`Rs ${hourlyRate.toFixed(2)}`, 150, 44);
     
     // Prepare table data for ALL days in the month
-    const tableData = this.prepareAllDaysTableData(staffEntries, month, year, hourlyRate, shiftCombinations);
+    const tableData = this.prepareAllDaysTableData(staffEntries, month, year, hourlyRate, shiftCombinations, specialDatesInMonth);
     
     // Create table with compact layout
     autoTable(doc, {
@@ -264,7 +284,8 @@ export class IndividualBillGenerator {
     month: number,
     year: number,
     hourlyRate: number, 
-    shiftCombinations: Array<{id: string, combination: string, hours: number}>
+    shiftCombinations: Array<{id: string, combination: string, hours: number}>,
+    specialDatesInMonth: Map<string, string>
   ): {
     rows: string[][];
     totalDays: number;
@@ -303,7 +324,7 @@ export class IndividualBillGenerator {
         // Combine shifts for the same date
         const shifts: string[] = [];
         let dayHours = 0;
-        let remarks = '';
+        let remarks = specialDatesInMonth.get(dateKey) || ''; // Get special date info for this date
         
         dayEntries.forEach(entry => {
           shifts.push(entry.shift_type);
@@ -316,21 +337,9 @@ export class IndividualBillGenerator {
           // Calculate hours for this shift
           const shiftHours = this.getShiftHours(entry.shift_type, shiftCombinations);
           dayHours += shiftHours;
-          
-          // Extract special date info from change_description
-          if (entry.change_description && entry.change_description.includes('Special Date:')) {
-            const specialMatch = entry.change_description.match(/Special Date:\s*([^;]+)/);
-            if (specialMatch && specialMatch[1].trim()) {
-             console.log(`📝 Found special date info for ${entry.assigned_name} on ${entry.date}:`, specialMatch[1].trim());
-              // For individual reports: Show FULL remarks text (including after *)
-              remarks = specialMatch[1].trim();
-           } else {
-             console.log(`❌ Special date pattern found but no content for ${entry.assigned_name} on ${entry.date}`);
-            }
-         } else {
-           console.log(`❌ No special date info found for ${entry.assigned_name} on ${entry.date}, change_description:`, entry.change_description);
-          }
         });
+        
+        console.log(`📝 Remarks for ${staffName} on ${dateKey}: "${remarks}"`);
         
         totalHours += dayHours;
         
