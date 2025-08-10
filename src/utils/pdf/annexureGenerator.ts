@@ -100,8 +100,8 @@ export class AnnexureGenerator {
       head: [['S.No', 'NAME (Full Name)', 'ID NUMBER', 'SALARY', 'NO OF HRS PAYABLE (Hrs)', 'NIGHT ALLOWANCE (Hrs)', 'AMOUNT']],
       body: tableData,
       styles: {
-        fontSize: 8,
-        cellPadding: 2,
+        fontSize: 6,
+        cellPadding: 1.5,
         overflow: 'linebreak',
         halign: 'center',
         valign: 'middle'
@@ -110,19 +110,19 @@ export class AnnexureGenerator {
         fillColor: [220, 220, 220],
         textColor: [0, 0, 0],
         fontStyle: 'bold',
-        fontSize: 9,
+        fontSize: 7,
         halign: 'center',
         valign: 'middle',
-        cellPadding: 2
+        cellPadding: 1.5
       },
       columnStyles: {
-        0: { cellWidth: 15, halign: 'center' }, // S.No
-        1: { cellWidth: 45, halign: 'left' },   // NAME (Full Name) - optimized for portrait
-        2: { cellWidth: 30, halign: 'center' }, // ID NUMBER - reduced for portrait
-        3: { cellWidth: 25, halign: 'right' },  // SALARY
-        4: { cellWidth: 25, halign: 'center' }, // NO OF HRS PAYABLE
-        5: { cellWidth: 25, halign: 'center' }, // NIGHT ALLOWANCE (Hrs)
-        6: { cellWidth: 30, halign: 'right' }   // AMOUNT
+        0: { cellWidth: 12, halign: 'center' }, // S.No
+        1: { cellWidth: 35, halign: 'left' },   // NAME (Full Name) - reduced for portrait
+        2: { cellWidth: 25, halign: 'center' }, // ID NUMBER - reduced for portrait
+        3: { cellWidth: 20, halign: 'right' },  // SALARY
+        4: { cellWidth: 20, halign: 'center' }, // NO OF HRS PAYABLE
+        5: { cellWidth: 20, halign: 'center' }, // NIGHT ALLOWANCE (Hrs)
+        6: { cellWidth: 25, halign: 'right' }   // AMOUNT
       },
       margin: { left: 15, right: 15 },
       theme: 'grid',
