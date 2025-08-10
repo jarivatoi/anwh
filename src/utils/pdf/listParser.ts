@@ -504,7 +504,7 @@ export class ListParser {
       /^\d+$/, // Pure numbers
       /^[A-Z]{1,2}$/, // Single/double letters
       /SHIFT/i, /DUTY/i, /MORNING/i, /EVENING/i, /NIGHT/i, /SATURDAY/i, /SUNDAY/i,
-      /HRS/i, /AM/i, /PM/i, /DATE/i, /TIME/i, /SYSTEM/i, /EDITED/i, /LAST/i, /BY/i, /AT/i
+      /HRS/i, /^AM$/i, /^PM$/i, /DATE/i, /TIME/i, /SYSTEM/i, /EDITED/i, /LAST/i, /BY/i, /AT/i
     ];
     
     for (const pattern of skipPatterns) {
