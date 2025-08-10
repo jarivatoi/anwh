@@ -828,19 +828,6 @@ export const RosterPanel: React.FC<RosterPanelProps> = ({ setActiveTab, onOpenCa
                 <button
                   onClick={() => {
                     setShowQuickActions(false);
-                    // TODO: Add roster export functionality
-                    console.log('Export Roster clicked');
-                  }}
-                  className="w-full flex items-center space-x-3 px-4 py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg font-medium transition-colors duration-200 select-none"
-                  style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
-                >
-                  <Download className="w-5 h-5" />
-                  <span className="select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}>Export Roster</span>
-                </button>
-                
-                <button
-                  onClick={() => {
-                    setShowQuickActions(false);
                     setClearType('all');
                     setShowClearConfirm(true);
                   }}
