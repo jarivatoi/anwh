@@ -396,19 +396,33 @@ export class BatchPrintManager {
           <title>Batch Print - ${this.pdfDocuments.length} Documents</title>
           <style>
             body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
-            .pdf-container { margin-bottom: 40px; page-break-after: always; min-height: 600px; }
+            .pdf-container { margin: 0; padding: 0; page-break-after: always; width: 100%; height: 100vh; }
             .pdf-container:last-child { page-break-after: auto; }
-            .pdf-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; text-align: center; }
-            .pdf-content { width: 100%; min-height: 600px; border: 1px solid #ccc; background: white; padding: 20px; }
+            .pdf-content { width: 100%; height: 100%; border: none; background: white; padding: 0; margin: 0; }
+            .header-info { display: block; }
+            .print-buttons { display: block; text-align: center; margin: 20px 0; }
             @media print {
+              .header-info { display: none !important; }
+              .print-buttons { display: none !important; }
               .pdf-container { page-break-after: always; }
-              .pdf-content { height: auto; min-height: 100vh; }
+              .pdf-content { height: 100vh; width: 100%; margin: 0; padding: 0; }
+              body { margin: 0; padding: 0; }
             }
           </style>
         </head>
         <body>
-          <h1>Batch Print Preview - ${this.pdfDocuments.length} Documents</h1>
-          <p>Click Print to print all documents. PDFs are embedded as HTML content for better printing compatibility.</p>
+          <div class="header-info">
+            <h1>Batch Print Preview - ${this.pdfDocuments.length} Documents</h1>
+            <p>Click Print to print all documents. PDFs are embedded as HTML content for better printing compatibility.</p>
+          </div>
+          <div class="print-buttons">
+            <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; background: #4f46e5; color: white; border: none; border-radius: 8px; cursor: pointer;">
+              Print All Documents
+            </button>
+            <button onclick="window.close()" style="padding: 10px 20px; font-size: 16px; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer; margin-left: 10px;">
+              Close
+            </button>
+          </div>
     `);
     
     // Add each PDF as HTML content instead of iframe
@@ -420,7 +434,6 @@ export class BatchPrintManager {
       
       printWindow.document.write(`
         <div class="pdf-container">
-          <div class="pdf-title">${pdfDoc.filename}</div>
           <div class="pdf-content">
             ${htmlContent}
           </div>
@@ -429,14 +442,6 @@ export class BatchPrintManager {
     }
     
     printWindow.document.write(`
-        <div style="text-align: center; margin-top: 30px; page-break-before: avoid;">
-          <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; background: #4f46e5; color: white; border: none; border-radius: 8px; cursor: pointer;">
-            Print All Documents
-          </button>
-          <button onclick="window.close()" style="padding: 10px 20px; font-size: 16px; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer; margin-left: 10px;">
-            Close
-          </button>
-        </div>
       </body>
       </html>
     `);
