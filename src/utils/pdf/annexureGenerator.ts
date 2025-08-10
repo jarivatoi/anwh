@@ -83,8 +83,8 @@ export class AnnexureGenerator {
       head: [['S.No', 'NAME\n(Full Name)', 'ID\nNUMBER', 'SALARY', 'NO OF HRS\nPAYABLE\n(Hrs)', 'NIGHT\nALLOWANCE\n(Hrs)', 'AMOUNT']],
       body: tableData,
       styles: {
-        fontSize: 'auto',
-        cellPadding: 'auto',
+        fontSize: 8,
+        cellPadding: 2,
         overflow: 'linebreak',
         halign: 'center',
         valign: 'middle'
@@ -93,11 +93,11 @@ export class AnnexureGenerator {
         fillColor: [220, 220, 220],
         textColor: [0, 0, 0],
         fontStyle: 'bold',
-        fontSize: 'auto',
+        fontSize: 8,
         halign: 'center',
         valign: 'middle',
-        cellPadding: 'auto',
-        minCellHeight: 'auto'
+        cellPadding: 2,
+        minCellHeight: 8
       },
       margin: { left: 5, right: 5 },
       theme: 'grid',
