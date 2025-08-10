@@ -35,7 +35,7 @@ export class BatchPrintManager {
   private pdfDocuments: { doc: jsPDF; filename: string }[] = [];
   
   /**
-   * Generate all PDFs and prepare for batch printing
+   * Generate all PDFs and prepare for batch printing (opens print window)
    */
   async generateAndPrintBatch(
     options: BatchPrintOptions,
@@ -43,7 +43,7 @@ export class BatchPrintManager {
   ): Promise<void> {
     const { month, year, entries, basicSalary, hourlyRate, shiftCombinations, reportTypes, selectedStaff } = options;
     
-    console.log('🖨️ Starting batch PDF generation and printing...');
+    console.log('🖨️ Starting batch PDF generation for printing...');
     
     this.pdfDocuments = [];
     this.currentPrintIndex = 0;
@@ -159,7 +159,7 @@ export class BatchPrintManager {
       onProgress?.({
         current: totalTasks,
         total: totalTasks,
-        currentTask: 'Preparing for printing...',
+        currentTask: 'Opening print window...',
         completed: false
       });
       
@@ -169,7 +169,7 @@ export class BatchPrintManager {
       onProgress?.({
         current: totalTasks,
         total: totalTasks,
-        currentTask: 'Printing completed',
+        currentTask: 'Print window opened',
         completed: true
       });
       
@@ -178,7 +178,163 @@ export class BatchPrintManager {
       onProgress?.({
         current: currentTask,
         total: totalTasks,
-        currentTask: 'Generation failed',
+        currentTask: 'Print preparation failed',
+        completed: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      throw error;
+    }
+  }
+  
+  /**
+   * Generate all PDFs and download them as individual files
+   */
+  async generateAndDownloadBatch(
+    options: BatchPrintOptions,
+    onProgress?: (progress: BatchPrintProgress) => void
+  ): Promise<void> {
+    const { month, year, entries, basicSalary, hourlyRate, shiftCombinations, reportTypes, selectedStaff } = options;
+    
+    console.log('📥 Starting batch PDF generation for download...');
+    
+    let currentTask = 0;
+    
+    // Calculate total tasks
+    let totalTasks = 0;
+    if (reportTypes.includes('individual')) {
+      const staffList = selectedStaff || this.getUniqueStaffMembers(entries.filter(entry => {
+        const entryDate = new Date(entry.date);
+        return entryDate.getMonth() === month && entryDate.getFullYear() === year;
+      }));
+      totalTasks += staffList.length;
+    }
+    if (reportTypes.includes('annexure')) totalTasks += 1;
+    if (reportTypes.includes('roster')) totalTasks += 1;
+    
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    
+    // Filter entries for the month
+    const monthEntries = entries.filter(entry => {
+      const entryDate = new Date(entry.date);
+      return entryDate.getMonth() === month && entryDate.getFullYear() === year;
+    });
+    
+    if (monthEntries.length === 0) {
+      throw new Error(`No roster entries found for ${monthNames[month]} ${year}`);
+    }
+    
+    try {
+      // Use the existing monthly report generator which auto-downloads files
+      if (reportTypes.includes('individual') && reportTypes.includes('annexure') && reportTypes.includes('roster')) {
+        // Generate all reports
+        onProgress?.({
+          current: 0,
+          total: totalTasks,
+          currentTask: 'Generating all reports...',
+          completed: false
+        });
+        
+        const result = await monthlyReportGenerator.generateAllReports({
+          month,
+          year,
+          entries,
+          basicSalary,
+          hourlyRate,
+          shiftCombinations
+        });
+        
+        onProgress?.({
+          current: totalTasks,
+          total: totalTasks,
+          currentTask: `Downloaded ${result.individualBills} individual bills, annexure, and roster list`,
+          completed: true
+        });
+        
+      } else {
+        // Generate selected reports individually
+        const { individualBillGenerator } = await import('./individualBillGenerator');
+        const { annexureGenerator } = await import('./annexureGenerator');
+        const { rosterListGenerator } = await import('./rosterListGenerator');
+        
+        if (reportTypes.includes('individual')) {
+          const staffList = selectedStaff || this.getUniqueStaffMembers(monthEntries);
+          
+          for (const staffName of staffList) {
+            currentTask++;
+            onProgress?.({
+              current: currentTask,
+              total: totalTasks,
+              currentTask: `Downloading bill for ${staffName}`,
+              completed: false
+            });
+            
+            await individualBillGenerator.generateBill({
+              staffName,
+              month,
+              year,
+              entries: monthEntries,
+              basicSalary,
+              hourlyRate,
+              shiftCombinations
+            });
+            
+            await new Promise(resolve => setTimeout(resolve, 200));
+          }
+        }
+        
+        if (reportTypes.includes('annexure')) {
+          currentTask++;
+          onProgress?.({
+            current: currentTask,
+            total: totalTasks,
+            currentTask: 'Downloading annexure summary',
+            completed: false
+          });
+          
+          await annexureGenerator.generateAnnexure({
+            month,
+            year,
+            entries: monthEntries,
+            hourlyRate,
+            shiftCombinations
+          });
+          
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+        
+        if (reportTypes.includes('roster')) {
+          currentTask++;
+          onProgress?.({
+            current: currentTask,
+            total: totalTasks,
+            currentTask: 'Downloading roster list',
+            completed: false
+          });
+          
+          await rosterListGenerator.generateRosterList({
+            month,
+            year,
+            entries: monthEntries
+          });
+        }
+        
+        onProgress?.({
+          current: totalTasks,
+          total: totalTasks,
+          currentTask: 'All downloads completed',
+          completed: true
+        });
+      }
+      
+    } catch (error) {
+      console.error('❌ Batch download failed:', error);
+      onProgress?.({
+        current: currentTask,
+        total: totalTasks,
+        currentTask: 'Download failed',
         completed: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       });
@@ -189,7 +345,7 @@ export class BatchPrintManager {
   /**
    * Start batch printing process
    */
-  private async startBatchPrinting(): Promise<void> {
+  async startBatchPrinting(): Promise<void> {
     if (this.pdfDocuments.length === 0) {
       throw new Error('No PDFs to print');
     }
@@ -397,17 +553,19 @@ export class BatchPrintManager {
   }
   
   /**
-   * Download all PDFs as individual files (fallback if printing fails)
+   * Download all PDFs as individual files
    */
-  async downloadAllPDFs(): Promise<void> {
-    console.log('📥 Downloading all PDFs individually...');
+  private async downloadAllPDFs(): Promise<void> {
+    console.log(`📥 Downloading ${this.pdfDocuments.length} PDFs individually...`);
     
     for (const pdfDoc of this.pdfDocuments) {
       pdfDoc.doc.save(pdfDoc.filename);
       
-      // Small delay between downloads
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Small delay between downloads to prevent browser overwhelm
+      await new Promise(resolve => setTimeout(resolve, 300));
     }
+    
+    console.log('✅ All PDFs downloaded successfully');
   }
   
   /**
