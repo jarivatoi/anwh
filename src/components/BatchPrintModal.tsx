@@ -110,7 +110,12 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
       await batchPrintManager.generateAndPrintBatch(options, setProgress);
     } catch (err) {
       console.error('Batch print failed:', err);
-      setError(err instanceof Error ? err.message : 'Failed to generate batch print');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to generate batch print';
+      if (errorMessage.includes('Could not open print window. Please allow popups.')) {
+        setError('Print window blocked. Please allow popups for this site, or use the \'Download\' option instead.');
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setIsProcessing(false);
     }
