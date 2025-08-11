@@ -491,18 +491,25 @@ export class BatchPrintManager {
                 const link = document.createElement('a');
                 link.href = '${pdfDataUrl}';
                 link.download = '${pdfDoc.filename}';
-                link.click();
-              ">Download</button>
-            </div>
-          </div>
-          <object id="pdf-${i}" data="${pdfDataUrl}" type="application/pdf" class="pdf-content">
-            <embed src="${pdfDataUrl}" type="application/pdf" class="pdf-content" />
-            <p style="padding: 20px; text-align: center;">
-              Your browser does not support PDF viewing. 
-              <a href="${pdfDataUrl}" download="${pdfDoc.filename}">Download ${pdfDoc.filename}</a> instead.
-            </p>
-          </object>
-        </div>
+                (function() {
+                  if(typeof document !== 'undefined') {
+                    const link = document.createElement('a');
+                    link.href = '${pdfDataUrl}';
+                    link.download = '${pdfDoc.filename}';
+                    link.click();
+                  }
+                })()
+                  if(typeof window !== 'undefined') {
+                    const newWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+                    if(newWindow) {
+                      newWindow.document.write('<html><head><title>${pdfDoc.filename}</title></head><body style=\\'margin:0;padding:0\\'><object data=\\'${pdfDataUrl}\\' type=\\'application/pdf\\' width=\\'100%\\' height=\\'100vh\\'></object><script>setTimeout(function() { if(typeof window !== \\'undefined\\') { window.print(); } }, 1000);</script></body></html>');
+                      newWindow.document.close();
+                      newWindow.focus();
+                    } else {
+                      alert('Please allow popups to print individual documents');
+                    }
+                  }
+                })()
       `);
     }
     
