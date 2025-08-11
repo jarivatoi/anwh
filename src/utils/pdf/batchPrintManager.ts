@@ -339,8 +339,8 @@ export class BatchPrintManager {
         completed: false
       });
       
-      // Start batch printing
-      await this.startBatchPrinting();
+      // Use the provided print window to display all PDFs in one tab
+      await this.displayAllPDFsInSingleTab(printWindow);
       
       onProgress?.({
         current: totalTasks,
@@ -360,6 +360,175 @@ export class BatchPrintManager {
       });
       throw error;
     }
+  }
+  
+  /**
+   * Display all PDFs in a single tab with menu bars above each PDF
+   */
+  private async displayAllPDFsInSingleTab(printWindow: Window): Promise<void> {
+    if (!printWindow) {
+      throw new Error('Print window not provided');
+    }
+    
+    console.log(`🖨️ Displaying ${this.pdfDocuments.length} PDFs in single tab with menu bars`);
+    
+    // Wait for window to be ready
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Print Documents - ${this.pdfDocuments.length} Files</title>
+          <style>
+            body { 
+              margin: 0; 
+              padding: 0; 
+              font-family: Arial, sans-serif; 
+              background: #f5f5f5;
+            }
+            .document-section { 
+              margin-bottom: 20px; 
+              background: white;
+              border-radius: 8px;
+              overflow: hidden;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            }
+            .document-header { 
+              background: #4f46e5; 
+              color: white; 
+              padding: 12px 20px; 
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              font-weight: 600;
+            }
+            .document-actions {
+              display: flex;
+              gap: 10px;
+            }
+            .action-btn {
+              background: rgba(255,255,255,0.2);
+              border: none;
+              color: white;
+              padding: 6px 12px;
+              border-radius: 4px;
+              cursor: pointer;
+              font-size: 12px;
+              font-weight: 500;
+            }
+            .action-btn:hover {
+              background: rgba(255,255,255,0.3);
+            }
+            .pdf-content { 
+              width: 100%; 
+              height: 600px; 
+              border: none; 
+              background: white;
+            }
+            .main-header {
+              background: #1f2937;
+              color: white;
+              padding: 20px;
+              text-align: center;
+              margin-bottom: 20px;
+            }
+            .main-actions {
+              text-align: center;
+              margin: 20px 0;
+            }
+            .main-btn {
+              background: #10b981;
+              color: white;
+              border: none;
+              padding: 12px 24px;
+              border-radius: 8px;
+              font-size: 16px;
+              font-weight: 600;
+              cursor: pointer;
+              margin: 0 10px;
+            }
+            .main-btn:hover {
+              background: #059669;
+            }
+            .close-btn {
+              background: #6b7280;
+            }
+            .close-btn:hover {
+              background: #4b5563;
+            }
+            @media print {
+              .main-header, .main-actions, .document-header { display: none !important; }
+              .document-section { 
+                page-break-after: always; 
+                margin: 0; 
+                box-shadow: none;
+                border-radius: 0;
+              }
+              .pdf-content { height: 100vh; }
+              body { background: white; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="main-header">
+            <h1>Print Preview - ${this.pdfDocuments.length} Documents</h1>
+            <p>Each document has its own menu bar. Use the main Print All button or individual Print buttons.</p>
+          </div>
+          
+          <div class="main-actions">
+            <button onclick="window.print()" class="main-btn">
+              Print All Documents
+            </button>
+            <button onclick="window.close()" class="main-btn close-btn">
+              Close Window
+            </button>
+          </div>
+    `);
+    
+    // Add each PDF with its own menu bar
+    for (let i = 0; i < this.pdfDocuments.length; i++) {
+      const pdfDoc = this.pdfDocuments[i];
+      const pdfDataUrl = pdfDoc.doc.output('datauristring');
+      
+      printWindow.document.write(`
+        <div class="document-section">
+          <div class="document-header">
+            <span>${pdfDoc.filename}</span>
+            <div class="document-actions">
+              <button class="action-btn" onclick="
+                const iframe = document.getElementById('pdf-${i}');
+                const newWindow = window.open('', '_blank');
+                newWindow.document.write('<html><head><title>${pdfDoc.filename}</title></head><body style=\\'margin:0;padding:0\\'><object data=\\'${pdfDataUrl}\\' type=\\'application/pdf\\' width=\\'100%\\' height=\\'100vh\\'></object><script>setTimeout(() => window.print(), 1000);</script></body></html>');
+                newWindow.document.close();
+              ">Print This</button>
+              <button class="action-btn" onclick="
+                const link = document.createElement('a');
+                link.href = '${pdfDataUrl}';
+                link.download = '${pdfDoc.filename}';
+                link.click();
+              ">Download</button>
+            </div>
+          </div>
+          <object id="pdf-${i}" data="${pdfDataUrl}" type="application/pdf" class="pdf-content">
+            <embed src="${pdfDataUrl}" type="application/pdf" class="pdf-content" />
+            <p style="padding: 20px; text-align: center;">
+              Your browser does not support PDF viewing. 
+              <a href="${pdfDataUrl}" download="${pdfDoc.filename}">Download ${pdfDoc.filename}</a> instead.
+            </p>
+          </object>
+        </div>
+      `);
+    }
+    
+    printWindow.document.write(`
+        </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
+    
+    // Auto-focus the print window
+    printWindow.focus();
   }
   
   /**
