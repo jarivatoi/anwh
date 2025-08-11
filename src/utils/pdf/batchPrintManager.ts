@@ -110,15 +110,7 @@ export class BatchPrintManager {
             combinedDoc.addPage();
             const pageData = doc.internal.pages[pageNum];
             if (pageData) {
-            }
-          }
-          // Add annexure to the combined document
-          const pageCount = doc.getNumberOfPages();
-          for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
-            combinedDoc.addPage();
-            const pageData = doc.internal.pages[pageNum];
-            if (pageData) {
-              combinedDoc.internal.pages[combinedDoc.internal.pages.length - 1] = pageData;
+             combinedDoc.internal.pages[combinedDoc.internal.pages.length - 1] = pageData;
             }
           }
           // Small delay to prevent browser overwhelm
@@ -144,10 +136,15 @@ export class BatchPrintManager {
           shiftCombinations
         });
         
-        this.pdfDocuments.push({
-          doc,
-          filename: `Annexure_${monthNames[month]}_${year}.pdf`
-        });
+        // Add annexure to the combined document
+        const annexurePageCount = doc.getNumberOfPages();
+        for (let pageNum = 1; pageNum <= annexurePageCount; pageNum++) {
+          combinedDoc.addPage();
+          const pageData = doc.internal.pages[pageNum];
+          if (pageData) {
+            combinedDoc.internal.pages[combinedDoc.internal.pages.length - 1] = pageData;
+          }
+        }
         
         await new Promise(resolve => setTimeout(resolve, 100));
       }
@@ -168,15 +165,15 @@ export class BatchPrintManager {
           entries: monthEntries
         });
         
-          // Add roster list to the combined document
-          const pageCount = doc.getNumberOfPages();
-          for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
-            combinedDoc.addPage();
-            const pageData = doc.internal.pages[pageNum];
-            if (pageData) {
-              combinedDoc.internal.pages[combinedDoc.internal.pages.length - 1] = pageData;
-            }
+        // Add roster list to the combined document
+        const rosterPageCount = doc.getNumberOfPages();
+        for (let pageNum = 1; pageNum <= rosterPageCount; pageNum++) {
+          combinedDoc.addPage();
+          const pageData = doc.internal.pages[pageNum];
+          if (pageData) {
+            combinedDoc.internal.pages[combinedDoc.internal.pages.length - 1] = pageData;
           }
+        }
       }
       
       onProgress?.({
