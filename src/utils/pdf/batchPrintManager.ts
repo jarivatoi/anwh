@@ -508,48 +508,80 @@ export class BatchPrintManager {
   private async printSequentially(): Promise<void> {
     console.log('🖨️ Using sequential print method');
     
+    // Create a single print window for all PDFs
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    if (!printWindow) {
+      throw new Error('Could not open print window. Please allow popups.');
+    }
+    
+    // Initialize the window with header
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Sequential Print - ${this.pdfDocuments.length} Documents</title>
+          <style>
+            body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+            .pdf-container { margin: 0; padding: 0; page-break-after: always; width: 100%; height: 100vh; }
+            .pdf-container:last-child { page-break-after: auto; }
+            .pdf-content { width: 100%; height: 100%; border: none; background: white; padding: 0; margin: 0; }
+            .header-info { display: block; }
+            .print-buttons { display: block; text-align: center; margin: 20px 0; }
+            @media print {
+              .header-info { display: none !important; }
+              .print-buttons { display: none !important; }
+              .pdf-container { page-break-after: always; }
+              .pdf-content { height: 100vh; width: 100%; margin: 0; padding: 0; }
+              body { margin: 0; padding: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header-info">
+            <h1>Print Preview - ${this.pdfDocuments.length} Documents</h1>
+            <p>Click Print to print all documents sequentially.</p>
+          </div>
+          <div class="print-buttons">
+            <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; background: #4f46e5; color: white; border: none; border-radius: 8px; cursor: pointer;">
+              Print All Documents
+            </button>
+            <button onclick="window.close()" style="padding: 10px 20px; font-size: 16px; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer; margin-left: 10px;">
+              Close
+            </button>
+          </div>
+    `);
+    
+    // Add each PDF as HTML content in the same window
     for (let i = 0; i < this.pdfDocuments.length; i++) {
       const pdfDoc = this.pdfDocuments[i];
       
-      // Create individual print window for each PDF
-      const printWindow = window.open('', '_blank', 'width=800,height=600');
-      if (!printWindow) {
-        console.warn(`Could not open print window for ${pdfDoc.filename}`);
-        continue;
-      }
-      
-      const pdfDataUrl = pdfDoc.doc.output('datauristring');
+      // Convert PDF to HTML content for better print compatibility
+      const htmlContent = await this.convertPdfToHtml(pdfDoc.doc);
       
       printWindow.document.write(`
-        <html>
-          <head>
-            <title>${pdfDoc.filename}</title>
-            <style>
-              body { margin: 0; padding: 0; }
-              object, embed { width: 100%; height: 100vh; border: none; }
-            </style>
-          </head>
-          <body>
-            <object data="${pdfDataUrl}" type="application/pdf" width="100%" height="100%">
-              <embed src="${pdfDataUrl}" type="application/pdf" width="100%" height="100%" />
-              <p>PDF cannot be displayed. <a href="${pdfDataUrl}" download="${pdfDoc.filename}">Download instead</a></p>
-            </object>
-            <script>
-              window.onload = function() {
-                setTimeout(function() {
-                  window.print();
-                }, 1000);
-              };
-            </script>
-          </body>
-        </html>
+        <div class="pdf-container">
+          <div class="pdf-content">
+            ${htmlContent}
+          </div>
+        </div>
       `);
-      
-      printWindow.document.close();
-      
-      // Wait between prints to avoid overwhelming the browser
-      await new Promise(resolve => setTimeout(resolve, 2000));
     }
+    
+    printWindow.document.write(`
+      </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
+    
+    // Auto-focus the print window
+    printWindow.focus();
+    
+    // Auto-trigger print after content loads
+    setTimeout(() => {
+      if (printWindow && !printWindow.closed) {
+        printWindow.print();
+      }
+    }, 1000);
   }
   
   /**
