@@ -228,7 +228,7 @@ export class BatchPrintManager {
   }
   
   /**
-   * Generate all PDFs and print them as individual files
+   * Generate all PDFs and open them in tabs for printing
    */
   async generateAndPrintBatch(
     options: BatchPrintOptions,
@@ -236,7 +236,7 @@ export class BatchPrintManager {
   ): Promise<void> {
     const { month, year, entries, basicSalary, hourlyRate, shiftCombinations, reportTypes, selectedStaff } = options;
     
-    console.log('🖨️ Starting batch PDF generation for printing...');
+    console.log('🖨️ Starting batch PDF generation for tab printing...');
     
     let currentTask = 0;
     
@@ -268,38 +268,17 @@ export class BatchPrintManager {
     }
     
     try {
-      // Generate individual PDFs and open print dialogs
+      // Generate individual PDFs and open them in tabs for printing
       if (reportTypes.includes('individual') && reportTypes.includes('annexure') && reportTypes.includes('roster')) {
-        // Generate all reports and print them
+        // Generate all reports and open them in tabs for printing
         onProgress?.({
           current: 0,
           total: totalTasks,
-          currentTask: 'Generating all reports for printing...',
+          currentTask: 'Generating all reports and opening in tabs...',
           completed: false
         });
         
-        const result = await monthlyReportGenerator.generateAllReports({
-          month,
-          year,
-          entries,
-          basicSalary,
-          hourlyRate,
-          shiftCombinations
-        });
-        
-        onProgress?.({
-          current: totalTasks,
-          total: totalTasks,
-          currentTask: `Generated ${result.individualBills} individual bills, annexure, and roster list for printing`,
-          completed: true
-        });
-        
-      } else {
-        // Generate selected reports individually for printing
-        const { individualBillGenerator } = await import('./individualBillGenerator');
-        const { annexureGenerator } = await import('./annexureGenerator');
-        const { rosterListGenerator } = await import('./rosterListGenerator');
-        
+        // Generate and open individual bills in tabs
         if (reportTypes.includes('individual')) {
           const staffList = selectedStaff || this.getUniqueStaffMembers(monthEntries);
           
@@ -308,11 +287,11 @@ export class BatchPrintManager {
             onProgress?.({
               current: currentTask,
               total: totalTasks,
-              currentTask: `Generating bill for ${staffName}`,
+              currentTask: `Opening bill for ${staffName} in new tab`,
               completed: false
             });
             
-            await individualBillGenerator.generateBill({
+            const doc = await this.generateIndividualBillPDF({
               staffName,
               month,
               year,
@@ -322,7 +301,131 @@ export class BatchPrintManager {
               shiftCombinations
             });
             
-            await new Promise(resolve => setTimeout(resolve, 200));
+            // Open in new tab for printing
+            const pdfBlob = doc.output('blob');
+            const pdfUrl = URL.createObjectURL(pdfBlob);
+            const printWindow = window.open(pdfUrl, '_blank');
+            
+            if (printWindow) {
+              printWindow.onload = () => {
+                setTimeout(() => {
+                  printWindow.print();
+                }, 1000);
+              };
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        }
+        
+        // Generate and open annexure in tab
+        if (reportTypes.includes('annexure')) {
+          currentTask++;
+          onProgress?.({
+            current: currentTask,
+            total: totalTasks,
+            currentTask: 'Opening annexure in new tab',
+            completed: false
+          });
+          
+          const doc = await this.generateAnnexurePDF({
+            month,
+            year,
+            entries: monthEntries,
+            hourlyRate,
+            shiftCombinations
+          });
+          
+          const pdfBlob = doc.output('blob');
+          const pdfUrl = URL.createObjectURL(pdfBlob);
+          const printWindow = window.open(pdfUrl, '_blank');
+          
+          if (printWindow) {
+            printWindow.onload = () => {
+              setTimeout(() => {
+                printWindow.print();
+              }, 1000);
+            };
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        
+        // Generate and open roster list in tab
+        if (reportTypes.includes('roster')) {
+          currentTask++;
+          onProgress?.({
+            current: currentTask,
+            total: totalTasks,
+            currentTask: 'Opening roster list in new tab',
+            completed: false
+          });
+          
+          const doc = await this.generateRosterListPDF({
+            month,
+            year,
+            entries: monthEntries
+          });
+          
+          const pdfBlob = doc.output('blob');
+          const pdfUrl = URL.createObjectURL(pdfBlob);
+          const printWindow = window.open(pdfUrl, '_blank');
+          
+          if (printWindow) {
+            printWindow.onload = () => {
+              setTimeout(() => {
+                printWindow.print();
+              }, 1000);
+            };
+          }
+        }
+        
+        onProgress?.({
+          current: totalTasks,
+          total: totalTasks,
+          currentTask: 'All reports opened in tabs for printing',
+          completed: true
+        });
+        
+      } else {
+        // Generate selected reports individually and open in tabs
+        
+        if (reportTypes.includes('individual')) {
+          const staffList = selectedStaff || this.getUniqueStaffMembers(monthEntries);
+          
+          for (const staffName of staffList) {
+            currentTask++;
+            onProgress?.({
+              current: currentTask,
+              total: totalTasks,
+              currentTask: `Opening bill for ${staffName} in new tab`,
+              completed: false
+            });
+            
+            const doc = await this.generateIndividualBillPDF({
+              staffName,
+              month,
+              year,
+              entries: monthEntries,
+              basicSalary,
+              hourlyRate,
+              shiftCombinations
+            });
+            
+            // Open in new tab for printing
+            const pdfBlob = doc.output('blob');
+            const pdfUrl = URL.createObjectURL(pdfBlob);
+            const printWindow = window.open(pdfUrl, '_blank');
+            
+            if (printWindow) {
+              printWindow.onload = () => {
+                setTimeout(() => {
+                  printWindow.print();
+                }, 1000);
+              };
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 500));
           }
         }
         
@@ -331,11 +434,11 @@ export class BatchPrintManager {
           onProgress?.({
             current: currentTask,
             total: totalTasks,
-            currentTask: 'Generating annexure summary',
+            currentTask: 'Opening annexure in new tab',
             completed: false
           });
           
-          await annexureGenerator.generateAnnexure({
+          const doc = await this.generateAnnexurePDF({
             month,
             year,
             entries: monthEntries,
@@ -343,7 +446,20 @@ export class BatchPrintManager {
             shiftCombinations
           });
           
-          await new Promise(resolve => setTimeout(resolve, 200));
+          // Open in new tab for printing
+          const pdfBlob = doc.output('blob');
+          const pdfUrl = URL.createObjectURL(pdfBlob);
+          const printWindow = window.open(pdfUrl, '_blank');
+          
+          if (printWindow) {
+            printWindow.onload = () => {
+              setTimeout(() => {
+                printWindow.print();
+              }, 1000);
+            };
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
         
         if (reportTypes.includes('roster')) {
@@ -351,21 +467,34 @@ export class BatchPrintManager {
           onProgress?.({
             current: currentTask,
             total: totalTasks,
-            currentTask: 'Generating roster list',
+            currentTask: 'Opening roster list in new tab',
             completed: false
           });
           
-          await rosterListGenerator.generateRosterList({
+          const doc = await this.generateRosterListPDF({
             month,
             year,
             entries: monthEntries
           });
+          
+          // Open in new tab for printing
+          const pdfBlob = doc.output('blob');
+          const pdfUrl = URL.createObjectURL(pdfBlob);
+          const printWindow = window.open(pdfUrl, '_blank');
+          
+          if (printWindow) {
+            printWindow.onload = () => {
+              setTimeout(() => {
+                printWindow.print();
+              }, 1000);
+            };
+          }
         }
         
         onProgress?.({
           current: totalTasks,
           total: totalTasks,
-          currentTask: 'All reports generated for printing',
+          currentTask: 'All reports opened in tabs for printing',
           completed: true
         });
       }
@@ -375,123 +504,12 @@ export class BatchPrintManager {
       onProgress?.({
         current: currentTask,
         total: totalTasks,
-        currentTask: 'Print generation failed',
+        currentTask: 'Opening PDFs for printing failed',
         completed: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       });
       throw error;
     }
-  }
-  
-  /**
-   * Start batch printing process
-   */
-  async startBatchPrinting(): Promise<void> {
-    if (this.pdfDocuments.length === 0) {
-      throw new Error('No PDFs to print');
-    }
-    
-    console.log(`🖨️ Starting batch printing of ${this.pdfDocuments.length} PDFs`);
-    
-    // Try different printing approaches based on browser capabilities
-    if (this.canUseBatchPrint()) {
-      await this.printAllAtOnce();
-    } else {
-      await this.printSequentially();
-    }
-  }
-  
-  /**
-   * Check if browser supports batch printing
-   */
-  private canUseBatchPrint(): boolean {
-    // Most modern browsers support this, but some mobile browsers don't
-    return typeof window.print === 'function' && !this.isMobileBrowser();
-  }
-  
-  /**
-   * Check if running on mobile browser
-   */
-  private isMobileBrowser(): boolean {
-    return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  }
-  
-  /**
-   * Print all PDFs at once (modern browsers)
-   */
-  private async printAllAtOnce(): Promise<void> {
-    console.log('📄 Starting combined PDF generation...');
-    
-    // Wait for window to be ready
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Batch Print - ${this.pdfDocuments.length} Documents</title>
-          <style>
-            body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
-            .pdf-container { margin: 0; padding: 0; page-break-after: always; width: 100%; height: 100vh; }
-            .pdf-container:last-child { page-break-after: auto; }
-            .pdf-content { width: 100%; height: 100%; border: none; background: white; padding: 0; margin: 0; }
-            .header-info { display: block; }
-            .print-buttons { display: block; text-align: center; margin: 20px 0; }
-            @media print {
-              .header-info { display: none !important; }
-              .print-buttons { display: none !important; }
-              .pdf-container { page-break-after: always; }
-              .pdf-content { height: 100vh; width: 100%; margin: 0; padding: 0; }
-              body { margin: 0; padding: 0; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header-info">
-            <h1>Batch Print Preview - ${this.pdfDocuments.length} Documents</h1>
-            <p>Click Print to print all documents. PDFs are embedded as HTML content for better printing compatibility.</p>
-          </div>
-          <div class="print-buttons">
-            <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; background: #4f46e5; color: white; border: none; border-radius: 8px; cursor: pointer;">
-              Print All Documents
-            </button>
-            <button onclick="window.close()" style="padding: 10px 20px; font-size: 16px; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer; margin-left: 10px;">
-              Close
-            </button>
-          </div>
-    `);
-    
-    // Add each PDF as HTML content instead of iframe
-    for (let i = 0; i < this.pdfDocuments.length; i++) {
-      const pdfDoc = this.pdfDocuments[i];
-      
-      // Convert PDF to HTML content for better print compatibility
-      const htmlContent = await this.convertPdfToHtml(pdfDoc.doc);
-      
-      printWindow.document.write(`
-        <div class="pdf-container">
-          <div class="pdf-content">
-            ${htmlContent}
-          </div>
-        </div>
-      `);
-    }
-    
-    printWindow.document.write(`
-      </body>
-      </html>
-    `);
-    
-    printWindow.document.close();
-    
-    // Auto-focus the print window
-    printWindow.focus();
-    
-    // Auto-trigger print after content loads
-    setTimeout(() => {
-      if (printWindow && !printWindow.closed) {
-        printWindow.print();
-      }
-    }, 1000);
   }
   
   /**
@@ -585,26 +603,10 @@ export class BatchPrintManager {
   }
   
   /**
-   * Download all PDFs as individual files
-   */
-  private async downloadAllPDFs(): Promise<void> {
-    console.log(`📥 Downloading ${this.pdfDocuments.length} PDFs individually...`);
-    
-    for (const pdfDoc of this.pdfDocuments) {
-      pdfDoc.doc.save(pdfDoc.filename);
-      
-      // Small delay between downloads to prevent browser overwhelm
-      await new Promise(resolve => setTimeout(resolve, 300));
-    }
-    
-    console.log('✅ All PDFs downloaded successfully');
-  }
-  
-  /**
    * Clean up resources
    */
   cleanup(): void {
-    // No cleanup needed for combined PDF approach
+    // No cleanup needed for tab-based printing approach
     console.log('🧹 Batch print manager cleanup completed');
   }
 }
