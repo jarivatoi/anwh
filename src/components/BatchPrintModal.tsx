@@ -32,7 +32,7 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState<BatchPrintProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [combineIntoSinglePDF, setCombineIntoSinglePDF] = useState(true);
+  const [printMode, setPrintMode] = useState<'individual' | 'combined'>('individual');
 
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -105,11 +105,11 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
       shiftCombinations,
       reportTypes,
       selectedStaff: reportTypes.includes('individual') ? selectedStaff : undefined,
-      combineIntoSinglePDF
+      combineIntoSinglePDF: printMode === 'combined'
     };
 
     try {
-      if (combineIntoSinglePDF) {
+      if (printMode === 'combined') {
         await batchPrintManager.generateCombinedPDF(options, setProgress);
       } else {
         await batchPrintManager.generateAndDownloadBatch(options, setProgress);
@@ -255,29 +255,39 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
             </div>
           </div>
 
-          {/* Combine PDF Toggle */}
+          {/* Print Mode */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Output Options</h3>
-            <div className="space-y-3">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={combineIntoSinglePDF}
-                  onChange={(e) => setCombineIntoSinglePDF(e.target.checked)}
-                  disabled={isProcessing}
-                  className="mr-3 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded disabled:opacity-50"
-                />
-                <div>
-                  <span className="text-sm font-medium text-gray-700">Combine into single PDF</span>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {combineIntoSinglePDF 
-                      ? 'All reports will be combined into one PDF file for easy printing'
-                      : 'Each report will be downloaded as a separate PDF file'
-                    }
-                  </p>
-                </div>
-              </label>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Print Mode</h3>
+            <div className="flex bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setPrintMode('individual')}
+                disabled={isProcessing}
+                className={`flex-1 px-4 py-2 rounded-md font-medium transition-all duration-200 ${
+                  printMode === 'individual'
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                Individual Files
+              </button>
+              <button
+                onClick={() => setPrintMode('combined')}
+                disabled={isProcessing}
+                className={`flex-1 px-4 py-2 rounded-md font-medium transition-all duration-200 ${
+                  printMode === 'combined'
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                Combined PDF
+              </button>
             </div>
+            <p className="text-xs text-gray-500 mt-2">
+              {printMode === 'individual' 
+                ? 'Each report will be downloaded as a separate PDF file'
+                : 'All reports will be combined into one PDF file for easy printing'
+              }
+            </p>
           </div>
 
           {/* Staff Selection (only show if individual reports selected) */}
@@ -374,7 +384,7 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
             onClick={handleDownload}
             disabled={isProcessing || reportTypes.length === 0}
             className={`px-4 py-2 disabled:bg-gray-300 text-white rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 ${
-              combineIntoSinglePDF ? 'hidden' : 'bg-green-600 hover:bg-green-700'
+              printMode === 'combined' ? 'hidden' : 'bg-green-600 hover:bg-green-700'
             }`}
           >
             <Download className="w-4 h-4" />
@@ -383,11 +393,9 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
           <button
             onClick={handleGeneratePDF}
             disabled={isProcessing || reportTypes.length === 0}
-            className={`px-4 py-2 disabled:bg-gray-300 text-white rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 ${
-              combineIntoSinglePDF ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-green-600 hover:bg-green-700'
-            }`}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 text-white rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2"
           >
-            {combineIntoSinglePDF ? (
+            {printMode === 'combined' ? (
               <>
                 <Download className="w-4 h-4" />
                 <span>Generate Combined PDF</span>
@@ -395,7 +403,7 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
             ) : (
               <>
                 <Download className="w-4 h-4" />
-                <span>Download All</span>
+                <span>Download Individual Files</span>
               </>
             )}
           </button>
