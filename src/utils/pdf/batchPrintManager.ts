@@ -43,7 +43,7 @@ export class BatchPrintManager {
     options: BatchPrintOptions,
     onProgress?: (progress: BatchPrintProgress) => void
   ): Promise<void> {
-    const { month, year, entries, basicSalary, hourlyRate, shiftCombinations, reportTypes, selectedStaff, printWindow } = options;
+    const { month, year, entries, basicSalary, hourlyRate, shiftCombinations, reportTypes, selectedStaff } = options;
     
     this.pdfDocuments = [];
     this.currentPrintIndex = 0;
@@ -339,8 +339,8 @@ export class BatchPrintManager {
         completed: false
       });
       
-      // Use the provided print window to display all PDFs in one tab
-      await this.displayAllPDFsInSingleTab(printWindow);
+      // Create a new print window to display all PDFs in one tab
+      const windowToUse = window.open('', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
       
       onProgress?.({
         current: totalTasks,
