@@ -321,7 +321,7 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
           >
             <Printer className="w-4 h-4" />
             <span>
-              Generate Combined PDF
+              Print PDF
             </span>
           </button>
         </div>
