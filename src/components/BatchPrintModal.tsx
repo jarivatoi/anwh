@@ -96,17 +96,16 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
     setError(null);
     setProgress(null);
 
-    const options: BatchPrintOptions = {
-      month: selectedMonth,
-      year: selectedYear,
-      entries,
-      basicSalary,
-      hourlyRate,
-      shiftCombinations,
-      reportTypes,
-      selectedStaff: reportTypes.includes('individual') ? selectedStaff : undefined,
-      combineIntoSinglePDF: printMode === 'combined'
-    };
+    const options: BatchPrintOptions = {} as BatchPrintOptions;
+    options.month = selectedMonth;
+    options.year = selectedYear;
+    options.entries = entries;
+    options.basicSalary = basicSalary;
+    options.hourlyRate = hourlyRate;
+    options.shiftCombinations = shiftCombinations;
+    options.reportTypes = reportTypes;
+    options.selectedStaff = reportTypes.includes('individual') ? selectedStaff : undefined;
+    options.combineIntoSinglePDF = printMode === 'combined';
 
     try {
       if (printMode === 'combined') {
