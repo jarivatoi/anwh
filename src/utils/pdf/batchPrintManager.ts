@@ -81,8 +81,8 @@ export class BatchPrintManager {
       format: 'a4'
     });
     
-    // Remove the default first page
-    combinedDoc.deletePage(1);
+    // Start with the first page (don't delete it)
+    let isFirstPage = true;
     
     try {
       // Generate individual bills
@@ -98,8 +98,11 @@ export class BatchPrintManager {
             completed: false
           });
           
-          // Add new page for this bill
-          combinedDoc.addPage();
+          // Add new page for this bill (except for the first one)
+          if (!isFirstPage) {
+            combinedDoc.addPage();
+          }
+          isFirstPage = false;
           
           // Generate content directly into the combined document
           await individualBillGenerator.generateBillContent(combinedDoc, {
@@ -127,8 +130,11 @@ export class BatchPrintManager {
           completed: false
         });
         
-        // Add new page for annexure
-        combinedDoc.addPage();
+        // Add new page for annexure (except for the first one)
+        if (!isFirstPage) {
+          combinedDoc.addPage();
+        }
+        isFirstPage = false;
         
         await annexureGenerator.generateAnnexureContent(combinedDoc, {
           month,
@@ -151,8 +157,11 @@ export class BatchPrintManager {
           completed: false
         });
         
-        // Add new page for roster list
-        combinedDoc.addPage();
+        // Add new page for roster list (except for the first one)
+        if (!isFirstPage) {
+          combinedDoc.addPage();
+        }
+        isFirstPage = false;
         
         await rosterListGenerator.generateRosterListContent(combinedDoc, {
           month,
@@ -171,22 +180,125 @@ export class BatchPrintManager {
       // Generate filename for combined PDF
       const filename = `Combined_Reports_${monthNames[month]}_${year}.pdf`;
       
-      // Open the combined PDF in the provided window for printing
+      // Create print window and load the PDF
+      const printWindow = window.open('', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+      if (!printWindow) {
+        throw new Error('Unable to open print window. Please allow popups for this site.');
+      }
+      
+      // Generate the PDF blob and URL
       const pdfBlob = combinedDoc.output('blob');
       const pdfUrl = URL.createObjectURL(pdfBlob);
       
-      if (printWindow) {
-        // Use the provided print window and load the PDF
-        printWindow.location.href = pdfUrl;
-        printWindow.onload = () => {
-          // Auto-trigger print dialog after PDF loads
-          setTimeout(() => {
-            printWindow.print();
-          }, 1000);
-        };
-      } else {
-        throw new Error('Print window was not provided');
-      }
+      // Create a proper HTML page with the PDF embedded
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>${filename}</title>
+            <style>
+              body { 
+                margin: 0; 
+                padding: 0; 
+                font-family: Arial, sans-serif;
+                background: #f5f5f5;
+              }
+              .header {
+                background: #1f2937;
+                color: white;
+                padding: 15px;
+                text-align: center;
+              }
+              .actions {
+                text-align: center;
+                padding: 15px;
+                background: white;
+                border-bottom: 1px solid #e5e7eb;
+              }
+              .btn {
+                background: #4f46e5;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 6px;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                margin: 0 5px;
+              }
+              .btn:hover {
+                background: #3730a3;
+              }
+              .btn.download {
+                background: #10b981;
+              }
+              .btn.download:hover {
+                background: #059669;
+              }
+              .btn.close {
+                background: #6b7280;
+              }
+              .btn.close:hover {
+                background: #4b5563;
+              }
+              .pdf-container {
+                width: 100%;
+                height: calc(100vh - 120px);
+                border: none;
+                background: white;
+              }
+              @media print {
+                .header, .actions { display: none !important; }
+                .pdf-container { height: 100vh; }
+                body { background: white; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>Combined Reports - ${filename}</h1>
+              <p>Generated ${this.pdfDocuments.length} report(s) for ${monthNames[month]} ${year}</p>
+            </div>
+            
+            <div class="actions">
+              <button onclick="if(typeof window !== 'undefined') window.print()" class="btn">
+                🖨️ Print All
+              </button>
+              <button onclick="
+                if(typeof document !== 'undefined') {
+                  const link = document.createElement('a');
+                  link.href = '${pdfUrl}';
+                  link.download = '${filename}';
+                  link.click();
+                }
+              " class="btn download">
+                💾 Download PDF
+              </button>
+              <button onclick="if(typeof window !== 'undefined') window.close()" class="btn close">
+                ❌ Close
+              </button>
+            </div>
+            
+            <object data="${pdfUrl}" type="application/pdf" class="pdf-container">
+              <embed src="${pdfUrl}" type="application/pdf" class="pdf-container" />
+              <div style="padding: 40px; text-align: center; background: white;">
+                <h2>PDF Viewer Not Available</h2>
+                <p>Your browser doesn't support PDF viewing.</p>
+                <button onclick="
+                  if(typeof document !== 'undefined') {
+                    const link = document.createElement('a');
+                    link.href = '${pdfUrl}';
+                    link.download = '${filename}';
+                    link.click();
+                  }
+                " class="btn download">Download PDF Instead</button>
+              </div>
+            </object>
+          </body>
+        </html>
+      `);
+      
+      printWindow.document.close();
+      printWindow.focus();
       
       onProgress?.({
         current: totalTasks,
