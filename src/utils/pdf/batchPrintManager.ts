@@ -20,6 +20,7 @@ export interface BatchPrintOptions {
   reportTypes: ('individual' | 'annexure' | 'roster')[];
   selectedStaff?: string[]; // For individual reports only
   combineIntoSinglePDF?: boolean;
+  printWindow?: Window;
 }
 
 export interface BatchPrintProgress {
@@ -39,7 +40,7 @@ export class BatchPrintManager {
     options: BatchPrintOptions,
     onProgress?: (progress: BatchPrintProgress) => void
   ): Promise<void> {
-    const { month, year, entries, basicSalary, hourlyRate, shiftCombinations, reportTypes, selectedStaff } = options;
+    const { month, year, entries, basicSalary, hourlyRate, shiftCombinations, reportTypes, selectedStaff, printWindow } = options;
     
     
     this.pdfDocuments = [];
@@ -191,9 +192,9 @@ export class BatchPrintManager {
       const pdfBlob = combinedDoc.output('blob');
       const pdfUrl = URL.createObjectURL(pdfBlob);
       
-      // Open in new tab for printing
-      const printWindow = window.open(pdfUrl, '_blank');
       if (printWindow) {
+        // Use the provided print window and load the PDF
+        printWindow.location.href = pdfUrl;
         printWindow.onload = () => {
           // Auto-trigger print dialog after PDF loads
           setTimeout(() => {
@@ -201,8 +202,7 @@ export class BatchPrintManager {
           }, 1000);
         };
       } else {
-        // Fallback: download if popup blocked
-        combinedDoc.save(filename);
+        throw new Error('Print window was not provided');
       }
       
       onProgress?.({
@@ -234,7 +234,7 @@ export class BatchPrintManager {
     options: BatchPrintOptions,
     onProgress?: (progress: BatchPrintProgress) => void
   ): Promise<void> {
-    const { month, year, entries, basicSalary, hourlyRate, shiftCombinations, reportTypes, selectedStaff } = options;
+    const { month, year, entries, basicSalary, hourlyRate, shiftCombinations, reportTypes, selectedStaff, printWindow } = options;
     
     console.log('🖨️ Starting batch PDF generation for tab printing...');
     
@@ -374,15 +374,16 @@ export class BatchPrintManager {
       const pdfBlob = combinedDoc.output('blob');
       const pdfUrl = URL.createObjectURL(pdfBlob);
       
-      const printWindow = window.open(pdfUrl, '_blank');
       if (printWindow) {
+        // Use the provided print window and load the PDF
+        printWindow.location.href = pdfUrl;
         printWindow.onload = () => {
           setTimeout(() => {
             printWindow.print();
           }, 1000);
         };
       } else {
-        throw new Error('Unable to open print window. Please allow popups for this site.');
+        throw new Error('Print window was not provided');
       }
       
       onProgress?.({

@@ -92,6 +92,13 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
       return;
     }
 
+    // Open window synchronously on user click to bypass popup blockers
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      setError('Unable to open print window. Please allow popups for this site.');
+      return;
+    }
+
     setIsProcessing(true);
     setError(null);
     setProgress(null);
@@ -106,6 +113,7 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
     options.reportTypes = reportTypes;
     options.selectedStaff = reportTypes.includes('individual') ? selectedStaff : undefined;
     options.combineIntoSinglePDF = printMode === 'combined';
+    options.printWindow = printWindow;
 
     try {
       if (printMode === 'combined') {
@@ -117,6 +125,8 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
       console.error('Batch print failed:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to generate batch print';
       setError(errorMessage);
+      // Close the print window if there was an error
+      printWindow.close();
     } finally {
       setIsProcessing(false);
     }
