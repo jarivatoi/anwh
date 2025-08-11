@@ -212,15 +212,15 @@ export class BatchPrintManager {
   }
   
   /**
-   * Generate all PDFs and download them as individual files
+   * Generate all PDFs and print them as individual files
    */
-  async generateAndDownloadBatch(
+  async generateAndPrintBatch(
     options: BatchPrintOptions,
     onProgress?: (progress: BatchPrintProgress) => void
   ): Promise<void> {
     const { month, year, entries, basicSalary, hourlyRate, shiftCombinations, reportTypes, selectedStaff } = options;
     
-    console.log('📥 Starting batch PDF generation for download...');
+    console.log('🖨️ Starting batch PDF generation for printing...');
     
     let currentTask = 0;
     
@@ -252,13 +252,13 @@ export class BatchPrintManager {
     }
     
     try {
-      // Use the existing monthly report generator which auto-downloads files
+      // Generate individual PDFs and open print dialogs
       if (reportTypes.includes('individual') && reportTypes.includes('annexure') && reportTypes.includes('roster')) {
-        // Generate all reports
+        // Generate all reports and print them
         onProgress?.({
           current: 0,
           total: totalTasks,
-          currentTask: 'Generating all reports...',
+          currentTask: 'Generating all reports for printing...',
           completed: false
         });
         
@@ -274,12 +274,12 @@ export class BatchPrintManager {
         onProgress?.({
           current: totalTasks,
           total: totalTasks,
-          currentTask: `Downloaded ${result.individualBills} individual bills, annexure, and roster list`,
+          currentTask: `Generated ${result.individualBills} individual bills, annexure, and roster list for printing`,
           completed: true
         });
         
       } else {
-        // Generate selected reports individually
+        // Generate selected reports individually for printing
         const { individualBillGenerator } = await import('./individualBillGenerator');
         const { annexureGenerator } = await import('./annexureGenerator');
         const { rosterListGenerator } = await import('./rosterListGenerator');
@@ -292,7 +292,7 @@ export class BatchPrintManager {
             onProgress?.({
               current: currentTask,
               total: totalTasks,
-              currentTask: `Downloading bill for ${staffName}`,
+              currentTask: `Generating bill for ${staffName}`,
               completed: false
             });
             
@@ -315,7 +315,7 @@ export class BatchPrintManager {
           onProgress?.({
             current: currentTask,
             total: totalTasks,
-            currentTask: 'Downloading annexure summary',
+            currentTask: 'Generating annexure summary',
             completed: false
           });
           
@@ -335,7 +335,7 @@ export class BatchPrintManager {
           onProgress?.({
             current: currentTask,
             total: totalTasks,
-            currentTask: 'Downloading roster list',
+            currentTask: 'Generating roster list',
             completed: false
           });
           
@@ -349,17 +349,17 @@ export class BatchPrintManager {
         onProgress?.({
           current: totalTasks,
           total: totalTasks,
-          currentTask: 'All downloads completed',
+          currentTask: 'All reports generated for printing',
           completed: true
         });
       }
       
     } catch (error) {
-      console.error('❌ Batch download failed:', error);
+      console.error('❌ Batch print failed:', error);
       onProgress?.({
         current: currentTask,
         total: totalTasks,
-        currentTask: 'Download failed',
+        currentTask: 'Print generation failed',
         completed: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       });

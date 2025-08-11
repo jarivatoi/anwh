@@ -111,7 +111,7 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
       if (printMode === 'combined') {
         await batchPrintManager.generateCombinedPDF(options, setProgress);
       } else {
-        await batchPrintManager.generateAndDownloadBatch(options, setProgress);
+        await batchPrintManager.generateAndPrintBatch(options, setProgress);
       }
     } catch (err) {
       console.error('Batch print failed:', err);
@@ -122,41 +122,6 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
     }
   };
 
-  const handleDownload = async () => {
-    if (reportTypes.length === 0) {
-      setError('Please select at least one report type');
-      return;
-    }
-
-    if (reportTypes.includes('individual') && selectedStaff.length === 0) {
-      setError('Please select at least one staff member for individual reports');
-      return;
-    }
-
-    setIsProcessing(true);
-    setError(null);
-    setProgress(null);
-
-    const options: BatchPrintOptions = {
-      month: selectedMonth,
-      year: selectedYear,
-      entries,
-      basicSalary,
-      hourlyRate,
-      shiftCombinations,
-      reportTypes,
-      selectedStaff: reportTypes.includes('individual') ? selectedStaff : undefined
-    };
-
-    try {
-      await batchPrintManager.generateAndDownloadBatch(options, setProgress);
-    } catch (err) {
-      console.error('Batch download failed:', err);
-      setError(err instanceof Error ? err.message : 'Failed to generate batch download');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
 
   const handleClose = () => {
     if (!isProcessing) {
@@ -380,31 +345,14 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
             {isProcessing ? 'Processing...' : 'Cancel'}
           </button>
           <button
-            onClick={handleDownload}
-            disabled={isProcessing || reportTypes.length === 0}
-            className={`px-4 py-2 disabled:bg-gray-300 text-white rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 ${
-              printMode === 'combined' ? 'hidden' : 'bg-green-600 hover:bg-green-700'
-            }`}
-          >
-            <Download className="w-4 h-4" />
-            <span>Download</span>
-          </button>
-          <button
             onClick={handleGeneratePDF}
             disabled={isProcessing || reportTypes.length === 0}
             className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 text-white rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2"
           >
-            {printMode === 'combined' ? (
-              <>
-                <Download className="w-4 h-4" />
-                <span>Generate Combined PDF</span>
-              </>
-            ) : (
-              <>
-                <Download className="w-4 h-4" />
-                <span>Download Individual Files</span>
-              </>
-            )}
+            <Printer className="w-4 h-4" />
+            <span>
+              {printMode === 'combined' ? 'Print Combined PDF' : 'Print Individual Files'}
+            </span>
           </button>
         </div>
       </div>
