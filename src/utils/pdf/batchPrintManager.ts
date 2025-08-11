@@ -19,6 +19,7 @@ export interface BatchPrintOptions {
   }>;
   reportTypes: ('individual' | 'annexure' | 'roster')[];
   selectedStaff?: string[]; // For individual reports only
+  combineIntoSinglePDF?: boolean;
 }
 
 export interface BatchPrintProgress {
@@ -30,20 +31,15 @@ export interface BatchPrintProgress {
 }
 
 export class BatchPrintManager {
-  private printWindow: Window | null = null;
-  private currentPrintIndex = 0;
-  private pdfDocuments: { doc: jsPDF; filename: string }[] = [];
   
   /**
-   * Generate all PDFs and prepare for batch printing (opens print window)
+   * Generate a single combined PDF with all reports
    */
-  async generateAndPrintBatch(
-    options: BatchPrintOptions,
+  async generateCombinedPDF(
     onProgress?: (progress: BatchPrintProgress) => void
   ): Promise<void> {
     const { month, year, entries, basicSalary, hourlyRate, shiftCombinations, reportTypes, selectedStaff } = options;
     
-    console.log('🖨️ Starting batch PDF generation for printing...');
     
     this.pdfDocuments = [];
     this.currentPrintIndex = 0;
@@ -74,6 +70,16 @@ export class BatchPrintManager {
     
     let currentTask = 0;
     
+    // Create a single PDF document for all reports
+    const combinedDoc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+    
+    // Remove the default first page
+    combinedDoc.deletePage(1);
+    
     try {
       // Generate individual bills
       if (reportTypes.includes('individual')) {
@@ -98,11 +104,23 @@ export class BatchPrintManager {
             shiftCombinations
           });
           
-          this.pdfDocuments.push({
-            doc,
-            filename: `${staffName}_${monthNames[month]}_${year}_Bill.pdf`
-          });
-          
+          // Add this bill to the combined document
+          const pageCount = doc.getNumberOfPages();
+          for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
+            combinedDoc.addPage();
+            const pageData = doc.internal.pages[pageNum];
+            if (pageData) {
+            }
+          }
+          // Add annexure to the combined document
+          const pageCount = doc.getNumberOfPages();
+          for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
+            combinedDoc.addPage();
+            const pageData = doc.internal.pages[pageNum];
+            if (pageData) {
+              combinedDoc.internal.pages[combinedDoc.internal.pages.length - 1] = pageData;
+            }
+          }
           // Small delay to prevent browser overwhelm
           await new Promise(resolve => setTimeout(resolve, 100));
         }
@@ -150,35 +168,45 @@ export class BatchPrintManager {
           entries: monthEntries
         });
         
-        this.pdfDocuments.push({
-          doc,
-          filename: `Roster_List_${monthNames[month]}_${year}.pdf`
-        });
+          // Add roster list to the combined document
+          const pageCount = doc.getNumberOfPages();
+          for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
+            combinedDoc.addPage();
+            const pageData = doc.internal.pages[pageNum];
+            if (pageData) {
+              combinedDoc.internal.pages[combinedDoc.internal.pages.length - 1] = pageData;
+            }
+          }
       }
       
       onProgress?.({
         current: totalTasks,
         total: totalTasks,
-        currentTask: 'Opening print window...',
+        currentTask: 'Finalizing combined PDF...',
         completed: false
       });
       
-      // Start batch printing
-      await this.startBatchPrinting();
+      // Generate filename for combined PDF
+      const filename = `Combined_Reports_${monthNames[month]}_${year}.pdf`;
+      
+      // Download the combined PDF
+      combinedDoc.save(filename);
       
       onProgress?.({
         current: totalTasks,
         total: totalTasks,
-        currentTask: 'Print window opened',
+        currentTask: `Combined PDF downloaded: ${filename}`,
         completed: true
       });
       
+      console.log('✅ Combined PDF generated successfully:', filename);
+      
     } catch (error) {
-      console.error('❌ Batch generation failed:', error);
+      console.error('❌ Combined PDF generation failed:', error);
       onProgress?.({
         current: currentTask,
         total: totalTasks,
-        currentTask: 'Print preparation failed',
+        currentTask: 'Combined PDF generation failed',
         completed: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       });
@@ -379,13 +407,7 @@ export class BatchPrintManager {
    * Print all PDFs at once (modern browsers)
    */
   private async printAllAtOnce(): Promise<void> {
-    console.log('🖨️ Using batch print method');
-    
-    // Create a combined print window with all PDFs
-    const printWindow = window.open('', '_blank', 'width=800,height=600');
-    if (!printWindow) {
-      throw new Error('Could not open print window. Please allow popups.');
-    }
+    console.log('📄 Starting combined PDF generation...');
     
     // Wait for window to be ready
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -457,79 +479,6 @@ export class BatchPrintManager {
         printWindow.print();
       }
     }, 1000);
-  }
-  
-  /**
-   * Convert PDF document to HTML content for better print compatibility
-   */
-  private async convertPdfToHtml(doc: jsPDF): Promise<string> {
-    try {
-      // Get the PDF as data URL
-      const pdfDataUrl = doc.output('datauristring');
-      
-      // Create an embedded PDF object that browsers can print
-      return `
-        <object data="${pdfDataUrl}" type="application/pdf" width="100%" height="600px">
-          <embed src="${pdfDataUrl}" type="application/pdf" width="100%" height="600px" />
-          <p>Your browser does not support PDF viewing. 
-             <a href="${pdfDataUrl}" download="document.pdf">Download the PDF</a> instead.
-          </p>
-        </object>
-      `;
-    } catch (error) {
-      console.error('Failed to convert PDF to HTML:', error);
-      return '<p>Error loading PDF content. Please try downloading instead.</p>';
-    }
-  }
-  
-  /**
-   * Print PDFs sequentially (fallback method)
-   */
-  private async printSequentially(): Promise<void> {
-    console.log('🖨️ Using sequential print method');
-    
-    for (let i = 0; i < this.pdfDocuments.length; i++) {
-      const pdfDoc = this.pdfDocuments[i];
-      
-      // Create individual print window for each PDF
-      const printWindow = window.open('', '_blank', 'width=800,height=600');
-      if (!printWindow) {
-        console.warn(`Could not open print window for ${pdfDoc.filename}`);
-        continue;
-      }
-      
-      const pdfDataUrl = pdfDoc.doc.output('datauristring');
-      
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>${pdfDoc.filename}</title>
-            <style>
-              body { margin: 0; padding: 0; }
-              object, embed { width: 100%; height: 100vh; border: none; }
-            </style>
-          </head>
-          <body>
-            <object data="${pdfDataUrl}" type="application/pdf" width="100%" height="100%">
-              <embed src="${pdfDataUrl}" type="application/pdf" width="100%" height="100%" />
-              <p>PDF cannot be displayed. <a href="${pdfDataUrl}" download="${pdfDoc.filename}">Download instead</a></p>
-            </object>
-            <script>
-              window.onload = function() {
-                setTimeout(function() {
-                  window.print();
-                }, 1000);
-              };
-            </script>
-          </body>
-        </html>
-      `);
-      
-      printWindow.document.close();
-      
-      // Wait between prints to avoid overwhelming the browser
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    }
   }
   
   /**
@@ -642,17 +591,8 @@ export class BatchPrintManager {
    * Clean up resources
    */
   cleanup(): void {
-    if (this.printWindow && !this.printWindow.closed) {
-      this.printWindow.close();
-    }
-    
-    // Clean up blob URLs
-    this.pdfDocuments.forEach(pdfDoc => {
-      // URLs will be cleaned up automatically by browser
-    });
-    
-    this.pdfDocuments = [];
-    this.currentPrintIndex = 0;
+    // No cleanup needed for combined PDF approach
+    console.log('🧹 Batch print manager cleanup completed');
   }
 }
 
