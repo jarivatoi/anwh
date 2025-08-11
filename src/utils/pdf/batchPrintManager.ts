@@ -228,15 +228,15 @@ export class BatchPrintManager {
   }
   
   /**
-   * Generate all PDFs and open them in tabs for printing
+   * Generate all PDFs and open them in separate tabs for printing
    */
   async generateAndPrintBatch(
     options: BatchPrintOptions,
     onProgress?: (progress: BatchPrintProgress) => void
   ): Promise<void> {
-    const { month, year, entries, basicSalary, hourlyRate, shiftCombinations, reportTypes, selectedStaff, printWindow } = options;
+    const { month, year, entries, basicSalary, hourlyRate, shiftCombinations, reportTypes, selectedStaff } = options;
     
-    console.log('🖨️ Starting batch PDF generation for tab printing...');
+    console.log('🖨️ Starting batch PDF generation for individual tab printing...');
     
     let currentTask = 0;
     
@@ -268,16 +268,7 @@ export class BatchPrintManager {
     }
     
     try {
-      // Create a single combined PDF with all selected reports
-      const combinedDoc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-      
-      // Remove the default first page
-      combinedDoc.deletePage(1);
-      let hasContent = false;
+      const openedTabs: Window[] = [];
       
       // Generate individual bills
       if (reportTypes.includes('individual')) {
@@ -288,16 +279,18 @@ export class BatchPrintManager {
           onProgress?.({
             current: currentTask,
             total: totalTasks,
-            currentTask: `Adding bill for ${staffName} to print document`,
+            currentTask: `Opening bill for ${staffName} in new tab`,
             completed: false
           });
           
-          // Add new page for this bill
-          combinedDoc.addPage();
-          hasContent = true;
+          // Generate individual bill PDF
+          const billDoc = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+          });
           
-          // Generate bill content directly into the combined document
-          await individualBillGenerator.generateBillContent(combinedDoc, {
+          await individualBillGenerator.generateBillContent(billDoc, {
             staffName,
             month,
             year,
@@ -306,6 +299,18 @@ export class BatchPrintManager {
             hourlyRate,
             shiftCombinations
           });
+          
+          // Open in new tab for printing
+          const billBlob = billDoc.output('blob');
+          const billUrl = URL.createObjectURL(billBlob);
+          const billTab = window.open(billUrl, '_blank');
+          
+          if (billTab) {
+            openedTabs.push(billTab);
+            billTab.onload = () => {
+              setTimeout(() => billTab.print(), 1000);
+            };
+          }
           
           await new Promise(resolve => setTimeout(resolve, 100));
         }
@@ -317,22 +322,35 @@ export class BatchPrintManager {
         onProgress?.({
           current: currentTask,
           total: totalTasks,
-          currentTask: 'Adding annexure to print document',
+          currentTask: 'Opening annexure in new tab',
           completed: false
         });
         
-        // Add new page for annexure
-        combinedDoc.addPage();
-        hasContent = true;
+        const annexureDoc = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4'
+        });
         
-        // Generate annexure content directly into the combined document
-        await annexureGenerator.generateAnnexureContent(combinedDoc, {
+        await annexureGenerator.generateAnnexureContent(annexureDoc, {
           month,
           year,
           entries: monthEntries,
           hourlyRate,
           shiftCombinations
         });
+        
+        // Open in new tab for printing
+        const annexureBlob = annexureDoc.output('blob');
+        const annexureUrl = URL.createObjectURL(annexureBlob);
+        const annexureTab = window.open(annexureUrl, '_blank');
+        
+        if (annexureTab) {
+          openedTabs.push(annexureTab);
+          annexureTab.onload = () => {
+            setTimeout(() => annexureTab.print(), 1000);
+          };
+        }
         
         await new Promise(resolve => setTimeout(resolve, 100));
       }
@@ -343,53 +361,39 @@ export class BatchPrintManager {
         onProgress?.({
           current: currentTask,
           total: totalTasks,
-          currentTask: 'Adding roster list to print document',
+          currentTask: 'Opening roster list in new tab',
           completed: false
         });
         
-        // Add new page for roster list
-        combinedDoc.addPage();
-        hasContent = true;
+        const rosterDoc = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4'
+        });
         
-        // Generate roster list content directly into the combined document
-        await rosterListGenerator.generateRosterListContent(combinedDoc, {
+        await rosterListGenerator.generateRosterListContent(rosterDoc, {
           month,
           year,
           entries: monthEntries
         });
-      }
-      
-      if (!hasContent) {
-        throw new Error('No content was generated for the print document');
-      }
-      
-      onProgress?.({
-        current: totalTasks,
-        total: totalTasks,
-        currentTask: 'Opening print document in new tab...',
-        completed: false
-      });
-      
-      // Open the combined PDF in a single new tab for printing
-      const pdfBlob = combinedDoc.output('blob');
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      
-      if (printWindow) {
-        // Use the provided print window and load the PDF
-        printWindow.location.href = pdfUrl;
-        printWindow.onload = () => {
-          setTimeout(() => {
-            printWindow.print();
-          }, 1000);
-        };
-      } else {
-        throw new Error('Print window was not provided');
+        
+        // Open in new tab for printing
+        const rosterBlob = rosterDoc.output('blob');
+        const rosterUrl = URL.createObjectURL(rosterBlob);
+        const rosterTab = window.open(rosterUrl, '_blank');
+        
+        if (rosterTab) {
+          openedTabs.push(rosterTab);
+          rosterTab.onload = () => {
+            setTimeout(() => rosterTab.print(), 1000);
+          };
+        }
       }
       
       onProgress?.({
         current: totalTasks,
         total: totalTasks,
-        currentTask: 'Print document opened in single tab',
+        currentTask: `Opened ${openedTabs.length} documents in separate tabs for printing`,
         completed: true
       });
       
@@ -398,7 +402,7 @@ export class BatchPrintManager {
       onProgress?.({
         current: currentTask,
         total: totalTasks,
-        currentTask: 'Print document generation failed',
+        currentTask: 'Individual print generation failed',
         completed: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       });
