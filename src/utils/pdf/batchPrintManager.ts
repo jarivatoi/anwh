@@ -456,17 +456,6 @@ export class BatchPrintManager {
             .close-btn:hover {
               background: #4b5563;
             }
-            @media print {
-              .main-header, .main-actions, .document-header { display: none !important; }
-              .document-section { 
-                page-break-after: always; 
-                margin: 0; 
-                box-shadow: none;
-                border-radius: 0;
-              }
-              .pdf-content { height: 100vh; }
-              body { background: white; }
-            }
           </style>
         </head>
         <body>
@@ -476,9 +465,6 @@ export class BatchPrintManager {
           </div>
           
           <div class="main-actions">
-            <button onclick="window.print()" class="main-btn">
-              Print All Documents
-            </button>
             <button onclick="window.close()" class="main-btn close-btn">
               Close Window
             </button>
