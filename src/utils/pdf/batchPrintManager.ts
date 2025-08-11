@@ -268,243 +268,136 @@ export class BatchPrintManager {
     }
     
     try {
-      // Generate individual PDFs and open them in tabs for printing
-      if (reportTypes.includes('individual') && reportTypes.includes('annexure') && reportTypes.includes('roster')) {
-        // Generate all reports and open them in tabs for printing
+      // Create a single combined PDF with all selected reports
+      const combinedDoc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      // Remove the default first page
+      combinedDoc.deletePage(1);
+      let hasContent = false;
+      
+      // Generate individual bills
+      if (reportTypes.includes('individual')) {
+        const staffList = selectedStaff || this.getUniqueStaffMembers(monthEntries);
+        
+        for (const staffName of staffList) {
+          currentTask++;
+          onProgress?.({
+            current: currentTask,
+            total: totalTasks,
+            currentTask: `Adding bill for ${staffName} to print document`,
+            completed: false
+          });
+          
+          // Add new page for this bill
+          combinedDoc.addPage();
+          hasContent = true;
+          
+          // Generate bill content directly into the combined document
+          await individualBillGenerator.generateBillContent(combinedDoc, {
+            staffName,
+            month,
+            year,
+            entries: monthEntries,
+            basicSalary,
+            hourlyRate,
+            shiftCombinations
+          });
+          
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+      
+      // Generate annexure
+      if (reportTypes.includes('annexure')) {
+        currentTask++;
         onProgress?.({
-          current: 0,
+          current: currentTask,
           total: totalTasks,
-          currentTask: 'Generating all reports and opening in tabs...',
+          currentTask: 'Adding annexure to print document',
           completed: false
         });
         
-        // Generate and open individual bills in tabs
-        if (reportTypes.includes('individual')) {
-          const staffList = selectedStaff || this.getUniqueStaffMembers(monthEntries);
-          
-          for (const staffName of staffList) {
-            currentTask++;
-            onProgress?.({
-              current: currentTask,
-              total: totalTasks,
-              currentTask: `Opening bill for ${staffName} in new tab`,
-              completed: false
-            });
-            
-            const doc = await this.generateIndividualBillPDF({
-              staffName,
-              month,
-              year,
-              entries: monthEntries,
-              basicSalary,
-              hourlyRate,
-              shiftCombinations
-            });
-            
-            // Open in new tab for printing
-            const pdfBlob = doc.output('blob');
-            const pdfUrl = URL.createObjectURL(pdfBlob);
-            const printWindow = window.open(pdfUrl, '_blank');
-            
-            if (printWindow) {
-              printWindow.onload = () => {
-                setTimeout(() => {
-                  printWindow.print();
-                }, 1000);
-              };
-            }
-            
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-        }
+        // Add new page for annexure
+        combinedDoc.addPage();
+        hasContent = true;
         
-        // Generate and open annexure in tab
-        if (reportTypes.includes('annexure')) {
-          currentTask++;
-          onProgress?.({
-            current: currentTask,
-            total: totalTasks,
-            currentTask: 'Opening annexure in new tab',
-            completed: false
-          });
-          
-          const doc = await this.generateAnnexurePDF({
-            month,
-            year,
-            entries: monthEntries,
-            hourlyRate,
-            shiftCombinations
-          });
-          
-          const pdfBlob = doc.output('blob');
-          const pdfUrl = URL.createObjectURL(pdfBlob);
-          const printWindow = window.open(pdfUrl, '_blank');
-          
-          if (printWindow) {
-            printWindow.onload = () => {
-              setTimeout(() => {
-                printWindow.print();
-              }, 1000);
-            };
-          }
-          
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-        
-        // Generate and open roster list in tab
-        if (reportTypes.includes('roster')) {
-          currentTask++;
-          onProgress?.({
-            current: currentTask,
-            total: totalTasks,
-            currentTask: 'Opening roster list in new tab',
-            completed: false
-          });
-          
-          const doc = await this.generateRosterListPDF({
-            month,
-            year,
-            entries: monthEntries
-          });
-          
-          const pdfBlob = doc.output('blob');
-          const pdfUrl = URL.createObjectURL(pdfBlob);
-          const printWindow = window.open(pdfUrl, '_blank');
-          
-          if (printWindow) {
-            printWindow.onload = () => {
-              setTimeout(() => {
-                printWindow.print();
-              }, 1000);
-            };
-          }
-        }
-        
-        onProgress?.({
-          current: totalTasks,
-          total: totalTasks,
-          currentTask: 'All reports opened in tabs for printing',
-          completed: true
+        // Generate annexure content directly into the combined document
+        await annexureGenerator.generateAnnexureContent(combinedDoc, {
+          month,
+          year,
+          entries: monthEntries,
+          hourlyRate,
+          shiftCombinations
         });
         
-      } else {
-        // Generate selected reports individually and open in tabs
-        
-        if (reportTypes.includes('individual')) {
-          const staffList = selectedStaff || this.getUniqueStaffMembers(monthEntries);
-          
-          for (const staffName of staffList) {
-            currentTask++;
-            onProgress?.({
-              current: currentTask,
-              total: totalTasks,
-              currentTask: `Opening bill for ${staffName} in new tab`,
-              completed: false
-            });
-            
-            const doc = await this.generateIndividualBillPDF({
-              staffName,
-              month,
-              year,
-              entries: monthEntries,
-              basicSalary,
-              hourlyRate,
-              shiftCombinations
-            });
-            
-            // Open in new tab for printing
-            const pdfBlob = doc.output('blob');
-            const pdfUrl = URL.createObjectURL(pdfBlob);
-            const printWindow = window.open(pdfUrl, '_blank');
-            
-            if (printWindow) {
-              printWindow.onload = () => {
-                setTimeout(() => {
-                  printWindow.print();
-                }, 1000);
-              };
-            }
-            
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-        }
-        
-        if (reportTypes.includes('annexure')) {
-          currentTask++;
-          onProgress?.({
-            current: currentTask,
-            total: totalTasks,
-            currentTask: 'Opening annexure in new tab',
-            completed: false
-          });
-          
-          const doc = await this.generateAnnexurePDF({
-            month,
-            year,
-            entries: monthEntries,
-            hourlyRate,
-            shiftCombinations
-          });
-          
-          // Open in new tab for printing
-          const pdfBlob = doc.output('blob');
-          const pdfUrl = URL.createObjectURL(pdfBlob);
-          const printWindow = window.open(pdfUrl, '_blank');
-          
-          if (printWindow) {
-            printWindow.onload = () => {
-              setTimeout(() => {
-                printWindow.print();
-              }, 1000);
-            };
-          }
-          
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-        
-        if (reportTypes.includes('roster')) {
-          currentTask++;
-          onProgress?.({
-            current: currentTask,
-            total: totalTasks,
-            currentTask: 'Opening roster list in new tab',
-            completed: false
-          });
-          
-          const doc = await this.generateRosterListPDF({
-            month,
-            year,
-            entries: monthEntries
-          });
-          
-          // Open in new tab for printing
-          const pdfBlob = doc.output('blob');
-          const pdfUrl = URL.createObjectURL(pdfBlob);
-          const printWindow = window.open(pdfUrl, '_blank');
-          
-          if (printWindow) {
-            printWindow.onload = () => {
-              setTimeout(() => {
-                printWindow.print();
-              }, 1000);
-            };
-          }
-        }
-        
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      // Generate roster list
+      if (reportTypes.includes('roster')) {
+        currentTask++;
         onProgress?.({
-          current: totalTasks,
+          current: currentTask,
           total: totalTasks,
-          currentTask: 'All reports opened in tabs for printing',
-          completed: true
+          currentTask: 'Adding roster list to print document',
+          completed: false
+        });
+        
+        // Add new page for roster list
+        combinedDoc.addPage();
+        hasContent = true;
+        
+        // Generate roster list content directly into the combined document
+        await rosterListGenerator.generateRosterListContent(combinedDoc, {
+          month,
+          year,
+          entries: monthEntries
         });
       }
+      
+      if (!hasContent) {
+        throw new Error('No content was generated for the print document');
+      }
+      
+      onProgress?.({
+        current: totalTasks,
+        total: totalTasks,
+        currentTask: 'Opening print document in new tab...',
+        completed: false
+      });
+      
+      // Open the combined PDF in a single new tab for printing
+      const pdfBlob = combinedDoc.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      
+      const printWindow = window.open(pdfUrl, '_blank');
+      if (printWindow) {
+        printWindow.onload = () => {
+          setTimeout(() => {
+            printWindow.print();
+          }, 1000);
+        };
+      } else {
+        throw new Error('Unable to open print window. Please allow popups for this site.');
+      }
+      
+      onProgress?.({
+        current: totalTasks,
+        total: totalTasks,
+        currentTask: 'Print document opened in single tab',
+        completed: true
+      });
       
     } catch (error) {
       console.error('❌ Batch print failed:', error);
       onProgress?.({
         current: currentTask,
         total: totalTasks,
-        currentTask: 'Opening PDFs for printing failed',
+        currentTask: 'Print document generation failed',
         completed: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       });
