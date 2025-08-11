@@ -112,7 +112,13 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
       await batchPrintManager.generateCombinedPDF(options, setProgress);
     } catch (err) {
       console.error('Batch print failed:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to generate batch print';
+      let errorMessage = err instanceof Error ? err.message : 'Failed to generate batch print';
+      
+      // Provide more specific guidance for popup blocker issues
+      if (errorMessage.includes('Unable to open print window') || errorMessage.includes('popup')) {
+        errorMessage = 'Browser blocked the print window popup. Please disable your browser\'s popup blocker for this site and try again. You can usually do this by clicking the popup blocker icon in your address bar.';
+      }
+      
       setError(errorMessage);
     } finally {
       setIsProcessing(false);
