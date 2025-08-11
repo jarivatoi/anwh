@@ -93,7 +93,7 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
     }
 
     // Open fullscreen window synchronously on user click to bypass popup blockers
-    const printWindow = window.open('', '_blank', 'width=' + screen.width + ',height=' + screen.height + ',left=0,top=0,fullscreen=yes,scrollbars=yes,resizable=yes');
+    const printWindow = window.open('', '_blank', `width=${screen.width},height=${screen.height},left=0,top=0,fullscreen=yes,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no`);
     if (!printWindow) {
       setError('Unable to open print window. Please allow popups for this site.');
       return;
