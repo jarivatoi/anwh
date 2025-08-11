@@ -36,6 +36,7 @@ export class BatchPrintManager {
    * Generate a single combined PDF with all reports
    */
   async generateCombinedPDF(
+    options: BatchPrintOptions,
     onProgress?: (progress: BatchPrintProgress) => void
   ): Promise<void> {
     const { month, year, entries, basicSalary, hourlyRate, shiftCombinations, reportTypes, selectedStaff } = options;
