@@ -187,13 +187,28 @@ export class BatchPrintManager {
       // Generate filename for combined PDF
       const filename = `Combined_Reports_${monthNames[month]}_${year}.pdf`;
       
-      // Download the combined PDF
-      combinedDoc.save(filename);
+      // Open the combined PDF in a new tab for printing
+      const pdfBlob = combinedDoc.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      
+      // Open in new tab for printing
+      const printWindow = window.open(pdfUrl, '_blank');
+      if (printWindow) {
+        printWindow.onload = () => {
+          // Auto-trigger print dialog after PDF loads
+          setTimeout(() => {
+            printWindow.print();
+          }, 1000);
+        };
+      } else {
+        // Fallback: download if popup blocked
+        combinedDoc.save(filename);
+      }
       
       onProgress?.({
         current: totalTasks,
         total: totalTasks,
-        currentTask: `Combined PDF downloaded: ${filename}`,
+        currentTask: `Combined PDF opened for printing: ${filename}`,
         completed: true
       });
       
