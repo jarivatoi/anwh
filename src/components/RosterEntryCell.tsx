@@ -218,6 +218,11 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
           cursor: 'pointer',
           touchAction: 'manipulation',
           WebkitTapHighlightColor: 'transparent',
+          WebkitTouchCallout: 'none',
+          WebkitUserSelect: 'none',
+          userSelect: 'none',
+          MozUserSelect: 'none',
+          msUserSelect: 'none',
           border: 'none',
           outline: 'none',
           background: 'transparent',
@@ -239,6 +244,11 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
          backgroundColor: isEditing ? 'rgba(255, 215, 0, 0.15)' : 'transparent',
          borderRadius: isEditing ? '6px' : '0',
          border: isEditing ? '2px solid #ffd700' : 'none'
+        }}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
         }}
       >
         <ScrollingText 

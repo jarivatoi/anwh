@@ -106,6 +106,7 @@ export const useLongPress = ({
 
   const onTouchStart = useCallback((e: React.TouchEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (isMouseDownRef.current) return; // Prevent duplicate if mouse already started
     console.log('📱 Touch start - starting long press timer');
     isTouchStartRef.current = true;
