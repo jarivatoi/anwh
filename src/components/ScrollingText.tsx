@@ -15,7 +15,7 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
   className = '', 
   children,
   pauseDuration = 1,
-  scrollDuration = 3.5,
+  scrollDuration = 2.5,
   easing = 'power2.inOut'
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
