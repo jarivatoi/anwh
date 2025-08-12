@@ -60,8 +60,8 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
         setNeedsScrolling(true);
         
         // Use enhanced timing for longer text with spaces
-        const enhancedPauseDuration = (hasSpaces && isLongText) ? pauseDuration + 1 : pauseDuration;
-        const enhancedScrollDuration = (hasSpaces && isLongText) ? scrollDuration + 1 : scrollDuration;
+        const enhancedPauseDuration = (hasSpaces && isLongText) ? 3 : pauseDuration;
+        const enhancedScrollDuration = (hasSpaces && isLongText) ? 7 : scrollDuration;
         const enhancedEasing = (hasSpaces && isLongText) ? 'power1.inOut' : easing;
         
         // Create animator with TweenMax-style enhanced timing
