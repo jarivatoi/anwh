@@ -18,7 +18,7 @@ export class ScrollingTextAnimator {
   constructor(options: ScrollingTextOptions) {
     this.options = {
       pauseDuration: 1,
-      scrollDuration: 1.5,
+      scrollDuration: 3.5,
       easing: 'power2.inOut',
       ...options
     };
