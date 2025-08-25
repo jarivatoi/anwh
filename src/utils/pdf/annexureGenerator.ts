@@ -163,9 +163,9 @@ export class AnnexureGenerator {
     doc.setFontSize(12);
     doc.text(`GRAND TOTAL AMOUNT: ${this.formatCurrency(grandTotal)}`, 15, finalY + 36);
 */
- doc.setFont('helvetica', 'bold');
+ doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
-    doc.text('Certified correct as per annexture:', 120, finalY + 100);
+    doc.text('Certified correct as per annexture:', 100, finalY + 100);
     
     // Footer
     doc.setFont('helvetica', 'normal');
