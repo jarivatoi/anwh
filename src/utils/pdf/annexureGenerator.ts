@@ -148,7 +148,7 @@ export class AnnexureGenerator {
     const grandTotal = staffSummaries.reduce((sum, s) => sum + s.grandTotal, 0);
     
     const finalY = (doc as any).lastAutoTable.finalY + 10;
-    
+    /*
     // Grand totals row
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
@@ -159,6 +159,8 @@ export class AnnexureGenerator {
     
     doc.setFontSize(12);
     doc.text(`GRAND TOTAL AMOUNT: ${this.formatCurrency(grandTotal)}`, 15, finalY + 36);
+*/
+
     
     // Footer
     doc.setFont('helvetica', 'normal');
