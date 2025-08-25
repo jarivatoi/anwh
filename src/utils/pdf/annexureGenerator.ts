@@ -165,7 +165,11 @@ export class AnnexureGenerator {
     // Footer
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.text(`Generated on: ${new Date().toLocaleString()}`, 15, doc.internal.pageSize.getHeight() - 15);
+    const now = new Date();
+    const day = now.getDate().toString().padStart(2, '0');
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const year = now.getFullYear();
+    doc.text(`Generated on: ${day}/${month}/${year}`, 15, doc.internal.pageSize.getHeight() - 15);
     doc.text('X-ray ANWH System', doc.internal.pageSize.getWidth() - 15, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
   }
   
