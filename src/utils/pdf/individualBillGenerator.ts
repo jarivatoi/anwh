@@ -219,7 +219,7 @@ export class IndividualBillGenerator {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     
-    // Calculate total amount from hours
+    // Calculate total amount from hours 
     const totalAmount = totalHours * hourlyRate;
     
     // Summary details
