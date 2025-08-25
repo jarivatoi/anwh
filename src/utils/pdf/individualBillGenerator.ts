@@ -221,8 +221,12 @@ export class IndividualBillGenerator {
     const totalAmount = totalHours * hourlyRate;
     
     // Summary details
-    doc.text(`Total Working Days: ${totalDays}`, 15, startY + 8);
+    //doc.text(`Total Working Days: ${totalDays}`, 15, startY + 8);
+    
+    
     doc.text(`Total Working Hours: ${this.formatNumber(totalHours)}`, 15, startY + 14);
+    
+    
     doc.text(`Subtotal (Hours): ${this.formatCurrency(totalAmount)}`, 15, startY + 20);
     
     // Night duty allowance - calculation: (number of nights) × 6 × 0.25 × hourly_rate
