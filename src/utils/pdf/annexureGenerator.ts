@@ -174,7 +174,7 @@ export class AnnexureGenerator {
  doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
     doc.text('Certified correct as per annexture:-_________________________', 80, finalY + 100);
-    doc.text('(Principal Medical Imaging Technologist):', 90, finalY + 115);
+    doc.text('(Principal Medical Imaging Technologist):', 95, finalY + 115);
     
     // Footer
     doc.setFont('helvetica', 'normal');
