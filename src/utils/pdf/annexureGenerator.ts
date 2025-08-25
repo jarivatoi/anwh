@@ -165,7 +165,7 @@ export class AnnexureGenerator {
 */
  doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    doc.text('Certified correct as per annexture:', 50, finalY + 50);
+    doc.text('Certified correct as per annexture:', 90, finalY + 150);
     
     // Footer
     doc.setFont('helvetica', 'normal');
