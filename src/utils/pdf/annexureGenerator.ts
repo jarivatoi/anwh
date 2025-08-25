@@ -36,6 +36,14 @@ export class AnnexureGenerator {
       maximumFractionDigits: 2
     })}`;
   }
+  
+  /**
+   * Format salary without decimal places
+   */
+  private formatSalary(value: number): string {
+    if (value === 0) return '';
+    return `Rs ${value.toLocaleString('en-US')}`;
+  }
 
   /**
    * Generate annexure matching the exact PDF format
@@ -91,7 +99,7 @@ export class AnnexureGenerator {
       (index + 1).toString(), // Serial number
       summary.fullName, // Full name instead of staff name
       summary.employeeId, // ID number
-      this.formatCurrency(summary.salary), // Salary
+      this.formatSalary(summary.salary), // Salary (no decimals)
       this.formatNumber(summary.totalHours), // Hours payable (without night allowance)
       this.formatNumber(summary.nightDutyHours), // Night allowance hours
       this.formatCurrency(summary.grandTotal)
