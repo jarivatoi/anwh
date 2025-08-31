@@ -302,6 +302,7 @@ export class AnnexureGenerator {
   private getStaffInfo(staffName: string) {
     // Import auth codes to get staff details
     const authCodes = [
+      
       { code: 'B165', name: 'BHEKUR', title: 'MIT', salary: 47510, employeeId: 'B16048123000915', firstName: 'Yashdev', surname: 'BHEKUR' },
       { code: 'B196', name: 'BHOLLOORAM', title: 'MIT', salary: 47510, employeeId: 'B19118118005356', firstName: 'Sawan', surname: 'BHOLLOORAM' },
       { code: 'D28B', name: 'DHUNNY', title: 'MIT', salary: 30060, employeeId: '0280876127778', firstName: 'Leelarvind', surname: 'DHUNNY' },
