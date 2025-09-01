@@ -243,10 +243,6 @@ export class AnnexureGenerator {
         // Map and calculate hours
         const shiftMapping: Record<string, string> = {
           'Morning Shift (9-4)': '9-4',
-          'Evening Shift (4-10)': '4-10',
-          'Saturday Regular (12-10)': '12-10',
-          'Night Duty': 'N',
-          'Sunday/Public Holiday/Special': '9-4'
         };
         
         const shiftId = shiftMapping[entry.shift_type];
