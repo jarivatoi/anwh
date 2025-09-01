@@ -268,7 +268,7 @@ export class AnnexureGenerator {
       const nightAllowance = nightDutyHours * hourlyRate;
       const grandTotal =  totalAmount + nightAllowance;
       
-      // Use base name for staff name (no (R) suffix needed since they're the same person)
+      // Use base name for staff identification (NARAYYA and NARAYYA(R) are the same person)
       const actualStaffName = baseName;
       
       // Get staff info for full name, ID, and salary
@@ -300,7 +300,7 @@ export class AnnexureGenerator {
    * Get staff information from auth codes
    */
   private getStaffInfo(staffName: string) {
-    // Match by base name (remove (R) suffix for matching)
+    // Match by base name - both NARAYYA and NARAYYA(R) should match the same authCode entry
     const baseStaffName = staffName.replace(/\(R\)$/, '').trim().toUpperCase();
     return authCodes.find(auth => auth.name.toUpperCase() === baseStaffName) || null;
   }
