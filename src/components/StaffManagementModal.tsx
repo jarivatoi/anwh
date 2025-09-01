@@ -1,618 +1,310 @@
-import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { X, User, Plus, Edit, Trash2, Save, AlertTriangle, CheckCircle, Eye, EyeOff } from 'lucide-react';
-import { authCodes, AuthCode } from '../utils/rosterAuth';
+import { jsPDF } from 'jspdf'; 
+import autoTable from 'jspdf-autotable';
+import { RosterEntry } from '../../types/roster';
+import { formatMauritianRupees } from '../currency';
+import { availableNames, authCodes } from '../rosterAuth';
 
-interface StaffManagementModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  isAdminAuthenticated: boolean;
-  adminName: string | null;
+export interface AnnexureOptions {
+  month: number;
+  year: number;
+  entries: RosterEntry[];
+  hourlyRate: number;
+  shiftCombinations: Array<{
+    id: string;
+    combination: string;
+    hours: number;
+  }>;
 }
 
-interface StaffFormData {
-  code: string;
-  name: string;
-  title: string;
-  salary: number;
-  employeeId: string;
-  firstName: string;
-  surname: string;
-}
+export class AnnexureGenerator {
+  
+  /**
+   * Format number without trailing zeros and hide if zero
+   */
+  private formatNumber(value: number): string {
+    if (value === 0) return '';
+    return value % 1 === 0 ? value.toString() : value.toFixed(2).replace(/\.?0+$/, '');
+  }
+  
+  /**
+   * Format currency without trailing zeros and hide if zero
+   */
+  private formatCurrency(value: number): string {
+    if (value === 0) return '';
+    return `Rs ${value.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`;
+  }
+  
+  /**
+   * Format salary without decimal places
+   */
+  private formatSalary(value: number): string {
+    if (value === 0) return '';
+    return `Rs ${value.toLocaleString('en-US')}`;
+  }
 
-export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
-  isOpen,
-  onClose,
-  isAdminAuthenticated,
-  adminName
-}) => {
-  const [staffList, setStaffList] = useState<AuthCode[]>([]);
-  const [editingStaff, setEditingStaff] = useState<AuthCode | null>(null);
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState<StaffFormData>({
-    code: '',
-    name: '',
-    title: 'MIT',
-    salary: 0,
-    employeeId: '',
-    firstName: '',
-    surname: ''
-  });
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const [confirmationAction, setConfirmationAction] = useState<'save' | 'delete' | null>(null);
-  const [confirmationMessage, setConfirmationMessage] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-
-  // Load staff data when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setStaffList([...authCodes]);
-      resetForm();
-    }
-  }, [isOpen]);
-
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.top = '0';
-      document.body.style.left = '0';
-      document.body.style.right = '0';
-      document.body.style.bottom = '0';
-    }
-
-    return () => {
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.left = '';
-      document.body.style.right = '';
-      document.body.style.bottom = '';
-    };
-  }, [isOpen]);
-
-  const resetForm = () => {
-    setFormData({
-      code: '',
-      name: '',
-      title: 'MIT',
-      salary: 0,
-      employeeId: '',
-      firstName: '',
-      surname: ''
+  /**
+   * Generate annexure matching the exact PDF format
+   */
+  async generateAnnexure(options: AnnexureOptions): Promise<void> {
+    // Create PDF document
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
     });
-    setFormErrors({});
-    setEditingStaff(null);
-    setShowForm(false);
-  };
-
-  const validateForm = (): boolean => {
-    const errors: Record<string, string> = {};
-
-    if (!formData.code.trim()) {
-      errors.code = 'Code is required';
-    } else if (formData.code.length < 3) {
-      errors.code = 'Code must be at least 3 characters';
-    } else if (staffList.some(staff => staff.code === formData.code && staff.code !== editingStaff?.code)) {
-      errors.code = 'Code already exists';
-    }
-
-    if (!formData.name.trim()) {
-      errors.name = 'Name is required';
-    } else if (staffList.some(staff => staff.name === formData.name && staff.name !== editingStaff?.name)) {
-      errors.name = 'Name already exists';
-    }
-
-    if (!formData.surname.trim()) {
-      errors.surname = 'Surname is required';
-    }
-
-    if (formData.salary < 0) {
-      errors.salary = 'Salary must be positive';
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleAddNew = () => {
-    resetForm();
-    setShowForm(true);
-  };
-
-  const handleEdit = (staff: AuthCode) => {
-    setEditingStaff(staff);
-    setFormData({
-      code: staff.code,
-      name: staff.name,
-      title: staff.title || 'MIT',
-      salary: staff.salary || 0,
-      employeeId: staff.employeeId || '',
-      firstName: staff.firstName || '',
-      surname: staff.surname || ''
+    
+    // Generate content
+    await this.generateAnnexureContent(doc, options);
+    
+    // Generate filename and save
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const filename = `Annexure_${monthNames[options.month]}_${options.year}.pdf`;
+    doc.save(filename);
+    
+    console.log('✅ Annexure generated:', filename);
+  }
+  
+  /**
+   * Generate annexure content into provided PDF document (for batch printing)
+   */
+  async generateAnnexureContent(doc: jsPDF, options: AnnexureOptions): Promise<void> {
+    const { month, year, entries, hourlyRate, shiftCombinations } = options;
+    
+    console.log('📄 Generating annexure for all staff');
+    
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    
+    // Header - matching the original format
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('X-RAY DEPARTMENT - JAWAHARLAL NEHRU HOSPITAL', doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
+    
+    doc.setFontSize(12);
+    doc.text(`ANNEXURE - ${monthNames[month]} ${year}`, doc.internal.pageSize.getWidth() / 2, 25, { align: 'center' });
+    
+    // Calculate summary for all staff
+    const staffSummaries = this.calculateStaffSummaries(entries, month, year, hourlyRate, shiftCombinations);
+    
+    // Prepare table data - matching the PDF format exactly
+    const tableData = staffSummaries.map((summary, index) => [
+      (index + 1).toString(), // Serial number
+      summary.fullName, // Full name instead of staff name
+      summary.employeeId, // ID number
+      this.formatSalary(summary.salary), // Salary (no decimals)
+      this.formatNumber(summary.totalHours), // Hours payable (without night allowance)
+      this.formatNumber(summary.nightDutyHours), // Night allowance hours
+      this.formatCurrency(summary.grandTotal)
+    ]);
+    
+    // Create table matching the original format
+    autoTable(doc, {
+      startY: 35,
+      head: [['S.No', 'NAME\n(Full Name)', 'ID\nNUMBER', 'SALARY', 'NO OF HRS\nPAYABLE\n(Hrs)', 'NIGHT\nALLOWANCE\n(Hrs)', 'AMOUNT']],
+      body: tableData,
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+        overflow: 'linebreak',
+        halign: 'center',
+        valign: 'middle',
+        fontStyle: 'bold'
+      },
+      headStyles: {
+        fillColor: [220, 220, 220],
+        textColor: [0, 0, 0],
+        fontStyle: 'bold',
+        fontSize: 8,
+        halign: 'center',
+        valign: 'middle',
+        cellPadding: 2,
+        minCellHeight: 8
+      },
+      margin: { left: 5, right: 5 },
+      theme: 'grid',
+      tableWidth: 'auto',
+      tableLineWidth: 0.3,
+      tableLineColor: [0, 0, 0],
+      columnStyles: {},
+      didParseCell: function(data) {
+        // Auto-adjust font size based on content length
+        if (data.section === 'body') {
+          const cellText = data.cell.text.join(' ');
+          if (cellText.length > 20) {
+            data.cell.styles.fontSize = 6;
+          } else if (cellText.length > 10) {
+            data.cell.styles.fontSize = 7;
+          } else {
+            data.cell.styles.fontSize = 8;
+          }
+        }
+      }
     });
-    setShowForm(true);
-  };
-
-  const handleDelete = (staff: AuthCode) => {
-    if (staff.code === '5274') {
-      alert('Cannot delete ADMIN account');
-      return;
-    }
     
-    setConfirmationAction('delete');
-    setConfirmationMessage(`Are you sure you want to delete ${staff.name}? This action cannot be undone.`);
-    setEditingStaff(staff);
-    setShowConfirmation(true);
-  };
-
-  const handleSave = () => {
-    if (!validateForm()) return;
-
-    setConfirmationAction('save');
-    setConfirmationMessage(
-      editingStaff 
-        ? `Save changes to ${formData.name}?`
-        : `Add new staff member ${formData.name}?`
-    );
-    setShowConfirmation(true);
-  };
-
-  const handleConfirmAction = async () => {
-    setIsSaving(true);
+    // Add grand totals at the bottom
+    const grandTotalDays = staffSummaries.reduce((sum, s) => sum + s.totalDays, 0);
+    const grandTotalHours = staffSummaries.reduce((sum, s) => sum + s.totalHours, 0);
+    const grandTotalSalary = staffSummaries.reduce((sum, s) => sum + s.salary, 0);
+    const grandNightDutyHours = staffSummaries.reduce((sum, s) => sum + s.nightDutyHours, 0);
+    const grandSubtotal = staffSummaries.reduce((sum, s) => sum + s.totalAmount, 0);
+    const grandNightAllowance = staffSummaries.reduce((sum, s) => sum + s.nightAllowance, 0);
+    const grandTotal = staffSummaries.reduce((sum, s) => sum + s.grandTotal, 0);
     
-    try {
-      if (confirmationAction === 'save') {
-        const newStaff: AuthCode = {
-          code: formData.code,
-          name: formData.name,
-          title: formData.title,
-          salary: formData.salary,
-          employeeId: formData.employeeId,
-          firstName: formData.firstName,
-          surname: formData.surname
-        };
-
-        if (editingStaff) {
-          // Update existing staff
-          const updatedList = staffList.map(staff => 
-            staff.code === editingStaff.code ? newStaff : staff
-          );
-          setStaffList(updatedList);
-          setSuccessMessage(`${formData.name} updated successfully!`);
-        } else {
-          // Add new staff
-          setStaffList([...staffList, newStaff]);
-          setSuccessMessage(`${formData.name} added successfully!`);
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    /*
+    // Grand totals row
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text('GRAND TOTALS:', 15, finalY);
+    doc.text(`Total Salary: ${this.formatCurrency(grandTotalSalary)}`, 15, finalY + 8);
+    doc.text(`Total Hours Payable: ${this.formatNumber(grandTotalHours)}`, 15, finalY + 16);
+    doc.text(`Total Night Allowance Hours: ${this.formatNumber(grandNightDutyHours)}`, 15, finalY + 24);
+    
+    doc.setFontSize(12);
+    doc.text(`GRAND TOTAL AMOUNT: ${this.formatCurrency(grandTotal)}`, 15, finalY + 36);
+*/
+ doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text('Certified correct as per annexture:-_________________________', 80, finalY + 100);
+    doc.text('(Principal Medical Imaging Technologist):', 95, finalY + 115);
+    
+    // Footer
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    const now = new Date();
+    const day = now.getDate().toString().padStart(2, '0');
+    const currentMonth = (now.getMonth() + 1).toString().padStart(2, '0');
+    const currentYear = now.getFullYear();
+    doc.text(`Generated on: ${day}/${currentMonth}/${currentYear}`, 15, doc.internal.pageSize.getHeight() - 15);
+    doc.text('X-ray ANWH System', doc.internal.pageSize.getWidth() - 15, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
+  }
+  
+  
+  /**
+   * Calculate summaries for all staff with night allowance
+   */
+  private calculateStaffSummaries(
+    entries: RosterEntry[], 
+    month: number, 
+    year: number, 
+    hourlyRate: number, 
+    shiftCombinations: Array<{id: string, combination: string, hours: number}>
+  ) {
+    const staffSummaries: Array<{
+      staffName: string;
+      fullName: string;
+      employeeId: string;
+      salary: number;
+      totalDays: number;
+      totalHours: number;
+      totalAmount: number;
+      nightDutyCount: number;
+      nightDutyHours: number;
+      nightAllowance: number;
+      grandTotal: number;
+    }> = [];
+    
+    // Group entries by staff
+    const staffGroups: Record<string, RosterEntry[]> = {};
+    
+    entries.forEach(entry => {
+      const entryDate = new Date(entry.date);
+      if (entryDate.getMonth() === month && entryDate.getFullYear() === year) {
+        // Use base name (remove (R) suffix) to group same person together
+        const baseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
+        if (!staffGroups[baseName]) {
+          staffGroups[baseName] = [];
+        }
+        staffGroups[baseName].push(entry);
+      }
+    });
+    
+    // Calculate for each staff member
+    Object.entries(staffGroups).forEach(([baseName, staffEntries]) => {
+      let totalHours = 0;
+      let totalAmount = 0;
+      let nightDutyCount = 0;
+      let nightDutyHours = 0;
+      
+      staffEntries.forEach(entry => {
+        // Count night duties for allowance calculation
+        if (entry.shift_type === 'Night Duty') {
+          nightDutyCount++;
         }
         
-        resetForm();
-      } else if (confirmationAction === 'delete' && editingStaff) {
-        // Delete staff
-        const updatedList = staffList.filter(staff => staff.code !== editingStaff.code);
-        setStaffList(updatedList);
-        setSuccessMessage(`${editingStaff.name} deleted successfully!`);
-        resetForm();
-      }
-      
-      // Show success message
-      setTimeout(() => setSuccessMessage(''), 3000);
-      
-    } catch (error) {
-      console.error('Staff management error:', error);
-      alert('An error occurred. Please try again.');
-    } finally {
-      setIsSaving(false);
-      setShowConfirmation(false);
-      setConfirmationAction(null);
-    }
-  };
-
-  const handleCancelConfirmation = () => {
-    setShowConfirmation(false);
-    setConfirmationAction(null);
-    setConfirmationMessage('');
-  };
-
-  const handleFormChange = (field: keyof StaffFormData, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Clear error for this field when user starts typing
-    if (formErrors[field]) {
-      setFormErrors(prev => ({ ...prev, [field]: '' }));
-    }
-  };
-
-  if (!isOpen) return null;
-
-  // Filter out ADMIN from the list for display
-  const displayStaffList = staffList.filter(staff => staff.name !== 'ADMIN');
-
-  return createPortal(
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-50 z-[9999]"
-      style={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        justifyContent: 'center',
-        padding: '16px',
-        paddingTop: '8px',
-        overflow: 'auto',
-        overflowY: 'auto',
-        WebkitOverflowScrolling: 'touch',
-        touchAction: 'pan-y'
-      }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !showConfirmation) {
-          onClose();
+        // Map and calculate hours
+        const shiftMapping: Record<string, string> = {
+          'Morning Shift (9-4)': '9-4',
+          'Evening Shift (4-10)': '4-10',
+          'Saturday Regular (12-10)': '12-10',
+          'Night Duty': 'N',
+          'Sunday/Public Holiday/Special': '9-4'
+        };
+        
+        const shiftId = shiftMapping[entry.shift_type];
+        if (shiftId) {
+          const combination = shiftCombinations.find(combo => combo.id === shiftId);
+          if (combination) {
+            // Special case: Night Duty should use 11 hours (since allowances are paid separately)
+            const hoursToUse = entry.shift_type === 'Night Duty' ? 11 : combination.hours;
+            totalHours += hoursToUse;
+            totalAmount += hoursToUse * hourlyRate;
+          }
         }
-      }}
-    >
-      <div 
-        className="bg-white rounded-2xl shadow-2xl w-full flex flex-col"
-        style={{
-          maxWidth: '90vw',
-          maxHeight: '95vh',
-          margin: '8px 0',
-          userSelect: 'none',
-          WebkitUserSelect: 'none'
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="border-b border-gray-200 flex-shrink-0 p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                <User className="w-6 h-6 text-yellow-600" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-gray-900">Staff Management</h3>
-                <p className="text-sm text-gray-600">Manage staff details and authentication codes</p>
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              disabled={showConfirmation}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200 disabled:opacity-50"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
+      });
+      
+      // Calculate night allowance hours: (number of nights) × 6 × 0.25
+      nightDutyHours = nightDutyCount * 6 * 0.25;
+      
+      // Calculate night allowance amount: nightDutyHours × hourly_rate
+      const nightAllowance = nightDutyHours * hourlyRate;
+      const grandTotal =  totalAmount + nightAllowance;
+      
+      // Use base name for staff identification (NARAYYA and NARAYYA(R) are the same person)
+      const actualStaffName = baseName;
+      
+      // Get staff info for full name, ID, and salary
+      const staffInfo = this.getStaffInfo(actualStaffName);
+      const fullName = staffInfo ? `${staffInfo.surname || actualStaffName} ${staffInfo.firstName || ''}`.trim() : actualStaffName;
+      const employeeId = staffInfo?.employeeId || '';
+      const salary = staffInfo?.salary || 0;
+      
+      staffSummaries.push({
+        staffName: actualStaffName,
+        fullName: fullName,
+        employeeId: employeeId,
+        salary: salary,
+        totalDays: staffEntries.length,
+        totalHours,
+        totalAmount,
+        nightDutyCount,
+        nightDutyHours,
+        nightAllowance,
+        grandTotal
+      });
+    });
+    
+    // Sort by staff name
+    return staffSummaries.sort((a, b) => a.staffName.localeCompare(b.staffName));
+  }
+  
+  /**
+   * Get staff information from auth codes
+   */
+  private getStaffInfo(staffName: string) {
+    // Match by base name - both NARAYYA and NARAYYA(R) should match the same authCode entry
+    const baseStaffName = staffName.replace(/\(R\)$/, '').trim().toUpperCase();
+    return authCodes.find(auth => auth.name.toUpperCase() === baseStaffName) || null;
+  }
+}
 
-        {/* Success Message */}
-        {successMessage && (
-          <div className="mx-6 mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-              <span className="text-green-800 font-medium">{successMessage}</span>
-            </div>
-          </div>
-        )}
-
-        {/* Content */}
-        <div 
-          className="flex-1 overflow-y-auto p-6"
-          style={{
-            WebkitOverflowScrolling: 'touch',
-            touchAction: 'pan-y'
-          }}
-        >
-          {!showForm ? (
-            /* Staff List View */
-            <div className="space-y-4">
-              {/* Add New Button */}
-              <div className="flex justify-between items-center">
-                <h4 className="text-lg font-semibold text-gray-900">
-                  Staff Members ({displayStaffList.length})
-                </h4>
-                <button
-                  onClick={handleAddNew}
-                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add New</span>
-                </button>
-              </div>
-
-              {/* Staff List */}
-              <div className="space-y-3">
-                {displayStaffList.map((staff) => (
-                  <div key={staff.code} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <span className="font-mono text-sm bg-gray-200 px-2 py-1 rounded">
-                            {staff.code}
-                          </span>
-                          <span className="font-semibold text-gray-900">{staff.name}</span>
-                          <span className="text-sm text-gray-600 bg-blue-100 px-2 py-1 rounded">
-                            {staff.title}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                          <div>
-                            <span className="font-medium">Full Name:</span> {staff.firstName} {staff.surname}
-                          </div>
-                          <div>
-                            <span className="font-medium">Salary:</span> Rs {(staff.salary || 0).toLocaleString()}
-                          </div>
-                          <div className="col-span-2">
-                            <span className="font-medium">Employee ID:</span> {staff.employeeId || 'Not set'}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handleEdit(staff)}
-                          className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors duration-200"
-                          title="Edit staff"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(staff)}
-                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors duration-200"
-                          title="Delete staff"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            /* Add/Edit Form */
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h4 className="text-lg font-semibold text-gray-900">
-                  {editingStaff ? 'Edit Staff Member' : 'Add New Staff Member'}
-                </h4>
-                <button
-                  onClick={resetForm}
-                  className="text-gray-600 hover:text-gray-800 transition-colors duration-200"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Code */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Authentication Code *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.code}
-                    onChange={(e) => handleFormChange('code', e.target.value.toUpperCase())}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono ${
-                      formErrors.code ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="e.g., B165"
-                    maxLength={4}
-                  />
-                  {formErrors.code && (
-                    <p className="text-sm text-red-600 mt-1">{formErrors.code}</p>
-                  )}
-                </div>
-
-                {/* Name */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Display Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => handleFormChange('name', e.target.value.toUpperCase())}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      formErrors.name ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="e.g., NARAYYA"
-                  />
-                  {formErrors.name && (
-                    <p className="text-sm text-red-600 mt-1">{formErrors.name}</p>
-                  )}
-                </div>
-
-                {/* First Name */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    First Name
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.firstName}
-                    onChange={(e) => handleFormChange('firstName', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="e.g., Viraj"
-                  />
-                </div>
-
-                {/* Surname */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Surname *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.surname}
-                    onChange={(e) => handleFormChange('surname', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      formErrors.surname ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="e.g., NARAYYA"
-                  />
-                  {formErrors.surname && (
-                    <p className="text-sm text-red-600 mt-1">{formErrors.surname}</p>
-                  )}
-                </div>
-
-                {/* Title */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Title
-                  </label>
-                  <select
-                    value={formData.title}
-                    onChange={(e) => handleFormChange('title', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="MIT">MIT</option>
-                    <option value="SMIT">SMIT</option>
-                    <option value="ADMIN">ADMIN</option>
-                  </select>
-                </div>
-
-                {/* Salary */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Salary (Rs)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.salary || ''}
-                    onChange={(e) => handleFormChange('salary', Number(e.target.value))}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      formErrors.salary ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="e.g., 38010"
-                    min="0"
-                  />
-                  {formErrors.salary && (
-                    <p className="text-sm text-red-600 mt-1">{formErrors.salary}</p>
-                  )}
-                </div>
-
-                {/* Employee ID */}
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Employee ID
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.employeeId}
-                    onChange={(e) => handleFormChange('employeeId', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="e.g., N280881240162C"
-                  />
-                </div>
-              </div>
-
-              {/* Form Actions */}
-              <div className="flex space-x-3">
-                <button
-                  onClick={resetForm}
-                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSave}
-                  className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
-                >
-                  <Save className="w-4 h-4" />
-                  <span>{editingStaff ? 'Update' : 'Add'} Staff</span>
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Warning Note */}
-        <div className="border-t border-gray-200 p-4 bg-amber-50">
-          <div className="flex items-center space-x-2">
-            <AlertTriangle className="w-4 h-4 text-amber-600" />
-            <p className="text-sm text-amber-800">
-              <strong>Note:</strong> Changes made here are temporary and will be lost on page refresh. 
-              This is a preview feature for testing staff management functionality.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Confirmation Modal */}
-      {showConfirmation && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-75 z-[99999] flex items-center justify-center p-4"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 99999
-          }}
-        >
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-            <div className="p-6">
-              <div className="flex items-center justify-center space-x-3 mb-4">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                  confirmationAction === 'delete' ? 'bg-red-100' : 'bg-blue-100'
-                }`}>
-                  {confirmationAction === 'delete' ? (
-                    <Trash2 className="w-6 h-6 text-red-600" />
-                  ) : (
-                    <Save className="w-6 h-6 text-blue-600" />
-                  )}
-                </div>
-              </div>
-              
-              <h4 className="text-lg font-bold text-gray-900 mb-4 text-center">
-                Confirm Action
-              </h4>
-              
-              <p className="text-gray-700 text-center mb-6">
-                {confirmationMessage}
-              </p>
-              
-              <div className="flex space-x-3">
-                <button
-                  onClick={handleCancelConfirmation}
-                  disabled={isSaving}
-                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleConfirmAction}
-                  disabled={isSaving}
-                  className={`flex-1 px-4 py-3 ${
-                    confirmationAction === 'delete' 
-                      ? 'bg-red-600 hover:bg-red-700' 
-                      : 'bg-blue-600 hover:bg-blue-700'
-                  } text-white rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center justify-center space-x-2`}
-                >
-                  {isSaving ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Processing...</span>
-                    </>
-                  ) : (
-                    <>
-                      {confirmationAction === 'delete' ? (
-                        <Trash2 className="w-4 h-4" />
-                      ) : (
-                        <Save className="w-4 h-4" />
-                      )}
-                      <span>Confirm</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>,
-    document.body
-  );
-};
+// Create singleton instance
+export const annexureGenerator = new AnnexureGenerator();
