@@ -244,37 +244,44 @@ export class AnnexureGenerator {
         const shiftMapping: Record<string, string> = {
           'Morning Shift (9-4)': '9-4',
           'Evening Shift (4-10)': '4-10',
-          'Night Duty': 'Night'
+          'Saturday Regular (12-10)': '12-10',
+          'Night Duty': 'N',
+          'Sunday/Public Holiday/Special': '9-4'
         };
         
-        const mappedShift = shiftMapping[entry.shift_type] || entry.shift_type;
-        const shiftCombo = shiftCombinations.find(combo => combo.combination === mappedShift);
-        
-        if (shiftCombo) {
-          totalHours += shiftCombo.hours;
-          totalAmount += shiftCombo.hours * hourlyRate;
-          
-          if (entry.shift_type === 'Night Duty') {
-            nightDutyHours += shiftCombo.hours;
+        const shiftId = shiftMapping[entry.shift_type];
+        if (shiftId) {
+          const combination = shiftCombinations.find(combo => combo.id === shiftId);
+          if (combination) {
+            // Special case: Night Duty should use 11 hours (since allowances are paid separately)
+            const hoursToUse = entry.shift_type === 'Night Duty' ? 11 : combination.hours;
+            totalHours += hoursToUse;
+            totalAmount += hoursToUse * hourlyRate;
           }
         }
       });
       
-      // Get staff information
-      const staffInfo = this.getStaffInfo(baseName);
-      const fullName = staffInfo ? `${staffInfo.firstName} ${staffInfo.surname}` : baseName;
+      // Calculate night allowance hours: (number of nights) × 6 × 0.25
+      nightDutyHours = nightDutyCount * 6 * 0.25;
+      
+      // Calculate night allowance amount: nightDutyHours × hourly_rate
+      const nightAllowance = nightDutyHours * hourlyRate;
+      const grandTotal =  totalAmount + nightAllowance;
+      
+      // Use base name for staff identification (NARAYYA and NARAYYA(R) are the same person)
+      const actualStaffName = baseName;
+      
+      // Get staff info for full name, ID, and salary
+      const staffInfo = this.getStaffInfo(actualStaffName);
+      const fullName = staffInfo ? `${staffInfo.surname || actualStaffName} ${staffInfo.firstName || ''}`.trim() : actualStaffName;
       const employeeId = staffInfo?.employeeId || '';
       const salary = staffInfo?.salary || 0;
       
-      // Calculate night allowance (Rs 100 per night duty)
-      const nightAllowance = nightDutyCount * 100;
-      const grandTotal = totalAmount + nightAllowance;
-      
       staffSummaries.push({
-        staffName: baseName,
-        fullName,
-        employeeId,
-        salary,
+        staffName: actualStaffName,
+        fullName: fullName,
+        employeeId: employeeId,
+        salary: salary,
         totalDays: staffEntries.length,
         totalHours,
         totalAmount,
