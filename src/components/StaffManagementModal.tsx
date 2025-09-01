@@ -346,22 +346,26 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                             <span className="font-medium">Employee ID:</span> {staff.employeeId || 'Not set'}
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handleEdit(staff)}
-                          className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors duration-200"
-                          title="Edit staff"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(staff)}
-                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors duration-200"
-                          title="Delete staff"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        
+                        {/* Action buttons moved below details for mobile */}
+                        <div className="flex items-center justify-center space-x-3 mt-3 pt-3 border-t border-gray-200">
+                          <button
+                            onClick={() => handleEdit(staff)}
+                            className="flex items-center space-x-2 px-4 py-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors duration-200 font-medium"
+                            title="Edit staff"
+                          >
+                            <Edit className="w-4 h-4" />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(staff)}
+                            className="flex items-center space-x-2 px-4 py-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors duration-200 font-medium"
+                            title="Delete staff"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
