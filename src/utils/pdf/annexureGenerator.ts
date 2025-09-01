@@ -218,8 +218,8 @@ export class AnnexureGenerator {
     entries.forEach(entry => {
       const entryDate = new Date(entry.date);
       if (entryDate.getMonth() === month && entryDate.getFullYear() === year) {
-        // Use base name (remove (R) suffix) to group same person together
-        const baseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
+        // Use the FINAL assigned name (current assignment) - don't group by base name
+        const finalAssignedName = entry.assigned_name.trim().toUpperCase();
         if (!staffGroups[baseName]) {
           staffGroups[baseName] = [];
         }
@@ -228,7 +228,7 @@ export class AnnexureGenerator {
     });
     
     // Calculate for each staff member
-    Object.entries(staffGroups).forEach(([baseName, staffEntries]) => {
+    Object.entries(staffGroups).forEach(([finalAssignedName, staffEntries]) => {
       let totalHours = 0;
       let totalAmount = 0;
       let nightDutyCount = 0;
@@ -268,19 +268,19 @@ export class AnnexureGenerator {
       const nightAllowance = nightDutyHours * hourlyRate;
       const grandTotal =  totalAmount + nightAllowance;
       
-      // Use base name for staff identification (NARAYYA and NARAYYA(R) are the same person)
-      const actualStaffName = baseName;
+      // Use the final assigned name as it appears in the roster (NARAYYA vs NARAYYA(R) are treated separately)
+      const actualStaffName = finalAssignedName;
       
-      // Get staff info for full name, ID, and salary using base name (without R)
+      // Get staff info for full name, ID, and salary using the actual final name
       const baseStaffName = actualStaffName.replace(/\(R\)$/, '').trim();
       const staffInfo = getStaffInfo(baseStaffName);
       const staffSalary = getStaffSalary(baseStaffName);
-      const fullName = staffInfo ? `${staffInfo.surname || baseStaffName} ${staffInfo.firstName || ''}`.trim() : baseStaffName;
+      const fullName = staffInfo ? `${staffInfo.surname || actualStaffName} ${staffInfo.firstName || ''}`.trim() : actualStaffName;
       const employeeId = staffInfo?.employeeId || '';
       const salary = staffSalary || 0;
       
       staffSummaries.push({
-        staffName: baseStaffName,
+        staffName: actualStaffName,
         fullName: fullName,
         employeeId: employeeId,
         salary: salary,
