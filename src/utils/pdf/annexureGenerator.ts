@@ -2,7 +2,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { RosterEntry } from '../../types/roster';
 import { formatMauritianRupees } from '../currency';
-import { availableNames, authCodes } from '../rosterAuth';
+import { getStaffInfo, getStaffSalary } from '../rosterAuth';
 
 export interface AnnexureOptions {
   month: number;
@@ -271,14 +271,16 @@ export class AnnexureGenerator {
       // Use base name for staff identification (NARAYYA and NARAYYA(R) are the same person)
       const actualStaffName = baseName;
       
-      // Get staff info for full name, ID, and salary
-      const staffInfo = this.getStaffInfo(actualStaffName);
-      const fullName = staffInfo ? `${staffInfo.surname || actualStaffName} ${staffInfo.firstName || ''}`.trim() : actualStaffName;
+      // Get staff info for full name, ID, and salary using base name (without R)
+      const baseStaffName = actualStaffName.replace(/\(R\)$/, '').trim();
+      const staffInfo = getStaffInfo(baseStaffName);
+      const staffSalary = getStaffSalary(baseStaffName);
+      const fullName = staffInfo ? `${staffInfo.surname || baseStaffName} ${staffInfo.firstName || ''}`.trim() : baseStaffName;
       const employeeId = staffInfo?.employeeId || '';
-      const salary = staffInfo?.salary || 0;
+      const salary = staffSalary || 0;
       
       staffSummaries.push({
-        staffName: actualStaffName,
+        staffName: baseStaffName,
         fullName: fullName,
         employeeId: employeeId,
         salary: salary,
@@ -294,18 +296,6 @@ export class AnnexureGenerator {
     
     // Sort by staff name
     return staffSummaries.sort((a, b) => a.staffName.localeCompare(b.staffName));
-  }
-  
-  /**
-   * Get staff information from auth codes
-   */
-  private getStaffInfo(staffName: string) {
-    // Match by base name - both NARAYYA and NARAYYA(R) should match the same authCode entry
-    const baseStaffName = staffName.replace(/\(R\)$/, '').trim().toUpperCase();
-    return authCodes.find(auth => {
-      const authBaseName = auth.name.replace(/\(R\)$/, '').trim().toUpperCase();
-      return authBaseName === baseStaffName;
-    }) || null;
   }
 }
 
