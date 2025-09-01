@@ -24,3 +24,4 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, User, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
 import { authCodes, validateAuthCode, isAdminCode } from '../utils/rosterAuth';
+}
