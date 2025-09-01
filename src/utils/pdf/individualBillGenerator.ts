@@ -243,9 +243,6 @@ export class AnnexureGenerator {
         // Map and calculate hours
         const shiftMapping: Record<string, string> = {
           'Morning Shift (9-4)': '9-4',
-    return authCodes.find(auth => {
-      const authBaseName = auth.name.replace(/\(R\)$/, '').trim().toUpperCase();
-      return authBaseName === baseStaffName;
           'Evening Shift (4-10)': '4-10',
           'Saturday Regular (12-10)': '12-10',
           'Night Duty': 'N',
@@ -305,7 +302,10 @@ export class AnnexureGenerator {
   private getStaffInfo(staffName: string) {
     // Match by base name - both NARAYYA and NARAYYA(R) should match the same authCode entry
     const baseStaffName = staffName.replace(/\(R\)$/, '').trim().toUpperCase();
-    return authCodes.find(auth => auth.name.toUpperCase() === baseStaffName) || null;
+    return authCodes.find(auth => {
+      const authBaseName = auth.name.replace(/\(R\)$/, '').trim().toUpperCase();
+      return authBaseName === baseStaffName;
+    }) || null;
   }
 }
 
