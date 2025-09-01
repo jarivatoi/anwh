@@ -532,15 +532,6 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
         </div>
 
         {/* Warning Note */}
-        <div className="border-t border-gray-200 p-4 bg-amber-50">
-          <div className="flex items-center space-x-2">
-            <AlertTriangle className="w-4 h-4 text-amber-600" />
-            <p className="text-sm text-amber-800">
-              <strong>Note:</strong> Changes made here are temporary and will be lost on page refresh. 
-              This is a preview feature for testing staff management functionality.
-            </p>
-          </div>
-        </div>
       </div>
 
       {/* Confirmation Modal */}
