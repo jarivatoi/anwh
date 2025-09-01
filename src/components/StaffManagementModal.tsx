@@ -1,251 +1,310 @@
-import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { X, User, Users, FileText, Download, AlertTriangle, CheckCircle } from 'lucide-react';
-import { authCodes, availableNames } from '../utils/rosterAuth';
+import { jsPDF } from 'jspdf'; 
+import autoTable from 'jspdf-autotable';
+import { RosterEntry } from '../../types/roster';
+import { formatMauritianRupees } from '../currency';
+import { availableNames, authCodes } from '../rosterAuth';
 
-interface StaffManagementModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  isAdminAuthenticated?: boolean;
-  adminName?: string | null;
+export interface AnnexureOptions {
+  month: number;
+  year: number;
+  entries: RosterEntry[];
+  hourlyRate: number;
+  shiftCombinations: Array<{
+    id: string;
+    combination: string;
+    hours: number;
+  }>;
 }
 
-export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
-  isOpen,
-  onClose,
-  isAdminAuthenticated = false,
-  adminName = null
-}) => {
-  const [selectedStaff, setSelectedStaff] = useState<string>('');
-  const [staffDetails, setStaffDetails] = useState<any>(null);
+export class AnnexureGenerator {
+  
+  /**
+   * Format number without trailing zeros and hide if zero
+   */
+  private formatNumber(value: number): string {
+    if (value === 0) return '';
+    return value % 1 === 0 ? value.toString() : value.toFixed(2).replace(/\.?0+$/, '');
+  }
+  
+  /**
+   * Format currency without trailing zeros and hide if zero
+   */
+  private formatCurrency(value: number): string {
+    if (value === 0) return '';
+    return `Rs ${value.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`;
+  }
+  
+  /**
+   * Format salary without decimal places
+   */
+  private formatSalary(value: number): string {
+    if (value === 0) return '';
+    return `Rs ${value.toLocaleString('en-US')}`;
+  }
 
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.top = '0';
-      document.body.style.left = '0';
-      document.body.style.right = '0';
-      document.body.style.bottom = '0';
-    }
-
-    return () => {
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.left = '';
-      document.body.style.right = '';
-      document.body.style.bottom = '';
-    };
-  }, [isOpen]);
-
-  // Close on escape key
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-      return () => document.removeEventListener('keydown', handleEscape);
-    }
-  }, [isOpen, onClose]);
-
-  // Update staff details when selection changes
-  useEffect(() => {
-    if (selectedStaff) {
-      const staffInfo = authCodes.find(auth => auth.name === selectedStaff);
-      setStaffDetails(staffInfo);
-    } else {
-      setStaffDetails(null);
-    }
-  }, [selectedStaff]);
-
-  if (!isOpen) return null;
-
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
-  const exportStaffData = () => {
-    const dataStr = JSON.stringify(authCodes, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
+  /**
+   * Generate annexure matching the exact PDF format
+   */
+  async generateAnnexure(options: AnnexureOptions): Promise<void> {
+    // Create PDF document
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
     
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'staff_data.json';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
+    // Generate content
+    await this.generateAnnexureContent(doc, options);
+    
+    // Generate filename and save
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const filename = `Annexure_${monthNames[options.month]}_${options.year}.pdf`;
+    doc.save(filename);
+    
+    console.log('✅ Annexure generated:', filename);
+  }
+  
+  /**
+   * Generate annexure content into provided PDF document (for batch printing)
+   */
+  async generateAnnexureContent(doc: jsPDF, options: AnnexureOptions): Promise<void> {
+    const { month, year, entries, hourlyRate, shiftCombinations } = options;
+    
+    console.log('📄 Generating annexure for all staff');
+    
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    
+    // Header - matching the original format
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('X-RAY DEPARTMENT - JAWAHARLAL NEHRU HOSPITAL', doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
+    
+    doc.setFontSize(12);
+    doc.text(`ANNEXURE - ${monthNames[month]} ${year}`, doc.internal.pageSize.getWidth() / 2, 25, { align: 'center' });
+    
+    // Calculate summary for all staff
+    const staffSummaries = this.calculateStaffSummaries(entries, month, year, hourlyRate, shiftCombinations);
+    
+    // Prepare table data - matching the PDF format exactly
+    const tableData = staffSummaries.map((summary, index) => [
+      (index + 1).toString(), // Serial number
+      summary.fullName, // Full name instead of staff name
+      summary.employeeId, // ID number
+      this.formatSalary(summary.salary), // Salary (no decimals)
+      this.formatNumber(summary.totalHours), // Hours payable (without night allowance)
+      this.formatNumber(summary.nightDutyHours), // Night allowance hours
+      this.formatCurrency(summary.grandTotal)
+    ]);
+    
+    // Create table matching the original format
+    autoTable(doc, {
+      startY: 35,
+      head: [['S.No', 'NAME\n(Full Name)', 'ID\nNUMBER', 'SALARY', 'NO OF HRS\nPAYABLE\n(Hrs)', 'NIGHT\nALLOWANCE\n(Hrs)', 'AMOUNT']],
+      body: tableData,
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+        overflow: 'linebreak',
+        halign: 'center',
+        valign: 'middle',
+        fontStyle: 'bold'
+      },
+      headStyles: {
+        fillColor: [220, 220, 220],
+        textColor: [0, 0, 0],
+        fontStyle: 'bold',
+        fontSize: 8,
+        halign: 'center',
+        valign: 'middle',
+        cellPadding: 2,
+        minCellHeight: 8
+      },
+      margin: { left: 5, right: 5 },
+      theme: 'grid',
+      tableWidth: 'auto',
+      tableLineWidth: 0.3,
+      tableLineColor: [0, 0, 0],
+      columnStyles: {},
+      didParseCell: function(data) {
+        // Auto-adjust font size based on content length
+        if (data.section === 'body') {
+          const cellText = data.cell.text.join(' ');
+          if (cellText.length > 20) {
+            data.cell.styles.fontSize = 6;
+          } else if (cellText.length > 10) {
+            data.cell.styles.fontSize = 7;
+          } else {
+            data.cell.styles.fontSize = 8;
+          }
+        }
+      }
+    });
+    
+    // Add grand totals at the bottom
+    const grandTotalDays = staffSummaries.reduce((sum, s) => sum + s.totalDays, 0);
+    const grandTotalHours = staffSummaries.reduce((sum, s) => sum + s.totalHours, 0);
+    const grandTotalSalary = staffSummaries.reduce((sum, s) => sum + s.salary, 0);
+    const grandNightDutyHours = staffSummaries.reduce((sum, s) => sum + s.nightDutyHours, 0);
+    const grandSubtotal = staffSummaries.reduce((sum, s) => sum + s.totalAmount, 0);
+    const grandNightAllowance = staffSummaries.reduce((sum, s) => sum + s.nightAllowance, 0);
+    const grandTotal = staffSummaries.reduce((sum, s) => sum + s.grandTotal, 0);
+    
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    /*
+    // Grand totals row
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text('GRAND TOTALS:', 15, finalY);
+    doc.text(`Total Salary: ${this.formatCurrency(grandTotalSalary)}`, 15, finalY + 8);
+    doc.text(`Total Hours Payable: ${this.formatNumber(grandTotalHours)}`, 15, finalY + 16);
+    doc.text(`Total Night Allowance Hours: ${this.formatNumber(grandNightDutyHours)}`, 15, finalY + 24);
+    
+    doc.setFontSize(12);
+    doc.text(`GRAND TOTAL AMOUNT: ${this.formatCurrency(grandTotal)}`, 15, finalY + 36);
+*/
+ doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text('Certified correct as per annexture:-_________________________', 80, finalY + 100);
+    doc.text('(Principal Medical Imaging Technologist):', 95, finalY + 115);
+    
+    // Footer
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    const now = new Date();
+    const day = now.getDate().toString().padStart(2, '0');
+    const currentMonth = (now.getMonth() + 1).toString().padStart(2, '0');
+    const currentYear = now.getFullYear();
+    doc.text(`Generated on: ${day}/${currentMonth}/${currentYear}`, 15, doc.internal.pageSize.getHeight() - 15);
+    doc.text('X-ray ANWH System', doc.internal.pageSize.getWidth() - 15, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
+  }
+  
+  
+  /**
+   * Calculate summaries for all staff with night allowance
+   */
+  private calculateStaffSummaries(
+    entries: RosterEntry[], 
+    month: number, 
+    year: number, 
+    hourlyRate: number, 
+    shiftCombinations: Array<{id: string, combination: string, hours: number}>
+  ) {
+    const staffSummaries: Array<{
+      staffName: string;
+      fullName: string;
+      employeeId: string;
+      salary: number;
+      totalDays: number;
+      totalHours: number;
+      totalAmount: number;
+      nightDutyCount: number;
+      nightDutyHours: number;
+      nightAllowance: number;
+      grandTotal: number;
+    }> = [];
+    
+    // Group entries by staff
+    const staffGroups: Record<string, RosterEntry[]> = {};
+    
+    entries.forEach(entry => {
+      const entryDate = new Date(entry.date);
+      if (entryDate.getMonth() === month && entryDate.getFullYear() === year) {
+        // Use base name (remove (R) suffix) to group same person together
+        const baseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
+        if (!staffGroups[baseName]) {
+          staffGroups[baseName] = [];
+        }
+        staffGroups[baseName].push(entry);
+      }
+    });
+    
+    // Calculate for each staff member
+    Object.entries(staffGroups).forEach(([baseName, staffEntries]) => {
+      let totalHours = 0;
+      let totalAmount = 0;
+      let nightDutyCount = 0;
+      let nightDutyHours = 0;
+      
+      staffEntries.forEach(entry => {
+        // Count night duties for allowance calculation
+        if (entry.shift_type === 'Night Duty') {
+          nightDutyCount++;
+        }
+        
+        // Map and calculate hours
+        const shiftMapping: Record<string, string> = {
+          'Morning Shift (9-4)': '9-4',
+          'Evening Shift (4-10)': '4-10',
+          'Saturday Regular (12-10)': '12-10',
+          'Night Duty': 'N',
+          'Sunday/Public Holiday/Special': '9-4'
+        };
+        
+        const shiftId = shiftMapping[entry.shift_type];
+        if (shiftId) {
+          const combination = shiftCombinations.find(combo => combo.id === shiftId);
+          if (combination) {
+            // Special case: Night Duty should use 11 hours (since allowances are paid separately)
+            const hoursToUse = entry.shift_type === 'Night Duty' ? 11 : combination.hours;
+            totalHours += hoursToUse;
+            totalAmount += hoursToUse * hourlyRate;
+          }
+        }
+      });
+      
+      // Calculate night allowance hours: (number of nights) × 6 × 0.25
+      nightDutyHours = nightDutyCount * 6 * 0.25;
+      
+      // Calculate night allowance amount: nightDutyHours × hourly_rate
+      const nightAllowance = nightDutyHours * hourlyRate;
+      const grandTotal =  totalAmount + nightAllowance;
+      
+      // Use base name for staff name (no (R) suffix needed since they're the same person)
+      const actualStaffName = baseName;
+      
+      // Get staff info for full name, ID, and salary
+      const staffInfo = this.getStaffInfo(actualStaffName);
+      const fullName = staffInfo ? `${staffInfo.surname || actualStaffName} ${staffInfo.firstName || ''}`.trim() : actualStaffName;
+      const employeeId = staffInfo?.employeeId || '';
+      const salary = staffInfo?.salary || 0;
+      
+      staffSummaries.push({
+        staffName: actualStaffName,
+        fullName: fullName,
+        employeeId: employeeId,
+        salary: salary,
+        totalDays: staffEntries.length,
+        totalHours,
+        totalAmount,
+        nightDutyCount,
+        nightDutyHours,
+        nightAllowance,
+        grandTotal
+      });
+    });
+    
+    // Sort by staff name
+    return staffSummaries.sort((a, b) => a.staffName.localeCompare(b.staffName));
+  }
+  
+  /**
+   * Get staff information from auth codes
+   */
+  private getStaffInfo(staffName: string) {
+    // Match by base name (remove (R) suffix for matching)
+    const baseStaffName = staffName.replace(/\(R\)$/, '').trim().toUpperCase();
+    return authCodes.find(auth => auth.name.toUpperCase() === baseStaffName) || null;
+  }
+}
 
-  return createPortal(
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-      onClick={handleBackdropClick}
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 99999,
-        WebkitOverflowScrolling: 'touch',
-        touchAction: 'pan-y'
-      }}
-    >
-      <div 
-        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full"
-        style={{ 
-          userSelect: 'none',
-          WebkitUserSelect: 'none',
-          WebkitTouchCallout: 'none',
-          maxHeight: '90vh',
-          display: 'flex',
-          flexDirection: 'column'
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="relative p-6 pb-4 border-b border-gray-200 flex-shrink-0">
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200"
-          >
-            <X className="w-5 h-5" />
-          </button>
-          
-          <div className="flex items-center justify-center space-x-3 mb-4">
-            <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-              <Users className="w-6 h-6 text-yellow-600" />
-            </div>
-          </div>
-
-          <h3 className="text-xl font-bold text-gray-900 mb-2 text-center">
-            Staff Management
-          </h3>
-          
-          <p className="text-sm text-gray-600 text-center">
-            View and manage staff information
-          </p>
-        </div>
-
-        {/* Content */}
-        <div 
-          className="flex-1 overflow-y-auto p-6"
-          style={{
-            WebkitOverflowScrolling: 'touch',
-            touchAction: 'pan-y'
-          }}
-        >
-          <div className="space-y-6">
-            {/* Staff Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Select Staff Member
-              </label>
-              <select
-                value={selectedStaff}
-                onChange={(e) => setSelectedStaff(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-              >
-                <option value="">Select staff member</option>
-                {availableNames.map(name => (
-                  <option key={name} value={name}>{name}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Staff Details */}
-            {staffDetails && (
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-medium text-gray-800 mb-3">Staff Information</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">Name:</span>
-                    <span className="ml-2 font-medium">{staffDetails.name}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Code:</span>
-                    <span className="ml-2 font-medium">{staffDetails.code}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Title:</span>
-                    <span className="ml-2 font-medium">{staffDetails.title}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Employee ID:</span>
-                    <span className="ml-2 font-medium">{staffDetails.employeeId || 'N/A'}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">First Name:</span>
-                    <span className="ml-2 font-medium">{staffDetails.firstName || 'N/A'}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Surname:</span>
-                    <span className="ml-2 font-medium">{staffDetails.surname || 'N/A'}</span>
-                  </div>
-                  {staffDetails.salary && (
-                    <div className="md:col-span-2">
-                      <span className="text-gray-600">Salary:</span>
-                      <span className="ml-2 font-medium">Rs {staffDetails.salary.toLocaleString()}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Staff Summary */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h4 className="font-medium text-blue-800 mb-3">Staff Summary</h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{availableNames.length}</div>
-                  <div className="text-blue-700">Total Staff</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {availableNames.filter(name => name.includes('(R)')).length}
-                  </div>
-                  <div className="text-blue-700">Radiographers</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Export Option */}
-            {isAdminAuthenticated && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h4 className="font-medium text-green-800 mb-3">Admin Actions</h4>
-                <button
-                  onClick={exportStaffData}
-                  className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Export Staff Data</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="border-t border-gray-200 p-6 flex-shrink-0">
-          <button
-            onClick={onClose}
-            className="w-full px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-};
+// Create singleton instance
+export const annexureGenerator = new AnnexureGenerator();
