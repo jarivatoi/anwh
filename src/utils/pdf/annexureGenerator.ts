@@ -243,10 +243,6 @@ export class AnnexureGenerator {
         // Map and calculate hours
         const shiftMapping: Record<string, string> = {
           'Morning Shift (9-4)': '9-4',
-    return authCodes.find(auth => {
-      const authBaseName = auth.name.replace(/\(R\)$/, '').trim().toUpperCase();
-      return authBaseName === baseStaffName;
-    }) || null;
           'Evening Shift (4-10)': '4-10',
           'Saturday Regular (12-10)': '12-10',
           'Night Duty': 'N',
