@@ -302,7 +302,10 @@ export class IndividualBillGenerator {
     // Match by base name (remove (R) suffix for matching)
     // This ensures both "NARAYYA" and "NARAYYA(R)" match the same auth code entry
     const baseStaffName = staffName.replace(/\(R\)$/, '').trim().toUpperCase();
-    return authCodes.find(auth => auth.name.toUpperCase() === baseStaffName) || null;
+    return authCodes.find(auth => {
+      const authBaseName = auth.name.replace(/\(R\)$/, '').trim().toUpperCase();
+      return authBaseName === baseStaffName;
+    }) || null;
   }
 }
 

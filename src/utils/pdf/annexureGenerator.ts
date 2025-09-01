@@ -302,7 +302,10 @@ export class AnnexureGenerator {
   private getStaffInfo(staffName: string) {
     // Match by base name - both NARAYYA and NARAYYA(R) should match the same authCode entry
     const baseStaffName = staffName.replace(/\(R\)$/, '').trim().toUpperCase();
-    return authCodes.find(auth => auth.name.toUpperCase() === baseStaffName) || null;
+    return authCodes.find(auth => {
+      const authBaseName = auth.name.replace(/\(R\)$/, '').trim().toUpperCase();
+      return authBaseName === baseStaffName;
+    }) || null;
   }
 }
 
