@@ -12,7 +12,6 @@ interface StaffManagementModalProps {
 
 interface StaffFormData {
   code: string;
-  name: string;
   title: string;
   salary: number;
   employeeId: string;
@@ -31,7 +30,6 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState<StaffFormData>({
     code: '',
-    name: '',
     title: 'MIT',
     salary: 0,
     employeeId: '',
@@ -77,7 +75,6 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
   const resetForm = () => {
     setFormData({
       code: '',
-      name: '',
       title: 'MIT',
       salary: 0,
       employeeId: '',
@@ -98,12 +95,6 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
       errors.code = 'Code must be at least 3 characters';
     } else if (staffList.some(staff => staff.code === formData.code && staff.code !== editingStaff?.code)) {
       errors.code = 'Code already exists';
-    }
-
-    if (!formData.name.trim()) {
-      errors.name = 'Name is required';
-    } else if (staffList.some(staff => staff.name === formData.name && staff.name !== editingStaff?.name)) {
-      errors.name = 'Name already exists';
     }
 
     if (!formData.surname.trim()) {
@@ -127,7 +118,6 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
     setEditingStaff(staff);
     setFormData({
       code: staff.code,
-      name: staff.name,
       title: staff.title || 'MIT',
       salary: staff.salary || 0,
       employeeId: staff.employeeId || '',
@@ -155,8 +145,8 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
     setConfirmationAction('save');
     setConfirmationMessage(
       editingStaff 
-        ? `Save changes to ${formData.name}?`
-        : `Add new staff member ${formData.name}?`
+        ? `Save changes to ${formData.surname}?`
+        : `Add new staff member ${formData.surname}?`
     );
     setShowConfirmation(true);
   };
@@ -168,7 +158,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
       if (confirmationAction === 'save') {
         const newStaff: AuthCode = {
           code: formData.code,
-          name: formData.name,
+          name: formData.surname, // Use surname as the name
           title: formData.title,
           salary: formData.salary,
           employeeId: formData.employeeId,
@@ -182,11 +172,11 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
             staff.code === editingStaff.code ? newStaff : staff
           );
           setStaffList(updatedList);
-          setSuccessMessage(`${formData.name} updated successfully!`);
+          setSuccessMessage(`${formData.surname} updated successfully!`);
         } else {
           // Add new staff
           setStaffList([...staffList, newStaff]);
-          setSuccessMessage(`${formData.name} added successfully!`);
+          setSuccessMessage(`${formData.surname} added successfully!`);
         }
         
         resetForm();
@@ -403,25 +393,6 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                   />
                   {formErrors.code && (
                     <p className="text-sm text-red-600 mt-1">{formErrors.code}</p>
-                  )}
-                </div>
-
-                {/* Name */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Display Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => handleFormChange('name', e.target.value.toUpperCase())}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      formErrors.name ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="e.g., NARAYYA"
-                  />
-                  {formErrors.name && (
-                    <p className="text-sm text-red-600 mt-1">{formErrors.name}</p>
                   )}
                 </div>
 
