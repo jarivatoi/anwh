@@ -1,310 +1,443 @@
-import { jsPDF } from 'jspdf'; 
-import autoTable from 'jspdf-autotable';
-import { RosterEntry } from '../../types/roster';
-import { formatMauritianRupees } from '../currency';
-import { availableNames, authCodes } from '../rosterAuth';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { X, User, Users, Badge, IdCard, DollarSign, Eye, EyeOff } from 'lucide-react';
+import { authCodes, validateAuthCode, isAdminCode } from '../utils/rosterAuth';
 
-export interface AnnexureOptions {
-  month: number;
-  year: number;
-  entries: RosterEntry[];
-  hourlyRate: number;
-  shiftCombinations: Array<{
-    id: string;
-    combination: string;
-    hours: number;
-  }>;
+interface StaffManagementModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  isAdminAuthenticated?: boolean;
+  adminName?: string | null;
 }
 
-export class AnnexureGenerator {
-  
-  /**
-   * Format number without trailing zeros and hide if zero
-   */
-  private formatNumber(value: number): string {
-    if (value === 0) return '';
-    return value % 1 === 0 ? value.toString() : value.toFixed(2).replace(/\.?0+$/, '');
-  }
-  
-  /**
-   * Format currency without trailing zeros and hide if zero
-   */
-  private formatCurrency(value: number): string {
-    if (value === 0) return '';
-    return `Rs ${value.toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    })}`;
-  }
-  
-  /**
-   * Format salary without decimal places
-   */
-  private formatSalary(value: number): string {
-    if (value === 0) return '';
-    return `Rs ${value.toLocaleString('en-US')}`;
-  }
+export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
+  isOpen,
+  onClose,
+  isAdminAuthenticated = false,
+  adminName = null
+}) => {
+  const [authCode, setAuthCode] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(isAdminAuthenticated);
+  const [authenticatedName, setAuthenticatedName] = useState(adminName);
 
-  /**
-   * Generate annexure matching the exact PDF format
-   */
-  async generateAnnexure(options: AnnexureOptions): Promise<void> {
-    // Create PDF document
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    });
-    
-    // Generate content
-    await this.generateAnnexureContent(doc, options);
-    
-    // Generate filename and save
-    const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    const filename = `Annexure_${monthNames[options.month]}_${options.year}.pdf`;
-    doc.save(filename);
-    
-    console.log('✅ Annexure generated:', filename);
-  }
-  
-  /**
-   * Generate annexure content into provided PDF document (for batch printing)
-   */
-  async generateAnnexureContent(doc: jsPDF, options: AnnexureOptions): Promise<void> {
-    const { month, year, entries, hourlyRate, shiftCombinations } = options;
-    
-    console.log('📄 Generating annexure for all staff');
-    
-    const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    
-    // Header - matching the original format
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('X-RAY DEPARTMENT - JAWAHARLAL NEHRU HOSPITAL', doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
-    
-    doc.setFontSize(12);
-    doc.text(`ANNEXURE - ${monthNames[month]} ${year}`, doc.internal.pageSize.getWidth() / 2, 25, { align: 'center' });
-    
-    // Calculate summary for all staff
-    const staffSummaries = this.calculateStaffSummaries(entries, month, year, hourlyRate, shiftCombinations);
-    
-    // Prepare table data - matching the PDF format exactly
-    const tableData = staffSummaries.map((summary, index) => [
-      (index + 1).toString(), // Serial number
-      summary.fullName, // Full name instead of staff name
-      summary.employeeId, // ID number
-      this.formatSalary(summary.salary), // Salary (no decimals)
-      this.formatNumber(summary.totalHours), // Hours payable (without night allowance)
-      this.formatNumber(summary.nightDutyHours), // Night allowance hours
-      this.formatCurrency(summary.grandTotal)
-    ]);
-    
-    // Create table matching the original format
-    autoTable(doc, {
-      startY: 35,
-      head: [['S.No', 'NAME\n(Full Name)', 'ID\nNUMBER', 'SALARY', 'NO OF HRS\nPAYABLE\n(Hrs)', 'NIGHT\nALLOWANCE\n(Hrs)', 'AMOUNT']],
-      body: tableData,
-      styles: {
-        fontSize: 8,
-        cellPadding: 2,
-        overflow: 'linebreak',
-        halign: 'center',
-        valign: 'middle',
-        fontStyle: 'bold'
-      },
-      headStyles: {
-        fillColor: [220, 220, 220],
-        textColor: [0, 0, 0],
-        fontStyle: 'bold',
-        fontSize: 8,
-        halign: 'center',
-        valign: 'middle',
-        cellPadding: 2,
-        minCellHeight: 8
-      },
-      margin: { left: 5, right: 5 },
-      theme: 'grid',
-      tableWidth: 'auto',
-      tableLineWidth: 0.3,
-      tableLineColor: [0, 0, 0],
-      columnStyles: {},
-      didParseCell: function(data) {
-        // Auto-adjust font size based on content length
-        if (data.section === 'body') {
-          const cellText = data.cell.text.join(' ');
-          if (cellText.length > 20) {
-            data.cell.styles.fontSize = 6;
-          } else if (cellText.length > 10) {
-            data.cell.styles.fontSize = 7;
-          } else {
-            data.cell.styles.fontSize = 8;
-          }
-        }
-      }
-    });
-    
-    // Add grand totals at the bottom
-    const grandTotalDays = staffSummaries.reduce((sum, s) => sum + s.totalDays, 0);
-    const grandTotalHours = staffSummaries.reduce((sum, s) => sum + s.totalHours, 0);
-    const grandTotalSalary = staffSummaries.reduce((sum, s) => sum + s.salary, 0);
-    const grandNightDutyHours = staffSummaries.reduce((sum, s) => sum + s.nightDutyHours, 0);
-    const grandSubtotal = staffSummaries.reduce((sum, s) => sum + s.totalAmount, 0);
-    const grandNightAllowance = staffSummaries.reduce((sum, s) => sum + s.nightAllowance, 0);
-    const grandTotal = staffSummaries.reduce((sum, s) => sum + s.grandTotal, 0);
-    
-    const finalY = (doc as any).lastAutoTable.finalY + 10;
-    /*
-    // Grand totals row
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text('GRAND TOTALS:', 15, finalY);
-    doc.text(`Total Salary: ${this.formatCurrency(grandTotalSalary)}`, 15, finalY + 8);
-    doc.text(`Total Hours Payable: ${this.formatNumber(grandTotalHours)}`, 15, finalY + 16);
-    doc.text(`Total Night Allowance Hours: ${this.formatNumber(grandNightDutyHours)}`, 15, finalY + 24);
-    
-    doc.setFontSize(12);
-    doc.text(`GRAND TOTAL AMOUNT: ${this.formatCurrency(grandTotal)}`, 15, finalY + 36);
-*/
- doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.text('Certified correct as per annexture:-_________________________', 80, finalY + 100);
-    doc.text('(Principal Medical Imaging Technologist):', 95, finalY + 115);
-    
-    // Footer
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    const now = new Date();
-    const day = now.getDate().toString().padStart(2, '0');
-    const currentMonth = (now.getMonth() + 1).toString().padStart(2, '0');
-    const currentYear = now.getFullYear();
-    doc.text(`Generated on: ${day}/${currentMonth}/${currentYear}`, 15, doc.internal.pageSize.getHeight() - 15);
-    doc.text('X-ray ANWH System', doc.internal.pageSize.getWidth() - 15, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
-  }
-  
-  
-  /**
-   * Calculate summaries for all staff with night allowance
-   */
-  private calculateStaffSummaries(
-    entries: RosterEntry[], 
-    month: number, 
-    year: number, 
-    hourlyRate: number, 
-    shiftCombinations: Array<{id: string, combination: string, hours: number}>
-  ) {
-    const staffSummaries: Array<{
-      staffName: string;
-      fullName: string;
-      employeeId: string;
-      salary: number;
-      totalDays: number;
-      totalHours: number;
-      totalAmount: number;
-      nightDutyCount: number;
-      nightDutyHours: number;
-      nightAllowance: number;
-      grandTotal: number;
-    }> = [];
-    
-    // Group entries by staff
-    const staffGroups: Record<string, RosterEntry[]> = {};
-    
-    entries.forEach(entry => {
-      const entryDate = new Date(entry.date);
-      if (entryDate.getMonth() === month && entryDate.getFullYear() === year) {
-        // Use base name (remove (R) suffix) to group same person together
-        const baseName = entry.assigned_name.replace(/\(R\)$/, '').trim().toUpperCase();
-        if (!staffGroups[baseName]) {
-          staffGroups[baseName] = [];
-        }
-        staffGroups[baseName].push(entry);
-      }
-    });
-    
-    // Calculate for each staff member
-    Object.entries(staffGroups).forEach(([baseName, staffEntries]) => {
-      let totalHours = 0;
-      let totalAmount = 0;
-      let nightDutyCount = 0;
-      let nightDutyHours = 0;
-      
-      staffEntries.forEach(entry => {
-        // Count night duties for allowance calculation
-        if (entry.shift_type === 'Night Duty') {
-          nightDutyCount++;
-        }
-        
-        // Map and calculate hours
-        const shiftMapping: Record<string, string> = {
-          'Morning Shift (9-4)': '9-4',
-          'Evening Shift (4-10)': '4-10',
-          'Saturday Regular (12-10)': '12-10',
-          'Night Duty': 'N',
-          'Sunday/Public Holiday/Special': '9-4'
-        };
-        
-        const shiftId = shiftMapping[entry.shift_type];
-        if (shiftId) {
-          const combination = shiftCombinations.find(combo => combo.id === shiftId);
-          if (combination) {
-            // Special case: Night Duty should use 11 hours (since allowances are paid separately)
-            const hoursToUse = entry.shift_type === 'Night Duty' ? 11 : combination.hours;
-            totalHours += hoursToUse;
-            totalAmount += hoursToUse * hourlyRate;
-          }
-        }
-      });
-      
-      // Calculate night allowance hours: (number of nights) × 6 × 0.25
-      nightDutyHours = nightDutyCount * 6 * 0.25;
-      
-      // Calculate night allowance amount: nightDutyHours × hourly_rate
-      const nightAllowance = nightDutyHours * hourlyRate;
-      const grandTotal =  totalAmount + nightAllowance;
-      
-      // Use base name for staff identification (NARAYYA and NARAYYA(R) are the same person)
-      const actualStaffName = baseName;
-      
-      // Get staff info for full name, ID, and salary
-      const staffInfo = this.getStaffInfo(actualStaffName);
-      const fullName = staffInfo ? `${staffInfo.surname || actualStaffName} ${staffInfo.firstName || ''}`.trim() : actualStaffName;
-      const employeeId = staffInfo?.employeeId || '';
-      const salary = staffInfo?.salary || 0;
-      
-      staffSummaries.push({
-        staffName: actualStaffName,
-        fullName: fullName,
-        employeeId: employeeId,
-        salary: salary,
-        totalDays: staffEntries.length,
-        totalHours,
-        totalAmount,
-        nightDutyCount,
-        nightDutyHours,
-        nightAllowance,
-        grandTotal
-      });
-    });
-    
-    // Sort by staff name
-    return staffSummaries.sort((a, b) => a.staffName.localeCompare(b.staffName));
-  }
-  
-  /**
-   * Get staff information from auth codes
-   */
-  private getStaffInfo(staffName: string) {
-    // Match by base name - both NARAYYA and NARAYYA(R) should match the same authCode entry
-    const baseStaffName = staffName.replace(/\(R\)$/, '').trim().toUpperCase();
-    return authCodes.find(auth => auth.name.toUpperCase() === baseStaffName) || null;
-  }
-}
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = '0';
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.bottom = '0';
+    }
 
-// Create singleton instance
-export const annexureGenerator = new AnnexureGenerator();
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.bottom = '';
+    };
+  }, [isOpen]);
+
+  // Reset state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setAuthCode('');
+      setAuthError('');
+      setIsAuthenticated(isAdminAuthenticated);
+      setAuthenticatedName(adminName);
+    }
+  }, [isOpen, isAdminAuthenticated, adminName]);
+
+  // Close on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [isOpen, onClose]);
+
+  const handleAuthSubmit = () => {
+    if (!authCode || authCode.length < 4) {
+      setAuthError('Please enter your authentication code');
+      return;
+    }
+
+    const editorName = validateAuthCode(authCode);
+    if (!editorName || !isAdminCode(authCode)) {
+      setAuthError(!editorName ? 'Invalid authentication code' : 'Admin access required');
+      return;
+    }
+
+    setIsAuthenticated(true);
+    setAuthenticatedName(editorName);
+    setAuthError('');
+  };
+
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  // Filter out ADMIN from staff list
+  const staffMembers = authCodes.filter(auth => auth.name !== 'ADMIN');
+
+  // Group staff by title
+  const smitStaff = staffMembers.filter(auth => auth.title === 'SMIT');
+  const mitStaff = staffMembers.filter(auth => auth.title === 'MIT');
+  const radiographers = staffMembers.filter(auth => auth.name.includes('(R)'));
+
+  const formatSalary = (salary: number) => {
+    return `Rs ${salary.toLocaleString('en-US')}`;
+  };
+
+  if (!isOpen) return null;
+
+  const modalContent = (
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      onClick={handleBackdropClick}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 99999,
+        WebkitOverflowScrolling: 'touch',
+        touchAction: 'pan-y'
+      }}
+    >
+      <div 
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          WebkitTouchCallout: 'none'
+        }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 className="text-xl font-bold text-gray-900">Staff Management</h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
+          {!isAuthenticated ? (
+            /* Authentication Section */
+            <div className="p-6">
+              <div className="max-w-md mx-auto">
+                <div className="flex items-center justify-center space-x-3 mb-6">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <User className="w-6 h-6 text-blue-600" />
+                  </div>
+                </div>
+
+                <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
+                  Authentication Required
+                </h3>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Admin Authentication Code
+                  </label>
+                  <div className="flex justify-center space-x-3 mb-3">
+                    {[0, 1, 2, 3].map((index) => (
+                      <input
+                        key={index}
+                        type={showPassword ? "text" : "password"}
+                        value={authCode[index] || ''}
+                        onChange={(e) => {
+                          const newValue = e.target.value.toUpperCase();
+                          if (newValue.length <= 1) {
+                            const newCode = authCode.split('');
+                            newCode[index] = newValue;
+                            setAuthCode(newCode.join(''));
+                            
+                            // Auto-focus next input
+                            if (newValue && index < 3) {
+                              const nextInput = document.querySelector(`input[data-index="${index + 1}"]`) as HTMLInputElement;
+                              if (nextInput) nextInput.focus();
+                            }
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          // Handle backspace to go to previous input
+                          if (e.key === 'Backspace' && !authCode[index] && index > 0) {
+                            const prevInput = document.querySelector(`input[data-index="${index - 1}"]`) as HTMLInputElement;
+                            if (prevInput) prevInput.focus();
+                          }
+                        }}
+                        data-index={index}
+                        className="w-12 h-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center font-mono text-lg"
+                        maxLength={1}
+                        autoComplete="off"
+                        autoFocus={index === 0}
+                      />
+                    ))}
+                    <button
+                      type="button"
+                      onTouchStart={() => setShowPassword(true)}
+                      onTouchEnd={() => setShowPassword(false)}
+                      onMouseDown={() => setShowPassword(true)}
+                      onMouseUp={() => setShowPassword(false)}
+                      onMouseLeave={() => setShowPassword(false)}
+                      className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200 rounded-lg ml-2"
+                      style={{
+                        touchAction: 'manipulation',
+                        WebkitTapHighlightColor: 'transparent'
+                      }}
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {authError && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-700 text-center">{authError}</p>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleAuthSubmit}
+                  disabled={authCode.length < 4}
+                  className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200"
+                >
+                  Access Staff Management
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Staff Management Content */
+            <div className="p-6">
+              {/* Authentication Status */}
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <User className="w-4 h-4 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-green-800 font-medium">
+                      Authenticated as: <strong>{authenticatedName}</strong>
+                    </p>
+                    <p className="text-xs text-green-600">
+                      Admin access granted for staff management
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Summary Statistics */}
+              <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                  <Users className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-blue-900">{staffMembers.length}</div>
+                  <div className="text-sm text-blue-700">Total Staff</div>
+                </div>
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                  <Badge className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-green-900">{smitStaff.length}</div>
+                  <div className="text-sm text-green-700">SMIT Staff</div>
+                </div>
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
+                  <IdCard className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-purple-900">{radiographers.length}</div>
+                  <div className="text-sm text-purple-700">Radiographers</div>
+                </div>
+              </div>
+
+              {/* Staff List */}
+              <div className="space-y-6">
+                {/* SMIT Staff Section */}
+                {smitStaff.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+                      <Badge className="w-5 h-5 text-blue-600" />
+                      <span>SMIT Staff ({smitStaff.length})</span>
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {smitStaff.map((staff) => (
+                        <div key={staff.code} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center space-x-2">
+                              <User className="w-5 h-5 text-blue-600" />
+                              <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">
+                                {staff.title}
+                              </span>
+                            </div>
+                            <span className="text-xs text-gray-500 font-mono">{staff.code}</span>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div>
+                              <div className="text-sm font-semibold text-gray-900">{staff.name}</div>
+                              {staff.firstName && staff.surname && (
+                                <div className="text-xs text-gray-600">
+                                  {staff.firstName} {staff.surname}
+                                </div>
+                              )}
+                            </div>
+                            
+                            {staff.employeeId && (
+                              <div className="flex items-center space-x-2">
+                                <IdCard className="w-3 h-3 text-gray-400" />
+                                <span className="text-xs text-gray-600 font-mono">{staff.employeeId}</span>
+                              </div>
+                            )}
+                            
+                            {staff.salary && (
+                              <div className="flex items-center space-x-2">
+                                <DollarSign className="w-3 h-3 text-gray-400" />
+                                <span className="text-xs text-gray-600">{formatSalary(staff.salary)}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* MIT Staff Section */}
+                {mitStaff.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+                      <User className="w-5 h-5 text-green-600" />
+                      <span>MIT Staff ({mitStaff.length})</span>
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {mitStaff.map((staff) => (
+                        <div key={staff.code} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center space-x-2">
+                              <User className="w-5 h-5 text-green-600" />
+                              <span className="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">
+                                {staff.title}
+                              </span>
+                            </div>
+                            <span className="text-xs text-gray-500 font-mono">{staff.code}</span>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div>
+                              <div className="text-sm font-semibold text-gray-900">{staff.name}</div>
+                              {staff.firstName && staff.surname && (
+                                <div className="text-xs text-gray-600">
+                                  {staff.firstName} {staff.surname}
+                                </div>
+                              )}
+                            </div>
+                            
+                            {staff.employeeId && (
+                              <div className="flex items-center space-x-2">
+                                <IdCard className="w-3 h-3 text-gray-400" />
+                                <span className="text-xs text-gray-600 font-mono">{staff.employeeId}</span>
+                              </div>
+                            )}
+                            
+                            {staff.salary && (
+                              <div className="flex items-center space-x-2">
+                                <DollarSign className="w-3 h-3 text-gray-400" />
+                                <span className="text-xs text-gray-600">{formatSalary(staff.salary)}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Radiographers Section */}
+                {radiographers.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+                      <IdCard className="w-5 h-5 text-purple-600" />
+                      <span>Radiographers ({radiographers.length})</span>
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {radiographers.map((staff) => (
+                        <div key={staff.code} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center space-x-2">
+                              <IdCard className="w-5 h-5 text-purple-600" />
+                              <span className="inline-block px-2 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded">
+                                Radiographer
+                              </span>
+                            </div>
+                            <span className="text-xs text-gray-500 font-mono">{staff.code}</span>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div>
+                              <div className="text-sm font-semibold text-gray-900">{staff.name}</div>
+                              {staff.firstName && staff.surname && (
+                                <div className="text-xs text-gray-600">
+                                  {staff.firstName} {staff.surname}
+                                </div>
+                              )}
+                            </div>
+                            
+                            {staff.employeeId && (
+                              <div className="flex items-center space-x-2">
+                                <IdCard className="w-3 h-3 text-gray-400" />
+                                <span className="text-xs text-gray-600 font-mono">{staff.employeeId}</span>
+                              </div>
+                            )}
+                            
+                            {staff.salary && (
+                              <div className="flex items-center space-x-2">
+                                <DollarSign className="w-3 h-3 text-gray-400" />
+                                <span className="text-xs text-gray-600">{formatSalary(staff.salary)}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors duration-200"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return createPortal(modalContent, document.body);
+};
+
+// Helper function to format salary
+const formatSalary = (salary: number) => {
+  return `Rs ${salary.toLocaleString('en-US')}`;
+};
