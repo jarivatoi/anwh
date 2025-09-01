@@ -243,32 +243,21 @@ export class AnnexureGenerator {
         // Map and calculate hours
         const shiftMapping: Record<string, string> = {
           'Morning Shift (9-4)': '9-4',
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-3">
-                        <span className="font-mono text-sm bg-gray-200 px-2 py-1 rounded">
-                          {staff.code}
-                        </span>
-                        <span className="font-semibold text-gray-900">{staff.name}</span>
-                        <span className="text-sm text-gray-600 bg-blue-100 px-2 py-1 rounded">
-                          {staff.title}
-                        </span>
-                      </div>
-                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                        <div>
-                          <span className="font-medium">Full Name:</span> {staff.firstName} {staff.surname}
-                          className="w-full sm:flex-1 flex items-center justify-center space-x-2 px-4 py-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors duration-200 text-sm"
-                        <div>
-                          <span className="font-medium">Salary:</span> Rs {(staff.salary || 0).toLocaleString()}
-                        </div>
-                          <span>Edit</span>
-                        <div className="col-span-2">
-                          <span className="font-medium">Employee ID:</span> {staff.employeeId || 'Not set'}
-                        </div>
-                          className="w-full sm:flex-1 flex items-center justify-center space-x-2 px-4 py-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors duration-200 text-sm"
+          'Afternoon Shift (4-9)': '4-9',
+          'Night Duty': 'Night',
+          'Day Off': 'Off'
+        };
+        
+        const mappedShift = shiftMapping[entry.shift_type] || entry.shift_type;
+        const shiftCombo = shiftCombinations.find(combo => combo.combination === mappedShift);
+        
+        if (shiftCombo) {
+          totalHours += shiftCombo.hours;
+          totalAmount += shiftCombo.hours * hourlyRate;
+        }
       });
       
       // Calculate night allowance hours: (number of nights) × 6 × 0.25
-                          <span>Delete</span>
       nightDutyHours = nightDutyCount * 6 * 0.25;
       
       // Calculate night allowance amount: nightDutyHours × hourly_rate
