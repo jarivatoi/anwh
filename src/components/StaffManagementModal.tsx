@@ -244,50 +244,47 @@ export class AnnexureGenerator {
         const shiftMapping: Record<string, string> = {
           'Morning Shift (9-4)': '9-4',
           'Evening Shift (4-10)': '4-10',
-          <div className="space-y-4">
-            {/* All Staff List */}
-            <div className="grid grid-cols-1 gap-4">
-              {availableNames.map(name => {
-                const staffInfo = authCodes.find(auth => auth.name === name);
-                return (
-                  <div key={name} className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-yellow-300 transition-colors duration-200">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-semibold text-gray-900 text-lg">{name}</h4>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        staffInfo?.title === 'SMIT' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-                      }`}>
-                        {staffInfo?.title || 'MIT'}
-                      </span>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                      <div>
-                        <span className="text-gray-600">Code:</span>
-                        <span className="ml-2 font-medium">{staffInfo?.code || 'N/A'}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Employee ID:</span>
-                        <span className="ml-2 font-medium">{staffInfo?.employeeId || 'N/A'}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">First Name:</span>
-                        <span className="ml-2 font-medium">{staffInfo?.firstName || 'N/A'}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Surname:</span>
-                        <span className="ml-2 font-medium">{staffInfo?.surname || 'N/A'}</span>
-                      </div>
-                      {staffInfo?.salary && (
-                        <div className="md:col-span-2">
-                          <span className="text-gray-600">Salary:</span>
-                          <span className="ml-2 font-medium">Rs {staffInfo.salary.toLocaleString()}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+          'Night Duty': 'Night'
+        };
+        
+        const mappedShift = shiftMapping[entry.shift_type] || entry.shift_type;
+        const shiftCombo = shiftCombinations.find(combo => combo.combination === mappedShift);
+        
+        if (shiftCombo) {
+          totalHours += shiftCombo.hours;
+          totalAmount += shiftCombo.hours * hourlyRate;
+          
+          if (entry.shift_type === 'Night Duty') {
+            nightDutyHours += shiftCombo.hours;
+          }
+        }
+      });
+      
+      // Get staff information
+      const staffInfo = this.getStaffInfo(baseName);
+      const fullName = staffInfo ? `${staffInfo.firstName} ${staffInfo.surname}` : baseName;
+      const employeeId = staffInfo?.employeeId || '';
+      const salary = staffInfo?.salary || 0;
+      
+      // Calculate night allowance (Rs 100 per night duty)
+      const nightAllowance = nightDutyCount * 100;
+      const grandTotal = totalAmount + nightAllowance;
+      
+      staffSummaries.push({
+        staffName: baseName,
+        fullName,
+        employeeId,
+        salary,
+        totalDays: staffEntries.length,
+        totalHours,
+        totalAmount,
+        nightDutyCount,
+        nightDutyHours,
+        nightAllowance,
+        grandTotal
+      });
+    });
+    
     // Sort by staff name
     return staffSummaries.sort((a, b) => a.staffName.localeCompare(b.staffName));
   }
