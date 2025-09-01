@@ -220,10 +220,10 @@ export class AnnexureGenerator {
       if (entryDate.getMonth() === month && entryDate.getFullYear() === year) {
         // Use the FINAL assigned name (current assignment) - don't group by base name
         const finalAssignedName = entry.assigned_name.trim().toUpperCase();
-        if (!staffGroups[baseName]) {
-          staffGroups[baseName] = [];
+        if (!staffGroups[finalAssignedName]) {
+          staffGroups[finalAssignedName] = [];
         }
-        staffGroups[baseName].push(entry);
+        staffGroups[finalAssignedName].push(entry);
       }
     });
     
