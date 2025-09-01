@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, User, Plus, Edit, Trash2, Save, AlertTriangle, CheckCircle } from 'lucide-react';
-import { authCodes, AuthCode } from '../utils/rosterAuth';
+import { authCodes, AuthCode, updateAuthCodes } from '../utils/rosterAuth';
 
 interface StaffManagementModalProps {
   isOpen: boolean;
@@ -172,10 +172,19 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
             staff.code === editingStaff.code ? newStaff : staff
           );
           setStaffList(updatedList);
+          
+          // Update the actual rosterAuth.ts file
+          await updateAuthCodes(updatedList);
+          
           setSuccessMessage(`${formData.surname} updated successfully!`);
         } else {
           // Add new staff
-          setStaffList([...staffList, newStaff]);
+          const updatedList = [...staffList, newStaff];
+          setStaffList(updatedList);
+          
+          // Update the actual rosterAuth.ts file
+          await updateAuthCodes(updatedList);
+          
           setSuccessMessage(`${formData.surname} added successfully!`);
         }
         
@@ -184,6 +193,10 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
         // Delete staff
         const updatedList = staffList.filter(staff => staff.code !== editingStaff.code);
         setStaffList(updatedList);
+        
+        // Update the actual rosterAuth.ts file
+        await updateAuthCodes(updatedList);
+        
         setSuccessMessage(`${editingStaff.name} deleted successfully!`);
         resetForm();
       }
@@ -193,7 +206,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
       
     } catch (error) {
       console.error('Staff management error:', error);
-      alert('An error occurred. Please try again.');
+      alert(`Failed to save changes: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSaving(false);
       setShowConfirmation(false);
