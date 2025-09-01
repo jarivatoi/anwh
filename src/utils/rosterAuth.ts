@@ -386,3 +386,4 @@ function refreshDerivedArrays(): void {
   
   console.log('🔄 Refreshed derived arrays with new auth codes');
 }
+}
