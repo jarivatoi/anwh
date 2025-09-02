@@ -20,6 +20,19 @@ export interface IndividualBillOptions {
 
 export class IndividualBillGenerator {
   
+  
+  /**
+   * Calculate hourly rate based on basic salary using the original formula
+   */
+  private calculateHourlyRate(basicSalary: number): number {
+    // Original formula: hourly rate = basic salary / (52 weeks * 40 hours per week)
+    return (basicSalar * 12) / (52 * 40);
+  }
+  
+  /**
+  
+  
+  
   /**
    * Format number without trailing zeros and hide if zero
    */
