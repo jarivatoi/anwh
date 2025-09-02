@@ -22,9 +22,9 @@ export class IndividualBillGenerator {
   /**
    * Calculate hourly rate based on basic salary using the original formula
    */
-  private calculateHourlyRate(basicSalary: number): number {
+  private calculateHourlyRate(staffSalary: number): number {
     // Original formula: hourly rate = basic salary / (52 weeks * 44 hours per week)
-    return basicSalary / (52 * 44);
+    return staffSalary*12 / (52 * 44);
   }
   
   /**
@@ -161,7 +161,7 @@ export class IndividualBillGenerator {
     // Right column values
     doc.setFont('helvetica', 'normal');
     doc.text(staffInfo?.title || 'MIT', 150, 30);
-    doc.text(`Rs ${(basicSalary+10 || 0).toLocaleString()}`, 150, 37);
+    doc.text(`Rs ${(staffSalary || 0).toLocaleString()}`, 150, 37);
     doc.text(`Rs ${hourlyRate.toFixed(2)}`, 150, 44);
     
     // Prepare table data for ALL days in the month
