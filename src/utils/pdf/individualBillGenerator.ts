@@ -10,7 +10,6 @@ export interface IndividualBillOptions {
   year: number;
   entries: RosterEntry[];
   basicSalary: number;
-  hourlyRate: number;
   shiftCombinations: Array<{
     id: string;
     combination: string;
@@ -20,18 +19,13 @@ export interface IndividualBillOptions {
 
 export class IndividualBillGenerator {
   
-  
   /**
    * Calculate hourly rate based on basic salary using the original formula
    */
   private calculateHourlyRate(basicSalary: number): number {
-    // Original formula: hourly rate = basic salary / (52 weeks * 40 hours per week)
-    return (basicSalary * 12) / (52 * 40);
+    // Original formula: hourly rate = basic salary / (52 weeks * 44 hours per week)
+    return basicSalary / (52 * 44);
   }
-  
-  /**
-  
-  
   
   /**
    * Format number without trailing zeros and hide if zero
@@ -56,6 +50,9 @@ export class IndividualBillGenerator {
    * Generate individual bill for a specific staff member matching the exact PDF format
    */
   async generateBill(options: IndividualBillOptions): Promise<void> {
+    // Calculate hourly rate based on basic salary
+    const hourlyRate = this.calculateHourlyRate(options.basicSalary);
+    
     // Create PDF document
     const doc = new jsPDF({
       orientation: 'portrait',
@@ -64,7 +61,10 @@ export class IndividualBillGenerator {
     });
     
     // Generate content
-    await this.generateBillContent(doc, options);
+    await this.generateBillContent(doc, {
+      ...options,
+      hourlyRate
+    });
     
     // Generate filename and save
     const monthNames = [
@@ -80,12 +80,13 @@ export class IndividualBillGenerator {
   /**
    * Generate bill content into provided PDF document (for batch printing)
    */
-  async generateBillContent(doc: jsPDF, options: IndividualBillOptions): Promise<void> {
+  async generateBillContent(doc: jsPDF, options: IndividualBillOptions & { hourlyRate: number }): Promise<void> {
     // Explicitly declare staffName to ensure proper scope
     const staffName = options.staffName;
     const { month, year, entries, basicSalary, hourlyRate, shiftCombinations } = options;
     
     console.log('📄 Starting individual bill generation for:', staffName);
+    console.log('💰 Hourly rate calculated:', hourlyRate, 'from basic salary:', basicSalary);
     
     const monthNames = [
       'January', 'February', 'March', 'April', 'May', 'June',
