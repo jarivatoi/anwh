@@ -162,7 +162,7 @@ export class IndividualBillGenerator {
     doc.setFont('helvetica', 'normal');
     doc.text(staffInfo?.title || 'MIT', 150, 30);
     doc.text(`Rs ${(staffSalary || 0).toLocaleString()}`, 150, 37);
-    doc.text(`Rs ${hourlyRate.toFixed(2)}`, 150, 44);
+    doc.text(`Rs ${hourlyRate.toFixed(2)}+150`, 150, 44);
     
     // Prepare table data for ALL days in the month
     const tableData = this.prepareAllDaysTableData(staffEntries, staffName, month, year, hourlyRate, shiftCombinations, specialDatesInMonth);
