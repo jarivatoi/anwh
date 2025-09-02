@@ -22,9 +22,9 @@ export class IndividualBillGenerator {
   /**
    * Calculate hourly rate based on basic salary using the original formula
    */
-  private calculateHourlyRate(staffSalary: number): number {
+  private calculateHourlyRate(basicSalary: number): number {
     // Original formula: hourly rate = basic salary / (52 weeks * 44 hours per week)
-    return staffSalary*12 / (52 * 44);
+    return basicSalary / (52 * 44);
   }
   
   /**
@@ -51,7 +51,7 @@ export class IndividualBillGenerator {
    */
   async generateBill(options: IndividualBillOptions): Promise<void> {
     // Calculate hourly rate based on basic salary
-    const hourlyRate = this.calculateHourlyRate(options.basicSalary);
+    const hourlyRate = this.calculateHourlyRate(basicSalary);
     
     // Create PDF document
     const doc = new jsPDF({
