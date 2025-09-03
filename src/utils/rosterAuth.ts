@@ -86,7 +86,7 @@ const loadStaffFromSupabase = async (): Promise<void> => {
       console.log('✅ Staff data loaded from Supabase successfully');
     }
   } catch (error) {
-    console.log('⚠️ Could not load staff from Supabase, using local defaults:', error);
+    console.log('⚠️ Could not load staff from Supabase (table may not exist), using local defaults:', error);
   }
 };
 

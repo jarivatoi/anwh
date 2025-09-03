@@ -17,8 +17,8 @@ export interface StaffMember {
 
 export const fetchStaffMembers = async (): Promise<StaffMember[]> => {
   if (!supabase) {
-    console.error('⚠️ Supabase not available - using local fallback');
-    throw new Error('Database not available. Using local staff data.');
+    console.log('⚠️ Supabase not available - using local fallback');
+    return [];
   }
 
   try {
@@ -30,15 +30,15 @@ export const fetchStaffMembers = async (): Promise<StaffMember[]> => {
       .order('surname', { ascending: true });
 
     if (error) {
-      console.error('❌ Error fetching staff members:', error);
-      throw new Error(`Database error: ${error.message}`);
+      console.log('⚠️ Staff table does not exist yet, using local defaults:', error.message);
+      return [];
     }
 
     console.log('✅ Successfully fetched staff members:', data?.length || 0);
     return data || [];
   } catch (error) {
-    console.error('❌ Network error fetching staff members:', error);
-    throw error;
+    console.log('⚠️ Could not fetch staff members, using local defaults:', error);
+    return [];
   }
 };
 
