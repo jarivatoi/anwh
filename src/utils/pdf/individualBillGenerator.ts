@@ -145,7 +145,7 @@ export class IndividualBillGenerator {
       const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
       
       // Add password protection notice
-      firstPage.drawText('🔒 PROTECTED DOCUMENT', {
+      firstPage.drawText('[PROTECTED] DOCUMENT', {
         x: width / 2 - 80,
         y: height / 2 + 50,
         size: 16,
