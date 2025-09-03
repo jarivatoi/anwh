@@ -18,14 +18,14 @@ export interface IndividualBillOptions {
   }>;
 }
 
-export class IndividualBillGenerator {
+export class IndividualBillGenerator { 
   
   /**
    * Calculate hourly rate based on basic salary using the original formula
    */
-  private calculateHourlyRate(getStaffSalary: number): number {
+  private calculateHourlyRate(basicSalary: number): number {
     // Original formula: hourly rate = basic salary / (52 weeks * 44 hours per week)
-    return getStaffSalary / (52 * 44);
+    return basicSalary / (52 * 44);
   }
   
   /**
@@ -57,7 +57,7 @@ export class IndividualBillGenerator {
    */
   async generateBill(options: IndividualBillOptions): Promise<void> {
    
-   
+    const hourlyRate = this.calculateHourlyRate(options.basicSalary);
     
     // Create PDF document
     const doc = new jsPDF({
@@ -84,8 +84,6 @@ export class IndividualBillGenerator {
    * Generate bill content into provided PDF document (for batch printing)
    */
   async generateBillContent(doc: jsPDF, options: IndividualBillOptions): Promise<void> {
-     
-    
     // Explicitly declare staffName to ensure proper scope
     const staffName = options.staffName;
     const { month, year, entries, basicSalary, hourlyRate, shiftCombinations } = options;
