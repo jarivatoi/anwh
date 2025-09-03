@@ -256,16 +256,16 @@ export class IndividualBillGenerator {
     //doc.text(`Total Working Days: ${totalDays}`, 15, startY + 8);
     
     
-    doc.text(`Total Working Hours: ${this.formatNumber(totalHours)}`, 15, startY + 14);
+    doc.text(`Total Working Hours: ${this.formatNumber(totalHours)}`, 15, startY + 9);
     
     
-    doc.text(`Subtotal (Hours): ${this.formatCurrency(totalAmount)}`, 15, startY + 20);
+    doc.text(`Subtotal (Hours): ${this.formatCurrency(totalAmount)}`, 15, startY + 15);
     
     // Night duty allowance - calculation: (number of nights) × 6 × 0.25 × hourly_rate
     const nightAllowanceBase = nightDutyCount * 6 * 0.25;
     const nightAllowance = nightAllowanceBase * hourlyRate;
     if (nightDutyCount > 0) {
-      doc.text(`Total Night Allowance: (${nightDutyCount} × 6 × 0.25 × ${hourlyRate.toFixed(2)}) = ${this.formatCurrency(nightAllowance)}`, 15, startY + 26, { align: 'left' });
+      doc.text(`Total Night Allowance: (${nightDutyCount} × 6 × 0.25 × ${hourlyRate.toFixed(2)}) = ${this.formatCurrency(nightAllowance)}`, 15, startY + 21, { align: 'left' });
     }
     
     // Grand total
