@@ -142,7 +142,7 @@ export class IndividualBillGenerator {
     // Header - compact format
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('X-RAY DEPARTMENT - JAWAHARLAL NEHRU HOSPITAL', doc.internal.pageSize.getWidth() / 2, 10, { align: 'center' });
+    doc.text('X-RAY DEPARTMENT - JAWAHARLAL NEHRU HOSPITAL', doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
     
     doc.setFontSize(12);
     let headerText = `INDIVIDUAL WORK SUMMARY - ${monthNames[month]} ${year}`;
