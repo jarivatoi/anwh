@@ -72,6 +72,11 @@ export class IndividualBillGenerator {
     const staffName = options.staffName;
     const { month, year, entries, basicSalary, hourlyRate, shiftCombinations } = options;
     
+    // Calculate individual hourly rate for this staff member
+    const baseStaffName = staffName.replace(/\(R\)$/, '').trim();
+    const staffSalary = getStaffSalary(baseStaffName);
+    const individualHourlyRate = staffSalary > 0 ? (staffSalary * 12) / 52 / 40 : hourlyRate;
+    
     console.log('📄 Starting individual bill generation for:', staffName);
     
     const monthNames = [
@@ -148,10 +153,10 @@ export class IndividualBillGenerator {
     doc.setFont('helvetica', 'normal');
     doc.text(staffInfo?.title || 'MIT', 150, 30);
     doc.text(`Rs ${(staffSalary || 0).toLocaleString()}`, 150, 37);
-    doc.text(`Rs ${hourlyRate.toFixed(2)}`, 150, 44);
+    doc.text(`Rs ${individualHourlyRate.toFixed(2)}`, 150, 44);
     
     // Prepare table data for ALL days in the month
-    const tableData = this.prepareAllDaysTableData(staffEntries, staffName, month, year, hourlyRate, shiftCombinations, specialDatesInMonth);
+    const tableData = this.prepareAllDaysTableData(staffEntries, staffName, month, year, individualHourlyRate, shiftCombinations, specialDatesInMonth);
     
     // Create table with compact layout
     autoTable(doc, {
@@ -196,10 +201,10 @@ export class IndividualBillGenerator {
     
     // Add summary section
     const finalY = (doc as any).lastAutoTable.finalY + 10;
-    this.addSummarySection(doc, tableData.totalDays, tableData.totalHours, tableData.nightDutyCount, hourlyRate, finalY);
+    this.addSummarySection(doc, tableData.totalDays, tableData.totalHours, tableData.nightDutyCount, individualHourlyRate, finalY);
     
     // Add signature sections
-    this.addSignatureSections(doc, tableData.totalDays, tableData.totalHours, tableData.nightDutyCount, hourlyRate);
+    this.addSignatureSections(doc, tableData.totalDays, tableData.totalHours, tableData.nightDutyCount, individualHourlyRate);
     
     // Footer - positioned at absolute bottom
     doc.setFont('helvetica', 'normal');
@@ -213,6 +218,7 @@ export class IndividualBillGenerator {
    * Add compact summary section
    */
   private addSummarySection(doc: jsPDF, totalDays: number, totalHours: number, nightDutyCount: number, hourlyRate: number, startY: number): void {
+    // This hourlyRate parameter is actually the individual staff's hourly rate, not the global one
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.text('SUMMARY:', 15, startY);

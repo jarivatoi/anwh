@@ -230,7 +230,6 @@ export class AnnexureGenerator {
     // Calculate for each staff member
     Object.entries(staffGroups).forEach(([baseName, staffEntries]) => {
       let totalHours = 0;
-      let totalAmount = 0;
       let nightDutyCount = 0;
       let nightDutyHours = 0;
       
@@ -256,17 +255,12 @@ export class AnnexureGenerator {
             // Special case: Night Duty should use 11 hours (since allowances are paid separately)
             const hoursToUse = entry.shift_type === 'Night Duty' ? 11 : combination.hours;
             totalHours += hoursToUse;
-            totalAmount += hoursToUse * hourlyRate;
           }
         }
       });
       
       // Calculate night allowance hours: (number of nights) × 6 × 0.25
       nightDutyHours = nightDutyCount * 6 * 0.25;
-      
-      // Calculate night allowance amount: nightDutyHours × hourly_rate
-      const nightAllowance = nightDutyHours * hourlyRate;
-      const grandTotal =  totalAmount + nightAllowance;
       
       // Use base name for staff identification (NARAYYA and NARAYYA(R) are the same person)
       const actualStaffName = baseName;
@@ -275,6 +269,9 @@ export class AnnexureGenerator {
       const baseStaffName = actualStaffName.replace(/\(R\)$/, '').trim();
       const staffInfo = getStaffInfo(baseStaffName);
       const staffSalary = getStaffSalary(baseStaffName);
+      
+      // Calculate individual hourly rate: (salary × 12) ÷ 52 ÷ 40
+      const individualHourlyRate = staffSalary > 0 ? (staffSalary * 12) / 52 / 40 : hourlyRate;
       const fullName = staffInfo ? `${staffInfo.surname || baseStaffName} ${staffInfo.firstName || ''}`.trim() : baseStaffName;
       const employeeId = staffInfo?.employeeId || '';
       const salary = staffSalary || 0;
@@ -286,11 +283,11 @@ export class AnnexureGenerator {
         salary: salary,
         totalDays: staffEntries.length,
         totalHours,
-        totalAmount,
+        totalAmount: totalHours * individualHourlyRate,
         nightDutyCount,
         nightDutyHours,
-        nightAllowance,
-        grandTotal
+        nightAllowance: nightDutyHours * individualHourlyRate,
+        grandTotal: (totalHours * individualHourlyRate) + (nightDutyHours * individualHourlyRate)
       });
     });
     
