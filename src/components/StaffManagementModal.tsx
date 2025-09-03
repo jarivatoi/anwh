@@ -432,25 +432,33 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                   </div>
                   
                   {/* Database Setup Instructions */}
-                  {error && error.includes('does not exist') && (
+                  {(error && error.includes('does not exist')) || staffMembers.length === 0 && (
                     <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                       <div className="flex items-start space-x-3">
                         <AlertTriangle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                         <div>
-                          <h5 className="font-medium text-blue-800 mb-2">Database Setup Required</h5>
+                          <h5 className="font-medium text-blue-800 mb-2">
+                            {error && error.includes('does not exist') ? 'Database Setup Required' : 'Import Staff Data'}
+                          </h5>
                           <p className="text-sm text-blue-700 mb-3">
-                            The staff_members table doesn't exist yet. Follow these steps to enable shared staff management:
+                            {error && error.includes('does not exist') 
+                              ? 'The staff_members table doesn\'t exist yet. Follow these steps to enable shared staff management:'
+                              : 'Import the local staff data into the Supabase database to enable shared staff management:'
+                            }
                           </p>
-                          <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
-                            <li>Go to your Supabase dashboard</li>
-                            <li>Open the SQL Editor</li>
-                            <li>Copy and paste the SQL code below</li>
-                            <li>Click "Run" to create the table</li>
-                            <li>Come back here and click "Import Staff Data"</li>
-                          </ol>
                           
-                          <div className="mt-3 p-3 bg-white border border-blue-300 rounded font-mono text-xs overflow-x-auto">
-                            <pre>{`-- Create staff_members table
+                          {error && error.includes('does not exist') && (
+                            <>
+                              <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+                                <li>Go to your Supabase dashboard</li>
+                                <li>Open the SQL Editor</li>
+                                <li>Copy and paste the SQL code below</li>
+                                <li>Click "Run" to create the table</li>
+                                <li>Come back here and click "Import Staff Data"</li>
+                              </ol>
+                              
+                              <div className="mt-3 p-3 bg-white border border-blue-300 rounded font-mono text-xs overflow-x-auto">
+                                <pre>{`-- Create staff_members table
 CREATE TABLE IF NOT EXISTS staff_members (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   code text UNIQUE NOT NULL,
@@ -486,15 +494,26 @@ CREATE TRIGGER update_staff_members_updated_at
   BEFORE UPDATE ON staff_members
   FOR EACH ROW
   EXECUTE FUNCTION update_staff_updated_at();`}</pre>
-                          </div>
+                              </div>
+                            </>
+                          )}
                           
                           <button
                             onClick={handleImportLocalStaff}
-                            disabled={!isAdminAuthenticated}
-                            className="mt-3 w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200"
+                            disabled={!isAdminAuthenticated || isSaving}
+                            className="mt-3 w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors duration-200"
                           >
-                            <Plus className="w-4 h-4" />
-                            <span>Import Staff Data to Database</span>
+                            {isSaving ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                <span>Importing...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Plus className="w-4 h-4" />
+                                <span>Import Staff Data to Database</span>
+                              </>
+                            )}
                           </button>
                         </div>
                       </div>
