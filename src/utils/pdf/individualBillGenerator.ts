@@ -296,10 +296,10 @@ export class IndividualBillGenerator {
     // Right side - Certification
     const rightX = 120;
     doc.setFontSize(10);
-    doc.text('Certified correct as per attendance.', rightX, summaryEndY-20);
-    doc.text('Name :- ______________________________________', rightX, summaryEndY -32);
-    doc.text('Grade: Principal Medical Imaging Technologist.', rightX, summaryEndY - 26);
-    doc.text('Signature:- ___________________________________', rightX, summaryEndY -18);
+    doc.text('Certified correct as per attendance.', rightX, summaryEndY-30);
+    doc.text('Name :- ______________________________________', rightX, summaryEndY -24);
+    doc.text('Grade: Principal Medical Imaging Technologist.', rightX, summaryEndY - 16);
+    doc.text('Signature:- ___________________________________', rightX, summaryEndY -8);
   }
    
   /**
