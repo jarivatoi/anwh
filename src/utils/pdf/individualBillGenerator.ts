@@ -295,6 +295,7 @@ export class IndividualBillGenerator {
     
     // Right side - Certification
     const rightX = 120;
+    doc.setFontSize(10);
     doc.text('Certified correct as per attendance.', rightX, summaryEndY + 5);
     doc.text('Name :- ________________________________________', rightX, summaryEndY + 12);
     doc.text('Grade: Principal Medical Imaging Technologist.', rightX, summaryEndY + 19);
