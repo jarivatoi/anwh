@@ -278,11 +278,12 @@ export class IndividualBillGenerator {
   /**
    * Add signature sections at bottom
    */
-  private addSignatureSections(doc: jsPDF, totalDays: number, totalHours: number, nightDutyCount: number, hourlyRate: number): void {
+  private addSignatureSections(doc: jsPDF, totalDays: number, totalHours: number, nightDutyCount: number, hourlyRate: number, startY: number): void {
     const totalAmount = totalHours * hourlyRate;
     const nightAllowanceBase = nightDutyCount * 6 * 0.25;
     const nightAllowance = nightAllowanceBase * hourlyRate;
     const grandTotal = totalAmount + nightAllowance;
+    
     // Calculate position after summary
     const summaryEndY = (doc as any).lastAutoTable.finalY + 5 + (nightDutyCount > 0 ? 34 : 28) + 10;
     
