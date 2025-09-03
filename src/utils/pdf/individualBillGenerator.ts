@@ -265,7 +265,7 @@ export class IndividualBillGenerator {
     const nightAllowanceBase = nightDutyCount * 6 * 0.25;
     const nightAllowance = nightAllowanceBase * hourlyRate;
     if (nightDutyCount > 0) {
-      doc.text(`Total Night Allowance: (${nightDutyCount} × 6 × 0.25 × ${this.formatCurrency(hourlyRate)}) = ${this.formatCurrency(nightAllowance)}`, 15, startY + 26, { align: 'left' });
+      doc.text(`Total Night Allowance: (${nightDutyCount} × 6 × 0.25 × ${hourlyRate.toFixed(2)}) = ${this.formatCurrency(nightAllowance)}`, 15, startY + 26, { align: 'left' });
     }
     
     // Grand total
