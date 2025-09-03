@@ -1,4 +1,4 @@
-import { PDFDocument, PDFName, PDFString } from 'pdf-lib';
+import { PDFDocument } from 'pdf-lib';
 import { authCodes } from '../rosterAuth';
 
 export interface EncryptionOptions {
@@ -27,25 +27,28 @@ export class PDFEncryption {
       // Load the PDF document
       const pdfDoc = await PDFDocument.load(arrayBuffer);
       
-      // Set encryption with password protection
+      // Set encryption with password protection using the correct PDF-lib API
       const ownerPassword = options.ownerPassword || options.userPassword + '_owner';
       
-      // Apply encryption settings
+      // Apply encryption settings using the correct method
+      pdfDoc.encrypt({
+        userPassword: options.userPassword,
+        ownerPassword: ownerPassword,
+        permissions: {
+          printing: options.permissions?.printing ? 'highResolution' : 'lowResolution',
+          modifying: options.permissions?.modifying ?? false,
+          copying: options.permissions?.copying ?? false,
+          annotating: options.permissions?.annotating ?? false,
+          fillingForms: false,
+          contentAccessibility: false,
+          documentAssembly: false,
+        }
+      });
+      
       console.log('🔒 PDF encryption applied successfully');
       
       // Save the encrypted PDF
-      const encryptedPdfBytes = await pdfDoc.save({
-        encryption: {
-          userPassword: options.userPassword,
-          ownerPassword: ownerPassword,
-          permissions: {
-            printing: options.permissions?.printing ?? true,
-            modifying: options.permissions?.modifying ?? false,
-            copying: options.permissions?.copying ?? false,
-            annotating: options.permissions?.annotating ?? false,
-          }
-        }
-      });
+      const encryptedPdfBytes = await pdfDoc.save();
       
       // Create new blob with encrypted content
       const encryptedBlob = new Blob([encryptedPdfBytes], { type: 'application/pdf' });
