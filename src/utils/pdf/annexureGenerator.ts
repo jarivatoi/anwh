@@ -164,11 +164,11 @@ export class AnnexureGenerator {
         if (data.section === 'body') {
           const cellText = data.cell.text.join(' ');
           if (cellText.length > 20) {
-            data.cell.styles.fontSize = 6;
-          } else if (cellText.length > 10) {
-            data.cell.styles.fontSize = 7;
-          } else {
             data.cell.styles.fontSize = 8;
+          } else if (cellText.length > 10) {
+            data.cell.styles.fontSize = 9;
+          } else {
+            data.cell.styles.fontSize = 11;
           }
         }
       }
