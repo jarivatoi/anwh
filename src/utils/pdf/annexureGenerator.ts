@@ -161,7 +161,7 @@ export class AnnexureGenerator {
       columnStyles: {},
       didParseCell: function(data) {
         // Auto-adjust font size based on content length
-         /*if (data.section === 'body') {
+        /*if (data.section === 'body') {
           const cellText = data.cell.text.join(' ');
           if (cellText.length > 20) {
             data.cell.styles.fontSize = 8;
@@ -169,14 +169,13 @@ export class AnnexureGenerator {
             data.cell.styles.fontSize = 9;
           } else {
             data.cell.styles.fontSize = 11;
-          */
           }
        
         
         }
       }
     });
-    
+    */
     // Add grand totals at the bottom
     const grandTotalDays = staffSummaries.reduce((sum, s) => sum + s.totalDays, 0);
     const grandTotalHours = staffSummaries.reduce((sum, s) => sum + s.totalHours, 0);
