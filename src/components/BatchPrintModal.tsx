@@ -105,7 +105,8 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
       shiftCombinations: shiftCombinations,
       reportTypes: reportTypes,
       selectedStaff: reportTypes.includes('individual') ? selectedStaff : undefined,
-      combineIntoSinglePDF: true
+      combineIntoSinglePDF: true,
+      numberOfCopies: numberOfCopies
     };
 
     try {
