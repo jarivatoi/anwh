@@ -297,9 +297,9 @@ export class IndividualBillGenerator {
     const rightX = 120;
     doc.setFontSize(10);
     doc.text('Certified correct as per attendance.', rightX, summaryEndY-40);
-    doc.text('Name :- ________________________________________', rightX, summaryEndY -32);
+    doc.text('Name :- ______________________________________', rightX, summaryEndY -32);
     doc.text('Grade: Principal Medical Imaging Technologist.', rightX, summaryEndY - 26);
-    doc.text('Signature:- ______________________________________', rightX, summaryEndY -18);
+    doc.text('Signature:- ___________________________________', rightX, summaryEndY -18);
   }
    
   /**
