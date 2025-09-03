@@ -32,6 +32,7 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState<BatchPrintProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [encryptPDFs, setEncryptPDFs] = useState(false);
 
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -105,7 +106,8 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
       shiftCombinations: shiftCombinations,
       reportTypes: reportTypes,
       selectedStaff: reportTypes.includes('individual') ? selectedStaff : undefined,
-      combineIntoSinglePDF: true
+      combineIntoSinglePDF: true,
+      encryptPDFs: encryptPDFs
     };
 
     try {
@@ -268,6 +270,23 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
               </div>
             </div>
           )}
+
+          {/* PDF Encryption */}
+          <div className="mb-6">
+            <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={encryptPDFs}
+                onChange={(e) => setEncryptPDFs(e.target.checked)}
+                disabled={isProcessing}
+                className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded disabled:opacity-50"
+              />
+              <div>
+                <div className="font-medium text-gray-900">Encrypt PDFs with Staff Codes</div>
+                <div className="text-sm text-gray-600">Each PDF will be password protected with the staff member's auth code</div>
+              </div>
+            </label>
+          </div>
 
           {/* Progress */}
           {progress && (
