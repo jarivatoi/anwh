@@ -1,4 +1,5 @@
 import { PDFDocument, PDFName, PDFString } from 'pdf-lib';
+import { authCodes } from '../rosterAuth';
 
 export interface EncryptionOptions {
   userPassword: string;
@@ -62,9 +63,6 @@ export class PDFEncryption {
    * Get staff authentication code for encryption
    */
   static getStaffCode(staffName: string): string {
-    // Import auth codes dynamically to avoid circular dependencies
-    const { authCodes } = require('../rosterAuth');
-    
     // Find the staff member's auth code
     const staffAuth = authCodes.find((auth: any) => {
       const baseName = auth.name.replace(/\(R\)$/, '').trim().toUpperCase();
