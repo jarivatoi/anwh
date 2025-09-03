@@ -45,6 +45,88 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
+  // Add import function
+  const handleImportLocalStaff = async () => {
+    if (!isAdminAuthenticated) {
+      alert('Admin authentication required');
+      return;
+    }
+
+    setIsSaving(true);
+    
+    try {
+      console.log('📦 Importing local staff data to Supabase...');
+      
+      // Get the hardcoded staff data (excluding ADMIN)
+      const localStaffData = [
+        { code: 'B165', name: 'BHEKUR', title: 'MIT', salary: 47510, employeeId: 'B1604812300915', firstName: 'Yashdev', surname: 'BHEKUR' },
+        { code: 'B196', name: 'BHOLLOORAM', title: 'MIT', salary: 47510, employeeId: 'B1911811805356', firstName: 'Sawan', surname: 'BHOLLOORAM' },
+        { code: 'D28B', name: 'DHUNNY', title: 'MIT', salary: 30060, employeeId: 'D280487461277B', firstName: 'Leelarvind', surname: 'DHUNNY' },
+        { code: 'D07D', name: 'DOMUN', title: 'SMIT', salary: 59300, employeeId: 'D070273400031D', firstName: 'Sheik Ahmad Shamir', surname: 'DOMUN' },
+        { code: 'H301', name: 'FOKEERCHAND', title: 'MIT', salary: 37185, employeeId: 'H3003861200061', firstName: 'Needeema', surname: 'FOKEERCHAND' },
+        { code: 'S069', name: 'GHOORAN', title: 'MIT', salary: 48810, employeeId: 'S0607814601039', firstName: 'Bibi Shafinaaz', surname: 'SAMTALLY-GHOORAN' },
+        { code: 'H13D', name: 'HOSENBUX', title: 'MIT', salary: 48810, employeeId: 'H130381180129D', firstName: 'Zameer', surname: 'HOSENBUX' },
+        { code: 'J149', name: 'JUMMUN', title: 'MIT', salary: 47510, employeeId: 'J1403792600909', firstName: 'Bibi Nawsheen', surname: 'JUMMUN' },
+        { code: 'M17G', name: 'MAUDHOO', title: 'MIT', salary: 38010, employeeId: 'M170380260096G', firstName: 'Chandanee', surname: 'MAUDHOO' },
+        { code: 'N28C', name: 'NARAYYA', title: 'MIT', salary: 38010, employeeId: 'N280881240162C', firstName: 'Viraj', surname: 'NARAYYA' },
+        { code: 'P09A', name: 'PITTEA', title: 'SMIT', salary: 59300, employeeId: 'P091171190413A', firstName: 'Soubiraj', surname: 'PITTEA' },
+        { code: 'R16G', name: 'RUNGADOO', title: 'SMIT', salary: 59300, employeeId: 'R210572400118G', firstName: 'Manee', surname: 'RUNGADOO' },
+        { code: 'T16G', name: 'TEELUCK', title: 'SMIT', salary: 59300, employeeId: '', firstName: '', surname: 'TEELUCK' },
+        { code: 'V160', name: 'VEERASAWMY', title: 'SMIT', salary: 59300, employeeId: 'V1604664204410', firstName: 'Goindah', surname: 'VEERASAWMY' },
+        
+        // Radiographers (R)
+        { code: 'B16R', name: 'BHEKUR(R)', title: 'MIT', salary: 47510, employeeId: 'B16048123000915', firstName: 'Yashdev', surname: 'BHEKUR' },
+        { code: 'B19R', name: 'BHOLLOORAM(R)', title: 'MIT', salary: 47510, employeeId: 'B19118118005356', firstName: 'Sawan', surname: 'BHOLLOORAM' },
+        { code: 'D28R', name: 'DHUNNY(R)', title: 'MIT', salary: 30060, employeeId: '0280876127778', firstName: 'Leetarvind', surname: 'DHUNNY' },
+        { code: 'D07R', name: 'DOMUN(R)', title: 'SMIT', salary: 59300, employeeId: 'D07027340003110', firstName: 'Shamir', surname: 'DOMUN' },
+        { code: 'H30R', name: 'FOKEERCHAND(R)', title: 'MIT', salary: 37185, employeeId: 'H30038612000061', firstName: 'Needeema', surname: 'FOKEERCHAND' },
+        { code: 'H13R', name: 'HOSENBUX(R)', title: 'MIT', salary: 48810, employeeId: 'H13038118012901', firstName: 'Zameer', surname: 'HOSENBUX' },
+        { code: 'S06R', name: 'GHOORAN(R)', title: 'MIT', salary: 48810, employeeId: 'S06781460103939', firstName: 'Bibi Sharinaaz', surname: 'SAMTALLY-GHOORAN' },
+        { code: 'J14R', name: 'JUMMUN(R)', title: 'MIT', salary: 47510, employeeId: 'J14037926000909', firstName: 'Bibi Nawsheen', surname: 'JUMMUN' },
+        { code: 'M17R', name: 'MAUDHOO(R)', title: 'MIT', salary: 38010, employeeId: 'M17038026006966', firstName: 'Chandanee', surname: 'MAUDHOO' },
+        { code: 'N28R', name: 'NARAYYA(R)', title: 'MIT', salary: 38010, employeeId: 'N280881240162C', firstName: 'Viraj', surname: 'NARAYYA' },
+        { code: 'P09R', name: 'PITTEA(R)', title: 'SMIT', salary: 59300, employeeId: 'P09117119004134', firstName: 'Subiraj', surname: 'PITTEA' },
+        { code: 'R21R', name: 'RUNGADOO(R)', title: 'SMIT', salary: 59300, employeeId: 'R21057240011866', firstName: 'Manee', surname: 'RUNGADOO' },
+        { code: 'T16R', name: 'TEELUCK(R)', title: 'SMIT', salary: 59300, employeeId: '', firstName: '', surname: 'TEELUCK' },
+        { code: 'V16R', name: 'VEERASAWMY(R)', title: 'SMIT', salary: 59300, employeeId: 'V16046642044100', firstName: 'Goindah', surname: 'VEERASAWMY' }
+      ];
+      
+      let importedCount = 0;
+      
+      for (const staff of localStaffData) {
+        try {
+          await addStaffMember({
+            code: staff.code,
+            name: staff.name,
+            title: staff.title,
+            salary: staff.salary,
+            employee_id: staff.employeeId,
+            first_name: staff.firstName,
+            surname: staff.surname,
+            is_active: true
+          }, adminName || 'ADMIN');
+          
+          importedCount++;
+        } catch (error) {
+          console.error(`Failed to import ${staff.name}:`, error);
+          // Continue with other staff members
+        }
+      }
+      
+      // Refresh staff data
+      await loadStaffMembers();
+      
+      setSuccessMessage(`Successfully imported ${importedCount} staff members to database!`);
+      setTimeout(() => setSuccessMessage(''), 5000);
+      
+    } catch (error) {
+      console.error('❌ Failed to import staff data:', error);
+      alert(`Failed to import staff data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
@@ -334,17 +416,91 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
               {/* Add New Button */}
               {!loading && (
                 <div className="flex justify-between items-center">
-                <h4 className="text-lg font-semibold text-gray-900">
-                  Staff Members ({displayStaffList.length})
-                </h4>
-                <button
-                  onClick={handleAddNew}
-                  disabled={!isAdminAuthenticated}
-                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add New</span>
-                </button>
+                <div className="w-full">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="text-lg font-semibold text-gray-900">
+                      Staff Members ({displayStaffList.length})
+                    </h4>
+                    <button
+                      onClick={handleAddNew}
+                      disabled={!isAdminAuthenticated}
+                      className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add New</span>
+                    </button>
+                  </div>
+                  
+                  {/* Database Setup Instructions */}
+                  {error && error.includes('does not exist') && (
+                    <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-start space-x-3">
+                        <AlertTriangle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <h5 className="font-medium text-blue-800 mb-2">Database Setup Required</h5>
+                          <p className="text-sm text-blue-700 mb-3">
+                            The staff_members table doesn't exist yet. Follow these steps to enable shared staff management:
+                          </p>
+                          <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+                            <li>Go to your Supabase dashboard</li>
+                            <li>Open the SQL Editor</li>
+                            <li>Copy and paste the SQL code below</li>
+                            <li>Click "Run" to create the table</li>
+                            <li>Come back here and click "Import Staff Data"</li>
+                          </ol>
+                          
+                          <div className="mt-3 p-3 bg-white border border-blue-300 rounded font-mono text-xs overflow-x-auto">
+                            <pre>{`-- Create staff_members table
+CREATE TABLE IF NOT EXISTS staff_members (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  code text UNIQUE NOT NULL,
+  name text NOT NULL,
+  title text DEFAULT 'MIT',
+  salary integer DEFAULT 0,
+  employee_id text DEFAULT '',
+  first_name text DEFAULT '',
+  surname text NOT NULL,
+  is_active boolean DEFAULT true,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  last_updated_by text DEFAULT 'SYSTEM'
+);
+
+-- Enable RLS
+ALTER TABLE staff_members ENABLE ROW LEVEL SECURITY;
+
+-- Allow all operations
+CREATE POLICY "Allow all operations on staff members" 
+ON staff_members FOR ALL USING (true);
+
+-- Create update trigger
+CREATE OR REPLACE FUNCTION update_staff_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_staff_members_updated_at
+  BEFORE UPDATE ON staff_members
+  FOR EACH ROW
+  EXECUTE FUNCTION update_staff_updated_at();`}</pre>
+                          </div>
+                          
+                          <button
+                            onClick={handleImportLocalStaff}
+                            disabled={!isAdminAuthenticated}
+                            className="mt-3 w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200"
+                          >
+                            <Plus className="w-4 h-4" />
+                            <span>Import Staff Data to Database</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
               )}
 
