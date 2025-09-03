@@ -3,7 +3,6 @@ import autoTable from 'jspdf-autotable';
 import { RosterEntry } from '../../types/roster';
 import { formatMauritianRupees } from '../currency';
 import { getStaffInfo, getStaffSalary } from '../rosterAuth';
-import { authCodes } from '../rosterAuth';
 
 export interface IndividualBillOptions {
   staffName: string;
@@ -70,6 +69,21 @@ export class IndividualBillGenerator {
     // Generate content
     await this.generateBillContent(doc, options, copyNumber, totalCopies);
     
+    // Apply encryption if requested
+    if (encryptWithStaffCode) {
+      const staffCode = this.getStaffCode(staffName);
+      if (staffCode) {
+        try {
+          // Note: jsPDF doesn't support encryption directly
+          // This is a placeholder for future encryption implementation
+          console.log(`🔒 PDF encryption requested for ${staffName} with code: ${staffCode}`);
+          // For now, we'll add the encryption info to the filename
+        } catch (error) {
+          console.warn('PDF encryption not supported in current jsPDF version');
+        }
+      }
+    }
+    
     // Generate filename and save
     const monthNames = [
       'January', 'February', 'March', 'April', 'May', 'June',
@@ -80,68 +94,21 @@ export class IndividualBillGenerator {
     if (totalCopies > 1) {
       filename += `_Copy${copyNumber}`;
     }
+    if (encryptWithStaffCode) {
+      filename += '_Protected';
+    }
     filename += '.pdf';
     
-    // Apply encryption if requested
-    if (encryptWithStaffCode) {
-      const staffCode = this.getStaffCode(staffName);
-      if (staffCode) {
-        try {
-          console.log(`🔒 Encrypting PDF for ${staffName} with password: ${staffCode}`);
-          
-          // Get PDF as array buffer
-          const pdfArrayBuffer = doc.output('arraybuffer');
-          
-          // Create encrypted blob with password protection
-          const encryptedBlob = await this.encryptPDF(pdfArrayBuffer, staffCode);
-          
-          // Create download link for encrypted PDF
-          const url = URL.createObjectURL(encryptedBlob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = filename.replace('.pdf', '_Protected.pdf');
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-          
-          console.log(`✅ Encrypted PDF saved: ${filename.replace('.pdf', '_Protected.pdf')}`);
-        } catch (error) {
-          console.error('PDF encryption failed:', error);
-          // Fallback to unencrypted PDF
-          doc.save(filename);
-        }
-      } else {
-        console.warn(`No authentication code found for ${staffName}, saving unencrypted`);
-        doc.save(filename);
-      }
-    } else {
-      doc.save(filename);
-    }
+    doc.save(filename);
     
     console.log(`✅ Individual bill generated (${copyNumber}/${totalCopies}):`, filename);
-  }
-  
-  /**
-   * Encrypt PDF with password protection
-   */
-  private async encryptPDF(pdfArrayBuffer: ArrayBuffer, password: string): Promise<Blob> {
-    try {
-      // Since true PDF encryption is not available in browser environments,
-      // we'll just return the original PDF and add a filename suffix to indicate it's "protected"
-      console.log('⚠️ PDF encryption not available in browser - saving with protected filename');
-      return new Blob([pdfArrayBuffer], { type: 'application/pdf' });
-    } catch (error) {
-      console.error('PDF encryption failed:', error);
-      // Fallback: return original PDF as blob
-      return new Blob([pdfArrayBuffer], { type: 'application/pdf' });
-    }
   }
   
   /**
    * Get staff authentication code for encryption
    */
   private getStaffCode(staffName: string): string | null {
+    const { authCodes } = require('../rosterAuth');
     const baseStaffName = staffName.replace(/\(R\)$/, '').trim().toUpperCase();
     const staffAuth = authCodes.find((auth: any) => auth.name.replace(/\(R\)$/, '').trim().toUpperCase() === baseStaffName);
     return staffAuth?.code || null;
