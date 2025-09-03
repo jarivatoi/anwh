@@ -93,6 +93,21 @@ const loadStaffFromSupabase = async (): Promise<void> => {
 // Auto-load staff data when module is imported
 loadStaffFromSupabase();
 
+// Listen for real-time staff updates to keep auth codes in sync
+const handleStaffRealtimeUpdate = (event: CustomEvent) => {
+  console.log('📡 rosterAuth: Received staff real-time update:', event.detail);
+  
+  // Reload staff data from Supabase to update auth codes
+  loadStaffFromSupabase().catch(error => {
+    console.error('❌ Failed to reload staff data after real-time update:', error);
+  });
+};
+
+// Set up real-time listener
+if (typeof window !== 'undefined') {
+  window.addEventListener('staffRealtimeUpdate', handleStaffRealtimeUpdate as EventListener);
+}
+
 // Available staff names for dropdowns and validation
 export let availableNames = authCodes
   .filter(auth => auth.name !== 'ADMIN') // Exclude ADMIN from staff selection
