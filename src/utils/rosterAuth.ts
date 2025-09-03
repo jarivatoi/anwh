@@ -45,6 +45,54 @@ export let authCodes: AuthCode[] = [
   { code: '5274', name: 'ADMIN', title: 'ADMIN', salary: 0, employeeId: '', firstName: '', surname: '' }
 ];
 
+// Load staff data from Supabase on startup
+const loadStaffFromSupabase = async (): Promise<void> => {
+  try {
+    const { fetchStaffMembers } = await import('./staffApi');
+    const staffMembers = await fetchStaffMembers();
+    
+    if (staffMembers && staffMembers.length > 0) {
+      console.log('📦 Loading staff data from Supabase:', staffMembers.length, 'members');
+      
+      // Convert to AuthCode format and update
+      const serverAuthCodes: AuthCode[] = staffMembers.map(staff => ({
+        code: staff.code,
+        name: staff.name,
+        title: staff.title,
+        salary: staff.salary,
+        employeeId: staff.employee_id,
+        firstName: staff.first_name,
+        surname: staff.surname
+      }));
+      
+      // Add ADMIN code (not stored in database)
+      serverAuthCodes.push({ 
+        code: '5274', 
+        name: 'ADMIN', 
+        title: 'ADMIN', 
+        salary: 0, 
+        employeeId: '', 
+        firstName: '', 
+        surname: '' 
+      });
+      
+      // Update the in-memory array
+      authCodes.length = 0;
+      authCodes.push(...serverAuthCodes);
+      
+      // Force refresh of derived arrays
+      refreshDerivedArrays();
+      
+      console.log('✅ Staff data loaded from Supabase successfully');
+    }
+  } catch (error) {
+    console.log('⚠️ Could not load staff from Supabase, using local defaults:', error);
+  }
+};
+
+// Auto-load staff data when module is imported
+loadStaffFromSupabase();
+
 // Available staff names for dropdowns and validation
 export let availableNames = authCodes
   .filter(auth => auth.name !== 'ADMIN') // Exclude ADMIN from staff selection

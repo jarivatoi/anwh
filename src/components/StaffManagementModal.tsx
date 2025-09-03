@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, User, Plus, Edit, Trash2, Save, AlertTriangle, CheckCircle } from 'lucide-react';
-import { authCodes, AuthCode, updateAuthCodes } from '../utils/rosterAuth';
+import { AuthCode } from '../utils/rosterAuth';
+import { useStaffData } from '../hooks/useStaffData';
+import { addStaffMember, updateStaffMember, deleteStaffMember, StaffMember } from '../utils/staffApi';
 
 interface StaffManagementModalProps {
   isOpen: boolean;
@@ -25,8 +27,8 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
   isAdminAuthenticated,
   adminName
 }) => {
-  const [staffList, setStaffList] = useState<AuthCode[]>([]);
-  const [editingStaff, setEditingStaff] = useState<AuthCode | null>(null);
+  const { staffMembers, loading, error, realtimeStatus, loadStaffMembers } = useStaffData();
+  const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState<StaffFormData>({
     code: '',
@@ -43,10 +45,9 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Load staff data when modal opens
+  // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
-      setStaffList([...authCodes]);
       resetForm();
     }
   }, [isOpen]);
@@ -93,7 +94,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
       errors.code = 'Code is required';
     } else if (formData.code.length < 3) {
       errors.code = 'Code must be at least 3 characters';
-    } else if (staffList.some(staff => staff.code === formData.code && staff.code !== editingStaff?.code)) {
+    } else if (staffMembers.some(staff => staff.code === formData.code && staff.code !== editingStaff?.code)) {
       errors.code = 'Code already exists';
     }
 
@@ -114,20 +115,20 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
     setShowForm(true);
   };
 
-  const handleEdit = (staff: AuthCode) => {
+  const handleEdit = (staff: StaffMember) => {
     setEditingStaff(staff);
     setFormData({
       code: staff.code,
-      title: staff.title || 'MIT',
-      salary: staff.salary || 0,
-      employeeId: staff.employeeId || '',
-      firstName: staff.firstName || '',
-      surname: staff.surname || ''
+      title: staff.title,
+      salary: staff.salary,
+      employeeId: staff.employee_id,
+      firstName: staff.first_name,
+      surname: staff.surname
     });
     setShowForm(true);
   };
 
-  const handleDelete = (staff: AuthCode) => {
+  const handleDelete = (staff: StaffMember) => {
     if (staff.code === '5274') {
       alert('Cannot delete ADMIN account');
       return;
@@ -156,76 +157,44 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
     
     try {
       if (confirmationAction === 'save') {
-        const newStaff: AuthCode = {
+        const staffData = {
           code: formData.code,
-          name: formData.surname, // Use surname as the name
+          name: formData.surname,
           title: formData.title,
           salary: formData.salary,
-          employeeId: formData.employeeId,
-          firstName: formData.firstName,
+          employee_id: formData.employeeId,
+          first_name: formData.firstName,
           surname: formData.surname
         };
 
         if (editingStaff) {
           // Update existing staff
-          const updatedList = staffList.map(staff => 
-            staff.code === editingStaff.code ? newStaff : staff
-          );
-          setStaffList(updatedList);
-          
-          // Update the actual rosterAuth.ts file
-          await updateAuthCodes(updatedList);
+          await updateStaffMember(editingStaff.id, staffData, adminName || 'ADMIN');
           
           setSuccessMessage(`${formData.surname} updated successfully!`);
         } else {
           // Add new staff
-          const updatedList = [...staffList, newStaff];
-          setStaffList(updatedList);
-          
-          // Update the actual rosterAuth.ts file
-          await updateAuthCodes(updatedList);
+          await addStaffMember({
+            ...staffData,
+            is_active: true
+          }, adminName || 'ADMIN');
           
           setSuccessMessage(`${formData.surname} added successfully!`);
         }
         
-        // Force refresh of the staff list from storage to ensure UI is in sync
-        setTimeout(async () => {
-          try {
-            const { workScheduleDB } = await import('../utils/indexedDB');
-            const storedAuthCodes = await workScheduleDB.getSetting<AuthCode[]>('authCodes');
-            if (storedAuthCodes) {
-              setStaffList([...storedAuthCodes]);
-              console.log('🔄 Staff list refreshed from storage');
-            }
-          } catch (error) {
-            console.error('Failed to refresh staff list:', error);
-          }
-        }, 500);
+        // Refresh staff data
+        await loadStaffMembers();
         
         resetForm();
       } else if (confirmationAction === 'delete' && editingStaff) {
         // Delete staff
-        const updatedList = staffList.filter(staff => staff.code !== editingStaff.code);
-        setStaffList(updatedList);
-        
-        // Update the actual rosterAuth.ts file
-        await updateAuthCodes(updatedList);
-        
-        // Force refresh of the staff list from storage
-        setTimeout(async () => {
-          try {
-            const { workScheduleDB } = await import('../utils/indexedDB');
-            const storedAuthCodes = await workScheduleDB.getSetting<AuthCode[]>('authCodes');
-            if (storedAuthCodes) {
-              setStaffList([...storedAuthCodes]);
-              console.log('🔄 Staff list refreshed from storage after deletion');
-            }
-          } catch (error) {
-            console.error('Failed to refresh staff list:', error);
-          }
-        }, 500);
+        await deleteStaffMember(editingStaff.id, adminName || 'ADMIN');
         
         setSuccessMessage(`${editingStaff.name} deleted successfully!`);
+        
+        // Refresh staff data
+        await loadStaffMembers();
+        
         resetForm();
       }
       
@@ -260,7 +229,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
   if (!isOpen) return null;
 
   // Filter out ADMIN from the list for display
-  const displayStaffList = staffList.filter(staff => staff.name !== 'ADMIN');
+  const displayStaffList = staffMembers.filter(staff => staff.name !== 'ADMIN');
 
   return createPortal(
     <div 
@@ -298,11 +267,19 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                <User className="w-6 h-6 text-yellow-600" />
+                <User className={`w-6 h-6 ${
+                  realtimeStatus === 'connected' ? 'text-green-600' : 
+                  realtimeStatus === 'connecting' ? 'text-yellow-600' :
+                  realtimeStatus === 'error' ? 'text-red-600' : 'text-gray-600'
+                }`} />
               </div>
               <div>
                 <h3 className="text-xl font-bold text-gray-900">Staff Management</h3>
-                <p className="text-sm text-gray-600">Manage staff details and authentication codes</p>
+                <p className="text-sm text-gray-600">
+                  Manage staff details and authentication codes
+                  {realtimeStatus === 'connected' && <span className="text-green-600 ml-2">• Live sync active</span>}
+                  {realtimeStatus === 'error' && <span className="text-red-600 ml-2">• Sync error</span>}
+                </p>
               </div>
             </div>
             <button
@@ -325,6 +302,16 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
           </div>
         )}
 
+        {/* Error Message */}
+        {error && (
+          <div className="mx-6 mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="w-5 h-5 text-amber-600" />
+              <span className="text-amber-800 font-medium">{error}</span>
+            </div>
+          </div>
+        )}
+
         {/* Content */}
         <div 
           className="flex-1 overflow-y-auto p-6"
@@ -336,22 +323,34 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
           {!showForm ? (
             /* Staff List View */
             <div className="space-y-4">
+              {/* Loading State */}
+              {loading && (
+                <div className="flex items-center justify-center py-8">
+                  <div className="w-8 h-8 border-4 border-yellow-200 border-t-yellow-600 rounded-full animate-spin" />
+                  <span className="ml-3 text-gray-600">Loading staff data...</span>
+                </div>
+              )}
+
               {/* Add New Button */}
-              <div className="flex justify-between items-center">
+              {!loading && (
+                <div className="flex justify-between items-center">
                 <h4 className="text-lg font-semibold text-gray-900">
                   Staff Members ({displayStaffList.length})
                 </h4>
                 <button
                   onClick={handleAddNew}
+                  disabled={!isAdminAuthenticated}
                   className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Add New</span>
                 </button>
               </div>
+              )}
 
               {/* Staff List */}
-              <div className="space-y-3">
+              {!loading && (
+                <div className="space-y-3">
                 {displayStaffList.map((staff) => (
                   <div key={staff.code} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                     <div className="flex flex-col space-y-3">
@@ -368,13 +367,13 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
                           <div>
-                            <span className="font-medium">Full Name:</span> {staff.firstName} {staff.surname}
+                            <span className="font-medium">Full Name:</span> {staff.first_name} {staff.surname}
                           </div>
                           <div>
-                            <span className="font-medium">Salary:</span> Rs {(staff.salary || 0).toLocaleString()}
+                            <span className="font-medium">Salary:</span> Rs {staff.salary.toLocaleString()}
                           </div>
                           <div className="sm:col-span-2">
-                            <span className="font-medium">Employee ID:</span> {staff.employeeId || 'Not set'}
+                            <span className="font-medium">Employee ID:</span> {staff.employee_id || 'Not set'}
                           </div>
                         </div>
                       </div>
@@ -383,6 +382,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                       <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 pt-2 border-t border-gray-200">
                         <button
                           onClick={() => handleEdit(staff)}
+                          disabled={!isAdminAuthenticated}
                           className="w-full sm:flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 text-sm"
                         >
                           <Edit className="w-4 h-4" />
@@ -390,6 +390,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                         </button>
                         <button
                           onClick={() => handleDelete(staff)}
+                          disabled={!isAdminAuthenticated}
                           className="w-full sm:flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors duration-200 text-sm"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -400,6 +401,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                   </div>
                 ))}
               </div>
+              )}
             </div>
           ) : (
             /* Add/Edit Form */
@@ -426,6 +428,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                     type="text"
                     value={formData.code}
                     onChange={(e) => handleFormChange('code', e.target.value.toUpperCase())}
+                    disabled={!isAdminAuthenticated}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono ${
                       formErrors.code ? 'border-red-300' : 'border-gray-300'
                     }`}
@@ -446,6 +449,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                     type="text"
                     value={formData.firstName}
                     onChange={(e) => handleFormChange('firstName', e.target.value)}
+                    disabled={!isAdminAuthenticated}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="e.g., Viraj"
                   />
@@ -460,6 +464,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                     type="text"
                     value={formData.surname}
                     onChange={(e) => handleFormChange('surname', e.target.value)}
+                    disabled={!isAdminAuthenticated}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                       formErrors.surname ? 'border-red-300' : 'border-gray-300'
                     }`}
@@ -478,6 +483,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                   <select
                     value={formData.title}
                     onChange={(e) => handleFormChange('title', e.target.value)}
+                    disabled={!isAdminAuthenticated}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="MIT">MIT</option>
@@ -495,6 +501,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                     type="number"
                     value={formData.salary || ''}
                     onChange={(e) => handleFormChange('salary', Number(e.target.value))}
+                    disabled={!isAdminAuthenticated}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                       formErrors.salary ? 'border-red-300' : 'border-gray-300'
                     }`}
@@ -515,6 +522,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                     type="text"
                     value={formData.employeeId}
                     onChange={(e) => handleFormChange('employeeId', e.target.value)}
+                    disabled={!isAdminAuthenticated}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="e.g., N280881240162C"
                   />
@@ -531,6 +539,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                 </button>
                 <button
                   onClick={handleSave}
+                  disabled={!isAdminAuthenticated}
                   className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
                 >
                   <Save className="w-4 h-4" />
@@ -546,8 +555,8 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
           <div className="flex items-center space-x-2">
             <CheckCircle className="w-4 h-4 text-green-600" />
             <p className="text-sm text-green-800">
-              <strong>Note:</strong> Changes made here will update the staff database and be reflected 
-              immediately in dropdowns and authentication. Changes persist until page refresh.
+              <strong>Note:</strong> Changes made here will update the shared staff database and be reflected 
+              immediately for all users across all devices. Changes are permanent and synchronized in real-time.
             </p>
           </div>
         </div>
