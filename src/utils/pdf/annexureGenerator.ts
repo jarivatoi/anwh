@@ -166,12 +166,12 @@ export class AnnexureGenerator {
           if (cellText.length > 20) {
             
             //data.cell.styles.fontSize = 6;
-            data.cell.styles.fontSize = 8;
+            data.cell.styles.fontSize = 9;
           } else if (cellText.length > 10) {
             //data.cell.styles.fontSize = 7;
-         data.cell.styles.fontSize = 8;
+         data.cell.styles.fontSize = 9;
           } else {
-            data.cell.styles.fontSize = 8;
+            data.cell.styles.fontSize = 9;
           }
         }
       }
