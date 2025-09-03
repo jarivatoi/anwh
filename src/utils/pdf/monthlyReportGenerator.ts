@@ -15,6 +15,8 @@ export interface MonthlyReportOptions {
     combination: string;
     hours: number;
   }>;
+  numberOfCopies?: number;
+  encryptPDFs?: boolean;
 }
 
 export class MonthlyReportGenerator {
@@ -27,7 +29,7 @@ export class MonthlyReportGenerator {
     annexureGenerated: boolean;
     rosterListGenerated: boolean;
   }> {
-    const { month, year, entries, basicSalary, hourlyRate, shiftCombinations } = options;
+    const { month, year, entries, basicSalary, hourlyRate, shiftCombinations, numberOfCopies = 1, encryptPDFs = false } = options;
     
     console.log('📄 Starting monthly report generation...');
     
@@ -63,7 +65,9 @@ export class MonthlyReportGenerator {
           entries: monthEntries,
           basicSalary,
           hourlyRate,
-          shiftCombinations
+          shiftCombinations,
+          numberOfCopies,
+          encryptWithStaffCode: encryptPDFs
         });
         individualBillsGenerated++;
         
@@ -82,7 +86,8 @@ export class MonthlyReportGenerator {
         year,
         entries: monthEntries,
         hourlyRate,
-        shiftCombinations
+        shiftCombinations,
+        numberOfCopies
       });
       annexureGenerated = true;
       
@@ -98,7 +103,8 @@ export class MonthlyReportGenerator {
       await rosterListGenerator.generateRosterList({
         month,
         year,
-        entries: monthEntries
+        entries: monthEntries,
+        numberOfCopies
       });
       rosterListGenerated = true;
     } catch (error) {

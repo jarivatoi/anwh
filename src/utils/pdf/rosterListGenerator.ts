@@ -6,6 +6,7 @@ export interface RosterListOptions {
   month: number;
   year: number;
   entries: RosterEntry[];
+  numberOfCopies?: number;
 }
 
 export class RosterListGenerator {
@@ -14,6 +15,20 @@ export class RosterListGenerator {
    * Generate roster list matching the PDF template format - all on one page
    */
   async generateRosterList(options: RosterListOptions): Promise<void> {
+    const { month, year, numberOfCopies = 1 } = options;
+    
+    // Generate the specified number of copies
+    for (let copy = 1; copy <= numberOfCopies; copy++) {
+      await this.generateSingleRosterList(options, copy, numberOfCopies);
+    }
+  }
+  
+  /**
+   * Generate a single roster list copy
+   */
+  private async generateSingleRosterList(options: RosterListOptions, copyNumber: number, totalCopies: number): Promise<void> {
+    const { month, year } = options;
+    
     // Create PDF document
     const doc = new jsPDF({
       orientation: 'portrait',
@@ -22,23 +37,29 @@ export class RosterListGenerator {
     });
     
     // Generate content
-    await this.generateRosterListContent(doc, options);
+    await this.generateRosterListContent(doc, options, copyNumber, totalCopies);
     
     // Generate filename and save
     const monthNames = [
       'January', 'February', 'March', 'April', 'May', 'June',
       'July', 'August', 'September', 'October', 'November', 'December'
     ];
-    const filename = `Roster_List_${monthNames[options.month]}_${options.year}.pdf`;
+    
+    let filename = `Roster_List_${monthNames[month]}_${year}`;
+    if (totalCopies > 1) {
+      filename += `_Copy${copyNumber}`;
+    }
+    filename += '.pdf';
+    
     doc.save(filename);
     
-    console.log('✅ Roster list generated:', filename);
+    console.log(`✅ Roster list generated (${copyNumber}/${totalCopies}):`, filename);
   }
   
   /**
    * Generate roster list content into provided PDF document (for batch printing)
    */
-  async generateRosterListContent(doc: jsPDF, options: RosterListOptions): Promise<void> {
+  async generateRosterListContent(doc: jsPDF, options: RosterListOptions, copyNumber?: number, totalCopies?: number): Promise<void> {
     const { month, year, entries } = options;
     
     console.log('📄 Generating roster list');
@@ -51,7 +72,11 @@ export class RosterListGenerator {
     // Header
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text(`X-Ray Roster for month of ${monthNames[month]} ${year}`, doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+    let headerText = `X-Ray Roster for month of ${monthNames[month]} ${year}`;
+    if (copyNumber && totalCopies && totalCopies > 1) {
+      headerText += ` (Copy ${copyNumber}/${totalCopies})`;
+    }
+    doc.text(headerText, doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
     
     // Filter entries for the specified month/year
     const monthEntries = entries.filter(entry => {

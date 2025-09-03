@@ -14,6 +14,7 @@ export interface AnnexureOptions {
     combination: string;
     hours: number;
   }>;
+  numberOfCopies?: number;
 }
 
 export class AnnexureGenerator {
@@ -49,6 +50,20 @@ export class AnnexureGenerator {
    * Generate annexure matching the exact PDF format
    */
   async generateAnnexure(options: AnnexureOptions): Promise<void> {
+    const { month, year, numberOfCopies = 1 } = options;
+    
+    // Generate the specified number of copies
+    for (let copy = 1; copy <= numberOfCopies; copy++) {
+      await this.generateSingleAnnexure(options, copy, numberOfCopies);
+    }
+  }
+  
+  /**
+   * Generate a single annexure copy
+   */
+  private async generateSingleAnnexure(options: AnnexureOptions, copyNumber: number, totalCopies: number): Promise<void> {
+    const { month, year } = options;
+    
     // Create PDF document
     const doc = new jsPDF({
       orientation: 'portrait',
@@ -57,23 +72,29 @@ export class AnnexureGenerator {
     });
     
     // Generate content
-    await this.generateAnnexureContent(doc, options);
+    await this.generateAnnexureContent(doc, options, copyNumber, totalCopies);
     
     // Generate filename and save
     const monthNames = [
       'January', 'February', 'March', 'April', 'May', 'June',
       'July', 'August', 'September', 'October', 'November', 'December'
     ];
-    const filename = `Annexure_${monthNames[options.month]}_${options.year}.pdf`;
+    
+    let filename = `Annexure_${monthNames[month]}_${year}`;
+    if (totalCopies > 1) {
+      filename += `_Copy${copyNumber}`;
+    }
+    filename += '.pdf';
+    
     doc.save(filename);
     
-    console.log('✅ Annexure generated:', filename);
+    console.log(`✅ Annexure generated (${copyNumber}/${totalCopies}):`, filename);
   }
   
   /**
    * Generate annexure content into provided PDF document (for batch printing)
    */
-  async generateAnnexureContent(doc: jsPDF, options: AnnexureOptions): Promise<void> {
+  async generateAnnexureContent(doc: jsPDF, options: AnnexureOptions, copyNumber?: number, totalCopies?: number): Promise<void> {
     const { month, year, entries, hourlyRate, shiftCombinations } = options;
     
     console.log('📄 Generating annexure for all staff');
@@ -89,7 +110,11 @@ export class AnnexureGenerator {
     doc.text('X-RAY DEPARTMENT - JAWAHARLAL NEHRU HOSPITAL', doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
     
     doc.setFontSize(12);
-    doc.text(`ANNEXURE - ${monthNames[month]} ${year}`, doc.internal.pageSize.getWidth() / 2, 25, { align: 'center' });
+    let headerText = `ANNEXURE - ${monthNames[month]} ${year}`;
+    if (copyNumber && totalCopies && totalCopies > 1) {
+      headerText += ` (Copy ${copyNumber}/${totalCopies})`;
+    }
+    doc.text(headerText, doc.internal.pageSize.getWidth() / 2, 25, { align: 'center' });
     
     // Calculate summary for all staff
     const staffSummaries = this.calculateStaffSummaries(entries, month, year, hourlyRate, shiftCombinations);

@@ -43,6 +43,8 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [numberOfCopies, setNumberOfCopies] = useState(1);
+  const [encryptPDFs, setEncryptPDFs] = useState(false);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -73,6 +75,8 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
       setError(null);
       setReportType('all');
       setSelectedStaff('');
+      setNumberOfCopies(1);
+      setEncryptPDFs(false);
     }
   }, [isOpen]);
 
@@ -124,7 +128,9 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
           entries,
           basicSalary,
           hourlyRate,
-          shiftCombinations
+          shiftCombinations,
+          numberOfCopies,
+          encryptPDFs
         });
         result = { ...allResult, reportType: 'all' };
         
@@ -141,7 +147,9 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
           entries: monthEntries,
           basicSalary,
           hourlyRate,
-          shiftCombinations
+          shiftCombinations,
+          numberOfCopies,
+          encryptWithStaffCode: encryptPDFs
         });
         
         result.individualBills = 1;
@@ -153,7 +161,8 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
           year: selectedYear,
           entries: monthEntries,
           hourlyRate,
-          shiftCombinations
+          shiftCombinations,
+          numberOfCopies
         });
         
         result.annexureGenerated = true;
@@ -163,7 +172,8 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
         await rosterListGenerator.generateRosterList({
           month: selectedMonth,
           year: selectedYear,
-          entries: monthEntries
+          entries: monthEntries,
+          numberOfCopies
         });
         
         result.rosterListGenerated = true;
@@ -423,6 +433,44 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
                       Will generate individual bill for {selectedStaff}
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Number of Copies */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Number of Copies
+                </label>
+                <select
+                  value={numberOfCopies}
+                  onChange={(e) => setNumberOfCopies(Number(e.target.value))}
+                  disabled={isGenerating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                >
+                  {[1, 2, 3, 4, 5].map(num => (
+                    <option key={num} value={num}>{num} {num === 1 ? 'copy' : 'copies'}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* PDF Encryption - Only for individual reports */}
+              {reportType === 'individual' && (
+                <div>
+                  <label className="flex items-center space-x-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={encryptPDFs}
+                      onChange={(e) => setEncryptPDFs(e.target.checked)}
+                      disabled={isGenerating}
+                      className="w-4 h-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
+                    />
+                    <div>
+                      <div className="font-medium text-yellow-800">Encrypt PDF with Staff Code</div>
+                      <div className="text-sm text-yellow-700">
+                        PDF will be password protected using the staff member's authentication code
+                      </div>
+                    </div>
+                  </label>
                 </div>
               )}
               {/* Report Types Info */}
