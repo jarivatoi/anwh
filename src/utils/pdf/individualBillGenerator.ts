@@ -116,9 +116,7 @@ export class IndividualBillGenerator {
     console.log(`🌟 Total special dates found in month: ${specialDatesInMonth.size}`);
    
     // Get staff information using base name (without R)
-    const baseStaffName = staffName.replace(/\(R\)$/, '').trim();
     const staffInfo = getStaffInfo(baseStaffName);
-    const staffSalary = getStaffSalary(baseStaffName);
     
     // Header - compact format
     doc.setFontSize(14);
