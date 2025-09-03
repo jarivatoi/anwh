@@ -432,18 +432,21 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                   </div>
                   
                   {/* Database Setup Instructions */}
-                  {(error && error.includes('does not exist')) || staffMembers.length === 0 && (
+                  {(error && error.includes('does not exist')) || staffMembers.length === 0 || true && (
                     <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                       <div className="flex items-start space-x-3">
                         <AlertTriangle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                         <div>
                           <h5 className="font-medium text-blue-800 mb-2">
-                            {error && error.includes('does not exist') ? 'Database Setup Required' : 'Import Staff Data'}
+                            {error && error.includes('does not exist') ? 'Database Setup Required' : 
+                             staffMembers.length === 0 ? 'Import Staff Data' : 'Re-import Staff Data'}
                           </h5>
                           <p className="text-sm text-blue-700 mb-3">
-                            {error && error.includes('does not exist') 
-                              ? 'The staff_members table doesn\'t exist yet. Follow these steps to enable shared staff management:'
-                              : 'Import the local staff data into the Supabase database to enable shared staff management:'
+                            {error && error.includes('does not exist') ? 
+                              'The staff_members table doesn\'t exist yet. Follow these steps to enable shared staff management:' :
+                              staffMembers.length === 0 ? 
+                                'Import the local staff data into the Supabase database to enable shared staff management:' :
+                                'Re-import the latest staff data (including updated salaries) to refresh the database:'
                             }
                           </p>
                           
