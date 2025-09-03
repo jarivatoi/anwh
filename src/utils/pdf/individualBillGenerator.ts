@@ -149,7 +149,7 @@ export class IndividualBillGenerator {
     if (copyNumber && totalCopies && totalCopies > 1) {
       headerText += ` (Copy ${copyNumber}/${totalCopies})`;
     }
-    doc.text(headerText, doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+    doc.text(headerText, doc.internal.pageSize.getWidth() / 2, 25, { align: 'center' });
     
     // Staff details section - two-column layout with proper alignment
     doc.setFontSize(10);
