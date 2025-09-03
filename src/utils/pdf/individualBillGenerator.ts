@@ -156,27 +156,27 @@ export class IndividualBillGenerator {
     doc.setFont('helvetica', 'bold');
     
     // Left column - Name, Month/Year, Employee ID
-    doc.text('Name:', 20, 30);
-    doc.text('Month/Year:', 20, 37);
-    doc.text('Employee ID:', 20, 44);
+    doc.text('Name:', 20, 35);
+    doc.text('Month/Year:', 20, 42);
+    doc.text('Employee ID:', 20, 49);
     
     // Left column values  
     doc.setFont('helvetica', 'normal');
-    doc.text(`${staffInfo?.firstName || ''} ${staffInfo?.surname || baseStaffName}`, 50, 30);
-    doc.text(`${monthNames[month]} ${year}`, 50, 37);
-    doc.text(staffInfo?.employeeId || '', 50, 44);
+    doc.text(`${staffInfo?.firstName || ''} ${staffInfo?.surname || baseStaffName}`, 50, 35);
+    doc.text(`${monthNames[month]} ${year}`, 50, 42);
+    doc.text(staffInfo?.employeeId || '', 50, 49);
     
     // Right column - Title, Salary, Hourly Rate
     doc.setFont('helvetica', 'bold');
-    doc.text('Title:', 120, 30);
-    doc.text('Salary:', 120, 37);
-    doc.text('Hourly Rate:', 120, 44);
+    doc.text('Title:', 120, 35);
+    doc.text('Salary:', 120, 42);
+    doc.text('Hourly Rate:', 120, 49);
     
     // Right column values
     doc.setFont('helvetica', 'normal');
-    doc.text(staffInfo?.title || 'MIT', 150, 30);
-    doc.text(`Rs ${(staffSalary || 0).toLocaleString()}`, 150, 37);
-    doc.text(`Rs ${individualHourlyRate.toFixed(2)}`, 150, 44);
+    doc.text(staffInfo?.title || 'MIT', 150, 35);
+    doc.text(`Rs ${(staffSalary || 0).toLocaleString()}`, 150, 42);
+    doc.text(`Rs ${individualHourlyRate.toFixed(2)}`, 150, 49);
     
     // Prepare table data for ALL days in the month
     const tableData = this.prepareAllDaysTableData(staffEntries, staffName, month, year, individualHourlyRate, shiftCombinations, specialDatesInMonth);
