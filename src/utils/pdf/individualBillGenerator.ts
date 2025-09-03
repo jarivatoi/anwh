@@ -68,11 +68,13 @@ export class IndividualBillGenerator {
     // Generate content
     await this.generateBillContent(doc, options, copyNumber, totalCopies);
     
-    // Generate ANWH filename with timestamp
-    const now = new Date();
-    const timestamp = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()}_${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
+    // Generate filename and save
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
     
-    let filename = `ANWH_${staffName}_Bill_${timestamp}`;
+    let filename = `${staffName}_${monthNames[month]}_${year}_Bill`;
     if (totalCopies > 1) {
       filename += `_Copy${copyNumber}`;
     }
