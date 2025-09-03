@@ -178,16 +178,64 @@ export async function updateAuthCodes(newAuthCodes: AuthCode[]): Promise<void> {
     // Force refresh of derived arrays
     refreshDerivedArrays();
     
-    console.log('✅ Successfully updated rosterAuth.ts in memory');
+    // Persist to IndexedDB for permanent storage
+    await persistAuthCodesToStorage(newAuthCodes);
     
-    // Note: In a real application, you would also persist to a database or file
-    // For now, changes persist until page refresh
+    console.log('✅ Successfully updated and persisted auth codes');
     
   } catch (error) {
     console.error('❌ Failed to update rosterAuth.ts:', error);
     throw new Error('Failed to save changes. Please try again.');
   }
 }
+
+/**
+ * Persist auth codes to IndexedDB
+ */
+async function persistAuthCodesToStorage(authCodes: AuthCode[]): Promise<void> {
+  try {
+    // Use the existing IndexedDB infrastructure
+    const { workScheduleDB } = await import('./indexedDB');
+    await workScheduleDB.init();
+    await workScheduleDB.setSetting('authCodes', authCodes);
+    console.log('💾 Auth codes persisted to IndexedDB');
+  } catch (error) {
+    console.error('❌ Failed to persist auth codes:', error);
+    throw error;
+  }
+}
+
+/**
+ * Load auth codes from IndexedDB on startup
+ */
+async function loadAuthCodesFromStorage(): Promise<void> {
+  try {
+    const { workScheduleDB } = await import('./indexedDB');
+    await workScheduleDB.init();
+    const storedAuthCodes = await workScheduleDB.getSetting<AuthCode[]>('authCodes');
+    
+    if (storedAuthCodes && Array.isArray(storedAuthCodes) && storedAuthCodes.length > 0) {
+      console.log('📦 Loading auth codes from IndexedDB:', storedAuthCodes.length, 'codes');
+      
+      // Update the in-memory array
+      authCodes.length = 0;
+      authCodes.push(...storedAuthCodes);
+      
+      // Force refresh of derived arrays
+      refreshDerivedArrays();
+      
+      console.log('✅ Auth codes loaded from storage successfully');
+    } else {
+      console.log('ℹ️ No stored auth codes found, using defaults');
+    }
+  } catch (error) {
+    console.error('❌ Failed to load auth codes from storage:', error);
+    // Continue with default auth codes if loading fails
+  }
+}
+
+// Auto-load auth codes when module is imported
+loadAuthCodesFromStorage();
 
 /**
  * Refresh derived arrays after auth codes change

@@ -313,6 +313,11 @@ class WorkScheduleDB {
           }
         }
         
+        // Special handling for authCodes to ensure they're properly loaded
+        if (key === 'authCodes' && result) {
+          console.log('📦 Loading auth codes from IndexedDB:', Array.isArray(result) ? result.length : 'invalid format');
+        }
+        
         resolve(result);
       };
 

@@ -188,6 +188,20 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
           setSuccessMessage(`${formData.surname} added successfully!`);
         }
         
+        // Force refresh of the staff list from storage to ensure UI is in sync
+        setTimeout(async () => {
+          try {
+            const { workScheduleDB } = await import('../utils/indexedDB');
+            const storedAuthCodes = await workScheduleDB.getSetting<AuthCode[]>('authCodes');
+            if (storedAuthCodes) {
+              setStaffList([...storedAuthCodes]);
+              console.log('🔄 Staff list refreshed from storage');
+            }
+          } catch (error) {
+            console.error('Failed to refresh staff list:', error);
+          }
+        }, 500);
+        
         resetForm();
       } else if (confirmationAction === 'delete' && editingStaff) {
         // Delete staff
@@ -196,6 +210,20 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
         
         // Update the actual rosterAuth.ts file
         await updateAuthCodes(updatedList);
+        
+        // Force refresh of the staff list from storage
+        setTimeout(async () => {
+          try {
+            const { workScheduleDB } = await import('../utils/indexedDB');
+            const storedAuthCodes = await workScheduleDB.getSetting<AuthCode[]>('authCodes');
+            if (storedAuthCodes) {
+              setStaffList([...storedAuthCodes]);
+              console.log('🔄 Staff list refreshed from storage after deletion');
+            }
+          } catch (error) {
+            console.error('Failed to refresh staff list:', error);
+          }
+        }, 500);
         
         setSuccessMessage(`${editingStaff.name} deleted successfully!`);
         resetForm();
