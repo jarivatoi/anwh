@@ -169,8 +169,9 @@ export class AnnexureGenerator {
             data.cell.styles.fontSize = 9;
           } else {
             data.cell.styles.fontSize = 11;
+          */
           }
-       */
+       
         
         }
       }
