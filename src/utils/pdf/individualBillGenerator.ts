@@ -198,7 +198,7 @@ export class IndividualBillGenerator {
         fillColor: [220, 220, 220],
         textColor: [0, 0, 0],
         fontStyle: 'bold',
-        fontSize: 7,
+        fontSize: 9,
         halign: 'center',
         valign: 'middle',
         cellPadding: 2
