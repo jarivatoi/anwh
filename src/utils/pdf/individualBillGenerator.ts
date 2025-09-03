@@ -9,7 +9,7 @@ export interface IndividualBillOptions {
   month: number;
   year: number;
   entries: RosterEntry[];
-  basicSalary: number;
+  basicSalary: number; 
   hourlyRate: number;
   shiftCombinations: Array<{
     id: string;
@@ -18,20 +18,7 @@ export interface IndividualBillOptions {
   }>;
 }
 
-export class IndividualBillGenerator { 
-  
-  /**
-   * Calculate hourly rate based on basic salary using the original formula
-   */
-  private calculateHourlyRate(basicSalary: number): number {
-    // Original formula: hourly rate = basic salary / (52 weeks * 44 hours per week)
-    return basicSalary / (52 * 44);
-  }
-  
-  /**
-  
-  
-  
+export class IndividualBillGenerator {
   
   /**
    * Format number without trailing zeros and hide if zero
@@ -56,9 +43,6 @@ export class IndividualBillGenerator {
    * Generate individual bill for a specific staff member matching the exact PDF format
    */
   async generateBill(options: IndividualBillOptions): Promise<void> {
-   
-    const hourlyRate = this.calculateHourlyRate(options.basicSalary);
-    
     // Create PDF document
     const doc = new jsPDF({
       orientation: 'portrait',
