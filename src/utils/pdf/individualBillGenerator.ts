@@ -283,14 +283,13 @@ export class IndividualBillGenerator {
     const nightAllowanceBase = nightDutyCount * 6 * 0.25;
     const nightAllowance = nightAllowanceBase * hourlyRate;
     const grandTotal = totalAmount + nightAllowance;
-    
     // Calculate position after summary
     const summaryEndY = (doc as any).lastAutoTable.finalY + 5 + (nightDutyCount > 0 ? 34 : 28) + 10;
     
     // Left side - Date and signature
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.text('Date: _________________________________________', 15, startY);
+    doc.text('Date: _________________________________________', 15, summaryEndY + 10);
     doc.text('Signature:_______________________________________', 15, summaryEndY + 20);
     
     // Right side - Certification
