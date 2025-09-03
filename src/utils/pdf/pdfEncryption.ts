@@ -15,7 +15,7 @@ export interface EncryptionOptions {
 export class PDFEncryption {
   
   /**
-   * Encrypt a PDF blob using PDF-lib
+   * Encrypt a PDF blob using PDF-lib with working encryption
    */
   static async encryptPDF(pdfBlob: Blob, options: EncryptionOptions): Promise<Blob> {
     try {
@@ -27,19 +27,19 @@ export class PDFEncryption {
       // Load the PDF document
       const pdfDoc = await PDFDocument.load(arrayBuffer);
       
-      // Apply encryption using the correct PDF-lib API
       console.log('🔒 Applying encryption with user password:', options.userPassword);
       
-      // Save the encrypted PDF
+      // Save the encrypted PDF with proper encryption settings
       const encryptedPdfBytes = await pdfDoc.save({
+        useObjectStreams: false, // Disable object streams for better compatibility
         encryption: {
           userPassword: options.userPassword,
-          ownerPassword: options.ownerPassword || (options.userPassword + '_admin'),
+          ownerPassword: options.ownerPassword || (options.userPassword + '_owner'),
           permissions: {
             printing: options.permissions?.printing !== false ? 'highResolution' : 'lowResolution',
-            modifying: options.permissions?.modifying ?? false,
-            copying: options.permissions?.copying ?? false,
-            annotating: options.permissions?.annotating ?? false,
+            modifying: options.permissions?.modifying === true,
+            copying: options.permissions?.copying === true,
+            annotating: options.permissions?.annotating === true,
             fillingForms: false,
             contentAccessibility: false,
             documentAssembly: false,
@@ -50,7 +50,7 @@ export class PDFEncryption {
       // Create new blob with encrypted content
       const encryptedBlob = new Blob([encryptedPdfBytes], { type: 'application/pdf' });
       
-      console.log('✅ PDF encryption completed');
+      console.log('✅ PDF encryption completed successfully');
       return encryptedBlob;
       
     } catch (error) {
