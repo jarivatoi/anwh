@@ -177,10 +177,8 @@ export class BatchPrintManager {
         completed: false
       });
       
-      // Generate ANWH filename with timestamp for combined PDF
-      const now = new Date();
-      const timestamp = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()}_${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
-      const filename = `ANWH_Combined_Reports_${timestamp}.pdf`;
+      // Generate filename for combined PDF
+      const filename = `Combined_Reports_${monthNames[month]}_${year}.pdf`;
       
       // Generate the PDF blob and URL
       const pdfBlob = combinedDoc.output('blob');
