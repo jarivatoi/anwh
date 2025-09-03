@@ -57,7 +57,7 @@ export class IndividualBillGenerator {
    */
   async generateBill(options: IndividualBillOptions): Promise<void> {
    
-    const hourlyRate = this.calculateHourlyRate(options.getStaffSalary);
+   
     
     // Create PDF document
     const doc = new jsPDF({
@@ -84,6 +84,8 @@ export class IndividualBillGenerator {
    * Generate bill content into provided PDF document (for batch printing)
    */
   async generateBillContent(doc: jsPDF, options: IndividualBillOptions): Promise<void> {
+     const hourlyRate = this.calculateHourlyRate(options.getStaffSalary);
+    
     // Explicitly declare staffName to ensure proper scope
     const staffName = options.staffName;
     const { month, year, entries, basicSalary, hourlyRate, shiftCombinations } = options;
