@@ -110,7 +110,9 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
       reportTypes: reportTypes,
       selectedStaff: reportTypes.includes('individual') ? selectedStaff : undefined,
       combineIntoSinglePDF: true,
-      numberOfCopies: numberOfCopies,
+      individualCopies: individualCopies,
+      annexureCopies: annexureCopies,
+      rosterCopies: rosterCopies,
       encryptPDFs: encryptPDFs
     };
 

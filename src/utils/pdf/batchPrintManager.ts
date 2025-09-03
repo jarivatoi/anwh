@@ -44,6 +44,10 @@ export class BatchPrintManager {
     onProgress?: (progress: BatchPrintProgress) => void
   ): Promise<void> {
     const { month, year, entries, basicSalary, hourlyRate, shiftCombinations, reportTypes, selectedStaff } = options;
+    const individualCopies = options.individualCopies || 1;
+    const annexureCopies = options.annexureCopies || 1;
+    const rosterCopies = options.rosterCopies || 1;
+    const encryptPDFs = options.encryptPDFs || false;
     
     this.pdfDocuments = [];
     this.currentPrintIndex = 0;
