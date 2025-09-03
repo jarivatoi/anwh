@@ -3,6 +3,7 @@ import autoTable from 'jspdf-autotable';
 import { RosterEntry } from '../../types/roster';
 import { formatMauritianRupees } from '../currency';
 import { getStaffInfo, getStaffSalary } from '../rosterAuth';
+import { authCodes } from '../rosterAuth';
 
 export interface IndividualBillOptions {
   staffName: string;
@@ -108,7 +109,6 @@ export class IndividualBillGenerator {
    * Get staff authentication code for encryption
    */
   private getStaffCode(staffName: string): string | null {
-    const { authCodes } = require('../rosterAuth');
     const baseStaffName = staffName.replace(/\(R\)$/, '').trim().toUpperCase();
     const staffAuth = authCodes.find((auth: any) => auth.name.replace(/\(R\)$/, '').trim().toUpperCase() === baseStaffName);
     return staffAuth?.code || null;
