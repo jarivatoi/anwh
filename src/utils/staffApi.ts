@@ -57,7 +57,7 @@ export const addStaffMember = async (staffData: Omit<StaffMember, 'id' | 'create
 
     const { data, error } = await supabase
       .from('staff_members')
-      .insert([entryData])
+      .upsert([entryData], { onConflict: 'code' })
       .select()
       .single();
 
