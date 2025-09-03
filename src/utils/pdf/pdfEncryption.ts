@@ -31,21 +31,21 @@ export class PDFEncryption {
       const ownerPassword = options.ownerPassword || options.userPassword + '_owner';
       
       // Apply encryption settings
-      pdfDoc.encrypt({
-        userPassword: options.userPassword,
-        ownerPassword: ownerPassword,
-        permissions: {
-          printing: options.permissions?.printing ?? true,
-          modifying: options.permissions?.modifying ?? false,
-          copying: options.permissions?.copying ?? false,
-          annotating: options.permissions?.annotating ?? false,
-        }
-      });
-      
       console.log('🔒 PDF encryption applied successfully');
       
       // Save the encrypted PDF
-      const encryptedPdfBytes = await pdfDoc.save();
+      const encryptedPdfBytes = await pdfDoc.save({
+        encryption: {
+          userPassword: options.userPassword,
+          ownerPassword: ownerPassword,
+          permissions: {
+            printing: options.permissions?.printing ?? true,
+            modifying: options.permissions?.modifying ?? false,
+            copying: options.permissions?.copying ?? false,
+            annotating: options.permissions?.annotating ?? false,
+          }
+        }
+      });
       
       // Create new blob with encrypted content
       const encryptedBlob = new Blob([encryptedPdfBytes], { type: 'application/pdf' });
