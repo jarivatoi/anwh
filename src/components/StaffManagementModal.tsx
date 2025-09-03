@@ -424,10 +424,10 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                     <button
                       onClick={handleAddNew}
                       disabled={!isAdminAuthenticated}
-                      className="flex items-center justify-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 mx-auto"
+                      className="flex items-center justify-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200"
                     >
                       <Plus className="w-4 h-4" />
-                      <span className="text-center">Add New</span>
+                      <span>Add New</span>
                     </button>
                   </div>
                   
@@ -504,17 +504,17 @@ CREATE TRIGGER update_staff_members_updated_at
                           <button
                             onClick={handleImportLocalStaff}
                             disabled={!isAdminAuthenticated || isSaving}
-                            className="mt-3 w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors duration-200 mx-auto"
+                            className="mt-3 w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors duration-200"
                           >
                             {isSaving ? (
                               <>
                                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                <span className="text-center">Importing...</span>
+                                <span>Importing...</span>
                               </>
                             ) : (
                               <>
                                 <Plus className="w-4 h-4" />
-                                <span className="text-center">Import Staff Data to Database</span>
+                                <span>Import Staff Data to Database</span>
                               </>
                             )}
                           </button>
