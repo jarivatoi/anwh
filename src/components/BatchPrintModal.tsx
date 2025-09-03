@@ -32,6 +32,8 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState<BatchPrintProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [numberOfCopies, setNumberOfCopies] = useState(1);
+  const [encryptPDFs, setEncryptPDFs] = useState(false);
 
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -106,7 +108,8 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
       reportTypes: reportTypes,
       selectedStaff: reportTypes.includes('individual') ? selectedStaff : undefined,
       combineIntoSinglePDF: true,
-      numberOfCopies: numberOfCopies
+      numberOfCopies: numberOfCopies,
+      encryptPDFs: encryptPDFs
     };
 
     try {
@@ -292,6 +295,46 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
               <div className="text-xs text-gray-600 mt-1">
                 {progress.current} of {progress.total} tasks completed
               </div>
+            </div>
+          )}
+
+          {/* Number of Copies */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Number of Copies</h3>
+            <select
+              value={numberOfCopies}
+              onChange={(e) => setNumberOfCopies(Number(e.target.value))}
+              disabled={isProcessing}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50"
+            >
+              {[1, 2, 3, 4, 5].map(num => (
+                <option key={num} value={num}>{num} {num === 1 ? 'copy' : 'copies'}</option>
+              ))}
+            </select>
+            <p className="text-sm text-gray-600 mt-2">
+              This applies to all selected report types
+            </p>
+          </div>
+
+          {/* PDF Encryption - Only for individual reports */}
+          {reportTypes.includes('individual') && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Security Options</h3>
+              <label className="flex items-center space-x-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={encryptPDFs}
+                  onChange={(e) => setEncryptPDFs(e.target.checked)}
+                  disabled={isProcessing}
+                  className="w-4 h-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
+                />
+                <div>
+                  <div className="font-medium text-yellow-800">Encrypt Individual Bills with Staff Codes</div>
+                  <div className="text-sm text-yellow-700">
+                    Each staff member's PDF will be password protected using their authentication code
+                  </div>
+                </div>
+              </label>
             </div>
           )}
 
