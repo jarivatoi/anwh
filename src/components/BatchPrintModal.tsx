@@ -32,7 +32,9 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState<BatchPrintProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [numberOfCopies, setNumberOfCopies] = useState(1);
+  const [individualCopies, setIndividualCopies] = useState(1);
+  const [annexureCopies, setAnnexureCopies] = useState(1);
+  const [rosterCopies, setRosterCopies] = useState(1);
   const [encryptPDFs, setEncryptPDFs] = useState(false);
 
   const monthNames = [
@@ -201,7 +203,26 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
                   disabled={isProcessing}
                   className="mr-3 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded disabled:opacity-50"
                 />
-                <span className="text-sm font-medium text-gray-700">Individual Bills</span>
+                <div className="flex-1">
+                  <span className="text-sm font-medium text-gray-700">Individual Bills</span>
+                  {reportTypes.includes('individual') && (
+                    <div className="mt-2 ml-4">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Copies per staff member:
+                      </label>
+                      <select
+                        value={individualCopies}
+                        onChange={(e) => setIndividualCopies(Number(e.target.value))}
+                        disabled={isProcessing}
+                        className="px-2 py-1 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50"
+                      >
+                        {[1, 2, 3, 4, 5].map(num => (
+                          <option key={num} value={num}>{num} {num === 1 ? 'copy' : 'copies'}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
               </label>
               <label className="flex items-center">
                 <input
@@ -211,7 +232,26 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
                   disabled={isProcessing}
                   className="mr-3 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded disabled:opacity-50"
                 />
-                <span className="text-sm font-medium text-gray-700">Annexure Summary</span>
+                <div className="flex-1">
+                  <span className="text-sm font-medium text-gray-700">Annexure Summary</span>
+                  {reportTypes.includes('annexure') && (
+                    <div className="mt-2 ml-4">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Number of copies:
+                      </label>
+                      <select
+                        value={annexureCopies}
+                        onChange={(e) => setAnnexureCopies(Number(e.target.value))}
+                        disabled={isProcessing}
+                        className="px-2 py-1 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50"
+                      >
+                        {[1, 2, 3, 4, 5].map(num => (
+                          <option key={num} value={num}>{num} {num === 1 ? 'copy' : 'copies'}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
               </label>
               <label className="flex items-center">
                 <input
@@ -221,7 +261,26 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
                   disabled={isProcessing}
                   className="mr-3 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded disabled:opacity-50"
                 />
-                <span className="text-sm font-medium text-gray-700">Roster List</span>
+                <div className="flex-1">
+                  <span className="text-sm font-medium text-gray-700">Roster List</span>
+                  {reportTypes.includes('roster') && (
+                    <div className="mt-2 ml-4">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Number of copies:
+                      </label>
+                      <select
+                        value={rosterCopies}
+                        onChange={(e) => setRosterCopies(Number(e.target.value))}
+                        disabled={isProcessing}
+                        className="px-2 py-1 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50"
+                      >
+                        {[1, 2, 3, 4, 5].map(num => (
+                          <option key={num} value={num}>{num} {num === 1 ? 'copy' : 'copies'}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
               </label>
             </div>
           </div>
@@ -298,28 +357,10 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
             </div>
           )}
 
-          {/* Number of Copies */}
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Number of Copies</h3>
-            <select
-              value={numberOfCopies}
-              onChange={(e) => setNumberOfCopies(Number(e.target.value))}
-              disabled={isProcessing}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50"
-            >
-              {[1, 2, 3, 4, 5].map(num => (
-                <option key={num} value={num}>{num} {num === 1 ? 'copy' : 'copies'}</option>
-              ))}
-            </select>
-            <p className="text-sm text-gray-600 mt-2">
-              This applies to all selected report types
-            </p>
-          </div>
-
           {/* PDF Encryption - Only for individual reports */}
           {reportTypes.includes('individual') && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Security Options</h3>
+            <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-yellow-800 mb-3">Security Options (Individual Bills Only)</h3>
               <label className="flex items-center space-x-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg cursor-pointer">
                 <input
                   type="checkbox"
