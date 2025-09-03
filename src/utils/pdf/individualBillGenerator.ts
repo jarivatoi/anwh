@@ -22,9 +22,9 @@ export class IndividualBillGenerator {
   /**
    * Calculate hourly rate based on basic salary using the original formula
    */
-  private calculateHourlyRate(basicSalary: number): number {
+  private calculateHourlyRate(getStaffSalary: number): number {
     // Original formula: hourly rate = basic salary / (52 weeks * 44 hours per week)
-    return basicSalary *12 / (52 * 40);
+    return getStaffSalary *12 / (52 * 40);
   }
   
   /**
