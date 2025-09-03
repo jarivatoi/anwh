@@ -471,9 +471,10 @@ export class IndividualBillGenerator {
   private formatDayDate(dateString: string): string {
     const date = new Date(dateString);
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const dayName = dayNames[date.getDay()];
     const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const month = monthNames[date.getMonth()];
     const year = date.getFullYear().toString().slice(-2);
     return `${dayName} ${day}-${month}-${year}`;
   }
