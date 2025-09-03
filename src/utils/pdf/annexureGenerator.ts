@@ -4,6 +4,8 @@ import { RosterEntry } from '../../types/roster';
 import { formatMauritianRupees } from '../currency';
 import { getStaffInfo, getStaffSalary } from '../rosterAuth';
 
+import { PDFEncryption } from './pdfEncryption';
+
 export interface AnnexureOptions {
   month: number;
   year: number;
@@ -15,6 +17,7 @@ export interface AnnexureOptions {
     hours: number;
   }>;
   numberOfCopies?: number;
+  encryptPDFs?: boolean;
 }
 
 export class AnnexureGenerator {
@@ -50,18 +53,18 @@ export class AnnexureGenerator {
    * Generate annexure matching the exact PDF format
    */
   async generateAnnexure(options: AnnexureOptions): Promise<void> {
-    const { month, year, numberOfCopies = 1 } = options;
+    const { month, year, numberOfCopies = 1, encryptPDFs = false } = options;
     
     // Generate the specified number of copies
     for (let copy = 1; copy <= numberOfCopies; copy++) {
-      await this.generateSingleAnnexure(options, copy, numberOfCopies);
+      await this.generateSingleAnnexure(options, copy, numberOfCopies, encryptPDFs);
     }
   }
   
   /**
    * Generate a single annexure copy
    */
-  private async generateSingleAnnexure(options: AnnexureOptions, copyNumber: number, totalCopies: number): Promise<void> {
+  private async generateSingleAnnexure(options: AnnexureOptions, copyNumber: number, totalCopies: number, encryptPDFs: boolean): Promise<void> {
     const { month, year } = options;
     
     // Create PDF document
@@ -84,6 +87,49 @@ export class AnnexureGenerator {
     if (totalCopies > 1) {
       filename += `_Copy${copyNumber}`;
     }
+    
+    if (encryptPDFs) {
+      try {
+        // Get PDF as blob
+        const pdfBlob = new Blob([doc.output('arraybuffer')], { type: 'application/pdf' });
+        
+        // Use ADMIN code for annexure encryption (since it contains all staff data)
+        const adminCode = '5274';
+        
+        // Encrypt the PDF
+        const encryptedBlob = await PDFEncryption.encryptPDF(pdfBlob, {
+          userPassword: adminCode,
+          permissions: {
+            printing: true,
+            modifying: false,
+            copying: false,
+            annotating: false
+          }
+        });
+        
+        // Generate encrypted filename
+        filename = PDFEncryption.generateEncryptedFilename(filename + '.pdf');
+        
+        // Download encrypted PDF
+        const url = URL.createObjectURL(encryptedBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        console.log(`✅ Encrypted annexure generated (${copyNumber}/${totalCopies}):`, filename);
+        return;
+        
+      } catch (error) {
+        console.error('❌ Annexure encryption failed, saving unencrypted:', error);
+        // Fallback to unencrypted if encryption fails
+      }
+    }
+    
+    // Save unencrypted PDF (original behavior)
     filename += '.pdf';
     
     doc.save(filename);

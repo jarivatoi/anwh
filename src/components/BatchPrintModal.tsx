@@ -32,6 +32,7 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState<BatchPrintProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [encryptPDFs, setEncryptPDFs] = useState(false);
 
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -105,7 +106,8 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
       shiftCombinations: shiftCombinations,
       reportTypes: reportTypes,
       selectedStaff: reportTypes.includes('individual') ? selectedStaff : undefined,
-      combineIntoSinglePDF: true
+      combineIntoSinglePDF: true,
+      encryptPDFs: encryptPDFs
     };
 
     try {

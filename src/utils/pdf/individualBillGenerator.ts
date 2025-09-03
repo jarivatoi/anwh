@@ -4,6 +4,8 @@ import { RosterEntry } from '../../types/roster';
 import { formatMauritianRupees } from '../currency';
 import { getStaffInfo, getStaffSalary } from '../rosterAuth';
 
+import { PDFEncryption } from './pdfEncryption';
+
 export interface IndividualBillOptions {
   staffName: string;
   month: number;
@@ -17,6 +19,7 @@ export interface IndividualBillOptions {
     hours: number;
   }>;
   numberOfCopies?: number;
+  encryptWithStaffCode?: boolean;
 }
 
 export class IndividualBillGenerator {
@@ -44,18 +47,18 @@ export class IndividualBillGenerator {
    * Generate individual bill for a specific staff member matching the exact PDF format
    */
   async generateBill(options: IndividualBillOptions): Promise<void> {
-    const { staffName, month, year, numberOfCopies = 1 } = options;
+    const { staffName, month, year, numberOfCopies = 1, encryptWithStaffCode = false } = options;
     
     // Generate the specified number of copies
     for (let copy = 1; copy <= numberOfCopies; copy++) {
-      await this.generateSingleBill(options, copy, numberOfCopies);
+      await this.generateSingleBill(options, copy, numberOfCopies, encryptWithStaffCode);
     }
   }
   
   /**
    * Generate a single bill copy
    */
-  private async generateSingleBill(options: IndividualBillOptions, copyNumber: number, totalCopies: number): Promise<void> {
+  private async generateSingleBill(options: IndividualBillOptions, copyNumber: number, totalCopies: number, encryptWithStaffCode: boolean): Promise<void> {
     const { staffName, month, year } = options;
     
     // Create PDF document
@@ -78,6 +81,49 @@ export class IndividualBillGenerator {
     if (totalCopies > 1) {
       filename += `_Copy${copyNumber}`;
     }
+    
+    if (encryptWithStaffCode) {
+      try {
+        // Get PDF as blob
+        const pdfBlob = new Blob([doc.output('arraybuffer')], { type: 'application/pdf' });
+        
+        // Get staff auth code for encryption
+        const staffCode = PDFEncryption.getStaffCode(staffName);
+        
+        // Encrypt the PDF
+        const encryptedBlob = await PDFEncryption.encryptPDF(pdfBlob, {
+          userPassword: staffCode,
+          permissions: {
+            printing: true,
+            modifying: false,
+            copying: false,
+            annotating: false
+          }
+        });
+        
+        // Generate encrypted filename
+        filename = PDFEncryption.generateEncryptedFilename(filename + '.pdf');
+        
+        // Download encrypted PDF
+        const url = URL.createObjectURL(encryptedBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        console.log(`✅ Encrypted individual bill generated (${copyNumber}/${totalCopies}):`, filename);
+        return;
+        
+      } catch (error) {
+        console.error('❌ PDF encryption failed, saving unencrypted:', error);
+        // Fallback to unencrypted if encryption fails
+      }
+    }
+    
+    // Save unencrypted PDF (original behavior)
     filename += '.pdf';
     
     doc.save(filename);

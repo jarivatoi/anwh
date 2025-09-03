@@ -2,11 +2,14 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { RosterEntry } from '../../types/roster';
 
+import { PDFEncryption } from './pdfEncryption';
+
 export interface RosterListOptions {
   month: number;
   year: number;
   entries: RosterEntry[];
   numberOfCopies?: number;
+  encryptPDFs?: boolean;
 }
 
 export class RosterListGenerator {
@@ -15,18 +18,18 @@ export class RosterListGenerator {
    * Generate roster list matching the PDF template format - all on one page
    */
   async generateRosterList(options: RosterListOptions): Promise<void> {
-    const { month, year, numberOfCopies = 1 } = options;
+    const { month, year, numberOfCopies = 1, encryptPDFs = false } = options;
     
     // Generate the specified number of copies
     for (let copy = 1; copy <= numberOfCopies; copy++) {
-      await this.generateSingleRosterList(options, copy, numberOfCopies);
+      await this.generateSingleRosterList(options, copy, numberOfCopies, encryptPDFs);
     }
   }
   
   /**
    * Generate a single roster list copy
    */
-  private async generateSingleRosterList(options: RosterListOptions, copyNumber: number, totalCopies: number): Promise<void> {
+  private async generateSingleRosterList(options: RosterListOptions, copyNumber: number, totalCopies: number, encryptPDFs: boolean): Promise<void> {
     const { month, year } = options;
     
     // Create PDF document
@@ -49,6 +52,49 @@ export class RosterListGenerator {
     if (totalCopies > 1) {
       filename += `_Copy${copyNumber}`;
     }
+    
+    if (encryptPDFs) {
+      try {
+        // Get PDF as blob
+        const pdfBlob = new Blob([doc.output('arraybuffer')], { type: 'application/pdf' });
+        
+        // Use ADMIN code for roster list encryption (since it contains all staff data)
+        const adminCode = '5274';
+        
+        // Encrypt the PDF
+        const encryptedBlob = await PDFEncryption.encryptPDF(pdfBlob, {
+          userPassword: adminCode,
+          permissions: {
+            printing: true,
+            modifying: false,
+            copying: false,
+            annotating: false
+          }
+        });
+        
+        // Generate encrypted filename
+        filename = PDFEncryption.generateEncryptedFilename(filename + '.pdf');
+        
+        // Download encrypted PDF
+        const url = URL.createObjectURL(encryptedBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        console.log(`✅ Encrypted roster list generated (${copyNumber}/${totalCopies}):`, filename);
+        return;
+        
+      } catch (error) {
+        console.error('❌ Roster list encryption failed, saving unencrypted:', error);
+        // Fallback to unencrypted if encryption fails
+      }
+    }
+    
+    // Save unencrypted PDF (original behavior)
     filename += '.pdf';
     
     doc.save(filename);
