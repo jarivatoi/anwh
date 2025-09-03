@@ -180,47 +180,7 @@ export class BatchPrintManager {
       // Generate filename for combined PDF
       const filename = `Combined_Reports_${monthNames[month]}_${year}.pdf`;
       
-      if (encryptPDFs) {
-        try {
-          // Get PDF as blob
-          const pdfBlob = new Blob([combinedDoc.output('arraybuffer')], { type: 'application/pdf' });
-          
-          // Use ADMIN code for combined reports encryption (since it contains all staff data)
-          const adminCode = '5274';
-          
-          // Encrypt the PDF
-          const encryptedBlob = await PDFEncryption.encryptPDF(pdfBlob, {
-            userPassword: adminCode,
-            permissions: {
-              printing: true,
-              modifying: false,
-              copying: false,
-              annotating: false
-            }
-          });
-          
-          // Generate encrypted filename and open
-          const encryptedFilename = PDFEncryption.generateEncryptedFilename(filename);
-          const pdfUrl = URL.createObjectURL(encryptedBlob);
-          window.open(pdfUrl, '_blank');
-          
-          onProgress?.({
-            current: totalTasks,
-            total: totalTasks,
-            currentTask: `Encrypted combined PDF opened: ${encryptedFilename}`,
-            completed: true
-          });
-          
-          console.log('✅ Encrypted combined PDF generated successfully:', encryptedFilename);
-          return;
-          
-        } catch (error) {
-          console.error('❌ Combined PDF encryption failed, opening unencrypted:', error);
-          // Fallback to unencrypted if encryption fails
-        }
-      }
-      
-      // Generate unencrypted PDF (original behavior)
+      // Generate the PDF blob and URL
       const pdfBlob = combinedDoc.output('blob');
       const pdfUrl = URL.createObjectURL(pdfBlob);
       

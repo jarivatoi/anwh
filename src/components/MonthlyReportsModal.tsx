@@ -44,7 +44,6 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [numberOfCopies, setNumberOfCopies] = useState(1);
-  const [encryptPDFs, setEncryptPDFs] = useState(false);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -128,8 +127,7 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
           basicSalary,
           hourlyRate,
           shiftCombinations,
-          numberOfCopies,
-          encryptPDFs
+          numberOfCopies
         });
         result = { ...allResult, reportType: 'all' };
         
@@ -147,8 +145,7 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
           basicSalary,
           hourlyRate,
           shiftCombinations,
-          numberOfCopies,
-          encryptWithStaffCode: encryptPDFs
+          numberOfCopies
         });
         
         result.individualBills = 1;
@@ -161,8 +158,7 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
           entries: monthEntries,
           hourlyRate,
           shiftCombinations,
-          numberOfCopies,
-          encryptPDFs
+          numberOfCopies
         });
         
         result.annexureGenerated = true;
@@ -173,8 +169,7 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
           month: selectedMonth,
           year: selectedYear,
           entries: monthEntries,
-          numberOfCopies,
-          encryptPDFs
+          numberOfCopies
         });
         
         result.rosterListGenerated = true;
@@ -452,23 +447,6 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
                     <option key={num} value={num}>{num} {num === 1 ? 'copy' : 'copies'}</option>
                   ))}
                 </select>
-              </div>
-
-              {/* PDF Encryption */}
-              <div>
-                <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={encryptPDFs}
-                    onChange={(e) => setEncryptPDFs(e.target.checked)}
-                    disabled={isGenerating}
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50"
-                  />
-                  <div>
-                    <div className="font-medium text-gray-900">Encrypt PDFs with Staff Codes</div>
-                    <div className="text-sm text-gray-600">Each PDF will be password protected with the staff member's auth code</div>
-                  </div>
-                </label>
               </div>
 
               {/* Report Types Info */}
