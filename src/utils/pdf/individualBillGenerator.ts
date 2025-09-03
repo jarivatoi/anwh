@@ -231,7 +231,7 @@ export class IndividualBillGenerator {
     
     // Footer - positioned at absolute bottom
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
+    doc.setFontSize(6);
     const pageHeight = doc.internal.pageSize.getHeight();
     doc.text('X-ray ANWH System', doc.internal.pageSize.getWidth() - 15, pageHeight - 15, { align: 'right' });
     doc.text(`Generated on: ${new Date().toLocaleString()}`, doc.internal.pageSize.getWidth() - 15, pageHeight - 10, { align: 'right' });
