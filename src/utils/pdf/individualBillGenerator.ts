@@ -52,7 +52,7 @@ export class IndividualBillGenerator {
   async generateBill(options: IndividualBillOptions): Promise<void> {
     // Calculate hourly rate based on basic salary
    // const hourlyRate = this.calculateHourlyRate(options.basicSalary);
-    const hourlyRate = calculateHourlyRate(getStaffSalary);
+    const hourlyRate = this.calculateHourlyRate(250);
     // Create PDF document
     const doc = new jsPDF({
       orientation: 'portrait',
