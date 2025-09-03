@@ -184,7 +184,7 @@ export class IndividualBillGenerator {
     // Create table with compact layout
     autoTable(doc, {
       startY: 55,
-      head: [['Day Date', 'Morning\n(9-4)', 'Saturday\n(12-10)', 'Evening\n(4-10)', 'Night\nDuty', 'Hours', 'Remarks']],
+      head: [['Date', 'Morning\n(9-4)', 'Saturday\n(12-10)', 'Evening\n(4-10)', 'Night\nDuty', 'Hours', 'Remarks']],
       body: tableData.rows,
       styles: {
         fontSize: 6,
@@ -204,7 +204,7 @@ export class IndividualBillGenerator {
         cellPadding: 2
       },
       columnStyles: {
-        0: { cellWidth: 25, halign: 'center' }, // Day Date
+        0: { cellWidth: 25, halign: 'center' }, // Date
         1: { cellWidth: 20, halign: 'center' }, // Morning (9-4) - same as date
         2: { cellWidth: 20, halign: 'center' }, // Saturday (12-10) - same as date
         3: { cellWidth: 20, halign: 'center' }, // Evening (4-10) - same as date
@@ -466,7 +466,7 @@ export class IndividualBillGenerator {
   }
   
   /**
-   * Format date as "Day DD/MM" (e.g., "Mon 01/07")
+   * Format date as "ddd dd-mm-yy" (e.g., "Mon 01-07-25")
    */
   private formatDayDate(dateString: string): string {
     const date = new Date(dateString);
@@ -474,7 +474,8 @@ export class IndividualBillGenerator {
     const dayName = dayNames[date.getDay()];
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    return `${dayName} ${day}/${month}`;
+    const year = date.getFullYear().toString().slice(-2);
+    return `${dayName} ${day}-${month}-${year}`;
   }
 }
 
