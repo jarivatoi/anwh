@@ -56,6 +56,9 @@ export class IndividualBillGenerator {
    * Generate individual bill for a specific staff member matching the exact PDF format
    */
   async generateBill(options: IndividualBillOptions): Promise<void> {
+   
+    const hourlyRate = this.calculateHourlyRate(options.basicSalary);
+    
     // Create PDF document
     const doc = new jsPDF({
       orientation: 'portrait',
