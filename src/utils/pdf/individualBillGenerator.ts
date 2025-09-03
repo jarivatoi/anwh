@@ -272,7 +272,7 @@ export class IndividualBillGenerator {
     const grandTotal = totalAmount + nightAllowance;
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    doc.text(`TOTAL AMOUNT: ${this.formatCurrency(grandTotal)}`, 15, startY + (nightDutyCount > 0 ? 34 : 28));
+    doc.text(`TOTAL AMOUNT: ${this.formatCurrency(grandTotal)}`, 15, startY - 5 + (nightDutyCount > 0 ? 34 : 28));
   }
   
   /**
