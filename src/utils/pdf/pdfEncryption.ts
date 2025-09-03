@@ -27,19 +27,16 @@ export class PDFEncryption {
       // Load the PDF document
       const pdfDoc = await PDFDocument.load(arrayBuffer);
       
-      // Set encryption with password protection using the correct PDF-lib API
-      const ownerPassword = options.ownerPassword || options.userPassword + '_owner';
-      
-      // Apply encryption settings using the correct method
-      console.log('🔒 PDF encryption applied successfully');
+      // Apply encryption using the correct PDF-lib API
+      console.log('🔒 Applying encryption with user password:', options.userPassword);
       
       // Save the encrypted PDF
       const encryptedPdfBytes = await pdfDoc.save({
         encryption: {
           userPassword: options.userPassword,
-          ownerPassword: ownerPassword,
+          ownerPassword: options.ownerPassword || (options.userPassword + '_admin'),
           permissions: {
-            printing: options.permissions?.printing ? 'highResolution' : 'lowResolution',
+            printing: options.permissions?.printing !== false ? 'highResolution' : 'lowResolution',
             modifying: options.permissions?.modifying ?? false,
             copying: options.permissions?.copying ?? false,
             annotating: options.permissions?.annotating ?? false,
