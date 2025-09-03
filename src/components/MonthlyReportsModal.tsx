@@ -44,7 +44,6 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [numberOfCopies, setNumberOfCopies] = useState(1);
-  const [encryptPDFs, setEncryptPDFs] = useState(false);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -76,7 +75,6 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
       setReportType('all');
       setSelectedStaff('');
       setNumberOfCopies(1);
-      setEncryptPDFs(false);
     }
   }, [isOpen]);
 
@@ -129,8 +127,7 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
           basicSalary,
           hourlyRate,
           shiftCombinations,
-          numberOfCopies,
-          encryptPDFs
+          numberOfCopies
         });
         result = { ...allResult, reportType: 'all' };
         
@@ -148,8 +145,7 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
           basicSalary,
           hourlyRate,
           shiftCombinations,
-          numberOfCopies,
-          encryptWithStaffCode: encryptPDFs
+          numberOfCopies
         });
         
         result.individualBills = 1;
@@ -453,26 +449,6 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
                 </select>
               </div>
 
-              {/* PDF Encryption - Only for individual reports */}
-              {reportType === 'individual' && (
-                <div>
-                  <label className="flex items-center space-x-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={encryptPDFs}
-                      onChange={(e) => setEncryptPDFs(e.target.checked)}
-                      disabled={isGenerating}
-                      className="w-4 h-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
-                    />
-                    <div>
-                      <div className="font-medium text-yellow-800">Encrypt PDF with Staff Code</div>
-                      <div className="text-sm text-yellow-700">
-                        PDF will be password protected using the staff member's authentication code
-                      </div>
-                    </div>
-                  </label>
-                </div>
-              )}
               {/* Report Types Info */}
               <div className="bg-gray-50 rounded-lg p-4">
                 <h4 className="font-medium text-gray-800 mb-3">

@@ -17,7 +17,6 @@ export interface IndividualBillOptions {
     hours: number;
   }>;
   numberOfCopies?: number;
-  encryptWithStaffCode?: boolean;
 }
 
 export class IndividualBillGenerator {
@@ -45,7 +44,7 @@ export class IndividualBillGenerator {
    * Generate individual bill for a specific staff member matching the exact PDF format
    */
   async generateBill(options: IndividualBillOptions): Promise<void> {
-    const { staffName, month, year, numberOfCopies = 1, encryptWithStaffCode = false } = options;
+    const { staffName, month, year, numberOfCopies = 1 } = options;
     
     // Generate the specified number of copies
     for (let copy = 1; copy <= numberOfCopies; copy++) {
@@ -57,7 +56,7 @@ export class IndividualBillGenerator {
    * Generate a single bill copy
    */
   private async generateSingleBill(options: IndividualBillOptions, copyNumber: number, totalCopies: number): Promise<void> {
-    const { staffName, month, year, encryptWithStaffCode = false } = options;
+    const { staffName, month, year } = options;
     
     // Create PDF document
     const doc = new jsPDF({
@@ -69,21 +68,6 @@ export class IndividualBillGenerator {
     // Generate content
     await this.generateBillContent(doc, options, copyNumber, totalCopies);
     
-    // Apply encryption if requested
-    if (encryptWithStaffCode) {
-      const staffCode = this.getStaffCode(staffName);
-      if (staffCode) {
-        try {
-          // Note: jsPDF doesn't support encryption directly
-          // This is a placeholder for future encryption implementation
-          console.log(`🔒 PDF encryption requested for ${staffName} with code: ${staffCode}`);
-          // For now, we'll add the encryption info to the filename
-        } catch (error) {
-          console.warn('PDF encryption not supported in current jsPDF version');
-        }
-      }
-    }
-    
     // Generate filename and save
     const monthNames = [
       'January', 'February', 'March', 'April', 'May', 'June',
@@ -94,24 +78,11 @@ export class IndividualBillGenerator {
     if (totalCopies > 1) {
       filename += `_Copy${copyNumber}`;
     }
-    if (encryptWithStaffCode) {
-      filename += '_Protected';
-    }
     filename += '.pdf';
     
     doc.save(filename);
     
     console.log(`✅ Individual bill generated (${copyNumber}/${totalCopies}):`, filename);
-  }
-  
-  /**
-   * Get staff authentication code for encryption
-   */
-  private getStaffCode(staffName: string): string | null {
-    const { authCodes } = require('../rosterAuth');
-    const baseStaffName = staffName.replace(/\(R\)$/, '').trim().toUpperCase();
-    const staffAuth = authCodes.find((auth: any) => auth.name.replace(/\(R\)$/, '').trim().toUpperCase() === baseStaffName);
-    return staffAuth?.code || null;
   }
   
   /**
