@@ -290,7 +290,7 @@ export class IndividualBillGenerator {
     // Left side - Date and signature
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.text('Date: _________________________________________', 15, summaryEndY + 10);
+    doc.text('Date: _________________________________________', 15, startY);
     doc.text('Signature:_______________________________________', 15, summaryEndY + 20);
     
     // Right side - Certification
