@@ -296,12 +296,12 @@ export class IndividualBillGenerator {
     // Right side - Certification
     const rightX = 120;
     doc.setFontSize(10);
-    doc.text('Certified correct as per attendance.', rightX, summaryEndY-20);
-    doc.text('Name :- ________________________________________', rightX, summaryEndY -12);
-    doc.text('Grade: Principal Medical Imaging Technologist.', rightX, summaryEndY - 4);
-    doc.text('Signature:- ______________________________________', rightX, summaryEndY );
+    doc.text('Certified correct as per attendance.', rightX, summaryEndY-40);
+    doc.text('Name :- ________________________________________', rightX, summaryEndY -32);
+    doc.text('Grade: Principal Medical Imaging Technologist.', rightX, summaryEndY - 26);
+    doc.text('Signature:- ______________________________________', rightX, summaryEndY -18);
   }
-  
+   
   /**
    * Filter roster entries for specific staff member and month
    */
