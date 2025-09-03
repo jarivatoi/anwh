@@ -187,7 +187,7 @@ export class IndividualBillGenerator {
       head: [['Date', 'Morning\n(9-4)', 'Saturday\n(12-10)', 'Evening\n(4-10)', 'Night\nDuty', 'Hours', 'Remarks']],
       body: tableData.rows,
       styles: {
-        fontSize: 10,
+        fontSize: 8,
         cellPadding: 1,
         overflow: 'linebreak',
         halign: 'center',
