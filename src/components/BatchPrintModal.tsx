@@ -271,6 +271,23 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
             </div>
           )}
 
+          {/* PDF Encryption */}
+          <div className="mb-6">
+            <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={encryptPDFs}
+                onChange={(e) => setEncryptPDFs(e.target.checked)}
+                disabled={isProcessing}
+                className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded disabled:opacity-50"
+              />
+              <div>
+                <div className="font-medium text-gray-900">Encrypt PDFs with Staff Codes</div>
+                <div className="text-sm text-gray-600">Each PDF will be password protected with the staff member's auth code</div>
+              </div>
+            </label>
+          </div>
+
           {/* Progress */}
           {progress && (
             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
