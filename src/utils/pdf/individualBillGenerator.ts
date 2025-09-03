@@ -299,5 +299,3 @@ export class AnnexureGenerator {
   }
 }
 
-// Create singleton instance
-export const annexureGenerator = new AnnexureGenerator();
