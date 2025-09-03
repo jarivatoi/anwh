@@ -43,7 +43,7 @@ export class BatchPrintManager {
     options: BatchPrintOptions,
     onProgress?: (progress: BatchPrintProgress) => void
   ): Promise<void> {
-    const { month, year, entries, basicSalary, hourlyRate, shiftCombinations, reportTypes, selectedStaff, numberOfCopies = 1 } = options;
+    const { month, year, entries, basicSalary, hourlyRate, shiftCombinations, reportTypes, selectedStaff } = options;
     
     this.pdfDocuments = [];
     this.currentPrintIndex = 0;
@@ -149,25 +149,27 @@ export class BatchPrintManager {
       
       // Generate roster list
       if (reportTypes.includes('roster')) {
-        currentTask++;
-        onProgress?.({
-          current: currentTask,
-          total: totalTasks,
-          currentTask: 'Generating roster list',
-          completed: false
-        });
-        
-        // Add new page for roster list (except for the first one)
-        if (!isFirstPage) {
-          combinedDoc.addPage();
+        for (let copy = 1; copy <= numberOfCopies; copy++) {
+          currentTask++;
+          onProgress?.({
+            current: currentTask,
+            total: totalTasks,
+            currentTask: `Generating roster list (Copy ${copy}/${numberOfCopies})`,
+            completed: false
+          });
+          
+          // Add new page for roster list (except for the first one)
+          if (!isFirstPage) {
+            combinedDoc.addPage();
+          }
+          isFirstPage = false;
+          
+          await rosterListGenerator.generateRosterListContent(combinedDoc, {
+            month,
+            year,
+            entries: monthEntries
+          }, copy, numberOfCopies);
         }
-        isFirstPage = false;
-        
-        await rosterListGenerator.generateRosterListContent(combinedDoc, {
-          month,
-          year,
-          entries: monthEntries
-        });
       }
       
       onProgress?.({
