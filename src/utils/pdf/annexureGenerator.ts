@@ -161,7 +161,7 @@ export class AnnexureGenerator {
       columnStyles: {},
       didParseCell: function(data) {
         // Auto-adjust font size based on content length
-        if (data.section === 'body') {
+         /*if (data.section === 'body') {
           const cellText = data.cell.text.join(' ');
           if (cellText.length > 20) {
             data.cell.styles.fontSize = 8;
@@ -170,6 +170,8 @@ export class AnnexureGenerator {
           } else {
             data.cell.styles.fontSize = 11;
           }
+       */
+        
         }
       }
     });
