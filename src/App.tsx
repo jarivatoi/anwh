@@ -56,12 +56,12 @@ function App() {
 
   // Auto-refresh effect for month-to-date calculation
   useEffect(() => {
-    // Set up interval to refresh every minute
+    // Set up interval to refresh every 30 seconds for more responsive updates
     const interval = setInterval(() => {
       // Force refresh calculations
       setRefreshKey(prev => prev + 1);
       console.log('🕒 Auto-refresh triggered for month-to-date value');
-    }, 60000); // Refresh every minute (60000ms)
+    }, 30000); // Refresh every 30 seconds (30000ms) instead of every minute
 
     return () => clearInterval(interval);
   }, []);
@@ -202,7 +202,7 @@ function App() {
           const existingShifts = newSchedule[date] || [];
           const allShifts = [...existingShifts];
           
-          shifts.forEach(shift => {
+          (shifts as string[]).forEach(shift => {
             if (!allShifts.includes(shift)) {
               allShifts.push(shift);
             }
@@ -219,7 +219,7 @@ function App() {
       setSpecialDates(prev => {
         const newSpecialDates = { ...prev };
         Object.entries(specialDateUpdates).forEach(([date, isSpecial]) => {
-          newSpecialDates[date] = isSpecial;
+          newSpecialDates[date] = isSpecial as boolean;
           console.log(`📌 APP: Updated ${date} special status:`, isSpecial);
         });
         console.log('📌 APP: Final special dates after bulk update:', Object.keys(newSpecialDates).length, 'dates');
@@ -627,7 +627,6 @@ function App() {
     console.log('⏳ Data still loading, showing enhanced loading screen');
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-indigo-100" style={{ 
-        minHeight: '100vh', 
         minHeight: '-webkit-fill-available',
         width: '100vw',
         height: '100vh',
@@ -750,8 +749,6 @@ function App() {
               key={refreshKey} 
               setActiveTab={setActiveTab} 
               onOpenCalendarExportModal={handleOpenCalendarExportModal}
-             selectedDate={currentDate}
-             onDateChange={setCurrentDate}
               selectedDate={currentDate}
               onDateChange={handleDateChange}
             />
