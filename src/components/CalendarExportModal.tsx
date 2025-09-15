@@ -537,7 +537,7 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
               className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
             >
               <Download className="w-4 h-4" />
-              <span>Expot To Calendar</span>
+              <span>Export To Calendar</span>
             </button>
           </div>
         </div>
