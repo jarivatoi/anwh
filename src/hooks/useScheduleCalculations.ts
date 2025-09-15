@@ -174,13 +174,41 @@ export const useScheduleCalculations = (
             if (workDay < today) {
               monthToDate += difference;
             } 
-            // If it's today, include based on shift end time (simplified logic)
+            // If it's today, include based on shift end time (improved logic)
             else if (workDay === today) {
-              // For multi-shifts, we'll use the latest shift end time
-              // This is a simplified approach - in reality would need to check each shift
+              // For multi-shifts, we'll check if the latest shift has ended
+              // Find the latest shift end time among the shifts in this combination
+              let latestShiftEndTime = 0;
+              dayShifts.forEach(shiftId => {
+                let shiftEndTimeHour = 0;
+                switch(shiftId) {
+                  case '9-4':
+                    shiftEndTimeHour = 16; // 4 PM
+                    break;
+                  case '4-10':
+                    shiftEndTimeHour = 22; // 10 PM
+                    break;
+                  case '12-10':
+                    shiftEndTimeHour = 22; // 10 PM
+                    break;
+                  case 'N':
+                    // Night shift is special - it ends at 9 AM next day
+                    // For multi-shift logic, we'll consider it as ending at 22 (10 PM) like other shifts
+                    shiftEndTimeHour = 22; // 10 PM
+                    break;
+                  default:
+                    shiftEndTimeHour = 16; // Default to 4 PM
+                }
+                latestShiftEndTime = Math.max(latestShiftEndTime, shiftEndTimeHour);
+              });
+              
+              // Include if current time is past the latest shift end time
               const currentHour = now.getHours();
-              // Assume multi-shifts end by 10 PM at the latest
-              if (currentHour >= 22) {
+              const currentMinute = now.getMinutes();
+              const includeMultiShift = (currentHour > latestShiftEndTime) || 
+                                       (currentHour === latestShiftEndTime && currentMinute >= 0);
+              
+              if (includeMultiShift) {
                 monthToDate += difference;
                 console.log(`📈 Added multi-shift to month-to-date: Rs ${difference.toFixed(2)}`);
               }
