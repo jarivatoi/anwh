@@ -78,10 +78,61 @@ export const useScheduleCalculations = (
           
           console.log(`💰 Found single shift ${combination.combination} (${combination.hours}h) = Rs ${shiftAmount.toFixed(2)}`);
           
-          // Check if this date is up to and INCLUDING today for month-to-date calculation
-          if (workMonth === now.getMonth() && workYear === now.getFullYear() && workDate.getDate() <= now.getDate()) {
-            monthToDate += shiftAmount;
-            console.log(`📈 Added to month-to-date: Rs ${shiftAmount.toFixed(2)}`);
+          // Check if this date should be included in month-to-date calculation
+          // Modified logic: Include today's shifts based on shift end time
+          if (workMonth === now.getMonth() && workYear === now.getFullYear()) {
+            const workDay = workDate.getDate();
+            const today = now.getDate();
+            
+            // If it's a previous day, always include
+            if (workDay < today) {
+              monthToDate += shiftAmount;
+              console.log(`📈 Added to month-to-date (previous day): Rs ${shiftAmount.toFixed(2)}`);
+            } 
+            // If it's today, include based on shift end time
+            else if (workDay === today) {
+              // Get current time components
+              const currentHour = now.getHours();
+              const currentMinute = now.getMinutes();
+              
+              // Determine shift end time based on shift type
+              let shiftEndTimeHour = 0;
+              switch(shiftId) {
+                case '9-4':
+                  shiftEndTimeHour = 16; // 4 PM
+                  break;
+                case '4-10':
+                  shiftEndTimeHour = 22; // 10 PM
+                  break;
+                case '12-10':
+                  shiftEndTimeHour = 22; // 10 PM
+                  break;
+                case 'N':
+                  shiftEndTimeHour = 9; // 9 AM (next day)
+                  break;
+                default:
+                  shiftEndTimeHour = 16; // Default to 4 PM
+              }
+              
+              // Special handling for night shift (ends next day)
+              let includeShift = false;
+              if (shiftId === 'N') {
+                // Night shift ends at 9 AM next day, so include only if it's the next day
+                // This means workDay must be less than today (indicating we've moved to the next calendar day)
+                includeShift = workDay < today;
+              } else {
+                // Other shifts end on the same day
+                includeShift = (currentHour > shiftEndTimeHour) || 
+                              (currentHour === shiftEndTimeHour && currentMinute >= 0);
+              }
+              
+              if (includeShift) {
+                monthToDate += shiftAmount;
+                console.log(`📈 Added to month-to-date (today, shift ended): Rs ${shiftAmount.toFixed(2)}`);
+              } else {
+                console.log(`⏭️ Not adding to month-to-date (today, shift not ended yet): ${shiftId}`);
+              }
+            }
           }
         } else {
           console.log(`❌ No single shift combination found for ${shiftId}`);
@@ -114,8 +165,26 @@ export const useScheduleCalculations = (
           
           console.log(`💰 Found multi-combination ${multiCombination.combination}, adjusting by Rs ${difference.toFixed(2)}`);
           
-          if (workMonth === now.getMonth() && workYear === now.getFullYear() && workDate.getDate() <= now.getDate()) {
-            monthToDate += difference;
+          // Apply same logic for month-to-date calculation with multi-shifts
+          if (workMonth === now.getMonth() && workYear === now.getFullYear()) {
+            const workDay = workDate.getDate();
+            const today = now.getDate();
+            
+            // If it's a previous day, always include
+            if (workDay < today) {
+              monthToDate += difference;
+            } 
+            // If it's today, include based on shift end time (simplified logic)
+            else if (workDay === today) {
+              // For multi-shifts, we'll use the latest shift end time
+              // This is a simplified approach - in reality would need to check each shift
+              const currentHour = now.getHours();
+              // Assume multi-shifts end by 10 PM at the latest
+              if (currentHour >= 22) {
+                monthToDate += difference;
+                console.log(`📈 Added multi-shift to month-to-date: Rs ${difference.toFixed(2)}`);
+              }
+            }
           }
         }
       }
