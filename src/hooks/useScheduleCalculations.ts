@@ -179,34 +179,52 @@ export const useScheduleCalculations = (
               // For multi-shifts, we'll check if the latest shift has ended
               // Find the latest shift end time among the shifts in this combination
               let latestShiftEndTime = 0;
+              let hasNightShift = false;
+              let nightShiftInclude = false;
+              
               dayShifts.forEach(shiftId => {
-                let shiftEndTimeHour = 0;
-                switch(shiftId) {
-                  case '9-4':
-                    shiftEndTimeHour = 16; // 4 PM
-                    break;
-                  case '4-10':
-                    shiftEndTimeHour = 22; // 10 PM
-                    break;
-                  case '12-10':
-                    shiftEndTimeHour = 22; // 10 PM
-                    break;
-                  case 'N':
-                    // Night shift is special - it ends at 9 AM next day
-                    // For multi-shift logic, we'll consider it as ending at 22 (10 PM) like other shifts
-                    shiftEndTimeHour = 22; // 10 PM
-                    break;
-                  default:
-                    shiftEndTimeHour = 16; // Default to 4 PM
+                if (shiftId === 'N') {
+                  // Night shift is special - it ends at 9 AM next day
+                  hasNightShift = true;
+                  // Night shift ends at 9 AM next day, so include only if it's the next day
+                  // This means workDay must be less than today (indicating we've moved to the next calendar day)
+                  nightShiftInclude = workDay < today;
+                } else {
+                  let shiftEndTimeHour = 0;
+                  switch(shiftId) {
+                    case '9-4':
+                      shiftEndTimeHour = 16; // 4 PM
+                      break;
+                    case '4-10':
+                      shiftEndTimeHour = 22; // 10 PM
+                      break;
+                    case '12-10':
+                      shiftEndTimeHour = 22; // 10 PM
+                      break;
+                    default:
+                      shiftEndTimeHour = 16; // Default to 4 PM
+                  }
+                  latestShiftEndTime = Math.max(latestShiftEndTime, shiftEndTimeHour);
                 }
-                latestShiftEndTime = Math.max(latestShiftEndTime, shiftEndTimeHour);
               });
               
-              // Include if current time is past the latest shift end time
-              const currentHour = now.getHours();
-              const currentMinute = now.getMinutes();
-              const includeMultiShift = (currentHour > latestShiftEndTime) || 
-                                       (currentHour === latestShiftEndTime && currentMinute >= 0);
+              // For multi-shift combinations:
+              // 1. If it includes a night shift, include if the night shift condition is met (next day)
+              // 2. If it doesn't include a night shift, include if the latest shift has ended (after 10 PM for 4-10 and 12-10)
+              // 3. If it's a combination of shifts, we follow the specification that multi-shift combinations 
+              //    are included after 22:00, but we need to account for night shifts properly
+              let includeMultiShift = false;
+              if (hasNightShift) {
+                // If there's a night shift, include based on night shift logic
+                includeMultiShift = nightShiftInclude;
+              } else {
+                // If there's no night shift, include based on the latest shift end time
+                // According to specification, multi-shift combinations are included after 22:00
+                const currentHour = now.getHours();
+                const currentMinute = now.getMinutes();
+                // For multi-shift combinations without night shift, use 22:00 as the end time
+                includeMultiShift = (currentHour > 22) || (currentHour === 22 && currentMinute >= 0);
+              }
               
               if (includeMultiShift) {
                 monthToDate += difference;
