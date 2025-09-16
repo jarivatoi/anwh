@@ -54,18 +54,6 @@ function App() {
   // Add refreshKey state
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Auto-refresh effect for month-to-date calculation
-  useEffect(() => {
-    // Set up interval to refresh every 30 seconds for more responsive updates
-    const interval = setInterval(() => {
-      // Force refresh calculations
-      setRefreshKey(prev => prev + 1);
-      console.log('🕒 Auto-refresh triggered for month-to-date value');
-    }, 30000); // Refresh every 30 seconds (30000ms) instead of every minute
-
-    return () => clearInterval(interval);
-  }, []);
-
   // Pass specialDates to the calculation hook with refreshKey dependency
   const { totalAmount, monthToDateAmount } = useScheduleCalculations(schedule, settings, specialDates, currentDate, refreshKey);
 
@@ -783,4 +771,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;
