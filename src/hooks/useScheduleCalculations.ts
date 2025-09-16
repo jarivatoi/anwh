@@ -252,4 +252,4 @@ export const useScheduleCalculations = (
   ]);
 
   return { totalAmount, monthToDateAmount };
-};
+}; 
