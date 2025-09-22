@@ -214,44 +214,6 @@ export const useScheduleCalculations = (
             } 
             // If it's today, include based on shift end time (improved logic)
             else if (workDay === today) {
-              // For multi-shifts, we'll check if the latest shift has ended
-              // Find the latest shift end time among the shifts in this combination
-              let latestShiftEndTime = 0;
-              let hasNightShift = false;
-              let nightShiftInclude = false;
-              
-              dayShifts.forEach(shiftId => {
-                if (shiftId === 'N') {
-                  // Night shift is special - it ends at 9 AM next day
-                  hasNightShift = true;
-                  // Night shift starts on workDate and ends at 9 AM the next day
-                  // So we should include it in month-to-date only after 9 AM the next day
-                  const workDateObj = new Date(workDate);
-                  const cutoffDate = new Date(workDateObj);
-                  cutoffDate.setDate(cutoffDate.getDate() + 1); // Next day
-                  cutoffDate.setHours(9, 0, 0, 0); // 9:00 AM
-                  
-                  // Include if current time is past the cutoff
-                  nightShiftInclude = now >= cutoffDate;
-                } else {
-                  let shiftEndTimeHour = 0;
-                  switch(shiftId) {
-                    case '9-4':
-                      shiftEndTimeHour = 16; // 4 PM
-                      break;
-                    case '4-10':
-                      shiftEndTimeHour = 22; // 10 PM
-                      break;
-                    case '12-10':
-                      shiftEndTimeHour = 22; // 10 PM
-                      break;
-                    default:
-                      shiftEndTimeHour = 16; // Default to 4 PM
-                  }
-                  latestShiftEndTime = Math.max(latestShiftEndTime, shiftEndTimeHour);
-                }
-              });
-              
               // For multi-shift combinations:
               // Each shift in the combination should be evaluated independently
               // The combination is included only when ALL shifts in it can be included
