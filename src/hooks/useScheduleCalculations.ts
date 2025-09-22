@@ -253,21 +253,49 @@ export const useScheduleCalculations = (
               });
               
               // For multi-shift combinations:
-              // 1. If it includes a night shift, include if the night shift condition is met (next day)
-              // 2. If it doesn't include a night shift, include if the latest shift has ended (after 10 PM for 4-10 and 12-10)
-              // 3. If it's a combination of shifts, we follow the specification that multi-shift combinations 
-              //    are included after 22:00, but we need to account for night shifts properly
-              let includeMultiShift = false;
-              if (hasNightShift) {
-                // If there's a night shift, include based on night shift logic
-                includeMultiShift = nightShiftInclude;
-              } else {
-                // If there's no night shift, include based on the latest shift end time
-                // According to specification, multi-shift combinations are included after 22:00
-                const currentHour = now.getHours();
-                const currentMinute = now.getMinutes();
-                // For multi-shift combinations without night shift, use 22:00 as the end time
-                includeMultiShift = (currentHour > 22) || (currentHour === 22 && currentMinute >= 0);
+              // Each shift in the combination should be evaluated independently
+              // The combination is included only when ALL shifts in it can be included
+              let includeMultiShift = true;
+              
+              // Check each shift in the combination
+              for (const shiftId of dayShifts) {
+                if (shiftId === 'N') {
+                  // Night shift condition - must be after 9 AM the following day
+                  const workDateObj = new Date(workDate);
+                  const cutoffDate = new Date(workDateObj);
+                  cutoffDate.setDate(cutoffDate.getDate() + 1); // Next day
+                  cutoffDate.setHours(9, 0, 0, 0); // 9:00 AM
+                  
+                  if (now < cutoffDate) {
+                    includeMultiShift = false;
+                    break;
+                  }
+                } else {
+                  // Regular shift condition - must be after its end time
+                  let shiftEndTimeHour = 0;
+                  switch(shiftId) {
+                    case '9-4':
+                      shiftEndTimeHour = 16; // 4 PM
+                      break;
+                    case '4-10':
+                      shiftEndTimeHour = 22; // 10 PM
+                      break;
+                    case '12-10':
+                      shiftEndTimeHour = 22; // 10 PM
+                      break;
+                    default:
+                      shiftEndTimeHour = 16; // Default to 4 PM
+                  }
+                  
+                  const currentHour = now.getHours();
+                  const currentMinute = now.getMinutes();
+                  
+                  if (!((currentHour > shiftEndTimeHour) || 
+                        (currentHour === shiftEndTimeHour && currentMinute >= 0))) {
+                    includeMultiShift = false;
+                    break;
+                  }
+                }
               }
               
               if (includeMultiShift) {
