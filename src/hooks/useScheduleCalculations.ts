@@ -86,9 +86,9 @@ export const useScheduleCalculations = (
             
             // If it's a previous day, always include - EXCEPT for night shifts which have special handling
             if (workDay < today) {
-              // Special handling for night shifts on previous days
+              // Special handling ONLY for night shifts on previous days
               let includePreviousDayShift = true;
-              if (dayShifts.includes('N')) {
+              if (shiftId === 'N') {
                 // For night shifts on previous days, we still need to check the cutoff time
                 // Night shift starts on workDate and ends at 9 AM the next day
                 const workDateObj = new Date(workDate);
@@ -194,7 +194,7 @@ export const useScheduleCalculations = (
             
             // If it's a previous day, always include - EXCEPT for night shifts which have special handling
             if (workDay < today) {
-              // Special handling for multi-shifts containing night shifts on previous days
+              // Special handling ONLY for multi-shifts containing night shifts on previous days
               let includePreviousDayMultiShift = true;
               if (dayShifts.includes('N')) {
                 // For night shifts on previous days, we still need to check the cutoff time
