@@ -117,9 +117,19 @@ export const useScheduleCalculations = (
               // Special handling for night shift (ends next day)
               let includeShift = false;
               if (shiftId === 'N') {
-                // Night shift ends at 9 AM next day, so include only if it's the next day
-                // This means workDay must be less than today (indicating we've moved to the next calendar day)
-                includeShift = workDay < today;
+                // Night shift starts on workDate and ends at 9 AM the next day
+                // So we should include it in month-to-date only after 9 AM the next day
+                // This means we need to check if current time is past 9 AM and the current date is after workDate
+                const workDateObj = new Date(workDate);
+                const currentDateObj = new Date(now);
+                
+                // Set time to 9 AM on the work date + 1 day
+                const cutoffDate = new Date(workDateObj);
+                cutoffDate.setDate(cutoffDate.getDate() + 1);
+                cutoffDate.setHours(9, 0, 0, 0); // 9:00 AM
+                
+                // Include if current time is past the cutoff
+                includeShift = now >= cutoffDate;
               } else {
                 // Other shifts end on the same day
                 includeShift = (currentHour > shiftEndTimeHour) || 
@@ -186,9 +196,18 @@ export const useScheduleCalculations = (
                 if (shiftId === 'N') {
                   // Night shift is special - it ends at 9 AM next day
                   hasNightShift = true;
-                  // Night shift ends at 9 AM next day, so include only if it's the next day
-                  // This means workDay must be less than today (indicating we've moved to the next calendar day)
-                  nightShiftInclude = workDay < today;
+                  // Night shift starts on workDate and ends at 9 AM the next day
+                  // So we should include it in month-to-date only after 9 AM the next day
+                  const workDateObj = new Date(workDate);
+                  const currentDateObj = new Date(now);
+                  
+                  // Set time to 9 AM on the work date + 1 day
+                  const cutoffDate = new Date(workDateObj);
+                  cutoffDate.setDate(cutoffDate.getDate() + 1);
+                  cutoffDate.setHours(9, 0, 0, 0); // 9:00 AM
+                  
+                  // Include if current time is past the cutoff
+                  nightShiftInclude = now >= cutoffDate;
                 } else {
                   let shiftEndTimeHour = 0;
                   switch(shiftId) {
