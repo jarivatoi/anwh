@@ -84,10 +84,26 @@ export const useScheduleCalculations = (
             const workDay = workDate.getDate();
             const today = now.getDate();
             
-            // If it's a previous day, always include
+            // If it's a previous day, always include - EXCEPT for night shifts which have special handling
             if (workDay < today) {
-              monthToDate += shiftAmount;
-              console.log(`📈 Added to month-to-date (previous day): Rs ${shiftAmount.toFixed(2)}`);
+              // Special handling for night shifts on previous days
+              let includePreviousDayShift = true;
+              if (dayShifts.includes('N')) {
+                // For night shifts on previous days, we still need to check the cutoff time
+                // Night shift starts on workDate and ends at 9 AM the next day
+                const workDateObj = new Date(workDate);
+                const cutoffDate = new Date(workDateObj);
+                cutoffDate.setDate(cutoffDate.getDate() + 1); // Next day
+                cutoffDate.setHours(9, 0, 0, 0); // 9:00 AM
+                
+                // Include if current time is past the cutoff
+                includePreviousDayShift = now >= cutoffDate;
+              }
+              
+              if (includePreviousDayShift) {
+                monthToDate += shiftAmount;
+                console.log(`📈 Added to month-to-date (previous day): Rs ${shiftAmount.toFixed(2)}`);
+              }
             } 
             // If it's today, include based on shift end time
             else if (workDay === today) {
@@ -119,13 +135,9 @@ export const useScheduleCalculations = (
               if (shiftId === 'N') {
                 // Night shift starts on workDate and ends at 9 AM the next day
                 // So we should include it in month-to-date only after 9 AM the next day
-                // This means we need to check if current time is past 9 AM and the current date is after workDate
                 const workDateObj = new Date(workDate);
-                const currentDateObj = new Date(now);
-                
-                // Set time to 9 AM on the work date + 1 day
                 const cutoffDate = new Date(workDateObj);
-                cutoffDate.setDate(cutoffDate.getDate() + 1);
+                cutoffDate.setDate(cutoffDate.getDate() + 1); // Next day
                 cutoffDate.setHours(9, 0, 0, 0); // 9:00 AM
                 
                 // Include if current time is past the cutoff
@@ -180,9 +192,25 @@ export const useScheduleCalculations = (
             const workDay = workDate.getDate();
             const today = now.getDate();
             
-            // If it's a previous day, always include
+            // If it's a previous day, always include - EXCEPT for night shifts which have special handling
             if (workDay < today) {
-              monthToDate += difference;
+              // Special handling for multi-shifts containing night shifts on previous days
+              let includePreviousDayMultiShift = true;
+              if (dayShifts.includes('N')) {
+                // For night shifts on previous days, we still need to check the cutoff time
+                // Night shift starts on workDate and ends at 9 AM the next day
+                const workDateObj = new Date(workDate);
+                const cutoffDate = new Date(workDateObj);
+                cutoffDate.setDate(cutoffDate.getDate() + 1); // Next day
+                cutoffDate.setHours(9, 0, 0, 0); // 9:00 AM
+                
+                // Include if current time is past the cutoff
+                includePreviousDayMultiShift = now >= cutoffDate;
+              }
+              
+              if (includePreviousDayMultiShift) {
+                monthToDate += difference;
+              }
             } 
             // If it's today, include based on shift end time (improved logic)
             else if (workDay === today) {
@@ -199,11 +227,8 @@ export const useScheduleCalculations = (
                   // Night shift starts on workDate and ends at 9 AM the next day
                   // So we should include it in month-to-date only after 9 AM the next day
                   const workDateObj = new Date(workDate);
-                  const currentDateObj = new Date(now);
-                  
-                  // Set time to 9 AM on the work date + 1 day
                   const cutoffDate = new Date(workDateObj);
-                  cutoffDate.setDate(cutoffDate.getDate() + 1);
+                  cutoffDate.setDate(cutoffDate.getDate() + 1); // Next day
                   cutoffDate.setHours(9, 0, 0, 0); // 9:00 AM
                   
                   // Include if current time is past the cutoff
