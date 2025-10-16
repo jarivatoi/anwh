@@ -29,6 +29,18 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
   const [selectedColor, setSelectedColor] = useState<string>('#000000');
   const [isAdmin, setIsAdmin] = useState(false);
 
+  // Log props for debugging
+  useEffect(() => {
+    console.log('🔍 StaffSelectionModal props:', {
+      isOpen,
+      entry: entry?.assigned_name,
+      entryId: entry?.id,
+      availableStaffLength: availableStaff?.length,
+      allEntriesForShiftLength: allEntriesForShift?.length,
+      allEntriesForShift: allEntriesForShift?.map(e => ({ id: e.id, assigned_name: e.assigned_name }))
+    });
+  }, [isOpen, entry, availableStaff, allEntriesForShift]);
+
   // Check if user is admin
   useEffect(() => {
     if (authCode) {
@@ -105,14 +117,6 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
 
   if (!isOpen || !entry) return null;
 
-  // Log what we're working with
-  console.log('🔍 StaffSelectionModal props:', {
-    isOpen,
-    entry: entry?.assigned_name,
-    availableStaffLength: availableStaff?.length,
-    availableStaffSample: availableStaff?.slice(0, 5)
-  });
-
   // Get the base name without (R) suffix
   const getBaseName = (name: string): string => {
     return name.replace(/\(R\)$/, '').trim();
@@ -157,6 +161,8 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     const allVariants = generateStaffVariants();
     
     console.log('🔍 allVariants:', allVariants);
+    console.log('🔍 entry:', entry);
+    console.log('🔍 allEntriesForShift:', allEntriesForShift);
     
     if (!allEntriesForShift || allEntriesForShift.length === 0) {
       const filtered = allVariants.filter(name => name !== 'ADMIN');
@@ -167,24 +173,52 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
 
     // Get staff who are already assigned to this shift (excluding current entry)
     const assignedStaff = allEntriesForShift
-      .filter(e => e.id !== entry.id)
+      .filter(e => e.id !== entry?.id)
       .map(e => e.assigned_name);
+      
+    console.log('🔍 assignedStaff (excluding current entry):', assignedStaff);
 
     // Filter out already assigned staff
     let filtered = allVariants
       .filter(name => name !== 'ADMIN')
       .filter(name => !assignedStaff.includes(name));
+      
+    console.log('🔍 filtered after removing assigned staff:', filtered);
 
     // Special handling: if current assignment is a (R) variant, 
     // exclude the base name from the list to avoid duplicates
-    const currentIsRVariant = entry.assigned_name.includes('(R)');
-    if (currentIsRVariant) {
+    if (entry?.assigned_name.includes('(R)')) {
       const baseName = getBaseName(entry.assigned_name);
       filtered = filtered.filter(name => name !== baseName);
+      console.log('🔍 filtered after removing base name (current is R variant):', filtered);
+    }
+    
+    // Special handling: if current assignment is a base name,
+    // exclude the (R) variant from the list to avoid duplicates
+    if (entry?.assigned_name && !entry.assigned_name.includes('(R)')) {
+      const rVariant = `${entry.assigned_name}(R)`;
+      filtered = filtered.filter(name => name !== rVariant);
+      console.log('🔍 filtered after removing R variant (current is base name):', filtered);
     }
 
+    // Special handling for (R) variants in assigned staff:
+    // If NARAYYA(R) is assigned, exclude NARAYYA from the list and vice versa
+    assignedStaff.forEach(assignedName => {
+      if (assignedName.includes('(R)')) {
+        // If (R) variant is assigned, exclude the base name
+        const baseName = getBaseName(assignedName);
+        filtered = filtered.filter(name => name !== baseName);
+        console.log(`🔍 filtered after removing base name ${baseName} (assigned is R variant ${assignedName}):`, filtered);
+      } else {
+        // If base name is assigned, exclude the (R) variant
+        const rVariant = `${assignedName}(R)`;
+        filtered = filtered.filter(name => name !== rVariant);
+        console.log(`🔍 filtered after removing R variant ${rVariant} (assigned is base name ${assignedName}):`, filtered);
+      }
+    });
+
     const sorted = sortByGroup(filtered);
-    console.log('🔍 Filtered staff (with entries):', sorted);
+    console.log('🔍 Final filtered staff:', sorted);
     return sorted;
   };
 
