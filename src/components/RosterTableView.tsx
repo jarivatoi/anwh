@@ -437,6 +437,48 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     setSelectedStaffForAdd([]);
   };
 
+  // Get the base name without (R) suffix
+  const getBaseName = (name: string): string => {
+    return name.replace(/\(R\)$/, '').trim();
+  };
+
+  // Get filtered available staff for the current shift
+  const getFilteredAvailableStaff = (): string[] => {
+    if (!selectedSpecialDate || !selectedShiftForAdd) {
+      return availableNames;
+    }
+
+    // Get current entries for this date and shift
+    const dateEntries = groupedEntries[selectedSpecialDate] || [];
+    const currentEntries = dateEntries.filter(entry => entry.shift_type === selectedShiftForAdd);
+    const currentStaff = currentEntries.map(entry => entry.assigned_name);
+
+    // Start with all available names
+    let filtered = [...availableNames].filter(name => name !== 'ADMIN');
+
+    // Filter out already assigned staff
+    filtered = filtered.filter(name => !currentStaff.includes(name));
+
+    // Special handling for (R) variants and base names:
+    // If NARAYYA is assigned, exclude NARAYYA(R) from the list and vice versa
+    currentStaff.forEach(assignedName => {
+      if (assignedName.includes('(R)')) {
+        // If (R) variant is assigned, exclude the base name
+        const baseName = getBaseName(assignedName);
+        filtered = filtered.filter(name => name !== baseName);
+      } else {
+        // If base name is assigned, exclude the (R) variant
+        const rVariant = `${assignedName}(R)`;
+        filtered = filtered.filter(name => name !== rVariant);
+      }
+    });
+
+    return sortByGroup(filtered);
+  };
+
+  // Get filtered staff list
+  const filteredAvailableStaff = getFilteredAvailableStaff();
+
   // Check if date is today
   const isToday = (dateString: string) => {
     const now = new Date();
@@ -1079,7 +1121,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               WebkitUserSelect: 'none'
             }}>
               <div className="space-y-3">
-                {availableNames.map(name => (
+                {filteredAvailableStaff.map(name => (
                   <label key={name} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
                     <input
                       type="checkbox"
@@ -1091,6 +1133,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                   </label>
                 ))}
               </div>
+
             </div>
             
             <div className="border-t border-gray-200 flex-shrink-0" style={{
