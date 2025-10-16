@@ -29,7 +29,6 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
         padding: '4px',
         textAlign: 'center',
         minHeight: '50px',
-        border: 'none',
         margin: 0,
         backgroundColor: isToday ? '#bbf7d0' : 
                          isPastDate ? '#fef2f2' :
@@ -54,14 +53,13 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
         {...useLongPress({
           onLongPress,
           onDoublePress,
-          delay: 5000
+          delay: 2500
         })}
         className={`text-center w-full h-full p-1 rounded transition-colors duration-200 ${
           isSpecialDate ? 'bg-red-300' :
           isToday ? 'bg-green-300' : 'hover:bg-gray-100'
         }`}
         style={{
-          border: 'none',
           background: 'transparent',
           cursor: 'pointer',
           touchAction: 'manipulation',
@@ -147,11 +145,6 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
             <ScrollingText 
               text={specialDateInfo}
               className="text-red-800 font-medium"
-              style={{
-                fontSize: window.innerWidth > window.innerHeight ? '10px' : '12px',
-                lineHeight: window.innerWidth > window.innerHeight ? '14px' : '16px',
-                textAlign: 'center'
-              }}
             />
           </div>
         )}
