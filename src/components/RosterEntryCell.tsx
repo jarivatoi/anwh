@@ -256,17 +256,6 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
         <ScrollingText 
           text={entry.assigned_name}
           className="text-center w-full"
-          style={{
-            color: getTextColor(),
-            fontWeight: '500',
-            fontSize: 'inherit',
-            textAlign: 'center',
-            width: '100%',
-            border: 'none',
-            outline: 'none',
-            filter: isEditing ? 'brightness(1.2) contrast(1.1)' : 'none',
-            textShadow: isEditing ? '0 0 8px rgba(255, 215, 0, 0.6)' : 'none'
-          }}
         />
         
         {/* Golden sparkle effects */}
