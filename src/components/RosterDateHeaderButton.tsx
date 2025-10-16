@@ -21,7 +21,7 @@ export const RosterDateHeaderButton: React.FC<RosterDateHeaderButtonProps> = ({
 }) => {
   const longPressHandlers = useLongPress({
     onLongPress,
-    delay: 5000
+    delay: 2500
   });
 
   // Format date as 27-7-25 (Sunday) Today
