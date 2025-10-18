@@ -299,9 +299,11 @@ export const clearMonthRosterEntries = async (year: number, month: number): Prom
   }
 
   try {
-    // Create date range for the specific month
+    // Create date range for the specific month (correctly calculate last day)
     const startDate = `${year}-${(month + 1).toString().padStart(2, '0')}-01`;
-    const endDate = `${year}-${(month + 1).toString().padStart(2, '0')}-31`;
+    // Calculate the last day of the month correctly
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const endDate = `${year}-${(month + 1).toString().padStart(2, '0')}-${lastDay.toString().padStart(2, '0')}`;
     
     console.log(`🗑️ Clearing roster entries for ${month + 1}/${year} from Supabase...`);
     console.log(`📅 Date range: ${startDate} to ${endDate}`);
