@@ -31,10 +31,11 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
         minHeight: '50px',
         margin: 0,
         backgroundColor: isToday ? '#bbf7d0' : 
+                         isSpecialDate ? '#fecaca' : 
                          isPastDate ? '#fef2f2' :
                          isFutureDate ? '#f0fdf4' : '#ffffff',
-        background: isSpecialDate ? '#fecaca' : 
-                   isToday ? '#bbf7d0' : 
+        background: isToday ? '#bbf7d0' : 
+                   isSpecialDate ? '#fecaca' : 
                    isPastDate ? '#fef2f2' :
                    isFutureDate ? '#f0fdf4' : '#ffffff',
         opacity: 1,
@@ -56,8 +57,8 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
           delay: 2500
         })}
         className={`text-center w-full h-full p-1 rounded transition-colors duration-200 ${
-          isSpecialDate ? 'bg-red-300' :
-          isToday ? 'bg-green-300' : 'hover:bg-gray-100'
+          isToday ? 'bg-green-300' : 
+          isSpecialDate ? 'bg-red-300' : 'hover:bg-gray-100'
         }`}
         style={{
           background: 'transparent',
@@ -96,8 +97,8 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
         }}
       >
         <div className={`font-medium text-[10px] sm:text-[12px] leading-tight relative z-20 flex flex-col items-center justify-center ${
-          isSpecialDate ? 'text-red-900' :
-          isToday ? 'text-green-900' : 'text-gray-900'
+          isToday ? 'text-green-900' : 
+          isSpecialDate ? 'text-red-900' : 'text-gray-900'
         }`} style={{
           textAlign: 'center',
           width: '100%',
@@ -144,7 +145,7 @@ export const RosterDateCell: React.FC<RosterDateCellProps> = ({
           }}>
             <ScrollingText 
               text={specialDateInfo}
-              className="text-red-800 font-medium"
+              className={`${isToday ? 'text-green-800' : 'text-red-800'} font-medium`}
             />
           </div>
         )}
