@@ -140,7 +140,7 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
     
     monthFilteredEntries.forEach(entry => {
       // Add the editor's name to the filter list
-      if (entry.last_edited_by && entry.last_edited_by !== 'ADMIN') {
+      if (entry.last_edited_by && entry.last_edited_by !== 'ADMIN' && entry.last_edited_by !== 'PDF Import') {
         staffNames.add(entry.last_edited_by);
       }
     });
