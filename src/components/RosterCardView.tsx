@@ -462,7 +462,21 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   // Get filtered available staff for the current shift
   const getFilteredAvailableStaff = (): string[] => {
     if (!editingDate || !selectedShift) {
-      return availableNames;
+      // Return only unique staff names, preferring (R) variants when both exist
+      const uniqueStaff: string[] = [];
+      const baseNames = new Set<string>();
+      
+      // Process names in reverse order to prioritize (R) variants
+      [...availableNames].reverse().forEach(name => {
+        const baseName = getBaseName(name);
+        if (!baseNames.has(baseName)) {
+          baseNames.add(baseName);
+          uniqueStaff.push(name);
+        }
+      });
+      
+      // Reverse back to maintain original order
+      return sortByGroup(uniqueStaff.reverse());
     }
 
     // Get current entries for this date and shift
@@ -490,7 +504,21 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
       }
     });
 
-    return sortByGroup(filtered);
+    // Ensure we don't have both base names and (R) variants in the final list
+    const finalFiltered: string[] = [];
+    const processedBaseNames = new Set<string>();
+    
+    // Process names in reverse order to prioritize (R) variants
+    filtered.reverse().forEach(name => {
+      const baseName = getBaseName(name);
+      if (!processedBaseNames.has(baseName)) {
+        processedBaseNames.add(baseName);
+        finalFiltered.push(name);
+      }
+    });
+    
+    // Reverse back to maintain original order
+    return sortByGroup(finalFiltered.reverse());
   };
 
   // Get filtered staff list
