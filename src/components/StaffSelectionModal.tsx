@@ -122,50 +122,14 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     return name.replace(/\(R\)$/, '').trim();
   };
 
-  // Generate both base name and (R) variant for each staff member
-  const generateStaffVariants = (): string[] => {
-    console.log('🔍 availableStaff:', availableStaff);
-    
-    const variants: string[] = [];
-    const baseNames: Set<string> = new Set();
-    
-    // Extract base names from available staff
-    availableStaff.forEach(staffName => {
-      const baseName = getBaseName(staffName);
-      baseNames.add(baseName);
-    });
-    
-    // For each base name, add both the base name and (R) variant
-    baseNames.forEach(baseName => {
-      // Add base name
-      if (!variants.includes(baseName)) {
-        variants.push(baseName);
-      }
-      
-      // Add (R) variant
-      const rVariant = `${baseName}(R)`;
-      if (!variants.includes(rVariant)) {
-        variants.push(rVariant);
-      }
-    });
-    
-    console.log('🔍 Generated variants:', variants);
-    console.log('🔍 NARAYYA variants:', variants.filter(v => v.includes('NARAYYA')));
-    
-    return sortByGroup(variants);
-  };
-
   // Filter out staff who are already working this shift
   const getFilteredStaff = () => {
-    // Generate staff variants
-    const allVariants = generateStaffVariants();
-    
-    console.log('🔍 allVariants:', allVariants);
+    console.log('🔍 availableStaff:', availableStaff);
     console.log('🔍 entry:', entry);
     console.log('🔍 allEntriesForShift:', allEntriesForShift);
     
     if (!allEntriesForShift || allEntriesForShift.length === 0) {
-      const filtered = allVariants.filter(name => name !== 'ADMIN');
+      const filtered = availableStaff.filter(name => name !== 'ADMIN');
       const sorted = sortByGroup(filtered);
       console.log('🔍 Filtered staff (no entries):', sorted);
       return sorted;
@@ -179,7 +143,7 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     console.log('🔍 assignedStaff (excluding current entry):', assignedStaff);
 
     // Filter out already assigned staff
-    let filtered = allVariants
+    let filtered = availableStaff
       .filter(name => name !== 'ADMIN')
       .filter(name => !assignedStaff.includes(name));
       
@@ -202,7 +166,7 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     }
 
     // Special handling for (R) variants in assigned staff:
-    // If NARAYYA(R) is assigned, exclude NARAYYA from the list and vice versa
+    // If an (R) variant is assigned, exclude the base name from the list and vice versa
     assignedStaff.forEach(assignedName => {
       if (assignedName.includes('(R)')) {
         // If (R) variant is assigned, exclude the base name
