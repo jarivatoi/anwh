@@ -28,12 +28,19 @@ const initialAuthCodes: AuthCode[] = [
 ];
 
 // Dynamically generate (R) variants for initial auth codes
+// BUT don't generate (R) variants if they already exist in the initial list
+const existingRVariantNames = new Set(
+  initialAuthCodes.filter(auth => auth.name.includes('(R)')).map(auth => auth.name)
+);
+
 const baseStaffCodes = initialAuthCodes.filter(auth => !auth.name.includes('(R)'));
-const rVariants = baseStaffCodes.map(auth => ({
-  ...auth,
-  name: `${auth.name}(R)`,
-  code: `${auth.code}R` // Generate a unique code for the (R) variant
-}));
+const rVariants = baseStaffCodes
+  .filter(auth => !existingRVariantNames.has(`${auth.name}(R)`)) // Only generate if not already exists
+  .map(auth => ({
+    ...auth,
+    name: `${auth.name}(R)`,
+    code: `${auth.code}R` // Generate a unique code for the (R) variant
+  }));
 
 // Combine base staff and (R) variants with ADMIN code
 export let authCodes: AuthCode[] = [
@@ -73,15 +80,22 @@ const loadStaffFromSupabase = async (): Promise<void> => {
           surname: staff.surname
         }));
       
-      // Dynamically generate (R) variants for all base staff members
+      // Dynamically generate (R) variants for base staff members ONLY
       // This ensures that even if (R) variants are deleted from Supabase,
       // they are still available in the application
+      // BUT don't generate (R) variants if they already exist in the database
+      const existingRVariantNames = new Set(
+        serverAuthCodes.filter(auth => auth.name.includes('(R)')).map(auth => auth.name)
+      );
+      
       const baseStaffCodes = serverAuthCodes.filter(auth => !auth.name.includes('(R)'));
-      const rVariants = baseStaffCodes.map(auth => ({
-        ...auth,
-        name: `${auth.name}(R)`,
-        code: `${auth.code}R` // Generate a unique code for the (R) variant
-      }));
+      const rVariants = baseStaffCodes
+        .filter(auth => !existingRVariantNames.has(`${auth.name}(R)`)) // Only generate if not already exists
+        .map(auth => ({
+          ...auth,
+          name: `${auth.name}(R)`,
+          code: `${auth.code}R` // Generate a unique code for the (R) variant
+        }));
       
       // Combine base staff and (R) variants
       const allAuthCodes = [...serverAuthCodes, ...rVariants];
@@ -154,15 +168,22 @@ export async function updateAuthCodes(newAuthCodes: AuthCode[]): Promise<void> {
   try {
     console.log('💾 Updating rosterAuth.ts with new auth codes...');
     
-    // Dynamically generate (R) variants for all base staff members
+    // Dynamically generate (R) variants for base staff members ONLY
     // This ensures that even if (R) variants are deleted from Supabase,
     // they are still available in the application
+    // BUT don't generate (R) variants if they already exist in the database
+    const existingRVariantNames = new Set(
+      newAuthCodes.filter(auth => auth.name.includes('(R)') && auth.name !== 'ADMIN').map(auth => auth.name)
+    );
+    
     const baseStaffCodes = newAuthCodes.filter(auth => !auth.name.includes('(R)') && auth.name !== 'ADMIN');
-    const rVariants = baseStaffCodes.map(auth => ({
-      ...auth,
-      name: `${auth.name}(R)`,
-      code: `${auth.code}R` // Generate a unique code for the (R) variant
-    }));
+    const rVariants = baseStaffCodes
+      .filter(auth => !existingRVariantNames.has(`${auth.name}(R)`)) // Only generate if not already exists
+      .map(auth => ({
+        ...auth,
+        name: `${auth.name}(R)`,
+        code: `${auth.code}R` // Generate a unique code for the (R) variant
+      }));
     
     // Combine base staff and (R) variants
     const allAuthCodes = [...newAuthCodes, ...rVariants];
@@ -213,15 +234,22 @@ async function loadAuthCodesFromStorage(): Promise<void> {
     if (storedAuthCodes && Array.isArray(storedAuthCodes) && storedAuthCodes.length > 0) {
       console.log('📦 Loading auth codes from IndexedDB:', storedAuthCodes.length, 'codes');
       
-      // Dynamically generate (R) variants for all base staff members
+      // Dynamically generate (R) variants for base staff members ONLY
       // This ensures that even if (R) variants are deleted from Supabase,
       // they are still available in the application
+      // BUT don't generate (R) variants if they already exist in the database
+      const existingRVariantNames = new Set(
+        storedAuthCodes.filter(auth => auth.name.includes('(R)') && auth.name !== 'ADMIN').map(auth => auth.name)
+      );
+      
       const baseStaffCodes = storedAuthCodes.filter(auth => !auth.name.includes('(R)') && auth.name !== 'ADMIN');
-      const rVariants = baseStaffCodes.map(auth => ({
-        ...auth,
-        name: `${auth.name}(R)`,
-        code: `${auth.code}R` // Generate a unique code for the (R) variant
-      }));
+      const rVariants = baseStaffCodes
+        .filter(auth => !existingRVariantNames.has(`${auth.name}(R)`)) // Only generate if not already exists
+        .map(auth => ({
+          ...auth,
+          name: `${auth.name}(R)`,
+          code: `${auth.code}R` // Generate a unique code for the (R) variant
+        }));
       
       // Combine base staff and (R) variants
       const allAuthCodes = [...storedAuthCodes, ...rVariants];
