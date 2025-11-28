@@ -1142,7 +1142,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
               userSelect: 'none',
               WebkitUserSelect: 'none'
             }}>
-              <div className="flex space-x-3">
+              <div className="flex space-x-33">
                 <button
                   onClick={handleCloseAuthModal}
                   disabled={isUpdating}
