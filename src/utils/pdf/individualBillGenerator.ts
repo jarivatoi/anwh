@@ -95,6 +95,15 @@ export class IndividualBillGenerator {
     
     // Calculate individual hourly rate for this staff member
     const baseStaffName = staffName.replace(/\(R\)$/, '').trim();
+    const staffInfo = getStaffInfo(baseStaffName);
+    
+    // Check if staff member exists in the current auth system
+    // If not, don't generate bill for deleted staff
+    if (!staffInfo) {
+      console.warn(`⚠️ Staff member ${staffName} not found in current staff list. Skipping bill generation.`);
+      throw new Error(`Staff member ${staffName} has been removed from the staff list and cannot be included in reports.`);
+    }
+    
     const staffSalary = getStaffSalary(baseStaffName);
     const individualHourlyRate = staffSalary > 0 ? (staffSalary * 12) / 52 / 40 : hourlyRate;
     
@@ -137,7 +146,7 @@ export class IndividualBillGenerator {
     console.log(`🌟 Total special dates found in month: ${specialDatesInMonth.size}`);
    
     // Get staff information using base name (without R)
-    const staffInfo = getStaffInfo(baseStaffName);
+    // const staffInfo = getStaffInfo(baseStaffName);  // Already retrieved above
     
     // Header - compact format
     doc.setFontSize(14);
@@ -227,7 +236,7 @@ export class IndividualBillGenerator {
     this.addSummarySection(doc, tableData.totalDays, tableData.totalHours, tableData.nightDutyCount, individualHourlyRate, finalY);
     
     // Add signature sections
-    this.addSignatureSections(doc, tableData.totalDays, tableData.totalHours, tableData.nightDutyCount, individualHourlyRate);
+    this.addSignatureSections(doc, tableData.totalDays, tableData.totalHours, tableData.nightDutyCount, individualHourlyRate, finalY);
     
     // Footer - positioned at absolute bottom
     doc.setFont('helvetica', 'normal');
