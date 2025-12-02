@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, Printer, Download, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { batchPrintManager, BatchPrintOptions, BatchPrintProgress } from '../utils/pdf/batchPrintManager';
 import { RosterEntry } from '../types/roster';
+import { getStaffInfo } from '../utils/rosterAuth';
 
 interface BatchPrintModalProps {
   isOpen: boolean;
@@ -51,7 +52,17 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
       staffSet.add(baseName);
     });
 
-    return Array.from(staffSet).sort();
+    // Convert to array
+    const staffArray = Array.from(staffSet);
+    
+    // Filter out staff members who don't exist in the current auth system
+    // This prevents deleted staff from appearing in the selection list
+    const validStaffArray = staffArray.filter(staffName => {
+      const staffInfo = getStaffInfo(staffName);
+      return !!staffInfo;
+    });
+
+    return validStaffArray.sort();
   };
 
   const availableStaff = getUniqueStaffMembers();
