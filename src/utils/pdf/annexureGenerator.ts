@@ -304,9 +304,19 @@ export class AnnexureGenerator {
       const employeeId = staffInfo?.employeeId || '';
       const salary = staffSalary || 0;
       
+      // Debug logging to understand why TEELUCK might still be appearing
+      console.log(`🔍 Staff Summary Debug for ${baseName}:`, {
+        totalHours,
+        nightDutyCount,
+        staffEntriesLength: staffEntries.length,
+        willBeIncluded: totalHours > 0 || nightDutyCount > 0,
+        staffExistsInAuth: !!staffInfo
+      });
+      
       // Only include staff with actual roster entries (hours > 0 or night duties)
-      // This prevents staff who are in the auth system but have no assignments from appearing
-      if (totalHours > 0 || nightDutyCount > 0) {
+      // AND who actually exist in the current staff list
+      // This prevents staff who have been deleted from appearing in reports
+      if ((totalHours > 0 || nightDutyCount > 0) && staffInfo) {
         staffSummaries.push({
           staffName: baseStaffName,
           fullName: fullName,
@@ -320,6 +330,13 @@ export class AnnexureGenerator {
           nightAllowance: nightDutyHours * individualHourlyRate,
           grandTotal: (totalHours * individualHourlyRate) + (nightDutyHours * individualHourlyRate)
         });
+      } else if (staffEntries.length > 0) {
+        // Log cases where staff has entries but 0 hours/night duties or doesn't exist in auth
+        if (!staffInfo) {
+          console.log(`⚠️ Staff ${baseName} has ${staffEntries.length} entries but doesn't exist in current staff list:`, staffEntries);
+        } else {
+          console.log(`⚠️ Staff ${baseName} has ${staffEntries.length} entries but 0 hours/night duties:`, staffEntries);
+        }
       }
     });
     
