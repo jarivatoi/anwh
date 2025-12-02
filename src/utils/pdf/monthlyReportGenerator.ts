@@ -2,7 +2,7 @@ import { individualBillGenerator } from './individualBillGenerator';
 import { annexureGenerator } from './annexureGenerator';
 import { rosterListGenerator } from './rosterListGenerator';
 import { RosterEntry } from '../../types/roster';
-import { availableNames } from '../rosterAuth';
+import { availableNames, getStaffInfo } from '../rosterAuth';
 
 export interface MonthlyReportOptions {
   month: number;
@@ -137,8 +137,15 @@ export class MonthlyReportGenerator {
     // Convert to array and sort
     const staffArray = Array.from(staffSet);
     
+    // Filter out staff members who don't exist in the current auth system
+    // This prevents deleted staff from appearing in reports
+    const validStaffArray = staffArray.filter(staffName => {
+      const staffInfo = getStaffInfo(staffName);
+      return !!staffInfo;
+    });
+    
     // Sort alphabetically by base name
-    return staffArray.sort((a, b) => {
+    return validStaffArray.sort((a, b) => {
       return a.localeCompare(b);
     });
   }
