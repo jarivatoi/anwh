@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Download, FileText, Users, List, Calendar, CheckCircle, AlertTriangle, User, Eye, EyeOff } from 'lucide-react';
-import { monthlyReportGenerator } from '../utils/pdf/monthlyReportGenerator';
+import { X, FileText, User, Users, List } from 'lucide-react';
+import { useRosterData } from '../hooks/useRosterData';
 import { individualBillGenerator } from '../utils/pdf/individualBillGenerator';
-import { annexureGenerator } from '../utils/pdf/annexureGenerator';
+import { monthlyReportGenerator } from '../utils/pdf/monthlyReportGenerator';
 import { rosterListGenerator } from '../utils/pdf/rosterListGenerator';
-import { RosterEntry } from '../types/roster';
-import { availableNames, sortByGroup } from '../utils/rosterAuth';
+import { annexureGenerator } from '../utils/pdf/annexureGenerator';
+import { getStaffInfo } from '../utils/rosterAuth';
+import type { RosterEntry } from '../types/roster';
 
 interface MonthlyReportsModalProps {
   isOpen: boolean;
@@ -222,8 +223,18 @@ export const MonthlyReportsModal: React.FC<MonthlyReportsModalProps> = ({
       staffSet.add(baseName);
     });
     
+    // Convert to array
+    const staffArray = Array.from(staffSet);
+    
+    // Filter out staff members who don't exist in the current auth system
+    // This prevents deleted staff from appearing in reports
+    const validStaffArray = staffArray.filter(staffName => {
+      const staffInfo = getStaffInfo(staffName);
+      return !!staffInfo;
+    });
+    
     // Sort the base names
-    return Array.from(staffSet).sort();
+    return validStaffArray.sort();
   };
   if (!isOpen) return null;
 
