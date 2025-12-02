@@ -5,6 +5,7 @@ import { individualBillGenerator } from './individualBillGenerator';
 import { annexureGenerator } from './annexureGenerator';
 import { rosterListGenerator } from './rosterListGenerator';
 import { RosterEntry } from '../../types/roster';
+import { getStaffInfo } from '../rosterAuth';
 
 export interface BatchPrintOptions {
   month: number;
@@ -832,7 +833,17 @@ export class BatchPrintManager {
       staffSet.add(baseName);
     });
     
-    return Array.from(staffSet).sort();
+    // Convert to array
+    const staffArray = Array.from(staffSet);
+    
+    // Filter out staff members who don't exist in the current auth system
+    // This prevents deleted staff from appearing in reports
+    const validStaffArray = staffArray.filter(staffName => {
+      const staffInfo = getStaffInfo(staffName);
+      return !!staffInfo;
+    });
+    
+    return validStaffArray.sort();
   }
   
   /**
