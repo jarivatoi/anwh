@@ -255,7 +255,7 @@ export class AnnexureGenerator {
       }
     });
     
-    // Calculate for each staff member
+    // Calculate for each staff member who actually has entries
     Object.entries(staffGroups).forEach(([baseName, staffEntries]) => {
       let totalHours = 0;
       let nightDutyCount = 0;
@@ -304,19 +304,23 @@ export class AnnexureGenerator {
       const employeeId = staffInfo?.employeeId || '';
       const salary = staffSalary || 0;
       
-      staffSummaries.push({
-        staffName: baseStaffName,
-        fullName: fullName,
-        employeeId: employeeId,
-        salary: salary,
-        totalDays: staffEntries.length,
-        totalHours,
-        totalAmount: totalHours * individualHourlyRate,
-        nightDutyCount,
-        nightDutyHours,
-        nightAllowance: nightDutyHours * individualHourlyRate,
-        grandTotal: (totalHours * individualHourlyRate) + (nightDutyHours * individualHourlyRate)
-      });
+      // Only include staff with actual roster entries (hours > 0 or night duties)
+      // This prevents staff who are in the auth system but have no assignments from appearing
+      if (totalHours > 0 || nightDutyCount > 0) {
+        staffSummaries.push({
+          staffName: baseStaffName,
+          fullName: fullName,
+          employeeId: employeeId,
+          salary: salary,
+          totalDays: staffEntries.length,
+          totalHours,
+          totalAmount: totalHours * individualHourlyRate,
+          nightDutyCount,
+          nightDutyHours,
+          nightAllowance: nightDutyHours * individualHourlyRate,
+          grandTotal: (totalHours * individualHourlyRate) + (nightDutyHours * individualHourlyRate)
+        });
+      }
     });
     
     // Sort by staff name
