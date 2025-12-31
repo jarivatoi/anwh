@@ -28,7 +28,7 @@ export const getShiftDisplayName = (shiftType: string): string => {
     'Morning Shift (9-4)': 'Morning (9-4)',
     'Evening Shift (4-10)': 'Evening (4-10)',
     'Saturday Regular (12-10)': 'Saturday (12-10)',
-    'Night Duty': 'Night Duty',
+    'Night Duty': 'Night Duty (N)',
     'Sunday/Public Holiday/Special': 'Special (9-4)'
   };
   return shiftMap[shiftType] || shiftType;
