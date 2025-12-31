@@ -407,8 +407,7 @@ export const shiftTypes = [
   'Morning Shift (9-4)',
   'Saturday Regular (12-10)',
   'Evening Shift (4-10)',
-  'Night Duty',
-  'Sunday/Public Holiday/Special'
+  'Night Duty (N)'
 ];
 
 // Admin code constant
