@@ -450,24 +450,63 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
             padding: window.innerWidth > window.innerHeight ? '8px' : '16px'
           }}
         >
-          <div className="flex space-x-3">
-            <button
-              onClick={onClose}
-              className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleConfirm}
-              disabled={!selectedStaff}
-              className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
-                selectedStaff 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              Confirm
-            </button>
+          <div className="space-y-3">
+            {/* Color selection for admin */}
+            {isAdmin && (
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+                    <Palette className="w-4 h-4" />
+                    <span>Text Color</span>
+                  </div>
+                  <div 
+                    className="w-8 h-8 rounded border-2 border-gray-300"
+                    style={{ backgroundColor: selectedColor }}
+                  />
+                </div>
+                
+                {/* Color options */}
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { color: '#000000', label: 'Black' },
+                    { color: '#dc2626', label: 'Red' },
+                    { color: '#059669', label: 'Green' }
+                  ].map(({ color, label }) => (
+                    <button
+                      key={color}
+                      onClick={() => setSelectedColor(color)}
+                      className={`w-8 h-8 rounded-full border-2 ${
+                        selectedColor === color 
+                          ? 'border-gray-800 ring-2 ring-offset-2 ring-blue-500' 
+                          : 'border-gray-300'
+                      }`}
+                      style={{ backgroundColor: color }}
+                      title={label}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={onClose}
+                className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirm}
+                disabled={!selectedStaff}
+                className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
+                  selectedStaff 
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                Confirm
+              </button>
+            </div>
           </div>
         </div>
       </div>
