@@ -139,6 +139,24 @@ const loadStaffFromSupabase = async (): Promise<void> => {
   } catch (error) {
     console.log('⚠️ Could not load staff from Supabase (table may not exist), using local defaults:', error);
   }
+  
+  // Always ensure ADMIN code is available, regardless of Supabase loading result
+  const adminCodeExists = authCodes.some(auth => auth.code === '5274');
+  if (!adminCodeExists) {
+    authCodes.push({ 
+      code: '5274', 
+      name: 'ADMIN', 
+      title: 'ADMIN', 
+      salary: 0, 
+      employeeId: '', 
+      firstName: '', 
+      surname: '' 
+    });
+    console.log('✅ ADMIN code added to authCodes');
+  }
+  
+  // Force refresh of derived arrays
+  refreshDerivedArrays();
 };
 
 ;
