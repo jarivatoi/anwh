@@ -442,38 +442,15 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     return name.replace(/\(R\)$/, '').trim();
   };
 
-  // Get filtered available staff for the current shift
+  // Get all staff for the multi-select interface
   const getFilteredAvailableStaff = (): string[] => {
     if (!selectedSpecialDate || !selectedShiftForAdd) {
-      return availableNames;
+      return availableNames.filter(name => name !== 'ADMIN');
     }
 
-    // Get current entries for this date and shift
-    const dateEntries = groupedEntries[selectedSpecialDate] || [];
-    const currentEntries = dateEntries.filter(entry => entry.shift_type === selectedShiftForAdd);
-    const currentStaff = currentEntries.map(entry => entry.assigned_name);
-
-    // Start with all available names
-    let filtered = [...availableNames].filter(name => name !== 'ADMIN');
-
-    // Filter out already assigned staff
-    filtered = filtered.filter(name => !currentStaff.includes(name));
-
-    // Special handling for (R) variants and base names:
-    // If NARAYYA is assigned, exclude NARAYYA(R) from the list and vice versa
-    currentStaff.forEach(assignedName => {
-      if (assignedName.includes('(R)')) {
-        // If (R) variant is assigned, exclude the base name
-        const baseName = getBaseName(assignedName);
-        filtered = filtered.filter(name => name !== baseName);
-      } else {
-        // If base name is assigned, exclude the (R) variant
-        const rVariant = `${assignedName}(R)`;
-        filtered = filtered.filter(name => name !== rVariant);
-      }
-    });
-
-    return sortByGroup(filtered);
+    // For the multi-select interface, show all staff members
+    // (they will be checked if already assigned)
+    return sortByGroup(availableNames.filter(name => name !== 'ADMIN'));
   };
 
   // Get filtered staff list
@@ -522,7 +499,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   };
 
   // Check if date has special info
-  const getSpecialDateInfo = (date: string) => {
+  const getSpecialDateInfo = (date: string): string | undefined => {
     const dateEntries = groupedEntries[date] || [];
     for (const entry of dateEntries) {
       if (entry.change_description && entry.change_description.includes('Special Date:')) {
@@ -532,12 +509,12 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
         }
       }
     }
-    return null;
+    return undefined;
   };
 
   // Check if date is marked as special
   const isSpecialDate = (date: string) => {
-    return getSpecialDateInfo(date) !== null;
+    return getSpecialDateInfo(date) !== undefined;
   };
 
 
@@ -811,9 +788,8 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                       isFutureDate={isFutureDate(date)}
                       onDoublePress={() => handleSpecialDateDoublePress(date)}
                       onLongPress={() => handleDateCellLongPress(date)}
-                      isSpecialDate={isSpecialDate(date) && getSpecialDateInfo(date) !== null}
+                      isSpecialDate={isSpecialDate(date) && getSpecialDateInfo(date) !== undefined}
                       specialDateInfo={getSpecialDateInfo(date)}
-                      formatTableDate={formatTableDate}
                     />
                     
                     {shiftTypes.map(shiftType => {
