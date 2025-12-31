@@ -142,10 +142,23 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
       
     console.log('🔍 assignedStaff (excluding current entry):', assignedStaff);
 
-    // Filter out already assigned staff
-    let filtered = availableStaff
-      .filter(name => name !== 'ADMIN')
-      .filter(name => !assignedStaff.includes(name));
+    // Start with all available staff (except ADMIN)
+    let filtered = availableStaff.filter(name => name !== 'ADMIN');
+    
+    // For admin users, show all staff (they might want to reassign staff)
+    if (!isAdmin) {
+      // For non-admin users, filter out other staff that are already assigned to this shift
+      // (but keep the currently assigned staff so they can be re-selected)
+      filtered = filtered.filter(name => {
+        // Allow the currently assigned staff member to be shown
+        if (entry && name === entry.assigned_name) {
+          return true;
+        }
+        // Filter out other staff who are already assigned to this shift
+        return !assignedStaff.includes(name);
+      });
+    }
+    // For admin users, don't filter out already assigned staff - they can reassign them
       
     console.log('🔍 filtered after removing assigned staff:', filtered);
 
@@ -406,14 +419,26 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                 </div>
               </div>
             ) : (
-              filteredStaff.map((staffName) => (
+              filteredStaff.map((staffName) => {
+                // Check if this staff member is already assigned to the same shift type on this date
+                const isAssignedToSameShift = allEntriesForShift.some(e => 
+                  e.assigned_name === staffName && 
+                  e.shift_type === entry.shift_type &&
+                  e.id !== entry?.id // Exclude current entry
+                );
+                
+                const isSelected = selectedStaff === staffName;
+                
+                return (
                 <button
                   key={staffName}
                   onClick={() => handleStaffSelect(staffName)}
                   className={`w-full p-4 rounded-lg border-2 text-left transition-all duration-200 ${
-                    selectedStaff === staffName
+                    isSelected
                       ? 'border-blue-500 bg-blue-50 text-blue-900'
-                     : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                      : isAssignedToSameShift
+                        ? 'border-yellow-300 bg-yellow-50 text-yellow-900'
+                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
                   }`}
                   style={{
                     touchAction: 'manipulation',
@@ -433,12 +458,20 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                         </div>
                       </div>
                     </div>
-                    {selectedStaff === staffName && (
-                      <Check className="w-5 h-5 text-blue-600" />
-                    )}
+                    <div className="flex items-center space-x-2">
+                      {isAssignedToSameShift && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                          Assigned
+                        </span>
+                      )}
+                      {isSelected && (
+                        <Check className="w-5 h-5 text-blue-600" />
+                      )}
+                    </div>
                   </div>
                 </button>
-              ))
+                );
+              })
             )}
           </div>
         </div>
