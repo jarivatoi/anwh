@@ -206,7 +206,7 @@ export const StaffManagementModal = ({
       }
       
       // Show success message
-      setTimeout(() => setSuccessMessage(''), 3000);
+      setTimeout(() => setSuccessMessage(''), 5000);
       
     } catch (error) {
       alert(`Failed to save changes: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -236,7 +236,7 @@ export const StaffManagementModal = ({
 
   // Filter out ADMIN and (R) variants from the list for display
   const displayStaffList = staffMembers.filter((staff: StaffMember) => 
-    staff.name !== 'ADMIN' && !staff.name.includes('(R)')
+    staff.name !== 'ADMIN' && !staff.name.includes('(R)') && staff.title !== 'R'
   );
 
   return createPortal(
