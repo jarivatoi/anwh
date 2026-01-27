@@ -368,7 +368,8 @@ export const StaffManagementModal = ({
                 <p className="text-sm text-gray-600">
                   Manage staff details and authentication codes
                   {realtimeStatus === 'connected' && <span className="text-green-600 ml-2">• Live sync active</span>}
-                  {realtimeStatus === 'error' && <span className="text-red-600 ml-2">• Sync error</span>}
+                  {realtimeStatus === 'error' && <span className="text-red-600 ml-2" title="Real-time sync is not working. Data may not update automatically.">• Sync error</span>}
+                  {realtimeStatus === 'connecting' && <span className="text-yellow-600 ml-2">• Connecting...</span>}
                 </p>
               </div>
             </div>
