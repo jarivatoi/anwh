@@ -86,7 +86,8 @@ export const useStaffData = () => {
         .order('surname', { ascending: true });
 
       if (fetchError) {
-        throw new Error(fetchError.message);
+        console.error('❌ Supabase fetch error:', fetchError);
+        throw new Error(`Database error: ${fetchError.message}`);
       }
 
       console.log('✅ Loaded staff members from Supabase:', data?.length || 0);
@@ -103,7 +104,8 @@ export const useStaffData = () => {
     } catch (err) {
       console.error('❌ Error loading staff members:', err);
       if (isMountedRef.current) {
-        setError(err instanceof Error ? err.message : 'Failed to load staff members');
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load staff members';
+        setError(errorMessage);
         
         // Fallback to local auth codes on error
         const localStaffMembers: StaffMember[] = authCodes
@@ -137,6 +139,7 @@ export const useStaffData = () => {
   useEffect(() => {
     if (!supabase) {
       console.log('⚠️ Supabase not available for real-time staff updates');
+      setRealtimeStatus('error');
       return;
     }
 
@@ -212,8 +215,8 @@ export const useStaffData = () => {
           }
         }
       )
-      .subscribe((status: any) => {
-        console.log('📡 Staff real-time subscription status:', status);
+      .subscribe((status: any, err: any) => {
+        console.log('📡 Staff real-time subscription status:', status, err);
         
         if (isMountedRef.current) {
           if (status === 'SUBSCRIBED') {
@@ -221,10 +224,19 @@ export const useStaffData = () => {
             console.log('✅ Staff real-time connection established');
           } else if (status === 'CHANNEL_ERROR') {
             setRealtimeStatus('error');
-            console.log('❌ Staff real-time connection error');
+            console.log('❌ Staff real-time connection error:', err);
+            // Don't automatically retry on CHANNEL_ERROR - it usually indicates a configuration issue
+            console.log('💡 Check if real-time is enabled for the staff_members table in Supabase dashboard');
           } else if (status === 'TIMED_OUT') {
             setRealtimeStatus('error');
             console.log('⏰ Staff real-time connection timed out');
+            // Try to reconnect after a delay
+            setTimeout(() => {
+              if (isMountedRef.current) {
+                console.log('🔄 Attempting to reconnect staff real-time subscription...');
+                setRealtimeStatus('connecting');
+              }
+            }, 5000);
           } else if (status === 'CLOSED') {
             setRealtimeStatus('disconnected');
             console.log('🔌 Staff real-time connection closed');
@@ -238,7 +250,9 @@ export const useStaffData = () => {
     // Cleanup
     return () => {
       console.log('🧹 Cleaning up staff real-time subscription...');
-      supabase.removeChannel(channel);
+      if (supabase && channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [loadStaffMembers, updateLocalAuthCodes]);
 
