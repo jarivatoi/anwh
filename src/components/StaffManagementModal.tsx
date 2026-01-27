@@ -68,8 +68,8 @@ export const StaffManagementModal = ({
         { code: 'S069', name: 'GHOORAN', title: 'MIT', salary: 48810, employeeId: 'S0607814601039', firstName: 'Bibi Shafinaaz', surname: 'SAMTALLY-GHOORAN' },
         { code: 'H13D', name: 'HOSENBUX', title: 'MIT', salary: 48810, employeeId: 'H130381180129D', firstName: 'Zameer', surname: 'HOSENBUX' },
         { code: 'J149', name: 'JUMMUN', title: 'MIT', salary: 47510, employeeId: 'J1403792600909', firstName: 'Bibi Nawsheen', surname: 'JUMMUN' },
-        { code: 'M17G', name: 'MAUDHOO', title: 'MIT', salary: 38010, employeeId: 'M170380260096G', firstName: 'Chandanee', surname: 'MAUDHOO' },
-        { code: 'N28C', name: 'NARAYYA', title: 'MIT', salary: 38010, employeeId: 'N280881240162C', firstName: 'Viraj', surname: 'NARAYYA' },
+        { code: 'M17G', name: 'MAUDHOO', title: 'MIT', salary: 39470, employeeId: 'M170380260096G', firstName: 'Chandanee', surname: 'MAUDHOO' },
+        { code: 'N28C', name: 'NARAYYA', title: 'MIT', salary: 39470, employeeId: 'N280881240162C', firstName: 'Viraj', surname: 'NARAYYA' },
         { code: 'P09A', name: 'PITTEA', title: 'SMIT', salary: 59300, employeeId: 'P091171190413A', firstName: 'Soubiraj', surname: 'PITTEA' },
         { code: 'R16G', name: 'RUNGADOO', title: 'SMIT', salary: 59300, employeeId: 'R210572400118G', firstName: 'Manee', surname: 'RUNGADOO' },
         { code: 'T16G', name: 'TEELUCK', title: 'SMIT', salary: 59300, employeeId: '', firstName: '', surname: 'TEELUCK' },
@@ -84,8 +84,8 @@ export const StaffManagementModal = ({
         { code: 'H13R', name: 'HOSENBUX(R)', title: 'MIT', salary: 48810, employeeId: 'H13038118012901', firstName: 'Zameer', surname: 'HOSENBUX' },
         { code: 'S06R', name: 'GHOORAN(R)', title: 'MIT', salary: 48810, employeeId: 'S06781460103939', firstName: 'Bibi Sharinaaz', surname: 'SAMTALLY-GHOORAN' },
         { code: 'J14R', name: 'JUMMUN(R)', title: 'MIT', salary: 47510, employeeId: 'J14037926000909', firstName: 'Bibi Nawsheen', surname: 'JUMMUN' },
-        { code: 'M17R', name: 'MAUDHOO(R)', title: 'MIT', salary: 38010, employeeId: 'M17038026006966', firstName: 'Chandanee', surname: 'MAUDHOO' },
-        { code: 'N28R', name: 'NARAYYA(R)', title: 'MIT', salary: 38010, employeeId: 'N280881240162C', firstName: 'Viraj', surname: 'NARAYYA' },
+        { code: 'M17R', name: 'MAUDHOO(R)', title: 'MIT', salary: 39470, employeeId: 'M17038026006966', firstName: 'Chandanee', surname: 'MAUDHOO' },
+        { code: 'N28R', name: 'NARAYYA(R)', title: 'MIT', salary: 39470, employeeId: 'N280881240162C', firstName: 'Viraj', surname: 'NARAYYA' },
         { code: 'P09R', name: 'PITTEA(R)', title: 'SMIT', salary: 59300, employeeId: 'P09117119004134', firstName: 'Subiraj', surname: 'PITTEA' },
         { code: 'R21R', name: 'RUNGADOO(R)', title: 'SMIT', salary: 59300, employeeId: 'R21057240011866', firstName: 'Manee', surname: 'RUNGADOO' },
         { code: 'T16R', name: 'TEELUCK(R)', title: 'SMIT', salary: 59300, employeeId: '', firstName: '', surname: 'TEELUCK' },
@@ -95,24 +95,36 @@ export const StaffManagementModal = ({
       // Filter out (R) variants - only import base names
       const filteredStaffData = localStaffData.filter(staff => !staff.name.includes('(R)'));
       
+      // Check which staff members already exist in the database
+      const existingStaffCodes = new Set(staffMembers.map(staff => staff.code));
+      
       let importedCount = 0;
+      let skippedCount = 0;
       
       for (const staff of filteredStaffData) {
         try {
-          await addStaffMember({
-            code: staff.code,
-            name: staff.name,
-            title: staff.title,
-            salary: staff.salary,
-            employee_id: staff.employeeId,
-            first_name: staff.firstName,
-            surname: staff.surname,
-            is_active: true,
-            last_updated_by: adminName || 'ADMIN'
-          }, adminName || 'ADMIN');
-          
-          importedCount++;
+          // Only import if staff member doesn't already exist
+          if (!existingStaffCodes.has(staff.code)) {
+            await addStaffMember({
+              code: staff.code,
+              name: staff.name,
+              title: staff.title,
+              salary: staff.salary,
+              employee_id: staff.employeeId,
+              first_name: staff.firstName,
+              surname: staff.surname,
+              is_active: true,
+              last_updated_by: adminName || 'ADMIN'
+            }, adminName || 'ADMIN');
+            
+            importedCount++;
+          } else {
+            // Skip existing staff members to preserve any manual updates
+            skippedCount++;
+            console.log(`Skipping existing staff member: ${staff.name} (${staff.code})`);
+          }
         } catch (error) {
+          console.error(`Error importing staff member ${staff.name}:`, error);
           // Continue with other staff members
         }
       }
@@ -120,7 +132,7 @@ export const StaffManagementModal = ({
       // Refresh staff data
       await loadStaffMembers();
       
-      setSuccessMessage(`Successfully imported ${importedCount} staff members to database!`);
+      setSuccessMessage(`Imported ${importedCount} new staff members. Skipped ${skippedCount} existing members to preserve updates.`);
       setTimeout(() => setSuccessMessage(''), 5000);
       
     } catch (error) {
