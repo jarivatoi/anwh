@@ -48,100 +48,6 @@ export const StaffManagementModal = ({
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Add import function
-  const handleImportLocalStaff = async () => {
-    if (!isAdminAuthenticated) {
-      alert('Admin authentication required');
-      return;
-    }
-
-    setIsSaving(true);
-    
-    try {
-      // Get the hardcoded staff data (excluding ADMIN)
-      const localStaffData = [
-        { code: 'B165', name: 'BHEKUR', title: 'MIT', salary: 47510, employeeId: 'B1604812300915', firstName: 'Yashdev', surname: 'BHEKUR' },
-        { code: 'B196', name: 'BHOLLOORAM', title: 'MIT', salary: 47510, employeeId: 'B1911811805356', firstName: 'Sawan', surname: 'BHOLLOORAM' },
-        { code: 'D28B', name: 'DHUNNY', title: 'MIT', salary: 30060, employeeId: 'D280487461277B', firstName: 'Leelarvind', surname: 'DHUNNY' },
-        { code: 'D07D', name: 'DOMUN', title: 'SMIT', salary: 59300, employeeId: 'D070273400031D', firstName: 'Sheik Ahmad Shamir', surname: 'DOMUN' },
-        { code: 'H301', name: 'FOKEERCHAND', title: 'MIT', salary: 37185, employeeId: 'H3003861200061', firstName: 'Needeema', surname: 'FOKEERCHAND' },
-        { code: 'S069', name: 'GHOORAN', title: 'MIT', salary: 48810, employeeId: 'S0607814601039', firstName: 'Bibi Shafinaaz', surname: 'SAMTALLY-GHOORAN' },
-        { code: 'H13D', name: 'HOSENBUX', title: 'MIT', salary: 48810, employeeId: 'H130381180129D', firstName: 'Zameer', surname: 'HOSENBUX' },
-        { code: 'J149', name: 'JUMMUN', title: 'MIT', salary: 47510, employeeId: 'J1403792600909', firstName: 'Bibi Nawsheen', surname: 'JUMMUN' },
-        { code: 'M17G', name: 'MAUDHOO', title: 'MIT', salary: 39470, employeeId: 'M170380260096G', firstName: 'Chandanee', surname: 'MAUDHOO' },
-        { code: 'N28C', name: 'NARAYYA', title: 'MIT', salary: 39470, employeeId: 'N280881240162C', firstName: 'Viraj', surname: 'NARAYYA' },
-        { code: 'P09A', name: 'PITTEA', title: 'SMIT', salary: 59300, employeeId: 'P091171190413A', firstName: 'Soubiraj', surname: 'PITTEA' },
-        { code: 'R16G', name: 'RUNGADOO', title: 'SMIT', salary: 59300, employeeId: 'R210572400118G', firstName: 'Manee', surname: 'RUNGADOO' },
-        { code: 'T16G', name: 'TEELUCK', title: 'SMIT', salary: 59300, employeeId: '', firstName: '', surname: 'TEELUCK' },
-        { code: 'V160', name: 'VEERASAWMY', title: 'SMIT', salary: 59300, employeeId: 'V1604664204410', firstName: 'Goindah', surname: 'VEERASAWMY' },
-        
-        // Radiographers (R) - Same person, different roster designation
-        { code: 'B16R', name: 'BHEKUR(R)', title: 'MIT', salary: 47510, employeeId: 'B16048123000915', firstName: 'Yashdev', surname: 'BHEKUR' },
-        { code: 'B19R', name: 'BHOLLOORAM(R)', title: 'MIT', salary: 47510, employeeId: 'B19118118005356', firstName: 'Sawan', surname: 'BHOLLOORAM' },
-        { code: 'D28R', name: 'DHUNNY(R)', title: 'MIT', salary: 30060, employeeId: '0280876127778', firstName: 'Leetarvind', surname: 'DHUNNY' },
-        { code: 'D07R', name: 'DOMUN(R)', title: 'SMIT', salary: 59300, employeeId: 'D07027340003110', firstName: 'Shamir', surname: 'DOMUN' },
-        { code: 'H30R', name: 'FOKEERCHAND(R)', title: 'MIT', salary: 37185, employeeId: 'H30038612000061', firstName: 'Needeema', surname: 'FOKEERCHAND' },
-        { code: 'H13R', name: 'HOSENBUX(R)', title: 'MIT', salary: 48810, employeeId: 'H13038118012901', firstName: 'Zameer', surname: 'HOSENBUX' },
-        { code: 'S06R', name: 'GHOORAN(R)', title: 'MIT', salary: 48810, employeeId: 'S06781460103939', firstName: 'Bibi Sharinaaz', surname: 'SAMTALLY-GHOORAN' },
-        { code: 'J14R', name: 'JUMMUN(R)', title: 'MIT', salary: 47510, employeeId: 'J14037926000909', firstName: 'Bibi Nawsheen', surname: 'JUMMUN' },
-        { code: 'M17R', name: 'MAUDHOO(R)', title: 'MIT', salary: 39470, employeeId: 'M17038026006966', firstName: 'Chandanee', surname: 'MAUDHOO' },
-        { code: 'N28R', name: 'NARAYYA(R)', title: 'MIT', salary: 39470, employeeId: 'N280881240162C', firstName: 'Viraj', surname: 'NARAYYA' },
-        { code: 'P09R', name: 'PITTEA(R)', title: 'SMIT', salary: 59300, employeeId: 'P09117119004134', firstName: 'Subiraj', surname: 'PITTEA' },
-        { code: 'R21R', name: 'RUNGADOO(R)', title: 'SMIT', salary: 59300, employeeId: 'R21057240011866', firstName: 'Manee', surname: 'RUNGADOO' },
-        { code: 'T16R', name: 'TEELUCK(R)', title: 'SMIT', salary: 59300, employeeId: '', firstName: '', surname: 'TEELUCK' },
-        { code: 'V16R', name: 'VEERASAWMY(R)', title: 'SMIT', salary: 59300, employeeId: 'V16046642044100', firstName: 'Goindah', surname: 'VEERASAWMY' }
-      ];
-      
-      // Filter out (R) variants - only import base names
-      const filteredStaffData = localStaffData.filter(staff => !staff.name.includes('(R)'));
-      
-      // Check which staff members already exist in the database
-      const existingStaffCodes = new Set(staffMembers.map(staff => staff.code));
-      
-      let importedCount = 0;
-      let skippedCount = 0;
-      
-      for (const staff of filteredStaffData) {
-        try {
-          // Only import if staff member doesn't already exist
-          if (!existingStaffCodes.has(staff.code)) {
-            await addStaffMember({
-              code: staff.code,
-              name: staff.name,
-              title: staff.title,
-              salary: staff.salary,
-              employee_id: staff.employeeId,
-              first_name: staff.firstName,
-              surname: staff.surname,
-              is_active: true,
-              last_updated_by: adminName || 'ADMIN'
-            }, adminName || 'ADMIN');
-            
-            importedCount++;
-          } else {
-            // Skip existing staff members to preserve any manual updates
-            skippedCount++;
-            console.log(`Skipping existing staff member: ${staff.name} (${staff.code})`);
-          }
-        } catch (error) {
-          console.error(`Error importing staff member ${staff.name}:`, error);
-          // Continue with other staff members
-        }
-      }
-      
-      // Refresh staff data
-      await loadStaffMembers();
-      
-      setSuccessMessage(`Imported ${importedCount} new staff members. Skipped ${skippedCount} existing members to preserve updates.`);
-      setTimeout(() => setSuccessMessage(''), 5000);
-      
-    } catch (error) {
-      alert(`Failed to import staff data: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
@@ -462,15 +368,14 @@ export const StaffManagementModal = ({
                         <div>
                           <h5 className="font-medium text-blue-800 mb-2">
                             {error && typeof error === 'string' && error.includes('does not exist') ? 'Database Setup Required' : 
-                             staffMembers.length === 0 ? 'Import Staff Data' : 'Re-import Staff Data'}
+                             staffMembers.length === 0 ? 'Setup Required' : 'Staff Management'}
                           </h5>
                           <p className="text-sm text-blue-700 mb-3">
                             {error && typeof error === 'string' && error.includes('does not exist') ? 
                               'The staff_members table doesn\'t exist yet. Follow these steps to enable shared staff management:' :
                               staffMembers.length === 0 ? 
-                                'Import the local staff data into the Supabase database to enable shared staff management:' :
-                                'Re-import the latest staff data (including updated salaries) to refresh the database:'
-                            }
+                                'Initialize the database to enable shared staff management:' :
+                                'Manage staff members using the buttons below:'}
                           </p>
                           
                           {error && typeof error === 'string' && error.includes('does not exist') && (
@@ -480,7 +385,7 @@ export const StaffManagementModal = ({
                                 <li>Open the SQL Editor</li>
                                 <li>Copy and paste the SQL code below</li>
                                 <li>Click "Run" to create the table</li>
-                                <li>Come back here and click "Import Staff Data"</li>
+                                <li>Come back here and use the "Add New" button to add staff</li>
                               </ol>
                               
                               <div className="mt-3 p-3 bg-white border border-blue-300 rounded font-mono text-xs overflow-x-auto">
@@ -524,23 +429,16 @@ CREATE TRIGGER update_staff_members_updated_at
                             </>
                           )}
                           
-                          <button
-                            onClick={handleImportLocalStaff}
-                            disabled={!isAdminAuthenticated || isSaving}
-                            className="mt-3 w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors duration-200"
-                          >
-                            {isSaving ? (
-                              <>
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                <span>Importing...</span>
-                              </>
-                            ) : (
-                              <>
-                                <Plus className="w-4 h-4" />
-                                <span>Import Staff Data to Database</span>
-                              </>
-                            )}
-                          </button>
+                          {!error && staffMembers.length === 0 && (
+                            <button
+                              onClick={handleAddNew}
+                              disabled={!isAdminAuthenticated}
+                              className="mt-3 w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors duration-200"
+                            >
+                              <Plus className="w-4 h-4" />
+                              <span>Add Your First Staff Member</span>
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
