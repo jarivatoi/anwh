@@ -210,6 +210,7 @@ export const StaffManagementModal = ({
       
     } catch (error) {
       alert(`Failed to save changes: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setSuccessMessage(''); // Clear any success message if there was an error
     } finally {
       setIsSaving(false);
       setShowConfirmation(false);
