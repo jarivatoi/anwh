@@ -11,7 +11,7 @@ export interface AuthCode {
 // Generate (R) variants for initial auth codes
 const initialAuthCodes: AuthCode[] = [
   // Regular Staff - ID-based codes
-  { code: 'B165', name: 'BHEKUR', title: 'MIT', salary: 47510, employeeId: 'B1604812300915', firstName: 'Yashdev', surname: 'BHEKUR' },
+  { code: 'B165', name: 'BHEKUR', title: 'MIT', salary: 49445, employeeId: 'B1604812300915', firstName: 'Yashdev', surname: 'BHEKUR' },
   { code: 'B196', name: 'BHOLLOORAM', title: 'MIT', salary: 48810, employeeId: 'B1911811805356', firstName: 'Sawan', surname: 'BHOLLOORAM' },
   { code: 'D28B', name: 'DHUNNY', title: 'MIT', salary: 30060, employeeId: 'D280487461277B', firstName: 'Leelarvind', surname: 'DHUNNY' },
   { code: 'D07D', name: 'DOMUN', title: 'SMIT', salary: 59300, employeeId: 'D070273400031D', firstName: 'Sheik Ahmad Shamir', surname: 'DOMUN' },
