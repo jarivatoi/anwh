@@ -87,8 +87,8 @@ export const addStaffMember = async (staffData: Omit<StaffMember, 'id' | 'create
     }
     
     // Dispatch event for real-time updates
-    window.dispatchEvent(new CustomEvent('staffMemberAdded', {
-      detail: data
+    window.dispatchEvent(new CustomEvent('staffRealtimeUpdate', {
+      detail: { action: 'added', staff: data }
     }));
     
     return data;
@@ -121,7 +121,7 @@ export const updateStaffMember = async (id: string, staffData: Partial<StaffMemb
     }
 
     // Dispatch event for real-time updates
-    window.dispatchEvent(new CustomEvent('staffMemberUpdated', {
+    window.dispatchEvent(new CustomEvent('staffRealtimeUpdate', {
       detail: data
     }));
     
@@ -205,8 +205,8 @@ export const deleteStaffMember = async (id: string, editorName: string): Promise
     }
     
     // Dispatch event for real-time updates
-    window.dispatchEvent(new CustomEvent('staffMemberDeleted', {
-      detail: { id, deletedStaff: data }
+    window.dispatchEvent(new CustomEvent('staffRealtimeUpdate', {
+      detail: { action: 'deleted', id, deletedStaff: data }
     }));
     
   } catch (error) {
