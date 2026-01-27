@@ -552,7 +552,6 @@ CREATE TRIGGER update_staff_members_updated_at
                   >
                     <option value="MIT">MIT</option>
                     <option value="SMIT">SMIT</option>
-                    <option value="R">R</option>
                   </select>
                 </div>
 
