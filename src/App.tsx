@@ -50,7 +50,7 @@ function App() {
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
 
-  // Load monthly salary when month changes
+  // Load monthly salary when month changes or after updates
   useEffect(() => {
     const loadMonthlySalary = async () => {
       try {
@@ -62,7 +62,7 @@ function App() {
       }
     };
     loadMonthlySalary();
-  }, [currentYear, currentMonth]);
+  }, [currentYear, currentMonth, refreshKey]);
 
   // Pass specialDates to the calculation hook with refreshKey dependency
   const { totalAmount, monthToDateAmount } = useScheduleCalculations(schedule, settings, specialDates, currentDate, refreshKey, monthlySalary);
