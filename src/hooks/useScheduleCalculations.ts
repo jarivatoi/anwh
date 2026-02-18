@@ -11,11 +11,11 @@ export const useScheduleCalculations = (
 ) => {
   const { totalAmount, monthToDateAmount } = useMemo(() => {
     // Determine effective salary: use monthlySalary if set (> 0),
-    // otherwise use global basicSalary ONLY for current year
+    // otherwise use global basicSalary ONLY for current year or past
     const today = new Date();
     const viewingYear = currentDate ? currentDate.getFullYear() : today.getFullYear();
-    const isCurrentYear = viewingYear === today.getFullYear();
-    const shouldUseGlobalSalary = (monthlySalary === undefined || monthlySalary === null || monthlySalary === 0) && isCurrentYear;
+    const isFutureYear = viewingYear > today.getFullYear();
+    const shouldUseGlobalSalary = (monthlySalary === undefined || monthlySalary === null || monthlySalary === 0) && !isFutureYear;
     const effectiveSalary = monthlySalary && monthlySalary > 0
       ? monthlySalary
       : (shouldUseGlobalSalary ? settings?.basicSalary || 0 : 0);
@@ -26,7 +26,7 @@ export const useScheduleCalculations = (
     console.log('🔄 Calculating amounts with data:', {
       viewingYear,
       todayYear: today.getFullYear(),
-      isCurrentYear,
+      isFutureYear,
       monthlySalary,
       shouldUseGlobalSalary,
       scheduleKeys: Object.keys(schedule || {}),
