@@ -11,11 +11,19 @@ export const useScheduleCalculations = (
 ) => {
   const { totalAmount, monthToDateAmount } = useMemo(() => {
     // Determine effective salary: use monthlySalary if set (> 0),
-    // otherwise use global basicSalary ONLY for current year or past
+    // otherwise use global basicSalary ONLY for current year (NOT past or future)
     const today = new Date();
     const viewingYear = currentDate ? currentDate.getFullYear() : today.getFullYear();
-    const isFutureYear = viewingYear > today.getFullYear();
-    const shouldUseGlobalSalary = (monthlySalary === undefined || monthlySalary === null || monthlySalary === 0) && !isFutureYear;
+    const actualCurrentYear = today.getFullYear();
+    const isFutureYear = viewingYear > actualCurrentYear;
+    const isPastYear = viewingYear < actualCurrentYear;
+
+    // Only apply global salary to current year's unedited months
+    // Past years must have explicit monthly salaries or remain at 0
+    // Future years always remain at 0 unless explicitly set
+    const shouldUseGlobalSalary = (monthlySalary === undefined || monthlySalary === null || monthlySalary === 0)
+                                  && !isFutureYear
+                                  && !isPastYear;
     const effectiveSalary = monthlySalary && monthlySalary > 0
       ? monthlySalary
       : (shouldUseGlobalSalary ? settings?.basicSalary || 0 : 0);
@@ -26,14 +34,14 @@ export const useScheduleCalculations = (
 
     console.log('🔄 Calculating amounts with data:', {
       viewingYear,
-      todayYear: today.getFullYear(),
+      actualCurrentYear,
       isFutureYear,
+      isPastYear,
       monthlySalary,
       shouldUseGlobalSalary,
       scheduleKeys: Object.keys(schedule || {}),
       scheduleCount: Object.keys(schedule || {}).length,
       settingsBasicSalary: settings?.basicSalary,
-      monthlySalary: monthlySalary,
       effectiveSalary: effectiveSalary,
       effectiveHourlyRate: effectiveHourlyRate,
       settingsHourlyRate: settings?.hourlyRate,
@@ -45,7 +53,7 @@ export const useScheduleCalculations = (
     let total = 0;
     let monthToDate = 0;
     const now = new Date();
-    
+
     // Get current month and year for filtering
     const currentMonth = currentDate ? currentDate.getMonth() : now.getMonth();
     const currentYear = currentDate ? currentDate.getFullYear() : now.getFullYear();

@@ -163,6 +163,22 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       {/* Basic Salary Section */}
       <div className="mb-8 p-4 bg-gray-50 rounded-lg">
         <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4 text-center">Salary Configuration</h3>
+
+        {/* Important Notice */}
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-start space-x-2">
+            <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-blue-800">
+              <p className="font-semibold mb-1">Global Salary Behavior:</p>
+              <ul className="space-y-1 text-xs">
+                <li>• <strong>Current Year:</strong> Applies to all unedited months</li>
+                <li>• <strong>Past Years:</strong> Must set individual monthly salaries (prevents historical data from changing)</li>
+                <li>• <strong>Future Years:</strong> Must set individual monthly salaries (always 0 until explicitly set)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
