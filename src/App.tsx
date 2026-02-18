@@ -431,11 +431,16 @@ function App() {
       hourlyRate: hourlyRate
     }));
 
-    // Update all months with salary = 0 to keep using global salary
+    // Update only current year's months with salary = 0 to keep using global salary
     try {
       const allMonthlySalaries = await workScheduleDB.getAllMonthlySalaries();
+      const currentYearValue = currentYear;
+
       const updatePromises = Object.entries(allMonthlySalaries)
-        .filter(([_, monthlySalary]) => monthlySalary === 0)
+        .filter(([monthKey, monthlySalary]) => {
+          const [year] = monthKey.split('-').map(Number);
+          return year === currentYearValue && monthlySalary === 0;
+        })
         .map(([monthKey]) => {
           const [year, month] = monthKey.split('-').map(Number);
           return workScheduleDB.setMonthlySalary(year, month - 1, 0);
@@ -450,7 +455,7 @@ function App() {
     } catch (error) {
       console.error('Failed to update monthly salaries:', error);
     }
-  }, [setSettings, monthlySalary]);
+  }, [setSettings, monthlySalary, currentYear]);
 
   const handleMonthlySalaryChange = useCallback(async (year: number, month: number, salary: number) => {
     try {
