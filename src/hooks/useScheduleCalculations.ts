@@ -10,8 +10,14 @@ export const useScheduleCalculations = (
   monthlySalary?: number // Add monthly salary parameter
 ) => {
   const { totalAmount, monthToDateAmount } = useMemo(() => {
-    // Determine effective salary: use monthlySalary if set (> 0), otherwise use global basicSalary
-    const effectiveSalary = monthlySalary && monthlySalary > 0 ? monthlySalary : settings?.basicSalary || 0;
+    // Determine effective salary: use monthlySalary if set (> 0),
+    // otherwise use global basicSalary ONLY for current year
+    const today = new Date();
+    const isCurrentYear = currentDate ? currentDate.getFullYear() === today.getFullYear() : true;
+    const shouldUseGlobalSalary = monthlySalary === 0 && isCurrentYear;
+    const effectiveSalary = monthlySalary && monthlySalary > 0
+      ? monthlySalary
+      : (shouldUseGlobalSalary ? settings?.basicSalary || 0 : 0);
 
     // Recalculate hourly rate based on effective salary
     const effectiveHourlyRate = effectiveSalary > 0 ? (effectiveSalary * 12) / 52 / 40 : settings?.hourlyRate || 0;
