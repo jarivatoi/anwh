@@ -1055,7 +1055,6 @@ export const Calendar: React.FC<CalendarProps> = ({
                           onMonthlySalaryChange(currentYear, currentMonth, salary);
                         }
                       }}
-                      disabled={monthlySalary === 0}
                       style={{
                         width: '100%',
                         padding: '12px 16px',
@@ -1067,7 +1066,6 @@ export const Calendar: React.FC<CalendarProps> = ({
                         fontFamily: 'monospace',
                         touchAction: 'manipulation',
                         backgroundColor: monthlySalary === 0 ? '#f0fdf4' : 'white',
-                        cursor: monthlySalary === 0 ? 'not-allowed' : 'text',
                         color: monthlySalary === 0 ? '#059669' : '#111827'
                       }}
                     />
@@ -1092,7 +1090,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                     fontWeight: monthlySalary === 0 ? '600' : '400'
                   }}>
                     {monthlySalary === 0
-                      ? '🔒 Locked to global salary from Settings. Will update automatically when you change global salary.'
+                      ? '🔒 Using global salary from Settings. Edit to set custom salary for this month.'
                       : 'Custom salary for this month. Won\'t change when you update global salary.'}
                   </p>
                 </div>
