@@ -437,26 +437,31 @@ function App() {
       const allMonthlySalaries = await workScheduleDB.getAllMonthlySalaries();
       const currentYearValue = currentYear;
 
-      const updatePromises = Object.entries(allMonthlySalaries)
-        .filter(([monthKey, monthlySalary]) => {
-          const [year] = monthKey.split('-').map(Number);
-          return year === currentYearValue && monthlySalary === 0;
-        })
-        .map(([monthKey]) => {
-          const [year, month] = monthKey.split('-').map(Number);
-          return workScheduleDB.setMonthlySalary(year, month - 1, 0);
-        });
+      // Create a set of all months in the current year (0-11)
+      const allMonthsInYear: Array<[number, number]> = [];
+      for (let month = 0; month < 12; month++) {
+        allMonthsInYear.push([currentYearValue, month]);
+      }
+
+      // For each month in current year, if it doesn't exist or is 0, set it to 0
+      const updatePromises = allMonthsInYear.map(async ([year, month]) => {
+        const monthKey = `${year}-${(month + 1).toString().padStart(2, '0')}`;
+        const existingSalary = allMonthlySalaries[monthKey];
+
+        // Only update if it doesn't exist (undefined) or is 0
+        if (existingSalary === undefined || existingSalary === 0) {
+          return workScheduleDB.setMonthlySalary(year, month, 0);
+        }
+      });
 
       await Promise.all(updatePromises);
 
-      // If current month has salary = 0, refresh calculations
-      if (monthlySalary === 0) {
-        setRefreshKey(prev => prev + 1);
-      }
+      // Force refresh calculations to use new salary
+      setRefreshKey(prev => prev + 1);
     } catch (error) {
       console.error('Failed to update monthly salaries:', error);
     }
-  }, [setSettings, monthlySalary, currentYear]);
+  }, [setSettings, currentYear]);
 
   const handleMonthlySalaryChange = useCallback(async (year: number, month: number, salary: number) => {
     try {
