@@ -29,6 +29,8 @@ interface CalendarProps {
   onResetMonth?: (year: number, month: number) => void;
   setSchedule: React.Dispatch<React.SetStateAction<DaySchedule>>;
   setSpecialDates: React.Dispatch<React.SetStateAction<SpecialDates>>;
+  monthlySalary?: number;
+  onMonthlySalaryChange?: (year: number, month: number, salary: number) => void;
 }
 
 export const Calendar: React.FC<CalendarProps> = ({
@@ -43,7 +45,9 @@ export const Calendar: React.FC<CalendarProps> = ({
   scheduleTitle,
   onTitleUpdate,
   setSchedule,
-  setSpecialDates
+  setSpecialDates,
+  monthlySalary = 0,
+  onMonthlySalaryChange
 }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -60,6 +64,7 @@ export const Calendar: React.FC<CalendarProps> = ({
   const [importAuthError, setImportAuthError] = useState('');
   const [isImporting, setIsImporting] = useState(false);
   const [importResults, setImportResults] = useState<{added: number, skipped: number, errors: number} | null>(null);
+  const [tempMonthlySalary, setTempMonthlySalary] = useState('');
   const calendarGridRef = useRef<HTMLDivElement>(null);
   const animatedElementsRef = useRef<Set<HTMLElement>>(new Set());
   
@@ -414,6 +419,7 @@ export const Calendar: React.FC<CalendarProps> = ({
         setTimeout(() => {
           if (!isLongPressActive) {
             setShowDatePicker(true);
+            setTempMonthlySalary(monthlySalary > 0 ? monthlySalary.toString() : '');
           }
         }, 50);
       }
@@ -978,9 +984,9 @@ export const Calendar: React.FC<CalendarProps> = ({
               </div>
 
               {/* Content */}
-              <div style={{ 
+              <div style={{
                 padding: window.innerWidth > window.innerHeight ? '12px' : '24px', // Less padding in landscape
-                flex: 1, 
+                flex: 1,
                 overflowY: 'auto',
                 WebkitOverflowScrolling: 'touch',
                 touchAction: 'pan-y'
@@ -1026,6 +1032,41 @@ export const Calendar: React.FC<CalendarProps> = ({
                       ))}
                     </select>
                   </div>
+                </div>
+
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px', textAlign: 'center' }}>
+                    Salary for {monthNames[currentMonth]} {currentYear}
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={tempMonthlySalary}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^\d]/g, '');
+                      setTempMonthlySalary(value);
+                    }}
+                    onBlur={() => {
+                      if (onMonthlySalaryChange && tempMonthlySalary) {
+                        const salary = parseInt(tempMonthlySalary, 10) || 0;
+                        onMonthlySalaryChange(currentYear, currentMonth, salary);
+                      }
+                    }}
+                    placeholder="0 (uses global salary)"
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid #d1d5db',
+                      borderRadius: '8px',
+                      textAlign: 'center',
+                      fontSize: '16px',
+                      fontFamily: 'monospace',
+                      touchAction: 'manipulation'
+                    }}
+                  />
+                  <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '8px', textAlign: 'center' }}>
+                    Leave as 0 to use global salary from Settings. Once set, this salary won't change when you update global salary.
+                  </p>
                 </div>
               </div>
               

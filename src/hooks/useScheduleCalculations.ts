@@ -2,17 +2,27 @@ import { useMemo } from 'react';
 import { DaySchedule, Settings, SpecialDates } from '../types';
 
 export const useScheduleCalculations = (
-  schedule: DaySchedule, 
-  settings: Settings, 
+  schedule: DaySchedule,
+  settings: Settings,
   specialDates: SpecialDates,
   currentDate?: Date,
-  refreshKey?: number // Add refresh key parameter
+  refreshKey?: number, // Add refresh key parameter
+  monthlySalary?: number // Add monthly salary parameter
 ) => {
   const { totalAmount, monthToDateAmount } = useMemo(() => {
+    // Determine effective salary: use monthlySalary if set (> 0), otherwise use global basicSalary
+    const effectiveSalary = monthlySalary && monthlySalary > 0 ? monthlySalary : settings?.basicSalary || 0;
+
+    // Recalculate hourly rate based on effective salary
+    const effectiveHourlyRate = effectiveSalary > 0 ? (effectiveSalary * 12) / 52 / 40 : settings?.hourlyRate || 0;
+
     console.log('🔄 Calculating amounts with data:', {
       scheduleKeys: Object.keys(schedule || {}),
       scheduleCount: Object.keys(schedule || {}).length,
       settingsBasicSalary: settings?.basicSalary,
+      monthlySalary: monthlySalary,
+      effectiveSalary: effectiveSalary,
+      effectiveHourlyRate: effectiveHourlyRate,
       settingsHourlyRate: settings?.hourlyRate,
       settingsCombinations: settings?.shiftCombinations?.length,
       specialDatesCount: Object.keys(specialDates || {}).length,
@@ -72,8 +82,8 @@ export const useScheduleCalculations = (
           return comboKey === shiftId;
         });
         
-        if (combination && settings.hourlyRate) {
-          const shiftAmount = combination.hours * settings.hourlyRate;
+        if (combination && effectiveHourlyRate) {
+          const shiftAmount = combination.hours * effectiveHourlyRate;
           total += shiftAmount;
           
           console.log(`💰 Found single shift ${combination.combination} (${combination.hours}h) = Rs ${shiftAmount.toFixed(2)}`);
@@ -173,14 +183,14 @@ export const useScheduleCalculations = (
           return comboKey === combinationKey;
         });
         
-        if (multiCombination && settings.hourlyRate) {
+        if (multiCombination && effectiveHourlyRate) {
           // Subtract individual shift amounts already added
           const individualTotal = dayShifts.reduce((sum, shiftId) => {
             const singleCombo = settings.shiftCombinations.find(combo => combo.id === shiftId);
-            return sum + (singleCombo ? singleCombo.hours * settings.hourlyRate : 0);
+            return sum + (singleCombo ? singleCombo.hours * effectiveHourlyRate : 0);
           }, 0);
           
-          const multiAmount = multiCombination.hours * settings.hourlyRate;
+          const multiAmount = multiCombination.hours * effectiveHourlyRate;
           const difference = multiAmount - individualTotal;
           
           total += difference;
@@ -274,11 +284,12 @@ export const useScheduleCalculations = (
     
     return { totalAmount: total, monthToDateAmount: monthToDate };
   }, [
-    schedule, 
-    settings, 
-    specialDates, 
-    currentDate, 
+    schedule,
+    settings,
+    specialDates,
+    currentDate,
     refreshKey,
+    monthlySalary,
     // Add these to ensure recalculation when data structure changes
     JSON.stringify(schedule),
     JSON.stringify(settings),

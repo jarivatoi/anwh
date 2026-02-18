@@ -26,6 +26,10 @@ export interface Settings {
   shiftCombinations: ShiftCombination[];
 }
 
+export interface MonthlySalaries {
+  [key: string]: number; // monthKey (YYYY-MM) -> salary
+}
+
 export interface ExportData {
   schedule: DaySchedule;
   specialDates: SpecialDates;
@@ -33,6 +37,7 @@ export interface ExportData {
   scheduleTitle: string;
   exportDate: string;
   version: string;
+  monthlySalaries?: MonthlySalaries;
 }
 
 export interface AuthCode {

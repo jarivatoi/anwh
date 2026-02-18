@@ -26,12 +26,19 @@ interface DBSchema {
       value: any;
     };
   };
+  monthlySalaries: {
+    key: string;
+    value: {
+      monthKey: string;
+      salary: number;
+    };
+  };
 }
 
 class WorkScheduleDB {
   private db: IDBDatabase | null = null;
   private readonly dbName = 'WorkScheduleDB';
-  private readonly version = 2;
+  private readonly version = 3;
   private initPromise: Promise<void> | null = null;
 
   async init(): Promise<void> {
@@ -91,6 +98,11 @@ class WorkScheduleDB {
         if (!db.objectStoreNames.contains('metadata')) {
           console.log('📝 Creating metadata store');
           db.createObjectStore('metadata', { keyPath: 'key' });
+        }
+
+        if (!db.objectStoreNames.contains('monthlySalaries')) {
+          console.log('💰 Creating monthlySalaries store');
+          db.createObjectStore('monthlySalaries', { keyPath: 'monthKey' });
         }
         console.log('✅ IndexedDB schema upgrade completed');
       };
@@ -520,13 +532,86 @@ class WorkScheduleDB {
         console.warn('Storage estimate not available:', error);
       }
     }
-    
+
     // Fallback estimates - iPhone Safari often can't provide exact quota
     console.log('📊 Using fallback storage estimate for iPhone Safari');
     return {
       used: 0,
       available: 50 * 1024 * 1024 // 50MB fallback (actual is much more)
     };
+  }
+
+  async getMonthlySalary(year: number, month: number): Promise<number> {
+    const db = await this.ensureDB();
+    const monthKey = `${year}-${month.toString().padStart(2, '0')}`;
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['monthlySalaries'], 'readonly');
+      const store = transaction.objectStore('monthlySalaries');
+      const request = store.get(monthKey);
+
+      request.onsuccess = () => {
+        const result = request.result ? request.result.salary : 0;
+        resolve(result);
+      };
+
+      request.onerror = () => {
+        reject(new Error(`Failed to get monthly salary for ${monthKey}`));
+      };
+    });
+  }
+
+  async setMonthlySalary(year: number, month: number, salary: number): Promise<void> {
+    const db = await this.ensureDB();
+    const monthKey = `${year}-${month.toString().padStart(2, '0')}`;
+    console.log(`💾 Saving monthly salary for ${monthKey}:`, salary);
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['monthlySalaries'], 'readwrite');
+      const store = transaction.objectStore('monthlySalaries');
+
+      transaction.onerror = () => {
+        console.error(`❌ Monthly salary transaction error for "${monthKey}":`, transaction.error);
+        reject(new Error(`Transaction failed: ${transaction.error}`));
+      };
+
+      transaction.oncomplete = () => {
+        console.log(`✅ Monthly salary for "${monthKey}" saved successfully`);
+        resolve();
+      };
+
+      const request = store.put({ monthKey, salary });
+
+      request.onsuccess = () => {
+        console.log(`✅ Monthly salary for "${monthKey}" put operation completed`);
+      };
+
+      request.onerror = () => {
+        console.error(`❌ Failed to set monthly salary for "${monthKey}":`, request.error);
+        reject(new Error(`Failed to set monthly salary: ${monthKey} - ${request.error}`));
+      };
+    });
+  }
+
+  async getAllMonthlySalaries(): Promise<Record<string, number>> {
+    const db = await this.ensureDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['monthlySalaries'], 'readonly');
+      const store = transaction.objectStore('monthlySalaries');
+      const request = store.getAll();
+
+      request.onsuccess = () => {
+        const result: Record<string, number> = {};
+        request.result.forEach((item: { monthKey: string; salary: number }) => {
+          result[item.monthKey] = item.salary;
+        });
+        resolve(result);
+      };
+
+      request.onerror = () => {
+        reject(new Error('Failed to get all monthly salaries'));
+      };
+    });
   }
 }
 

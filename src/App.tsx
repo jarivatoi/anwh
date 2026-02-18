@@ -43,8 +43,25 @@ function App() {
   // Add refreshKey state
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Add monthly salary state
+  const [monthlySalary, setMonthlySalary] = useState(0);
+
+  // Load monthly salary when month changes
+  useEffect(() => {
+    const loadMonthlySalary = async () => {
+      try {
+        const salary = await workScheduleDB.getMonthlySalary(currentYear, currentMonth);
+        setMonthlySalary(salary);
+      } catch (error) {
+        console.error('Failed to load monthly salary:', error);
+        setMonthlySalary(0);
+      }
+    };
+    loadMonthlySalary();
+  }, [currentYear, currentMonth]);
+
   // Pass specialDates to the calculation hook with refreshKey dependency
-  const { totalAmount, monthToDateAmount } = useScheduleCalculations(schedule, settings, specialDates, currentDate, refreshKey);
+  const { totalAmount, monthToDateAmount } = useScheduleCalculations(schedule, settings, specialDates, currentDate, refreshKey, monthlySalary);
 
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
@@ -406,14 +423,48 @@ function App() {
     setSelectedDate(null);
   };
 
-  const updateBasicSalary = useCallback((salary: number) => {
+  const updateBasicSalary = useCallback(async (salary: number) => {
     const hourlyRate = (salary * 12) / 52 / 40;
     setSettings(prev => ({
       ...prev,
       basicSalary: salary,
       hourlyRate: hourlyRate
     }));
-  }, [setSettings]);
+
+    // Update all months with salary = 0 to keep using global salary
+    try {
+      const allMonthlySalaries = await workScheduleDB.getAllMonthlySalaries();
+      const updatePromises = Object.entries(allMonthlySalaries)
+        .filter(([_, monthlySalary]) => monthlySalary === 0)
+        .map(([monthKey]) => {
+          const [year, month] = monthKey.split('-').map(Number);
+          return workScheduleDB.setMonthlySalary(year, month - 1, 0);
+        });
+
+      await Promise.all(updatePromises);
+
+      // If current month has salary = 0, refresh calculations
+      if (monthlySalary === 0) {
+        setRefreshKey(prev => prev + 1);
+      }
+    } catch (error) {
+      console.error('Failed to update monthly salaries:', error);
+    }
+  }, [setSettings, monthlySalary]);
+
+  const handleMonthlySalaryChange = useCallback(async (year: number, month: number, salary: number) => {
+    try {
+      await workScheduleDB.setMonthlySalary(year, month, salary);
+
+      // If updating current month, update state and refresh calculations
+      if (year === currentYear && month === currentMonth) {
+        setMonthlySalary(salary);
+        setRefreshKey(prev => prev + 1);
+      }
+    } catch (error) {
+      console.error('Failed to set monthly salary:', error);
+    }
+  }, [currentYear, currentMonth]);
 
   const updateShiftHours = useCallback((combinationId: string, hours: number) => {
     setSettings(prev => ({
@@ -633,6 +684,8 @@ function App() {
               onTitleUpdate={handleTitleUpdate}
               setSchedule={setSchedule}
               setSpecialDates={setSpecialDates}
+              monthlySalary={monthlySalary}
+              onMonthlySalaryChange={handleMonthlySalaryChange}
             />
           ) : activeTab === 'settings' ? (
             <SettingsPanel
