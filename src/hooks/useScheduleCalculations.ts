@@ -13,8 +13,9 @@ export const useScheduleCalculations = (
     // Determine effective salary: use monthlySalary if set (> 0),
     // otherwise use global basicSalary ONLY for current year
     const today = new Date();
-    const isCurrentYear = currentDate ? currentDate.getFullYear() === today.getFullYear() : true;
-    const shouldUseGlobalSalary = monthlySalary === 0 && isCurrentYear;
+    const viewingYear = currentDate ? currentDate.getFullYear() : today.getFullYear();
+    const isCurrentYear = viewingYear === today.getFullYear();
+    const shouldUseGlobalSalary = (monthlySalary === undefined || monthlySalary === null || monthlySalary === 0) && isCurrentYear;
     const effectiveSalary = monthlySalary && monthlySalary > 0
       ? monthlySalary
       : (shouldUseGlobalSalary ? settings?.basicSalary || 0 : 0);
@@ -23,6 +24,11 @@ export const useScheduleCalculations = (
     const effectiveHourlyRate = effectiveSalary > 0 ? (effectiveSalary * 12) / 52 / 40 : settings?.hourlyRate || 0;
 
     console.log('🔄 Calculating amounts with data:', {
+      viewingYear,
+      todayYear: today.getFullYear(),
+      isCurrentYear,
+      monthlySalary,
+      shouldUseGlobalSalary,
       scheduleKeys: Object.keys(schedule || {}),
       scheduleCount: Object.keys(schedule || {}).length,
       settingsBasicSalary: settings?.basicSalary,
