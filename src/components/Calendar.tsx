@@ -78,9 +78,9 @@ export const Calendar: React.FC<CalendarProps> = ({
   const firstDayWeekday = firstDayOfMonth.getDay();
   const daysInMonth = lastDayOfMonth.getDate();
 
-  // Only apply global salary to current year
-  const isCurrentYear = currentYear === today.getFullYear();
-  const shouldUseGlobalSalary = monthlySalary === 0 && isCurrentYear;
+  // Only apply global salary to current year or past years, NEVER future years
+  const isFutureYear = currentYear > today.getFullYear();
+  const shouldUseGlobalSalary = monthlySalary === 0 && !isFutureYear;
 
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
