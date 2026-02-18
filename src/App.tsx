@@ -426,42 +426,59 @@ function App() {
 
   const updateBasicSalary = useCallback(async (salary: number) => {
     const hourlyRate = (salary * 12) / 52 / 40;
-    setSettings(prev => ({
-      ...prev,
-      basicSalary: salary,
-      hourlyRate: hourlyRate
-    }));
 
-    // Update only current year's months with salary = 0 to keep using global salary
+    // BEFORE saving new salary, lock in past years with old global salary
     try {
       const allMonthlySalaries = await workScheduleDB.getAllMonthlySalaries();
       const currentYearValue = currentYear;
+      const oldGlobalSalary = settings?.basicSalary || 0;
 
-      // Create a set of all months in the current year (0-11)
-      const allMonthsInYear: Array<[number, number]> = [];
-      for (let month = 0; month < 12; month++) {
-        allMonthsInYear.push([currentYearValue, month]);
+      // Convert all unedited months in past years to explicit values
+      const lockInPromises: Promise<void>[] = [];
+
+      // For each past year
+      for (let year = 2020; year < currentYearValue; year++) {
+        for (let month = 0; month < 12; month++) {
+          const monthKey = `${year}-${(month + 1).toString().padStart(2, '0')}`;
+          const existingSalary = allMonthlySalaries[monthKey];
+
+          // If month has no explicit salary set (undefined or 0), lock it to old global salary
+          if (existingSalary === undefined || existingSalary === 0) {
+            lockInPromises.push(workScheduleDB.setMonthlySalary(year, month, oldGlobalSalary));
+          }
+        }
       }
 
-      // For each month in current year, if it doesn't exist or is 0, set it to 0
-      const updatePromises = allMonthsInYear.map(async ([year, month]) => {
-        const monthKey = `${year}-${(month + 1).toString().padStart(2, '0')}`;
+      // Wait for all past months to be locked in
+      await Promise.all(lockInPromises);
+
+      // NOW save the new global salary
+      setSettings(prev => ({
+        ...prev,
+        basicSalary: salary,
+        hourlyRate: hourlyRate
+      }));
+
+      // Ensure current year months with salary = 0 stay at 0 (to use new global salary)
+      const currentYearPromises = [];
+      for (let month = 0; month < 12; month++) {
+        const monthKey = `${currentYearValue}-${(month + 1).toString().padStart(2, '0')}`;
         const existingSalary = allMonthlySalaries[monthKey];
 
         // Only update if it doesn't exist (undefined) or is 0
         if (existingSalary === undefined || existingSalary === 0) {
-          return workScheduleDB.setMonthlySalary(year, month, 0);
+          currentYearPromises.push(workScheduleDB.setMonthlySalary(currentYearValue, month, 0));
         }
-      });
+      }
 
-      await Promise.all(updatePromises);
+      await Promise.all(currentYearPromises);
 
       // Force refresh calculations to use new salary
       setRefreshKey(prev => prev + 1);
     } catch (error) {
       console.error('Failed to update monthly salaries:', error);
     }
-  }, [setSettings, currentYear]);
+  }, [setSettings, currentYear, settings?.basicSalary]);
 
   const handleMonthlySalaryChange = useCallback(async (year: number, month: number, salary: number) => {
     try {

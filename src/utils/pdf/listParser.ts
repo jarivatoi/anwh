@@ -507,7 +507,7 @@ export class ListParser {
       'feb': 2, 'february': 2,
       'mar': 3, 'march': 3,
       'apr': 4, 'april': 4,
-      'may': 5, 'may': 5,
+      'may': 5,
       'jun': 6, 'june': 6,
       'jul': 7, 'july': 7,
       'aug': 8, 'august': 8,
@@ -545,31 +545,7 @@ export class ListParser {
     
     return isValid;
   }
-  
-  /**
-   * Check if a row is a header row
-   */
-  private isHeaderRow(row: Array<{text: string, x: number, y: number}>): boolean {
-    const rowText = row.map(item => item.text.toLowerCase()).join(' ');
-    
-    console.log(`📋 HEADER CHECK: Row text: "${rowText}"`);
-    
-    // Check for common header patterns
-    const headerPatterns = [
-      'date', 'day', 'shift type', 'assigned staff', 'last edited', 'staff', 'type'
-    ];
-    
-    // If row contains multiple header keywords, it's likely a header
-    const headerKeywordCount = headerPatterns.filter(pattern => 
-      rowText.includes(pattern)
-    ).length;
-    
-    const isHeader = headerKeywordCount >= 2;
-    console.log(`📋 HEADER CHECK: Found ${headerKeywordCount} header keywords, isHeader: ${isHeader}`);
-    
-    return isHeader;
-  }
-  
+
   /**
    * Identify shift type from text
    */
