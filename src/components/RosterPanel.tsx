@@ -22,13 +22,17 @@ interface RosterPanelProps {
   onOpenCalendarExportModal: () => void;
   selectedDate?: Date;
   onDateChange?: (date: Date) => void;
+  basicSalary?: number;
+  hourlyRate?: number;
 }
 
-export const RosterPanel: React.FC<RosterPanelProps> = ({ 
-  setActiveTab, 
-  onOpenCalendarExportModal, 
-  selectedDate: propSelectedDate, 
-  onDateChange: propOnDateChange 
+export const RosterPanel: React.FC<RosterPanelProps> = ({
+  setActiveTab,
+  onOpenCalendarExportModal,
+  selectedDate: propSelectedDate,
+  onDateChange: propOnDateChange,
+  basicSalary = 35000,
+  hourlyRate = 201.92
 }) => {
   const [activeView, setActiveView] = useState<ViewType>('table');
   const [selectedShiftFilter, setSelectedShiftFilter] = useState<ShiftFilterType>('all');
@@ -1001,8 +1005,8 @@ Please check:
         isOpen={showMonthlyReports}
         onClose={() => setShowMonthlyReports(false)}
         entries={entries}
-        basicSalary={35000} // You can get this from settings if needed
-        hourlyRate={201.92} // You can get this from settings if needed
+        basicSalary={basicSalary}
+        hourlyRate={hourlyRate}
         shiftCombinations={[
           { id: '9-4', combination: '9-4', hours: 6.5 },
           { id: '4-10', combination: '4-10', hours: 5.5 },
@@ -1010,14 +1014,14 @@ Please check:
           { id: 'N', combination: 'N', hours: 12.5 }
         ]}
       />
-      
+
       {/* Batch Print Modal */}
       <BatchPrintModal
         isOpen={showBatchPrint}
         onClose={() => setShowBatchPrint(false)}
         entries={entries}
-        basicSalary={35000}
-        hourlyRate={201.92}
+        basicSalary={basicSalary}
+        hourlyRate={hourlyRate}
         shiftCombinations={[
           { id: '9-4', combination: '9-4', hours: 6.5 },
           { id: '4-10', combination: '4-10', hours: 5.5 },

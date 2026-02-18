@@ -711,12 +711,14 @@ function App() {
               onExportData={handleExportData}
             />
           ) : (
-            <RosterPanel 
-              key={refreshKey} 
-              setActiveTab={setActiveTab} 
+            <RosterPanel
+              key={refreshKey}
+              setActiveTab={setActiveTab}
               onOpenCalendarExportModal={handleOpenCalendarExportModal}
               selectedDate={currentDate}
               onDateChange={handleDateChange}
+              basicSalary={settings.basicSalary}
+              hourlyRate={settings.hourlyRate}
             />
           )}
         </div>
@@ -732,7 +734,12 @@ function App() {
               onToggleSpecialDate={toggleSpecialDate}
               onClose={closeModal}
             />
-            <RosterPanel setActiveTab={setActiveTab} onOpenCalendarExportModal={handleOpenCalendarExportModal} />
+            <RosterPanel
+              setActiveTab={setActiveTab}
+              onOpenCalendarExportModal={handleOpenCalendarExportModal}
+              basicSalary={settings.basicSalary}
+              hourlyRate={settings.hourlyRate}
+            />
           </>
         )}
 
