@@ -78,6 +78,10 @@ export const Calendar: React.FC<CalendarProps> = ({
   const firstDayWeekday = firstDayOfMonth.getDay();
   const daysInMonth = lastDayOfMonth.getDate();
 
+  // Only apply global salary to current year
+  const isCurrentYear = currentYear === today.getFullYear();
+  const shouldUseGlobalSalary = monthlySalary === 0 && isCurrentYear;
+
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
@@ -421,7 +425,7 @@ export const Calendar: React.FC<CalendarProps> = ({
         setTimeout(() => {
           if (!isLongPressActive) {
             setShowDatePicker(true);
-            setTempMonthlySalary(monthlySalary > 0 ? monthlySalary.toString() : globalSalary.toString());
+            setTempMonthlySalary(monthlySalary > 0 ? monthlySalary.toString() : (shouldUseGlobalSalary ? globalSalary.toString() : '0'));
           }
         }, 50);
       }
@@ -1058,18 +1062,18 @@ export const Calendar: React.FC<CalendarProps> = ({
                       style={{
                         width: '100%',
                         padding: '12px 16px',
-                        paddingRight: monthlySalary === 0 ? '40px' : '16px',
-                        border: monthlySalary === 0 ? '2px solid #10b981' : '2px solid #d1d5db',
+                        paddingRight: shouldUseGlobalSalary ? '40px' : '16px',
+                        border: shouldUseGlobalSalary ? '2px solid #10b981' : '2px solid #d1d5db',
                         borderRadius: '8px',
                         textAlign: 'center',
                         fontSize: '16px',
                         fontFamily: 'monospace',
                         touchAction: 'manipulation',
-                        backgroundColor: monthlySalary === 0 ? '#f0fdf4' : 'white',
-                        color: monthlySalary === 0 ? '#059669' : '#111827'
+                        backgroundColor: shouldUseGlobalSalary ? '#f0fdf4' : 'white',
+                        color: shouldUseGlobalSalary ? '#059669' : '#111827'
                       }}
                     />
-                    {monthlySalary === 0 && (
+                    {shouldUseGlobalSalary && (
                       <div style={{
                         position: 'absolute',
                         right: '12px',
@@ -1084,14 +1088,16 @@ export const Calendar: React.FC<CalendarProps> = ({
                   </div>
                   <p style={{
                     fontSize: '12px',
-                    color: monthlySalary === 0 ? '#059669' : '#6b7280',
+                    color: shouldUseGlobalSalary ? '#059669' : (monthlySalary === 0 ? '#6b7280' : '#6b7280'),
                     marginTop: '8px',
                     textAlign: 'center',
-                    fontWeight: monthlySalary === 0 ? '600' : '400'
+                    fontWeight: shouldUseGlobalSalary ? '600' : '400'
                   }}>
-                    {monthlySalary === 0
+                    {shouldUseGlobalSalary
                       ? '🔒 Using global salary from Settings. Edit to set custom salary for this month.'
-                      : 'Custom salary for this month. Won\'t change when you update global salary.'}
+                      : (monthlySalary === 0
+                          ? 'No salary set for this month. Enter a value to set custom salary.'
+                          : 'Custom salary for this month. Won\'t change when you update global salary.')}
                   </p>
                 </div>
               </div>
