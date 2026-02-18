@@ -543,7 +543,7 @@ class WorkScheduleDB {
 
   async getMonthlySalary(year: number, month: number): Promise<number> {
     const db = await this.ensureDB();
-    const monthKey = `${year}-${month.toString().padStart(2, '0')}`;
+    const monthKey = `${year}-${(month + 1).toString().padStart(2, '0')}`;
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(['monthlySalaries'], 'readonly');
@@ -563,7 +563,7 @@ class WorkScheduleDB {
 
   async setMonthlySalary(year: number, month: number, salary: number): Promise<void> {
     const db = await this.ensureDB();
-    const monthKey = `${year}-${month.toString().padStart(2, '0')}`;
+    const monthKey = `${year}-${(month + 1).toString().padStart(2, '0')}`;
     console.log(`💾 Saving monthly salary for ${monthKey}:`, salary);
 
     return new Promise((resolve, reject) => {
