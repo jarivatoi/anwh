@@ -697,6 +697,7 @@ function App() {
               setSpecialDates={setSpecialDates}
               monthlySalary={monthlySalary}
               onMonthlySalaryChange={handleMonthlySalaryChange}
+              globalSalary={settings.basicSalary}
             />
           ) : activeTab === 'settings' ? (
             <SettingsPanel

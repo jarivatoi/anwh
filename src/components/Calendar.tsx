@@ -31,6 +31,7 @@ interface CalendarProps {
   setSpecialDates: React.Dispatch<React.SetStateAction<SpecialDates>>;
   monthlySalary?: number;
   onMonthlySalaryChange?: (year: number, month: number, salary: number) => void;
+  globalSalary?: number;
 }
 
 export const Calendar: React.FC<CalendarProps> = ({
@@ -47,7 +48,8 @@ export const Calendar: React.FC<CalendarProps> = ({
   setSchedule,
   setSpecialDates,
   monthlySalary = 0,
-  onMonthlySalaryChange
+  onMonthlySalaryChange,
+  globalSalary = 0
 }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -419,7 +421,7 @@ export const Calendar: React.FC<CalendarProps> = ({
         setTimeout(() => {
           if (!isLongPressActive) {
             setShowDatePicker(true);
-            setTempMonthlySalary(monthlySalary > 0 ? monthlySalary.toString() : '');
+            setTempMonthlySalary(monthlySalary > 0 ? monthlySalary.toString() : globalSalary.toString());
           }
         }, 50);
       }
@@ -1038,34 +1040,60 @@ export const Calendar: React.FC<CalendarProps> = ({
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px', textAlign: 'center' }}>
                     Salary for {monthNames[currentMonth]} {currentYear}
                   </label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={tempMonthlySalary}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/[^\d]/g, '');
-                      setTempMonthlySalary(value);
-                    }}
-                    onBlur={() => {
-                      if (onMonthlySalaryChange && tempMonthlySalary) {
-                        const salary = parseInt(tempMonthlySalary, 10) || 0;
-                        onMonthlySalaryChange(currentYear, currentMonth, salary);
-                      }
-                    }}
-                    placeholder="0 (uses global salary)"
-                    style={{
-                      width: '100%',
-                      padding: '12px 16px',
-                      border: '2px solid #d1d5db',
-                      borderRadius: '8px',
-                      textAlign: 'center',
-                      fontSize: '16px',
-                      fontFamily: 'monospace',
-                      touchAction: 'manipulation'
-                    }}
-                  />
-                  <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '8px', textAlign: 'center' }}>
-                    Leave as 0 to use global salary from Settings. Once set, this salary won't change when you update global salary.
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={tempMonthlySalary}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^\d]/g, '');
+                        setTempMonthlySalary(value);
+                      }}
+                      onBlur={() => {
+                        if (onMonthlySalaryChange && tempMonthlySalary) {
+                          const salary = parseInt(tempMonthlySalary, 10) || 0;
+                          onMonthlySalaryChange(currentYear, currentMonth, salary);
+                        }
+                      }}
+                      disabled={monthlySalary === 0}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        paddingRight: monthlySalary === 0 ? '40px' : '16px',
+                        border: monthlySalary === 0 ? '2px solid #10b981' : '2px solid #d1d5db',
+                        borderRadius: '8px',
+                        textAlign: 'center',
+                        fontSize: '16px',
+                        fontFamily: 'monospace',
+                        touchAction: 'manipulation',
+                        backgroundColor: monthlySalary === 0 ? '#f0fdf4' : 'white',
+                        cursor: monthlySalary === 0 ? 'not-allowed' : 'text',
+                        color: monthlySalary === 0 ? '#059669' : '#111827'
+                      }}
+                    />
+                    {monthlySalary === 0 && (
+                      <div style={{
+                        position: 'absolute',
+                        right: '12px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        color: '#10b981',
+                        fontSize: '18px'
+                      }}>
+                        🔒
+                      </div>
+                    )}
+                  </div>
+                  <p style={{
+                    fontSize: '12px',
+                    color: monthlySalary === 0 ? '#059669' : '#6b7280',
+                    marginTop: '8px',
+                    textAlign: 'center',
+                    fontWeight: monthlySalary === 0 ? '600' : '400'
+                  }}>
+                    {monthlySalary === 0
+                      ? '🔒 Locked to global salary from Settings. Will update automatically when you change global salary.'
+                      : 'Custom salary for this month. Won\'t change when you update global salary.'}
                   </p>
                 </div>
               </div>
