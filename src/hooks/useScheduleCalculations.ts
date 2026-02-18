@@ -21,7 +21,8 @@ export const useScheduleCalculations = (
       : (shouldUseGlobalSalary ? settings?.basicSalary || 0 : 0);
 
     // Recalculate hourly rate based on effective salary
-    const effectiveHourlyRate = effectiveSalary > 0 ? (effectiveSalary * 12) / 52 / 40 : settings?.hourlyRate || 0;
+    // IMPORTANT: For future years, hourly rate must also be 0 unless a monthly salary is explicitly set
+    const effectiveHourlyRate = effectiveSalary > 0 ? (effectiveSalary * 12) / 52 / 40 : 0;
 
     console.log('🔄 Calculating amounts with data:', {
       viewingYear,
