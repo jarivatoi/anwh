@@ -225,7 +225,7 @@ export const SpecialDateModal: React.FC<SpecialDateModalProps> = ({
                   value={info}
                   onChange={(e) => setInfo(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
-                  rows={3}
+                  rows={5}
                   placeholder="Enter information about this special date (e.g., 'Public Holiday - Independence Day')"
                   maxLength={200}
                 />
