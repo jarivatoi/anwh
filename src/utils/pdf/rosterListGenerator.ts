@@ -138,21 +138,48 @@ export class RosterListGenerator {
                   const commaWidth = doc.getTextWidth(',');
                   const spaceWidth = doc.getTextWidth(' ');
 
+                  const isNarayya = staff.name.includes('NARAYYA');
+
                   if (index > 0) {
                     const totalWidth = tempX + commaWidth + spaceWidth + nameWidth;
                     const willFit = totalWidth <= cellRight;
-                    console.log(`[PRE-CALC] Index ${index}, Name: "${staff.name}", tempX: ${tempX.toFixed(2)}, nameW: ${nameWidth.toFixed(2)}, commaW: ${commaWidth.toFixed(2)}, spaceW: ${spaceWidth.toFixed(2)}, total: ${totalWidth.toFixed(2)}, cellRight: ${cellRight.toFixed(2)}, willFit: ${willFit}`);
+
+                    if (isNarayya) {
+                      console.log(`[PRE-CALC NARAYYA] =============================`);
+                      console.log(`[PRE-CALC NARAYYA] Index: ${index}`);
+                      console.log(`[PRE-CALC NARAYYA] Name: "${staff.name}"`);
+                      console.log(`[PRE-CALC NARAYYA] Current tempX: ${tempX.toFixed(4)}`);
+                      console.log(`[PRE-CALC NARAYYA] Comma width: ${commaWidth.toFixed(4)}`);
+                      console.log(`[PRE-CALC NARAYYA] Space width: ${spaceWidth.toFixed(4)}`);
+                      console.log(`[PRE-CALC NARAYYA] Name width: ${nameWidth.toFixed(4)}`);
+                      console.log(`[PRE-CALC NARAYYA] Total needed: ${totalWidth.toFixed(4)}`);
+                      console.log(`[PRE-CALC NARAYYA] Cell right: ${cellRight.toFixed(4)}`);
+                      console.log(`[PRE-CALC NARAYYA] Available space: ${(cellRight - tempX).toFixed(4)}`);
+                      console.log(`[PRE-CALC NARAYYA] Will fit: ${willFit}`);
+                    } else {
+                      console.log(`[PRE-CALC] Index ${index}, Name: "${staff.name}", tempX: ${tempX.toFixed(2)}, nameW: ${nameWidth.toFixed(2)}, commaW: ${commaWidth.toFixed(2)}, spaceW: ${spaceWidth.toFixed(2)}, total: ${totalWidth.toFixed(2)}, cellRight: ${cellRight.toFixed(2)}, willFit: ${willFit}`);
+                    }
 
                     // Check if comma + space + name will fit
                     if (!willFit) {
                       // Won't fit, move to next line
                       totalLines++;
                       tempX = cellLeft + nameWidth; // Reset to left edge + name width
-                      console.log(`[PRE-CALC] -> NEW LINE ${totalLines}, tempX reset to ${tempX.toFixed(2)}`);
+                      if (isNarayya) {
+                        console.log(`[PRE-CALC NARAYYA] -> NEW LINE ${totalLines}, tempX reset to ${tempX.toFixed(4)}`);
+                        console.log(`[PRE-CALC NARAYYA] =============================`);
+                      } else {
+                        console.log(`[PRE-CALC] -> NEW LINE ${totalLines}, tempX reset to ${tempX.toFixed(2)}`);
+                      }
                     } else {
                       // Will fit, add comma + space + name
                       tempX += commaWidth + spaceWidth + nameWidth;
-                      console.log(`[PRE-CALC] -> SAME LINE, tempX now ${tempX.toFixed(2)}`);
+                      if (isNarayya) {
+                        console.log(`[PRE-CALC NARAYYA] -> SAME LINE, tempX now ${tempX.toFixed(4)}`);
+                        console.log(`[PRE-CALC NARAYYA] =============================`);
+                      } else {
+                        console.log(`[PRE-CALC] -> SAME LINE, tempX now ${tempX.toFixed(2)}`);
+                      }
                     }
                   } else {
                     // First name, start from left edge + name width
@@ -179,11 +206,28 @@ export class RosterListGenerator {
                   const commaWidth = doc.getTextWidth(',');
                   const spaceWidth = doc.getTextWidth(' ');
 
+                  const isNarayya = staff.name.includes('NARAYYA');
+
                   // Check if we need comma and space before this name
                   if (index > 0) {
                     const rightEdge = data.cell.x + data.cell.width - 6;
                     const willFit = currentX + commaWidth + spaceWidth + nameWidth <= rightEdge;
-                    console.log(`[DRAW] Line ${drawLine}, Index ${index}, Name: "${staff.name}", currentX: ${currentX.toFixed(2)}, nameW: ${nameWidth.toFixed(2)}, commaW: ${commaWidth.toFixed(2)}, spaceW: ${spaceWidth.toFixed(2)}, total: ${(currentX + commaWidth + spaceWidth + nameWidth).toFixed(2)}, rightEdge: ${rightEdge.toFixed(2)}, willFit: ${willFit}`);
+
+                    if (isNarayya) {
+                      console.log(`[DRAW NARAYYA] =============================`);
+                      console.log(`[DRAW NARAYYA] Line ${drawLine}, Index: ${index}`);
+                      console.log(`[DRAW NARAYYA] Name: "${staff.name}"`);
+                      console.log(`[DRAW NARAYYA] Current X: ${currentX.toFixed(4)}`);
+                      console.log(`[DRAW NARAYYA] Comma width: ${commaWidth.toFixed(4)}`);
+                      console.log(`[DRAW NARAYYA] Space width: ${spaceWidth.toFixed(4)}`);
+                      console.log(`[DRAW NARAYYA] Name width: ${nameWidth.toFixed(4)}`);
+                      console.log(`[DRAW NARAYYA] Total needed: ${(currentX + commaWidth + spaceWidth + nameWidth).toFixed(4)}`);
+                      console.log(`[DRAW NARAYYA] Right edge: ${rightEdge.toFixed(4)}`);
+                      console.log(`[DRAW NARAYYA] Available space: ${(rightEdge - currentX).toFixed(4)}`);
+                      console.log(`[DRAW NARAYYA] Will fit: ${willFit}`);
+                    } else {
+                      console.log(`[DRAW] Line ${drawLine}, Index ${index}, Name: "${staff.name}", currentX: ${currentX.toFixed(2)}, nameW: ${nameWidth.toFixed(2)}, commaW: ${commaWidth.toFixed(2)}, spaceW: ${spaceWidth.toFixed(2)}, total: ${(currentX + commaWidth + spaceWidth + nameWidth).toFixed(2)}, rightEdge: ${rightEdge.toFixed(2)}, willFit: ${willFit}`);
+                    }
 
                     // Check if comma + space + name will fit on current line
                     if (!willFit) {
@@ -191,19 +235,35 @@ export class RosterListGenerator {
                       currentX = data.cell.x + 2;
                       cellY += lineHeight;
                       drawLine++;
-                      console.log(`[DRAW] -> NEW LINE ${drawLine}, Y: ${cellY.toFixed(2)}, X reset to ${currentX.toFixed(2)}`);
+                      if (isNarayya) {
+                        console.log(`[DRAW NARAYYA] -> NEW LINE ${drawLine}, Y: ${cellY.toFixed(4)}, X reset to ${currentX.toFixed(4)}`);
+                      } else {
+                        console.log(`[DRAW] -> NEW LINE ${drawLine}, Y: ${cellY.toFixed(2)}, X reset to ${currentX.toFixed(2)}`);
+                      }
                     } else {
                       // Will fit, draw comma and space in previous staff's color
                       const previousStaff = staffNamesData[index - 1];
                       const previousRgbColor = this.hexToRgb(previousStaff.color);
                       doc.setTextColor(previousRgbColor[0], previousRgbColor[1], previousRgbColor[2]);
 
+                      if (isNarayya) {
+                        console.log(`[DRAW NARAYYA] Drawing comma at X: ${currentX.toFixed(4)}`);
+                      }
                       doc.text(',', currentX, cellY);
                       currentX += commaWidth;
 
+                      if (isNarayya) {
+                        console.log(`[DRAW NARAYYA] After comma, X: ${currentX.toFixed(4)}`);
+                        console.log(`[DRAW NARAYYA] Drawing space at X: ${currentX.toFixed(4)}`);
+                      }
                       doc.text(' ', currentX, cellY);
                       currentX += spaceWidth;
-                      console.log(`[DRAW] -> SAME LINE, drew comma+space, X now ${currentX.toFixed(2)}`);
+
+                      if (isNarayya) {
+                        console.log(`[DRAW NARAYYA] -> SAME LINE, drew comma+space, X now ${currentX.toFixed(4)}`);
+                      } else {
+                        console.log(`[DRAW] -> SAME LINE, drew comma+space, X now ${currentX.toFixed(2)}`);
+                      }
                     }
                   } else {
                     console.log(`[DRAW] Line ${drawLine}, Index 0, Name: "${staff.name}", currentX: ${currentX.toFixed(2)}, nameW: ${nameWidth.toFixed(2)}`);
@@ -214,9 +274,20 @@ export class RosterListGenerator {
                   doc.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
 
                   // Draw the staff name
+                  if (isNarayya) {
+                    console.log(`[DRAW NARAYYA] Drawing name at X: ${currentX.toFixed(4)}, Y: ${cellY.toFixed(4)}`);
+                  }
                   doc.text(staff.name, currentX, cellY);
-                  console.log(`[DRAW] -> Drew "${staff.name}" at X: ${currentX.toFixed(2)}, Y: ${cellY.toFixed(2)}`);
+                  if (isNarayya) {
+                    console.log(`[DRAW NARAYYA] Drew "${staff.name}" at X: ${currentX.toFixed(4)}, Y: ${cellY.toFixed(4)}`);
+                  } else {
+                    console.log(`[DRAW] -> Drew "${staff.name}" at X: ${currentX.toFixed(2)}, Y: ${cellY.toFixed(2)}`);
+                  }
                   currentX += nameWidth;
+                  if (isNarayya) {
+                    console.log(`[DRAW NARAYYA] After name, X: ${currentX.toFixed(4)}`);
+                    console.log(`[DRAW NARAYYA] =============================`);
+                  }
                 });
                 
                 // Reset color for other cells
