@@ -123,26 +123,34 @@ export class RosterListGenerator {
                 let tempX = 0;
                 
                 // Pre-calculate how many lines we'll need
+                console.log(`[PRE-CALC] Cell width: ${maxWidth}, Staff count: ${staffNamesData.length}`);
                 staffNamesData.forEach((staff, index) => {
                   const nameWidth = doc.getTextWidth(staff.name);
                   const commaWidth = doc.getTextWidth(',');
                   const spaceWidth = doc.getTextWidth(' ');
 
                   if (index > 0) {
+                    const willFit = tempX + commaWidth + spaceWidth + nameWidth <= maxWidth;
+                    console.log(`[PRE-CALC] Index ${index}, Name: "${staff.name}", tempX: ${tempX.toFixed(2)}, nameW: ${nameWidth.toFixed(2)}, commaW: ${commaWidth.toFixed(2)}, spaceW: ${spaceWidth.toFixed(2)}, total: ${(tempX + commaWidth + spaceWidth + nameWidth).toFixed(2)}, maxW: ${maxWidth.toFixed(2)}, willFit: ${willFit}`);
+
                     // Check if comma + space + name will fit
-                    if (tempX + commaWidth + spaceWidth + nameWidth > maxWidth) {
+                    if (!willFit) {
                       // Won't fit, move to next line
                       totalLines++;
                       tempX = nameWidth; // Reset with just the name on new line
+                      console.log(`[PRE-CALC] -> NEW LINE ${totalLines}, tempX reset to ${tempX.toFixed(2)}`);
                     } else {
                       // Will fit, add comma + space + name
                       tempX += commaWidth + spaceWidth + nameWidth;
+                      console.log(`[PRE-CALC] -> SAME LINE, tempX now ${tempX.toFixed(2)}`);
                     }
                   } else {
                     // First name, just add the name width
                     tempX = nameWidth;
+                    console.log(`[PRE-CALC] Index 0, Name: "${staff.name}", tempX: ${tempX.toFixed(2)}`);
                   }
                 });
+                console.log(`[PRE-CALC] Total lines calculated: ${totalLines}`);
                 
                 // Calculate starting Y position for vertical centering
                 const totalHeight = totalLines * lineHeight;
@@ -152,6 +160,9 @@ export class RosterListGenerator {
                 doc.setFontSize(8);
                 doc.setFont('helvetica', 'normal');
 
+                console.log(`[DRAW] Starting Y: ${cellY.toFixed(2)}, Cell bounds: ${data.cell.x} to ${(data.cell.x + data.cell.width - 6).toFixed(2)}`);
+                let drawLine = 1;
+
                 staffNamesData.forEach((staff, index) => {
                   // Calculate width for this staff name
                   const nameWidth = doc.getTextWidth(staff.name);
@@ -160,11 +171,17 @@ export class RosterListGenerator {
 
                   // Check if we need comma and space before this name
                   if (index > 0) {
+                    const rightEdge = data.cell.x + data.cell.width - 6;
+                    const willFit = currentX + commaWidth + spaceWidth + nameWidth <= rightEdge;
+                    console.log(`[DRAW] Line ${drawLine}, Index ${index}, Name: "${staff.name}", currentX: ${currentX.toFixed(2)}, nameW: ${nameWidth.toFixed(2)}, commaW: ${commaWidth.toFixed(2)}, spaceW: ${spaceWidth.toFixed(2)}, total: ${(currentX + commaWidth + spaceWidth + nameWidth).toFixed(2)}, rightEdge: ${rightEdge.toFixed(2)}, willFit: ${willFit}`);
+
                     // Check if comma + space + name will fit on current line
-                    if (currentX + commaWidth + spaceWidth + nameWidth > data.cell.x + data.cell.width - 6) {
+                    if (!willFit) {
                       // Won't fit, move to next line WITHOUT drawing comma
                       currentX = data.cell.x + 2;
                       cellY += lineHeight;
+                      drawLine++;
+                      console.log(`[DRAW] -> NEW LINE ${drawLine}, Y: ${cellY.toFixed(2)}, X reset to ${currentX.toFixed(2)}`);
                     } else {
                       // Will fit, draw comma and space in previous staff's color
                       const previousStaff = staffNamesData[index - 1];
@@ -176,7 +193,10 @@ export class RosterListGenerator {
 
                       doc.text(' ', currentX, cellY);
                       currentX += spaceWidth;
+                      console.log(`[DRAW] -> SAME LINE, drew comma+space, X now ${currentX.toFixed(2)}`);
                     }
+                  } else {
+                    console.log(`[DRAW] Line ${drawLine}, Index 0, Name: "${staff.name}", currentX: ${currentX.toFixed(2)}, nameW: ${nameWidth.toFixed(2)}`);
                   }
 
                   // Now draw the current staff name in their color
@@ -185,6 +205,7 @@ export class RosterListGenerator {
 
                   // Draw the staff name
                   doc.text(staff.name, currentX, cellY);
+                  console.log(`[DRAW] -> Drew "${staff.name}" at X: ${currentX.toFixed(2)}, Y: ${cellY.toFixed(2)}`);
                   currentX += nameWidth;
                 });
                 
