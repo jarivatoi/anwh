@@ -133,10 +133,10 @@ export class RosterListGenerator {
                 doc.setFontSize(8);
 
                 staffNamesData.forEach((staff, index) => {
-                  // Use getStringUnitWidth for consistency with drawing phase
-                  const nameWidth = doc.getStringUnitWidth(staff.name) * doc.getFontSize() / doc.internal.scaleFactor;
-                  const commaWidth = doc.getStringUnitWidth(',') * doc.getFontSize() / doc.internal.scaleFactor;
-                  const spaceWidth = doc.getStringUnitWidth(' ') * doc.getFontSize() / doc.internal.scaleFactor;
+                  // Use getTextWidth for consistency with drawing phase
+                  const nameWidth = doc.getTextWidth(staff.name);
+                  const commaWidth = doc.getTextWidth(',');
+                  const spaceWidth = doc.getTextWidth(' ');
 
                   if (index > 0) {
                     const totalWidth = tempX + commaWidth + spaceWidth + nameWidth;
@@ -199,10 +199,10 @@ export class RosterListGenerator {
                       doc.setTextColor(previousRgbColor[0], previousRgbColor[1], previousRgbColor[2]);
 
                       doc.text(',', currentX, cellY);
-                      currentX += commaWidth + 1.0;
+                      currentX += commaWidth;
 
                       doc.text(' ', currentX, cellY);
-                      currentX += spaceWidth + 0.5;
+                      currentX += spaceWidth;
                       console.log(`[DRAW] -> SAME LINE, drew comma+space, X now ${currentX.toFixed(2)}`);
                     }
                   } else {
