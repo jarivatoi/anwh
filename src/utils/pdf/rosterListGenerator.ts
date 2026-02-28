@@ -147,31 +147,38 @@ export class RosterListGenerator {
                   // Set individual color for this staff member
                   const rgbColor = this.hexToRgb(staff.color);
                   doc.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
-                  
+
                   // Format text with comma separator (but not at start of new lines)
                   const isFirstOnLine = currentX === data.cell.x + 2;
                   const textToShow = (index === 0 || isFirstOnLine) ? staff.name : `, ${staff.name}`;
-                  
-                  // Calculate width including potential comma at end of line
+
+                  // Calculate width including spacing
                   const textWidth = doc.getTextWidth(textToShow);
-                  const commaWidth = doc.getTextWidth(',');
+                  const commaWidth = doc.getTextWidth(', '); // Include space after comma
+                  const spaceBuffer = 1; // Add small buffer for safety
                   const willNeedCommaAtEnd = index < staffNamesData.length - 1; // Not the last name
-                  const totalWidthNeeded = textWidth + (willNeedCommaAtEnd ? commaWidth : 0);
-                  
-                  // Check if text (including comma) would exceed cell width (with 4mm margin)
-                  
+                  const totalWidthNeeded = textWidth + (willNeedCommaAtEnd ? spaceBuffer : 0);
+
                   // If text (including comma) would exceed width, move to next line
                   if (currentX + totalWidthNeeded > data.cell.x + data.cell.width - 6 && index > 0) {
+                    // Get the previous staff member's color for the comma
+                    const previousStaff = staffNamesData[index - 1];
+                    const previousRgbColor = this.hexToRgb(previousStaff.color);
+                    doc.setTextColor(previousRgbColor[0], previousRgbColor[1], previousRgbColor[2]);
+
                     // Add comma after the PREVIOUS name (the last name on the current line)
                     doc.text(',', currentX, cellY);
-                    
+
                     currentX = data.cell.x + 2; // Reset to left margin
                     cellY += lineHeight; // Move down for next line
-                    
+
+                    // Set color back to current staff member
+                    doc.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
+
                     // Recalculate text without comma for new line
                     const newLineText = staff.name;
                     const newLineWidth = doc.getTextWidth(newLineText);
-                    
+
                     // Draw the text at current position (no comma at start of line)
                     doc.text(newLineText, currentX, cellY);
                     currentX += newLineWidth;
