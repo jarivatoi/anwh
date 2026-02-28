@@ -142,7 +142,10 @@ export class RosterListGenerator {
                 // Set font to match table
                 doc.setFontSize(8);
                 doc.setFont('helvetica', 'normal');
-                
+
+                console.log('🎨 Drawing staff names:', staffNamesData.map(s => `${s.name} (${s.color})`).join(', '));
+                console.log('📏 Cell bounds: x=' + data.cell.x + ', width=' + data.cell.width + ', maxX=' + (data.cell.x + data.cell.width - 6));
+
                 staffNamesData.forEach((staff, index) => {
                   // Set individual color for this staff member
                   const rgbColor = this.hexToRgb(staff.color);
@@ -159,20 +162,31 @@ export class RosterListGenerator {
                   const willNeedCommaAtEnd = index < staffNamesData.length - 1; // Not the last name
                   const totalWidthNeeded = textWidth + (willNeedCommaAtEnd ? spaceBuffer : 0);
 
+                  console.log(`\n👤 [${index}] ${staff.name} (${staff.color})`);
+                  console.log(`   currentX: ${currentX.toFixed(2)}, textToShow: "${textToShow}"`);
+                  console.log(`   textWidth: ${textWidth.toFixed(2)}, totalNeeded: ${totalWidthNeeded.toFixed(2)}`);
+                  console.log(`   wouldExceed: ${currentX + totalWidthNeeded} > ${data.cell.x + data.cell.width - 6} = ${currentX + totalWidthNeeded > data.cell.x + data.cell.width - 6}`);
+
                   // If text (including comma) would exceed width, move to next line
                   if (currentX + totalWidthNeeded > data.cell.x + data.cell.width - 6 && index > 0) {
+                    console.log(`   ⚠️ WRAPPING! Adding comma for previous staff`);
+
                     // Get the previous staff member's color for the comma
                     const previousStaff = staffNamesData[index - 1];
                     const previousRgbColor = this.hexToRgb(previousStaff.color);
+                    console.log(`   Previous staff: ${previousStaff.name} (${previousStaff.color}) -> RGB(${previousRgbColor.join(',')})`);
                     doc.setTextColor(previousRgbColor[0], previousRgbColor[1], previousRgbColor[2]);
 
                     // Add comma after the PREVIOUS name (the last name on the current line)
+                    console.log(`   Drawing comma at x=${currentX.toFixed(2)}, y=${cellY.toFixed(2)}`);
                     doc.text(',', currentX, cellY);
 
                     currentX = data.cell.x + 2; // Reset to left margin
                     cellY += lineHeight; // Move down for next line
+                    console.log(`   New line: x=${currentX.toFixed(2)}, y=${cellY.toFixed(2)}`);
 
                     // Set color back to current staff member
+                    console.log(`   Setting color for ${staff.name}: RGB(${rgbColor.join(',')})`);
                     doc.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
 
                     // Recalculate text without comma for new line
@@ -180,10 +194,12 @@ export class RosterListGenerator {
                     const newLineWidth = doc.getTextWidth(newLineText);
 
                     // Draw the text at current position (no comma at start of line)
+                    console.log(`   Drawing "${newLineText}" at x=${currentX.toFixed(2)}, width=${newLineWidth.toFixed(2)}`);
                     doc.text(newLineText, currentX, cellY);
                     currentX += newLineWidth;
                   } else {
                     // Draw the text at current position
+                    console.log(`   ✓ Drawing "${textToShow}" at x=${currentX.toFixed(2)}, RGB(${rgbColor.join(',')})`);
                     doc.text(textToShow, currentX, cellY);
                     currentX += textWidth;
                   }
