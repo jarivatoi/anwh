@@ -152,6 +152,17 @@ export class RosterListGenerator {
                       console.log(`[PRE-CALC NARAYYA] Comma width: ${commaWidth.toFixed(4)}`);
                       console.log(`[PRE-CALC NARAYYA] Space width: ${spaceWidth.toFixed(4)}`);
                       console.log(`[PRE-CALC NARAYYA] Name width: ${nameWidth.toFixed(4)}`);
+
+                      // Character-by-character debugging
+                      let charDebug = '';
+                      for (let i = 0; i < staff.name.length; i++) {
+                        const char = staff.name[i];
+                        const charWidth = doc.getTextWidth(char);
+                        charDebug += `'${char}':${charWidth.toFixed(4)} `;
+                      }
+                      console.log(`[PRE-CALC NARAYYA] Character widths: ${charDebug}`);
+                      console.log(`[PRE-CALC NARAYYA] Full text width check: ${doc.getTextWidth(staff.name).toFixed(4)}`);
+
                       console.log(`[PRE-CALC NARAYYA] Total needed: ${totalWidth.toFixed(4)}`);
                       console.log(`[PRE-CALC NARAYYA] Cell right: ${cellRight.toFixed(4)}`);
                       console.log(`[PRE-CALC NARAYYA] Available space: ${(cellRight - tempX).toFixed(4)}`);
@@ -221,6 +232,17 @@ export class RosterListGenerator {
                       console.log(`[DRAW NARAYYA] Comma width: ${commaWidth.toFixed(4)}`);
                       console.log(`[DRAW NARAYYA] Space width: ${spaceWidth.toFixed(4)}`);
                       console.log(`[DRAW NARAYYA] Name width: ${nameWidth.toFixed(4)}`);
+
+                      // Character-by-character debugging
+                      let charDebug = '';
+                      for (let i = 0; i < staff.name.length; i++) {
+                        const char = staff.name[i];
+                        const charWidth = doc.getTextWidth(char);
+                        charDebug += `'${char}':${charWidth.toFixed(4)} `;
+                      }
+                      console.log(`[DRAW NARAYYA] Character widths: ${charDebug}`);
+                      console.log(`[DRAW NARAYYA] Full text width check: ${doc.getTextWidth(staff.name).toFixed(4)}`);
+
                       console.log(`[DRAW NARAYYA] Total needed: ${(currentX + commaWidth + spaceWidth + nameWidth).toFixed(4)}`);
                       console.log(`[DRAW NARAYYA] Right edge: ${rightEdge.toFixed(4)}`);
                       console.log(`[DRAW NARAYYA] Available space: ${(rightEdge - currentX).toFixed(4)}`);
@@ -276,6 +298,12 @@ export class RosterListGenerator {
                   // Draw the staff name
                   if (isNarayya) {
                     console.log(`[DRAW NARAYYA] Drawing name at X: ${currentX.toFixed(4)}, Y: ${cellY.toFixed(4)}`);
+                    // Measure what jsPDF will actually render
+                    const actualTextWidth = doc.getTextWidth(staff.name);
+                    const actualEndX = currentX + actualTextWidth;
+                    console.log(`[DRAW NARAYYA] Expected end X: ${(currentX + nameWidth).toFixed(4)}`);
+                    console.log(`[DRAW NARAYYA] Actual text width from jsPDF: ${actualTextWidth.toFixed(4)}`);
+                    console.log(`[DRAW NARAYYA] Actual end X would be: ${actualEndX.toFixed(4)}`);
                   }
                   doc.text(staff.name, currentX, cellY);
                   if (isNarayya) {
