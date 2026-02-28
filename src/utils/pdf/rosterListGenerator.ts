@@ -118,26 +118,30 @@ export class RosterListGenerator {
                 let currentX = data.cell.x + 2;
                 let currentLine = 0;
                 const lineHeight = 3;
-                const maxWidth = data.cell.width - 6; // Increased margin for better spacing
                 let totalLines = 1;
-                let tempX = 0;
-                
+
                 // Pre-calculate how many lines we'll need
-                console.log(`[PRE-CALC] Cell width: ${maxWidth}, Staff count: ${staffNamesData.length}`);
+                // CRITICAL: We must use the same coordinate system as during drawing
+                const cellLeft = data.cell.x + 2;
+                const cellRight = data.cell.x + data.cell.width - 6;
+                let tempX = cellLeft; // Start from actual cell position, not 0!
+
+                console.log(`[PRE-CALC] Cell left: ${cellLeft.toFixed(2)}, Cell right: ${cellRight.toFixed(2)}, Staff count: ${staffNamesData.length}`);
                 staffNamesData.forEach((staff, index) => {
                   const nameWidth = doc.getTextWidth(staff.name);
                   const commaWidth = doc.getTextWidth(',');
                   const spaceWidth = doc.getTextWidth(' ');
 
                   if (index > 0) {
-                    const willFit = tempX + commaWidth + spaceWidth + nameWidth <= maxWidth;
-                    console.log(`[PRE-CALC] Index ${index}, Name: "${staff.name}", tempX: ${tempX.toFixed(2)}, nameW: ${nameWidth.toFixed(2)}, commaW: ${commaWidth.toFixed(2)}, spaceW: ${spaceWidth.toFixed(2)}, total: ${(tempX + commaWidth + spaceWidth + nameWidth).toFixed(2)}, maxW: ${maxWidth.toFixed(2)}, willFit: ${willFit}`);
+                    const totalWidth = tempX + commaWidth + spaceWidth + nameWidth;
+                    const willFit = totalWidth <= cellRight;
+                    console.log(`[PRE-CALC] Index ${index}, Name: "${staff.name}", tempX: ${tempX.toFixed(2)}, nameW: ${nameWidth.toFixed(2)}, commaW: ${commaWidth.toFixed(2)}, spaceW: ${spaceWidth.toFixed(2)}, total: ${totalWidth.toFixed(2)}, cellRight: ${cellRight.toFixed(2)}, willFit: ${willFit}`);
 
                     // Check if comma + space + name will fit
                     if (!willFit) {
                       // Won't fit, move to next line
                       totalLines++;
-                      tempX = nameWidth; // Reset with just the name on new line
+                      tempX = cellLeft + nameWidth; // Reset to left edge + name width
                       console.log(`[PRE-CALC] -> NEW LINE ${totalLines}, tempX reset to ${tempX.toFixed(2)}`);
                     } else {
                       // Will fit, add comma + space + name
@@ -145,8 +149,8 @@ export class RosterListGenerator {
                       console.log(`[PRE-CALC] -> SAME LINE, tempX now ${tempX.toFixed(2)}`);
                     }
                   } else {
-                    // First name, just add the name width
-                    tempX = nameWidth;
+                    // First name, start from left edge + name width
+                    tempX = cellLeft + nameWidth;
                     console.log(`[PRE-CALC] Index 0, Name: "${staff.name}", tempX: ${tempX.toFixed(2)}`);
                   }
                 });
