@@ -398,31 +398,18 @@ export class BoxParser {
    */
   private identifyShiftTypeFromText(text: string): string | null {
     const lowerText = text.toLowerCase();
-    const trimmedText = text.trim();
-
-    // CRITICAL: Check if this text could be a staff name BEFORE checking shift patterns
-    // This prevents staff names starting with 'N' (like NARAYYA) from being detected as Night Duty
-    if (this.findMatchingStaffName(text)) {
-      console.log(`⚠️ SHIFT DEBUG: Skipping "${text}" - it's a staff name, not a shift`);
-      return null;
-    }
-
+    
     // HIGHEST PRIORITY: Evening Shift patterns (check these FIRST)
     if (lowerText.includes('4-10') || lowerText.includes('16hrs-22hrs') || lowerText.includes('16-22')) {
       return 'Evening Shift (4-10)';
     }
-
+    
     if (lowerText.includes('evening') || lowerText.includes('4pm') || lowerText.includes('16:')) {
       return 'Evening Shift (4-10)';
     }
-
-    // Single letter patterns - ONLY if it's exactly 'N' or 'n' with no other characters
-    if ((trimmedText === 'N' || trimmedText === 'n') && trimmedText.length === 1) {
-      return 'Night Duty';
-    }
-
-    // Full word 'night' pattern
-    if (lowerText === 'night') {
+    
+    // Single letter patterns
+    if (text.trim() === 'N' || lowerText === 'night' || lowerText === 'n') {
       return 'Night Duty';
     }
     
