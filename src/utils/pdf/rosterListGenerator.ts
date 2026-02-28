@@ -128,8 +128,8 @@ export class RosterListGenerator {
 
                 console.log(`[PRE-CALC] Cell left: ${cellLeft.toFixed(2)}, Cell right: ${cellRight.toFixed(2)}, Staff count: ${staffNamesData.length}`);
 
-                // Set font to match drawing phase
-                doc.setFont('helvetica', 'bold');
+                // Set font to match drawing phase - MUST BE NORMAL, NOT BOLD
+                doc.setFont('helvetica', 'normal');
                 doc.setFontSize(8);
 
                 staffNamesData.forEach((staff, index) => {
