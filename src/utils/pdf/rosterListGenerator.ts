@@ -119,6 +119,8 @@ export class RosterListGenerator {
                 let currentLine = 0;
                 const lineHeight = 3;
                 let totalLines = 1;
+                // Add a small buffer after each name to prevent comma overlap
+                const nameBuffer = 0.5;
 
                 // Pre-calculate how many lines we'll need
                 // CRITICAL: We must use the same coordinate system as during drawing
