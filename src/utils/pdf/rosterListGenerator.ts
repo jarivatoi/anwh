@@ -166,18 +166,18 @@ export class RosterListGenerator {
                 const totalHeight = totalLines * lineHeight;
                 let cellY = data.cell.y + (data.cell.height / 2) - (totalHeight / 2) + 2;
                 
-                // Set font to match table
+                // Set font to match table AND pre-calc phase
                 doc.setFontSize(8);
-                doc.setFont('helvetica', 'normal');
+                doc.setFont('helvetica', 'bold');
 
                 console.log(`[DRAW] Starting Y: ${cellY.toFixed(2)}, Cell bounds: ${data.cell.x} to ${(data.cell.x + data.cell.width - 6).toFixed(2)}`);
                 let drawLine = 1;
 
                 staffNamesData.forEach((staff, index) => {
-                  // Calculate width for this staff name
-                  const nameWidth = doc.getTextWidth(staff.name);
-                  const commaWidth = doc.getTextWidth(',');
-                  const spaceWidth = doc.getTextWidth(' ');
+                  // Calculate width using SAME method as PRE-CALC
+                  const nameWidth = doc.getStringUnitWidth(staff.name) * doc.getFontSize() / doc.internal.scaleFactor;
+                  const commaWidth = doc.getStringUnitWidth(',') * doc.getFontSize() / doc.internal.scaleFactor;
+                  const spaceWidth = doc.getStringUnitWidth(' ') * doc.getFontSize() / doc.internal.scaleFactor;
 
                   // Check if we need comma and space before this name
                   if (index > 0) {
