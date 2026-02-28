@@ -199,7 +199,7 @@ export class RosterListGenerator {
                       doc.setTextColor(previousRgbColor[0], previousRgbColor[1], previousRgbColor[2]);
 
                       doc.text(',', currentX, cellY);
-                      currentX += commaWidth;
+                      currentX += commaWidth + 0.3;
 
                       doc.text(' ', currentX, cellY);
                       currentX += spaceWidth;
