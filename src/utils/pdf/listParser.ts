@@ -551,60 +551,74 @@ export class ListParser {
    */
   private identifyShiftTypeFromText(text: string): string | null {
     const lowerText = text.toLowerCase();
-    
+    const trimmedText = text.trim();
+
     console.log(`🔍 SHIFT DEBUG: Analyzing text: "${text}"`);
-    
+
+    // CRITICAL: Check if this text could be a staff name BEFORE checking shift patterns
+    // This prevents staff names starting with 'N' (like NARAYYA) from being detected as Night Duty
+    if (this.findMatchingStaffName(text)) {
+      console.log(`⚠️ SHIFT DEBUG: Skipping "${text}" - it's a staff name, not a shift`);
+      return null;
+    }
+
     // PRIORITY 1: Exact parenthetical matches (most common in this PDF format)
     if (lowerText.includes('evening') && lowerText.includes('(4-10)')) {
       return 'Evening Shift (4-10)';
     }
-    
+
     if (lowerText.includes('morning') && lowerText.includes('(9-4)')) {
       return 'Morning Shift (9-4)';
     }
-    
+
     if (lowerText.includes('saturday') && lowerText.includes('(12-10)')) {
       return 'Saturday Regular (12-10)';
     }
-    
+
     // PRIORITY 2: Direct shift type matches (most common in list format)
     if (lowerText.includes('evening') && lowerText.includes('4-10')) {
       return 'Evening Shift (4-10)';
     }
-    
+
     if (lowerText.includes('morning') && lowerText.includes('9-4')) {
       return 'Morning Shift (9-4)';
     }
-    
+
     if (lowerText.includes('saturday') && lowerText.includes('12-10')) {
       return 'Saturday Regular (12-10)';
     }
-    
+
     if (lowerText.includes('night duty') || lowerText === 'night duty') {
       return 'Night Duty';
     }
-    
+
     if (lowerText.includes('sunday') || lowerText.includes('public holiday') || lowerText.includes('special')) {
       return 'Sunday/Public Holiday/Special';
     }
-    
+
     // PRIORITY 3: Fallback patterns
     if (lowerText.includes('4-10') || lowerText.includes('16-22')) {
       return 'Evening Shift (4-10)';
     }
-    
+
     if (lowerText.includes('9-4') || lowerText.includes('9-16')) {
       return 'Morning Shift (9-4)';
     }
-    
+
     if (lowerText.includes('12-10') || lowerText.includes('12-22')) {
       return 'Saturday Regular (12-10)';
     }
-    
-    if (lowerText === 'n' || lowerText === 'night') {
+
+    // Single letter 'N' or 'n' - ONLY if it's exactly one character
+    if ((trimmedText === 'N' || trimmedText === 'n') && trimmedText.length === 1) {
       return 'Night Duty';
     }
-    
+
+    // Full word 'night' pattern
+    if (lowerText === 'night') {
+      return 'Night Duty';
+    }
+
     console.log(`❌ SHIFT DEBUG: No pattern matched for: "${text}"`);
     return null;
   }
