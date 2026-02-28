@@ -199,10 +199,10 @@ export class RosterListGenerator {
                       doc.setTextColor(previousRgbColor[0], previousRgbColor[1], previousRgbColor[2]);
 
                       doc.text(',', currentX, cellY);
-                      currentX += commaWidth + 0.3;
+                      currentX += commaWidth + 1.0;
 
                       doc.text(' ', currentX, cellY);
-                      currentX += spaceWidth;
+                      currentX += spaceWidth + 0.5;
                       console.log(`[DRAW] -> SAME LINE, drew comma+space, X now ${currentX.toFixed(2)}`);
                     }
                   } else {
