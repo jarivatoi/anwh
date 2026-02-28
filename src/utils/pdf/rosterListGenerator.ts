@@ -127,10 +127,16 @@ export class RosterListGenerator {
                 let tempX = cellLeft; // Start from actual cell position, not 0!
 
                 console.log(`[PRE-CALC] Cell left: ${cellLeft.toFixed(2)}, Cell right: ${cellRight.toFixed(2)}, Staff count: ${staffNamesData.length}`);
+
+                // Set font to match drawing phase
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8);
+
                 staffNamesData.forEach((staff, index) => {
-                  const nameWidth = doc.getTextWidth(staff.name);
-                  const commaWidth = doc.getTextWidth(',');
-                  const spaceWidth = doc.getTextWidth(' ');
+                  // Use getStringUnitWidth for consistency with drawing phase
+                  const nameWidth = doc.getStringUnitWidth(staff.name) * doc.getFontSize() / doc.internal.scaleFactor;
+                  const commaWidth = doc.getStringUnitWidth(',') * doc.getFontSize() / doc.internal.scaleFactor;
+                  const spaceWidth = doc.getStringUnitWidth(' ') * doc.getFontSize() / doc.internal.scaleFactor;
 
                   if (index > 0) {
                     const totalWidth = tempX + commaWidth + spaceWidth + nameWidth;
