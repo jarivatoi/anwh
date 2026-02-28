@@ -124,14 +124,23 @@ export class RosterListGenerator {
                 
                 // Pre-calculate how many lines we'll need
                 staffNamesData.forEach((staff, index) => {
-                  const textToShow = index === 0 ? staff.name : `, ${staff.name}`;
-                  const textWidth = doc.getTextWidth(textToShow);
-                  
-                  if (tempX + textWidth > maxWidth && index > 0) {
-                    totalLines++;
-                    tempX = doc.getTextWidth(staff.name); // Reset with just the name (no comma)
+                  const nameWidth = doc.getTextWidth(staff.name);
+                  const commaWidth = doc.getTextWidth(',');
+                  const spaceWidth = doc.getTextWidth(' ');
+
+                  if (index > 0) {
+                    // Check if comma + space + name will fit
+                    if (tempX + commaWidth + spaceWidth + nameWidth > maxWidth) {
+                      // Won't fit, move to next line
+                      totalLines++;
+                      tempX = nameWidth; // Reset with just the name on new line
+                    } else {
+                      // Will fit, add comma + space + name
+                      tempX += commaWidth + spaceWidth + nameWidth;
+                    }
                   } else {
-                    tempX += textWidth;
+                    // First name, just add the name width
+                    tempX = nameWidth;
                   }
                 });
                 
