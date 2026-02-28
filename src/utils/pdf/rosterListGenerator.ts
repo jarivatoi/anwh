@@ -150,9 +150,12 @@ export class RosterListGenerator {
                     const previousRgbColor = this.hexToRgb(previousStaff.color);
                     doc.setTextColor(previousRgbColor[0], previousRgbColor[1], previousRgbColor[2]);
 
-                    // Draw comma and space
-                    doc.text(', ', currentX, cellY);
-                    currentX += doc.getTextWidth(', ');
+                    // Draw comma and space separately for better spacing control
+                    doc.text(',', currentX, cellY);
+                    currentX += doc.getTextWidth(',');
+
+                    doc.text(' ', currentX, cellY);
+                    currentX += doc.getTextWidth(' ');
                   }
 
                   // Now draw the current staff name in their color
@@ -162,10 +165,10 @@ export class RosterListGenerator {
                   // Calculate width for line wrapping
                   const nameWidth = doc.getTextWidth(staff.name);
                   const willNeedComma = index < staffNamesData.length - 1;
-                  const commaWidth = willNeedComma ? doc.getTextWidth(', ') : 0;
+                  const commaSpaceWidth = willNeedComma ? (doc.getTextWidth(',') + doc.getTextWidth(' ')) : 0;
 
                   // Check if we need to wrap to next line
-                  if (currentX + nameWidth + commaWidth > data.cell.x + data.cell.width - 6 && index > 0) {
+                  if (currentX + nameWidth + commaSpaceWidth > data.cell.x + data.cell.width - 6 && index > 0) {
                     // Move to next line
                     currentX = data.cell.x + 2;
                     cellY += lineHeight;
