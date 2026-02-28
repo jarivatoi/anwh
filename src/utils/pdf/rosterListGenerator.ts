@@ -268,18 +268,30 @@ export class RosterListGenerator {
                       const previousRgbColor = this.hexToRgb(previousStaff.color);
                       doc.setTextColor(previousRgbColor[0], previousRgbColor[1], previousRgbColor[2]);
 
-                      if (isNarayya) {
-                        console.log(`[DRAW NARAYYA] Drawing ", " at X: ${currentX.toFixed(4)}`);
+                      // Debug for NARAYYA and comparison names
+                      const isGhooran = staff.name.includes('GHOORAN');
+                      const isHosenbux = staff.name.includes('HOSENBUX');
+                      const showDebug = isNarayya || isGhooran || isHosenbux;
+
+                      if (showDebug) {
+                        const prefix = isNarayya ? 'NARAYYA' : (isGhooran ? 'GHOORAN' : 'HOSENBUX');
+                        console.log(`[DRAW ${prefix}] =============================`);
+                        console.log(`[DRAW ${prefix}] Previous name: "${previousStaff.name}"`);
+                        console.log(`[DRAW ${prefix}] Current name: "${staff.name}"`);
+                        console.log(`[DRAW ${prefix}] Drawing ", " at X: ${currentX.toFixed(4)}`);
                         const commaSpaceWidth = doc.getTextWidth(', ');
-                        console.log(`[DRAW NARAYYA] ", " combined width: ${commaSpaceWidth.toFixed(4)} vs sum: ${(commaWidth + spaceWidth).toFixed(4)}`);
+                        console.log(`[DRAW ${prefix}] ", " combined width: ${commaSpaceWidth.toFixed(4)} vs sum: ${(commaWidth + spaceWidth).toFixed(4)}`);
+                        console.log(`[DRAW ${prefix}] Comma alone: ${commaWidth.toFixed(4)}, Space alone: ${spaceWidth.toFixed(4)}`);
                       }
 
                       // Draw comma and space as a single string for proper rendering
                       doc.text(', ', currentX, cellY);
                       currentX += commaWidth + spaceWidth;
 
-                      if (isNarayya) {
-                        console.log(`[DRAW NARAYYA] -> SAME LINE, drew ", ", X now ${currentX.toFixed(4)}`);
+                      if (showDebug) {
+                        const prefix = isNarayya ? 'NARAYYA' : (isGhooran ? 'GHOORAN' : 'HOSENBUX');
+                        console.log(`[DRAW ${prefix}] After ", ", X now: ${currentX.toFixed(4)}`);
+                        console.log(`[DRAW ${prefix}] =============================`);
                       } else {
                         console.log(`[DRAW] -> SAME LINE, drew ", ", X now ${currentX.toFixed(2)}`);
                       }
