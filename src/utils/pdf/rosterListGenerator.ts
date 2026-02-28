@@ -269,22 +269,19 @@ export class RosterListGenerator {
                       doc.setTextColor(previousRgbColor[0], previousRgbColor[1], previousRgbColor[2]);
 
                       if (isNarayya) {
-                        console.log(`[DRAW NARAYYA] Drawing comma at X: ${currentX.toFixed(4)}`);
+                        console.log(`[DRAW NARAYYA] Drawing ", " at X: ${currentX.toFixed(4)}`);
+                        const commaSpaceWidth = doc.getTextWidth(', ');
+                        console.log(`[DRAW NARAYYA] ", " combined width: ${commaSpaceWidth.toFixed(4)} vs sum: ${(commaWidth + spaceWidth).toFixed(4)}`);
                       }
-                      doc.text(',', currentX, cellY);
-                      currentX += commaWidth;
+
+                      // Draw comma and space as a single string for proper rendering
+                      doc.text(', ', currentX, cellY);
+                      currentX += commaWidth + spaceWidth;
 
                       if (isNarayya) {
-                        console.log(`[DRAW NARAYYA] After comma, X: ${currentX.toFixed(4)}`);
-                        console.log(`[DRAW NARAYYA] Drawing space at X: ${currentX.toFixed(4)}`);
-                      }
-                      doc.text(' ', currentX, cellY);
-                      currentX += spaceWidth;
-
-                      if (isNarayya) {
-                        console.log(`[DRAW NARAYYA] -> SAME LINE, drew comma+space, X now ${currentX.toFixed(4)}`);
+                        console.log(`[DRAW NARAYYA] -> SAME LINE, drew ", ", X now ${currentX.toFixed(4)}`);
                       } else {
-                        console.log(`[DRAW] -> SAME LINE, drew comma+space, X now ${currentX.toFixed(2)}`);
+                        console.log(`[DRAW] -> SAME LINE, drew ", ", X now ${currentX.toFixed(2)}`);
                       }
                     }
                   } else {
