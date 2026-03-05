@@ -33,6 +33,13 @@ interface DBSchema {
       salary: number;
     };
   };
+  dateNotes: {
+    key: string;
+    value: {
+      date: string;
+      note: string;
+    };
+  };
 }
 
 class WorkScheduleDB {
@@ -103,6 +110,11 @@ class WorkScheduleDB {
         if (!db.objectStoreNames.contains('monthlySalaries')) {
           console.log('💰 Creating monthlySalaries store');
           db.createObjectStore('monthlySalaries', { keyPath: 'monthKey' });
+        }
+
+        if (!db.objectStoreNames.contains('dateNotes')) {
+          console.log('📝 Creating dateNotes store');
+          db.createObjectStore('dateNotes', { keyPath: 'date' });
         }
         console.log('✅ IndexedDB schema upgrade completed');
       };
@@ -433,11 +445,12 @@ class WorkScheduleDB {
       return `Roster_${day}-${month}-${year}.json`;
     };
 
-    const [schedule, specialDates, settings, scheduleTitle] = await Promise.all([
+    const [schedule, specialDates, settings, scheduleTitle, dateNotes] = await Promise.all([
       this.getSchedule(),
       this.getSpecialDates(),
       this.getSetting('workSettings'),
-      this.getMetadata('scheduleTitle')
+      this.getMetadata('scheduleTitle'),
+      this.getDateNotes()
     ]);
 
     // Ensure settings have shift combinations
@@ -457,6 +470,7 @@ class WorkScheduleDB {
       specialDates,
       settings: finalSettings,
       scheduleTitle: scheduleTitle || 'Work Schedule',
+      dateNotes,
       exportDate: new Date().toISOString(),
       version: '3.0',
       filename: createExportFilename().replace('Roster_', 'ANWH_')
@@ -513,6 +527,11 @@ class WorkScheduleDB {
     if (data.scheduleTitle) {
       console.log('📝 Importing schedule title:', data.scheduleTitle);
       promises.push(this.setMetadata('scheduleTitle', data.scheduleTitle));
+    }
+
+    if (data.dateNotes) {
+      console.log('📝 Importing date notes with', Object.keys(data.dateNotes).length, 'entries');
+      promises.push(this.setDateNotes(data.dateNotes));
     }
 
     await Promise.all(promises);
@@ -611,6 +630,59 @@ class WorkScheduleDB {
       request.onerror = () => {
         reject(new Error('Failed to get all monthly salaries'));
       };
+    });
+  }
+
+  async getDateNotes(): Promise<Record<string, string>> {
+    const db = await this.ensureDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['dateNotes'], 'readonly');
+      const store = transaction.objectStore('dateNotes');
+      const request = store.getAll();
+
+      request.onsuccess = () => {
+        const result: Record<string, string> = {};
+        request.result.forEach((item: { date: string; note: string }) => {
+          result[item.date] = item.note;
+        });
+        resolve(result);
+      };
+
+      request.onerror = () => {
+        reject(new Error('Failed to get date notes'));
+      };
+    });
+  }
+
+  async setDateNotes(dateNotes: Record<string, string>): Promise<void> {
+    const db = await this.ensureDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['dateNotes'], 'readwrite');
+      const store = transaction.objectStore('dateNotes');
+
+      transaction.onerror = () => {
+        console.error('❌ Date notes transaction error:', transaction.error);
+        reject(new Error(`Transaction failed: ${transaction.error}`));
+      };
+
+      transaction.oncomplete = () => {
+        console.log('✅ Date notes saved successfully');
+        resolve();
+      };
+
+      // Save each note
+      Object.entries(dateNotes).forEach(([date, note]) => {
+        if (note && note.trim() !== '') {
+          const request = store.put({ date, note });
+          request.onsuccess = () => {
+            console.log(`💾 Saved note for ${date}`);
+          };
+          request.onerror = () => {
+            console.error(`❌ Failed to save note for ${date}:`, request.error);
+          };
+        }
+      });
     });
   }
 }
