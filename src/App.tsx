@@ -12,7 +12,7 @@ import { useIndexedDB, useScheduleData } from './hooks/useIndexedDB';
 import { workScheduleDB } from './utils/indexedDB';
 import { DEFAULT_SHIFT_COMBINATIONS } from './constants';
 import { AddToHomescreen } from './utils/addToHomescreen';
-import { DaySchedule, SpecialDates, Settings, ExportData } from './types';
+import { DaySchedule, SpecialDates, Settings, ExportData, DateNotes } from './types';
 import { gsap } from 'gsap';
 import { RosterPanel } from './components/RosterPanel';
 import { syncRosterToCalendar } from './utils/rosterCalendarSync';
@@ -45,6 +45,39 @@ function App() {
 
   // Add monthly salary state
   const [monthlySalary, setMonthlySalary] = useState(0);
+
+  // Add date notes state
+  const [dateNotes, setDateNotes] = useState<DateNotes>({});
+
+  // Add manual mode state
+  const [useManualMode, setUseManualMode] = useState(false);
+
+  // Load date notes and manual mode on mount
+  useEffect(() => {
+    const loadDateNotesAndManualMode = async () => {
+      try {
+        await workScheduleDB.init();
+        const [notes, settingsData] = await Promise.all([
+          workScheduleDB.getDateNotes(),
+          workScheduleDB.getSetting('workSettings')
+        ]);
+        
+        if (notes && Object.keys(notes).length > 0) {
+          console.log('📝 Loaded date notes:', Object.keys(notes).length, 'entries');
+          setDateNotes(notes);
+        }
+        
+        if (settingsData?.useManualMode !== undefined) {
+          console.log('⚙️ Loaded manual mode:', settingsData.useManualMode);
+          setUseManualMode(settingsData.useManualMode);
+        }
+      } catch (error) {
+        console.error('Failed to load date notes/manual mode:', error);
+      }
+    };
+    
+    loadDateNotesAndManualMode();
+  }, []);
 
   // Extract month and year BEFORE using them
   const currentMonth = currentDate.getMonth();
@@ -298,6 +331,53 @@ function App() {
     // FIXED: Force refresh calculations when shifts change
     setRefreshKey(prev => prev + 1);
   };
+
+  // Handle note update for a date
+  const handleUpdateNote = useCallback(async (dateKey: string, note: string) => {
+    setDateNotes(prev => {
+      const updated = {
+        ...prev,
+        [dateKey]: note
+      };
+      
+      // Save to IndexedDB
+      workScheduleDB.setDateNotes(updated).catch(err => {
+        console.error('Failed to save date note:', err);
+      });
+      
+      return updated;
+    });
+  }, []);
+
+  // Handle manual amount update
+  const handleUpdateManualAmount = useCallback((combinationId: string, manualAmount: number) => {
+    setSettings(prev => {
+      const updatedCombinations = prev.shiftCombinations.map(combo => {
+        if (combo.id === combinationId) {
+          return {
+            ...combo,
+            useManualAmount: true,
+            manualAmount
+          };
+        }
+        return combo;
+      });
+      
+      return {
+        ...prev,
+        shiftCombinations: updatedCombinations
+      };
+    });
+  }, [setSettings]);
+
+  // Handle manual mode toggle
+  const handleToggleManualMode = useCallback((enabled: boolean) => {
+    setUseManualMode(enabled);
+    setSettings(prev => ({
+      ...prev,
+      useManualMode: enabled
+    }));
+  }, [setSettings]);
 
   // Handle roster to calendar synchronization
   const handleRosterCalendarSync = useCallback((event: CustomEvent) => {
@@ -703,6 +783,8 @@ function App() {
               currentDate={currentDate}
               schedule={schedule}
               specialDates={specialDates}
+              dateNotes={dateNotes}
+              setDateNotes={setDateNotes}
               onDateClick={handleDateClick}
               onNavigateMonth={navigateMonth}
               totalAmount={totalAmount}
@@ -719,8 +801,11 @@ function App() {
           ) : activeTab === 'settings' ? (
             <SettingsPanel
               settings={settings}
+              useManualMode={useManualMode}
+              onToggleManualMode={handleToggleManualMode}
               onUpdateBasicSalary={updateBasicSalary}
               onUpdateShiftHours={updateShiftHours}
+              onUpdateManualAmount={handleUpdateManualAmount}
             />
           ) : activeTab === 'data' ? (
             <MenuPanel
@@ -747,6 +832,8 @@ function App() {
               selectedDate={selectedDate}
               schedule={schedule}
               specialDates={specialDates}
+              dateNotes={dateNotes}
+              onUpdateNote={handleUpdateNote}
               onToggleShift={toggleShift}
               onToggleSpecialDate={toggleSpecialDate}
               onClose={closeModal}
