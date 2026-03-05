@@ -730,51 +730,6 @@ export const Calendar: React.FC<CalendarProps> = ({
   const totalCells = calendarDays.length;
   const numberOfRows = Math.ceil(totalCells / 7);
 
-  // Calculate dynamic row heights based on content
-  const calculateRowHeights = () => {
-    const rowHeights: string[] = [];
-    
-    for (let row = 0; row < numberOfRows; row++) {
-      let maxContentLines = 0;
-      
-      // Check each day in this row (7 days per row)
-      for (let col = 0; col < 7; col++) {
-        const dayIndex = row * 7 + col;
-        if (dayIndex < calendarDays.length) {
-          const day = calendarDays[dayIndex];
-          if (day) {
-            const dayShifts = getDayShifts(day);
-            const hasSpecial = isSpecialDate(day);
-            
-            // Count content lines: shifts + special text (if present)
-            // Maximum possible: SPECIAL (1 line) + 3 shifts (3 lines) = 4 total
-            let contentLines = dayShifts.length;
-            if (hasSpecial) contentLines += 1; // Add 1 line for "SPECIAL" text
-            
-            // Cap at maximum possible content (should never exceed 4)
-            contentLines = Math.min(contentLines, 4);
-            
-            maxContentLines = Math.max(maxContentLines, contentLines);
-          }
-        }
-      }
-      
-      // Calculate height based on maximum content lines in the row
-      const baseHeight = window.innerWidth >= 640 ? 60 : 50; // Base height for date number
-      const lineHeight = window.innerWidth >= 640 ? 16 : 12; // Reduced height per content line
-      const padding = window.innerWidth >= 640 ? 16 : 12; // Top/bottom padding
-      
-      const calculatedHeight = baseHeight + (maxContentLines * lineHeight) + padding;
-      const minHeight = window.innerWidth >= 640 ? 70 : 55; // Reduced minimum height
-      
-      const finalHeight = Math.max(calculatedHeight, minHeight);
-      rowHeights.push(`${finalHeight}px`);
-    }
-    
-    return rowHeights;
-  };
-
-  const rowHeights = calculateRowHeights();
 
   return (
     <div className="bg-white overflow-hidden select-none" style={{
@@ -1213,11 +1168,11 @@ export const Calendar: React.FC<CalendarProps> = ({
                     : 'border-transparent'
                 }`}
                 style={{
-                  height: rowHeights[rowIndex], // All cells in same row have same height
                   userSelect: 'none',
                   WebkitUserSelect: 'none',
                   display: 'flex',
-                  flexDirection: 'column'
+                  flexDirection: 'column',
+                  minHeight: window.innerWidth >= 640 ? '70px' : '55px' // Minimum height only
                 }}
                 onClick={() => day && handleDateClick(day)}
                onMouseDown={(e) => day && handleDateLongPressStart(day, e)}
@@ -1275,8 +1230,8 @@ export const Calendar: React.FC<CalendarProps> = ({
                       </div>
                     </div>
                     
-                    {/* Content container - grows to fill available space */}
-                    <div className={`flex flex-col items-center justify-start space-y-0.5 sm:space-y-1 px-0.5 select-none min-w-0 flex-1 ${isPastDate(day) ? 'z-30' : ''}`}>
+                    {/* Content container - only takes needed space */}
+                    <div className={`flex flex-col items-center justify-start space-y-0.5 sm:space-y-1 px-0.5 select-none min-w-0 ${isPastDate(day) ? 'z-30' : ''}`}>
                       {/* Special date indicator */}
                       {hasSpecialDate && (
                         <div 
