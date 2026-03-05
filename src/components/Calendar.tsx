@@ -4,11 +4,12 @@ import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Calculator, Edit3,
 import { Download } from 'lucide-react';
 import { gsap } from 'gsap';
 import { SHIFTS } from '../constants';
-import { DaySchedule, SpecialDates } from '../types';
+import { DaySchedule, SpecialDates, DateNotes } from '../types';
 import { ClearDateModal } from './ClearDateModal';
 import { ClearMonthModal } from './ClearMonthModal';
 import { MonthClearModal } from './MonthClearModal';
 import { CalendarExportModal } from './CalendarExportModal';
+import { ScrollingText } from './ScrollingText';
 import { formatMauritianRupees } from '../utils/currency';
 import { useLongPress } from '../hooks/useLongPress';
 import { validateAuthCode, availableNames } from '../utils/rosterAuth';
@@ -19,6 +20,7 @@ interface CalendarProps {
   currentDate: Date;
   schedule: DaySchedule;
   specialDates: SpecialDates;
+  dateNotes?: DateNotes;
   onDateClick: (day: number) => void;
   onNavigateMonth: (direction: 'prev' | 'next') => void;
   totalAmount: number;
@@ -29,6 +31,7 @@ interface CalendarProps {
   onResetMonth?: (year: number, month: number) => void;
   setSchedule: React.Dispatch<React.SetStateAction<DaySchedule>>;
   setSpecialDates: React.Dispatch<React.SetStateAction<SpecialDates>>;
+  setDateNotes?: React.Dispatch<React.SetStateAction<DateNotes>>;
   monthlySalary?: number;
   onMonthlySalaryChange?: (year: number, month: number, salary: number) => void;
   globalSalary?: number;
@@ -38,6 +41,7 @@ export const Calendar: React.FC<CalendarProps> = ({
   currentDate,
   schedule,
   specialDates,
+  dateNotes = {},
   onDateClick,
   onNavigateMonth,
   totalAmount,
@@ -47,6 +51,7 @@ export const Calendar: React.FC<CalendarProps> = ({
   onTitleUpdate,
   setSchedule,
   setSpecialDates,
+  setDateNotes = () => {},
   monthlySalary = 0,
   onMonthlySalaryChange,
   globalSalary = 0
@@ -324,6 +329,11 @@ export const Calendar: React.FC<CalendarProps> = ({
     return specialDates[dateKey] === true;
   };
 
+  const getDateNote = (day: number) => {
+    const dateKey = formatDateKey(day);
+    return dateNotes[dateKey] || '';
+  };
+
   const getDayShifts = (day: number) => {
     const dateKey = formatDateKey(day);
     const shifts = schedule[dateKey] || [];
@@ -487,7 +497,8 @@ export const Calendar: React.FC<CalendarProps> = ({
     // Check if date has content before showing modal
     const hasShifts = schedule[dateKey] && schedule[dateKey].length > 0;
     const isSpecial = specialDates[dateKey] === true;
-    const hasContent = hasShifts || isSpecial;
+    const hasNote = dateNotes[dateKey] && dateNotes[dateKey].trim() !== '';
+    const hasContent = hasShifts || isSpecial || hasNote;
     
     // Only show modal if date has content to clear
     if (!hasContent) {
@@ -527,6 +538,15 @@ export const Calendar: React.FC<CalendarProps> = ({
           delete newSpecialDates[dateKey];
           return newSpecialDates;
         });
+        
+        // Clear note for this specific date
+        if (setDateNotes) {
+          setDateNotes(prev => {
+            const newDateNotes = { ...prev };
+            delete newDateNotes[dateKey];
+            return newDateNotes;
+          });
+        }
         
         console.log(`✅ Successfully cleared date ${dateKey}`);
         resolve();
@@ -1278,6 +1298,18 @@ export const Calendar: React.FC<CalendarProps> = ({
                           </div>
                         ) : null;
                       })}
+                      
+                      {/* Note display */}
+                      {getDateNote(day) && getDateNote(day).trim() !== '' && (
+                        <div className="note-text text-[8px] sm:text-[10px] font-medium leading-tight text-indigo-600 flex-shrink-0 w-full select-none mt-0.5">
+                          <ScrollingText 
+                            text={getDateNote(day)} 
+                            pauseDuration={2}
+                            scrollDuration={3}
+                            className="text-center select-none"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -1353,6 +1385,7 @@ export const Calendar: React.FC<CalendarProps> = ({
         selectedDate={dateToDelete}
         schedule={schedule}
         specialDates={specialDates}
+        dateNotes={dateNotes}
         onConfirm={handleClearDate}
         onCancel={() => {
           setShowClearDateModal(false);
