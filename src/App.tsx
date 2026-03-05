@@ -585,7 +585,20 @@ function App() {
 
   const handleExportData = async () => {
     try {
-      const exportData = await workScheduleDB.exportAllData();
+      console.log('🔄 Starting export...');
+      
+      // Export directly from React state (like MIT)
+      const exportData = {
+        schedule,
+        specialDates,
+        dateNotes,
+        settings,
+        scheduleTitle: scheduleTitle || 'Work Schedule',
+        exportDate: new Date().toISOString(),
+        version: '3.0'
+      };
+      
+      console.log('📦 Export data:', exportData);
       
       const dataStr = JSON.stringify(exportData, null, 2);
       const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -593,12 +606,22 @@ function App() {
       
       const link = document.createElement('a');
       link.href = url;
-      link.download = exportData.filename || 'ANWH_export.json';
+      
+      // Create filename with date
+      const now = new Date();
+      const day = now.getDate().toString().padStart(2, '0');
+      const month = (now.getMonth() + 1).toString().padStart(2, '0');
+      const year = now.getFullYear();
+      link.download = `ANWH_${day}-${month}-${year}.json`;
+      
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      
+      console.log('✅ Export successful');
     } catch (error) {
+      console.error('❌ Export error:', error);
       alert('Export failed. Please try again.');
     }
   };
