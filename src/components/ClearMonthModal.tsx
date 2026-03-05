@@ -166,6 +166,7 @@ export const ClearMonthModal: React.FC<ClearMonthModalProps> = ({
                   <ul className="text-sm text-red-700 space-y-1">
                     <li>• All scheduled shifts for the month</li>
                     <li>• All special date markings</li>
+                    <li>• All notes added to dates</li>
                     <li>• All shift combinations and data</li>
                   </ul>
                 </div>
