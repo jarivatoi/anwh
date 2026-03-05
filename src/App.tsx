@@ -628,47 +628,66 @@ function App() {
 
   const handleImportData = async (data: any) => {
     try {
-      // Import data to IndexedDB
-      await workScheduleDB.importAllData(data);
+      console.log('🔄 Importing data...', data);
       
-      // Show loading state during refresh
+      // Validate imported data structure
+      if (!data || typeof data !== 'object') {
+        throw new Error('Invalid data format');
+      }
       
-      // Refresh all data with proper error handling
-      const refreshPromises = [
-        refreshData().catch(err => console.error('Failed to refresh schedule data:', err)),
-        refreshSettings().catch(err => console.error('Failed to refresh settings:', err)),
-        refreshTitle().catch(err => console.error('Failed to refresh title:', err))
-      ];
+      // Import directly to React state (like MIT)
+      if (data.schedule) {
+        console.log('📅 Importing schedule:', Object.keys(data.schedule).length, 'entries');
+        setSchedule(data.schedule);
+      }
       
-      await Promise.allSettled(refreshPromises);
+      if (data.specialDates) {
+        console.log('⭐ Importing special dates:', Object.keys(data.specialDates).length, 'entries');
+        setSpecialDates(data.specialDates);
+      }
       
-      // Force multiple calculation refreshes with delays
-      const triggerRefresh = (delay: number, label: string) => {
-        setTimeout(() => {
-          setRefreshKey(prev => prev + 1);
-        }, delay);
-      };
+      if (data.dateNotes) {
+        console.log('📝 Importing date notes:', Object.keys(data.dateNotes).length, 'entries');
+        setDateNotes(data.dateNotes);
+      }
       
-      // Immediate refresh
+      if (data.settings) {
+        console.log('⚙️ Importing settings:', data.settings);
+        setSettings(data.settings);
+        
+        // Update manual mode from settings
+        if (data.settings.useManualMode !== undefined) {
+          setUseManualMode(data.settings.useManualMode);
+        }
+      }
+      
+      if (data.scheduleTitle) {
+        console.log('📝 Importing schedule title:', data.scheduleTitle);
+        setScheduleTitle(data.scheduleTitle);
+      }
+      
+      // Save to IndexedDB in background
+      try {
+        await workScheduleDB.importAllData(data);
+        console.log('✅ Data saved to IndexedDB');
+      } catch (dbError) {
+        console.warn('IndexedDB save failed, but state updated:', dbError);
+      }
+      
+      // Force refresh calculations
       setRefreshKey(prev => prev + 1);
       
-      // Staggered refreshes
-      triggerRefresh(200, 'First delayed');
-      triggerRefresh(500, 'Second delayed');
-      triggerRefresh(1000, 'Final delayed');
-
-      // Redirect to calendar tab instead of reloading
+      console.log('✅ Import successful');
+      
+      // Switch to calendar tab after successful import
       setTimeout(() => {
         setActiveTab('calendar');
-      }, 1200); // Wait for all refreshes to complete
+      }, 100);
       
-      const version = data.version || '1.0';
-      if (version === '1.0') {
-        alert('Data imported successfully! Note: This was an older format file. Special date information was not available and has been reset.');
-      } else {
-        alert('Data imported successfully!');
-      }
+      const version = data.version || '3.0';
+      console.log(`Imported data version: ${version}`);
     } catch (error) {
+      console.error('❌ Import error:', error);
       alert('Error importing data. Please check the file format.');
     }
   };
