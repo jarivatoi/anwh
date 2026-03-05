@@ -30,7 +30,9 @@ export const useScheduleCalculations = (
 
     // Recalculate hourly rate based on effective salary
     // IMPORTANT: For future years, hourly rate must also be 0 unless a monthly salary is explicitly set
-    const effectiveHourlyRate = effectiveSalary > 0 ? (effectiveSalary * 12) / 52 / 40 : 0;
+    const effectiveHourlyRate = effectiveSalary > 0 
+      ? (effectiveSalary * 12) / 52 / 40 
+      : 0;
 
     console.log('🔄 Calculating amounts with data:', {
       viewingYear,
@@ -103,8 +105,10 @@ export const useScheduleCalculations = (
           return comboKey === shiftId;
         });
         
-        if (combination && effectiveHourlyRate) {
-          const shiftAmount = combination.hours * effectiveHourlyRate;
+        if (combination && (effectiveHourlyRate || (settings.useManualMode && combination.useManualAmount))) {
+          const shiftAmount = settings.useManualMode && combination.useManualAmount && combination.manualAmount !== undefined
+            ? combination.manualAmount
+            : combination.hours * effectiveHourlyRate;
           total += shiftAmount;
           
           console.log(`💰 Found single shift ${combination.combination} (${combination.hours}h) = Rs ${shiftAmount.toFixed(2)}`);
@@ -204,14 +208,19 @@ export const useScheduleCalculations = (
           return comboKey === combinationKey;
         });
         
-        if (multiCombination && effectiveHourlyRate) {
+        if (multiCombination && (effectiveHourlyRate || (settings.useManualMode && multiCombination.useManualAmount))) {
           // Subtract individual shift amounts already added
           const individualTotal = dayShifts.reduce((sum, shiftId) => {
             const singleCombo = settings.shiftCombinations.find(combo => combo.id === shiftId);
-            return sum + (singleCombo ? singleCombo.hours * effectiveHourlyRate : 0);
+            const singleAmount = settings.useManualMode && singleCombo?.useManualAmount && singleCombo.manualAmount !== undefined
+              ? singleCombo.manualAmount
+              : (singleCombo ? singleCombo.hours * effectiveHourlyRate : 0);
+            return sum + singleAmount;
           }, 0);
           
-          const multiAmount = multiCombination.hours * effectiveHourlyRate;
+          const multiAmount = settings.useManualMode && multiCombination.useManualAmount && multiCombination.manualAmount !== undefined
+            ? multiCombination.manualAmount
+            : (multiCombination.hours * effectiveHourlyRate);
           const difference = multiAmount - individualTotal;
           
           total += difference;
