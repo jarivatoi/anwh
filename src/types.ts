@@ -14,16 +14,23 @@ export interface SpecialDates {
   [key: string]: boolean; // date string -> is special date
 }
 
+export interface DateNotes {
+  [key: string]: string; // date string -> note text
+}
+
 export interface ShiftCombination {
   id: string;
   combination: string;
   hours: number;
+  useManualAmount?: boolean;
+  manualAmount?: number;
 }
 
 export interface Settings {
   basicSalary: number;
   hourlyRate: number;
   shiftCombinations: ShiftCombination[];
+  useManualMode?: boolean;
 }
 
 export interface MonthlySalaries {
