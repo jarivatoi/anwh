@@ -729,7 +729,14 @@ export const Calendar: React.FC<CalendarProps> = ({
   // Calculate number of rows needed
   const totalCells = calendarDays.length;
   const numberOfRows = Math.ceil(totalCells / 7);
-
+  
+  // Calculate square cell size based on viewport width
+  const getCellSize = () => {
+    const isDesktop = window.innerWidth >= 640;
+    const availableWidth = isDesktop ? window.innerWidth - 96 : window.innerWidth - 32; // Account for padding
+    const cellWidth = availableWidth / 7; // 7 columns
+    return Math.max(cellWidth, isDesktop ? 70 : 55); // Minimum size
+  };
 
   return (
     <div className="bg-white overflow-hidden select-none" style={{
@@ -1172,7 +1179,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                   WebkitUserSelect: 'none',
                   display: 'flex',
                   flexDirection: 'column',
-                  minHeight: window.innerWidth >= 640 ? '70px' : '55px' // Minimum height only
+                  minHeight: `${getCellSize()}px` // Square size (width = height) but can grow with content
                 }}
                 onClick={() => day && handleDateClick(day)}
                onMouseDown={(e) => day && handleDateLongPressStart(day, e)}
