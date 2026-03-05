@@ -869,24 +869,16 @@ function App() {
 
         {/* Modals - Outside of any scrollable content */}
         {showModal && (
-          <>
-            <ShiftModal
-              selectedDate={selectedDate}
-              schedule={schedule}
-              specialDates={specialDates}
-              dateNotes={dateNotes}
-              onUpdateNote={handleUpdateNote}
-              onToggleShift={toggleShift}
-              onToggleSpecialDate={toggleSpecialDate}
-              onClose={closeModal}
-            />
-            <RosterPanel
-              setActiveTab={setActiveTab}
-              onOpenCalendarExportModal={handleOpenCalendarExportModal}
-              basicSalary={settings.basicSalary}
-              hourlyRate={settings.hourlyRate}
-            />
-          </>
+          <ShiftModal
+            selectedDate={selectedDate}
+            schedule={schedule}
+            specialDates={specialDates}
+            dateNotes={dateNotes}
+            onUpdateNote={handleUpdateNote}
+            onToggleShift={toggleShift}
+            onToggleSpecialDate={toggleSpecialDate}
+            onClose={closeModal}
+          />
         )}
 
         {/* Calendar Export Modal */}
