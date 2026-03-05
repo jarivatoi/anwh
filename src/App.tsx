@@ -63,12 +63,10 @@ function App() {
         ]);
         
         if (notes && Object.keys(notes).length > 0) {
-          console.log('📝 Loaded date notes:', Object.keys(notes).length, 'entries');
           setDateNotes(notes);
         }
         
         if (settingsData?.useManualMode !== undefined) {
-          console.log('⚙️ Loaded manual mode:', settingsData.useManualMode);
           setUseManualMode(settingsData.useManualMode);
         }
       } catch (error) {
@@ -585,8 +583,6 @@ function App() {
 
   const handleExportData = async () => {
     try {
-      console.log('🔄 Starting export...');
-      
       // Export directly from React state (like MIT)
       const exportData = {
         schedule,
@@ -597,8 +593,6 @@ function App() {
         exportDate: new Date().toISOString(),
         version: '3.0'
       };
-      
-      console.log('📦 Export data:', exportData);
       
       const dataStr = JSON.stringify(exportData, null, 2);
       const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -618,18 +612,14 @@ function App() {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      
-      console.log('✅ Export successful');
     } catch (error) {
-      console.error('❌ Export error:', error);
+      console.error('Export failed:', error);
       alert('Export failed. Please try again.');
     }
   };
 
   const handleImportData = async (data: any) => {
     try {
-      console.log('🔄 Importing data...', data);
-      
       // Validate imported data structure
       if (!data || typeof data !== 'object') {
         throw new Error('Invalid data format');
@@ -637,22 +627,18 @@ function App() {
       
       // Import directly to React state (like MIT)
       if (data.schedule) {
-        console.log('📅 Importing schedule:', Object.keys(data.schedule).length, 'entries');
         setSchedule(data.schedule);
       }
       
       if (data.specialDates) {
-        console.log('⭐ Importing special dates:', Object.keys(data.specialDates).length, 'entries');
         setSpecialDates(data.specialDates);
       }
       
       if (data.dateNotes) {
-        console.log('📝 Importing date notes:', Object.keys(data.dateNotes).length, 'entries');
         setDateNotes(data.dateNotes);
       }
       
       if (data.settings) {
-        console.log('⚙️ Importing settings:', data.settings);
         setSettings(data.settings);
         
         // Update manual mode from settings
@@ -662,14 +648,12 @@ function App() {
       }
       
       if (data.scheduleTitle) {
-        console.log('📝 Importing schedule title:', data.scheduleTitle);
         setScheduleTitle(data.scheduleTitle);
       }
       
       // Save to IndexedDB in background
       try {
         await workScheduleDB.importAllData(data);
-        console.log('✅ Data saved to IndexedDB');
       } catch (dbError) {
         console.warn('IndexedDB save failed, but state updated:', dbError);
       }
@@ -677,18 +661,13 @@ function App() {
       // Force refresh calculations
       setRefreshKey(prev => prev + 1);
       
-      console.log('✅ Import successful');
-      
       // Switch to calendar tab after successful import
       setTimeout(() => {
         setActiveTab('calendar');
       }, 100);
-      
-      const version = data.version || '3.0';
-      console.log(`Imported data version: ${version}`);
     } catch (error) {
-      console.error('❌ Import error:', error);
-      alert('Error importing data. Please check the file format.');
+      console.error('Import error:', error);
+      throw error; // Re-throw to be caught by MenuPanel
     }
   };
 
