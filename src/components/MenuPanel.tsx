@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Download, Upload, Database as DataIcon, FileText, Database, HardDrive, Smartphone } from 'lucide-react';
+import ConfirmationModal from './ConfirmationModal';
 
 interface MenuPanelProps {
   onImportData: (data: any) => void;
@@ -11,6 +12,8 @@ export const MenuPanel: React.FC<MenuPanelProps> = ({
   onExportData
 }) => {
   const [storageInfo, setStorageInfo] = useState<{ used: number; available: number } | null>(null);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   useEffect(() => {
     const loadStorageInfo = async () => {
@@ -23,25 +26,12 @@ export const MenuPanel: React.FC<MenuPanelProps> = ({
     loadStorageInfo();
   }, []);
 
-  const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const data = JSON.parse(e.target?.result as string);
-          onImportData(data);
-        } catch (error) {
-          alert('Invalid file format. Please select a valid JSON file.');
-        }
-      };
-      reader.readAsText(file);
-    }
-    // Clear the input so the same file can be selected again if needed
-    event.target.value = '';
+  const handleExportClick = () => {
+    setShowExportModal(true);
   };
 
-  const handleExportClick = async () => {
+  const handleExportConfirm = async () => {
+    setShowExportModal(false);
     try {
       // Show loading state
       const button = document.querySelector('.export-button') as HTMLButtonElement;
@@ -53,8 +43,8 @@ export const MenuPanel: React.FC<MenuPanelProps> = ({
       // Call the onExportData function which will handle the export
       await onExportData();
       
-      // Show success notification
-      alert('✅ Data exported successfully! Check your downloads folder.');
+      // Show success notification (you could also add another modal for this)
+      console.log('✅ Data exported successfully!');
       
       // Reset button
       if (button) {
@@ -63,15 +53,25 @@ export const MenuPanel: React.FC<MenuPanelProps> = ({
       }
     } catch (error) {
       console.error('Export failed:', error);
-      alert('❌ Export failed. Please try again.');
-      
-      // Reset button on error
-      const button = document.querySelector('.export-button') as HTMLButtonElement;
-      if (button) {
-        button.disabled = false;
-        button.textContent = 'Export Schedule';
-      }
     }
+  };
+
+  const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target?.result as string);
+          onImportData(data);
+        } catch (error) {
+          console.error('Invalid file format');
+        }
+      };
+      reader.readAsText(file);
+    }
+    // Clear the input so the same file can be selected again if needed
+    event.target.value = '';
   };
 
   const performExport = async (data: any, filename: string) => {
@@ -297,6 +297,27 @@ export const MenuPanel: React.FC<MenuPanelProps> = ({
           </div>
         </div>
       </div>
+      
+      {/* Export Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showExportModal}
+        title="Export Schedule Data"
+        message={
+          <div>
+            <p>Your schedule data will be exported as a JSON file including:</p>
+            <ul style={{ marginTop: '8px', paddingLeft: '20px' }}>
+              <li>All scheduled shifts and dates</li>
+              <li>Special date markings</li>
+              <li>Salary and hourly rate settings</li>
+              <li>Work hours configuration</li>
+              <li>Custom schedule title</li>
+            </ul>
+          </div>
+        }
+        onConfirm={handleExportConfirm}
+        onCancel={() => setShowExportModal(false)}
+        confirmText="Export"
+      />
     </div>
   );
 };
