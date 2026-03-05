@@ -445,46 +445,55 @@ class WorkScheduleDB {
       return `Roster_${day}-${month}-${year}.json`;
     };
 
-    const [schedule, specialDates, settings, scheduleTitle, dateNotes] = await Promise.all([
-      this.getSchedule(),
-      this.getSpecialDates(),
-      this.getSetting('workSettings'),
-      this.getMetadata('scheduleTitle'),
-      this.getDateNotes()
-    ]);
+    try {
+      const [schedule, specialDates, settings, scheduleTitle, dateNotes] = await Promise.all([
+        this.getSchedule(),
+        this.getSpecialDates(),
+        this.getSetting('workSettings'),
+        this.getMetadata('scheduleTitle'),
+        this.getDateNotes().catch(err => {
+          console.warn('Failed to get date notes, using empty object:', err);
+          return {};
+        })
+      ]);
+      
+      // Ensure settings have shift combinations
+      const finalSettings = settings || {
+        basicSalary: 35000,
+        hourlyRate: 173.08,
+        shiftCombinations: DEFAULT_SHIFT_COMBINATIONS
+      };
 
-    // Ensure settings have shift combinations
-    const finalSettings = settings || {
-      basicSalary: 35000,
-      hourlyRate: 173.08,
-      shiftCombinations: DEFAULT_SHIFT_COMBINATIONS
-    };
+      // If settings exist but don't have shift combinations, add them
+      if (finalSettings && (!finalSettings.shiftCombinations || finalSettings.shiftCombinations.length === 0)) {
+        finalSettings.shiftCombinations = DEFAULT_SHIFT_COMBINATIONS;
+      }
 
-    // If settings exist but don't have shift combinations, add them
-    if (finalSettings && (!finalSettings.shiftCombinations || finalSettings.shiftCombinations.length === 0)) {
-      finalSettings.shiftCombinations = DEFAULT_SHIFT_COMBINATIONS;
+      const exportData = {
+        schedule,
+        specialDates,
+        settings: finalSettings,
+        scheduleTitle: scheduleTitle || 'Work Schedule',
+        dateNotes,
+        exportDate: new Date().toISOString(),
+        version: '3.0',
+        filename: createExportFilename().replace('Roster_', 'ANWH_')
+      };
+
+      console.log('📦 Export data prepared:', {
+        scheduleEntries: Object.keys(exportData.schedule).length,
+        specialDatesEntries: Object.keys(exportData.specialDates).length,
+        settingsIncluded: !!exportData.settings,
+        shiftCombinations: exportData.settings?.shiftCombinations?.length || 0,
+        dateNotesCount: Object.keys(exportData.dateNotes).length,
+        filename: exportData.filename
+      });
+
+      return exportData;
+    } catch (error) {
+      console.error('❌ Export failed:', error);
+      throw error;
     }
-
-    const exportData = {
-      schedule,
-      specialDates,
-      settings: finalSettings,
-      scheduleTitle: scheduleTitle || 'Work Schedule',
-      dateNotes,
-      exportDate: new Date().toISOString(),
-      version: '3.0',
-      filename: createExportFilename().replace('Roster_', 'ANWH_')
-    };
-
-    console.log('📦 Export data prepared:', {
-      scheduleEntries: Object.keys(exportData.schedule).length,
-      specialDatesEntries: Object.keys(exportData.specialDates).length,
-      settingsIncluded: !!exportData.settings,
-      shiftCombinations: exportData.settings?.shiftCombinations?.length || 0,
-      filename: exportData.filename
-    });
-
-    return exportData;
   }
 
   async importAllData(data: any): Promise<void> {
