@@ -735,7 +735,8 @@ export const Calendar: React.FC<CalendarProps> = ({
     const isDesktop = window.innerWidth >= 640;
     const availableWidth = isDesktop ? window.innerWidth - 96 : window.innerWidth - 32; // Account for padding
     const cellWidth = availableWidth / 7; // 7 columns
-    return Math.max(cellWidth, isDesktop ? 70 : 55); // Minimum size
+    // Return actual cell width for perfect square, with reasonable minimums
+    return cellWidth < 50 ? 50 : cellWidth; // Only enforce minimum if extremely small
   };
 
   return (
