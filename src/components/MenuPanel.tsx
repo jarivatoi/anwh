@@ -64,8 +64,10 @@ export const MenuPanel: React.FC<MenuPanelProps> = ({
         try {
           const data = JSON.parse(e.target?.result as string);
           onImportData(data);
+          setShowImportModal(true); // Show success modal after successful import
         } catch (error) {
           console.error('Invalid file format');
+          alert('Invalid file format. Please select a valid JSON file.');
         }
       };
       reader.readAsText(file);
@@ -317,6 +319,29 @@ export const MenuPanel: React.FC<MenuPanelProps> = ({
         onConfirm={handleExportConfirm}
         onCancel={() => setShowExportModal(false)}
         confirmText="Export"
+      />
+
+      {/* Import Success Modal */}
+      <ConfirmationModal
+        isOpen={showImportModal}
+        title="Import Successful"
+        message={
+          <div>
+            <p style={{ marginBottom: '12px' }}>Your schedule data has been successfully imported!</p>
+            <ul style={{ marginTop: '8px', paddingLeft: '20px' }}>
+              <li>All scheduled shifts and dates</li>
+              <li>Special date markings</li>
+              <li>Notes for each date</li>
+              <li>Salary and hourly rate settings</li>
+              <li>Manual amount configurations</li>
+              <li>Work hours configuration</li>
+            </ul>
+          </div>
+        }
+        onConfirm={() => setShowImportModal(false)}
+        onCancel={() => setShowImportModal(false)}
+        confirmText="OK"
+        isDanger={false}
       />
     </div>
   );
