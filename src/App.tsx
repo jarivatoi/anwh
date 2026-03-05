@@ -686,10 +686,9 @@ function App() {
       
       const version = data.version || '3.0';
       console.log(`Imported data version: ${version}`);
-      // Success modal will be shown by MenuPanel component
     } catch (error) {
       console.error('❌ Import error:', error);
-      throw error; // Re-throw to be caught by MenuPanel
+      alert('Error importing data. Please check the file format.');
     }
   };
 
