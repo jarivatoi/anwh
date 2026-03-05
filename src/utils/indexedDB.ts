@@ -433,9 +433,6 @@ class WorkScheduleDB {
   }
 
   async exportAllData(): Promise<any> {
-    console.log('🔄 Exporting all data from IndexedDB...');
-    
-    // Create filename with ANWH_DDMMYYYY-HHMMSS format
     const createExportFilename = (): string => {
       const now = new Date();
       const day = now.getDate().toString().padStart(2, '0');
@@ -451,25 +448,20 @@ class WorkScheduleDB {
         this.getSpecialDates(),
         this.getSetting('workSettings'),
         this.getMetadata('scheduleTitle'),
-        this.getDateNotes().catch(err => {
-          console.warn('Failed to get date notes, using empty object:', err);
-          return {};
-        })
+        this.getDateNotes().catch(() => ({}))
       ]);
       
-      // Ensure settings have shift combinations
       const finalSettings = settings || {
         basicSalary: 35000,
         hourlyRate: 173.08,
         shiftCombinations: DEFAULT_SHIFT_COMBINATIONS
       };
 
-      // If settings exist but don't have shift combinations, add them
       if (finalSettings && (!finalSettings.shiftCombinations || finalSettings.shiftCombinations.length === 0)) {
         finalSettings.shiftCombinations = DEFAULT_SHIFT_COMBINATIONS;
       }
 
-      const exportData = {
+      return {
         schedule,
         specialDates,
         settings: finalSettings,
@@ -479,19 +471,8 @@ class WorkScheduleDB {
         version: '3.0',
         filename: createExportFilename().replace('Roster_', 'ANWH_')
       };
-
-      console.log('📦 Export data prepared:', {
-        scheduleEntries: Object.keys(exportData.schedule).length,
-        specialDatesEntries: Object.keys(exportData.specialDates).length,
-        settingsIncluded: !!exportData.settings,
-        shiftCombinations: exportData.settings?.shiftCombinations?.length || 0,
-        dateNotesCount: Object.keys(exportData.dateNotes).length,
-        filename: exportData.filename
-      });
-
-      return exportData;
     } catch (error) {
-      console.error('❌ Export failed:', error);
+      console.error('Export failed:', error);
       throw error;
     }
   }
