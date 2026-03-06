@@ -178,7 +178,8 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
         ref={textRef}
         className="whitespace-nowrap"
         style={{
-          display: 'inline-block',
+          //display: 'inline-block',
+          display: 'block',
           //minWidth: '100%',
          minWidth: 'fit-content',
           maxWidth: 'none',
