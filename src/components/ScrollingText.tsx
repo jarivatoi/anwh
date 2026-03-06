@@ -178,7 +178,7 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
         ref={textRef}
         className="whitespace-nowrap"
         style={{
-          display: 'block',
+          display: 'inline-block',
           minWidth: 'fit-content',
           maxWidth: 'none',
           overflow: 'visible' // Prevent text from escaping container
