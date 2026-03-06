@@ -181,7 +181,7 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
           display: 'inline-block',
           minWidth: '100%',
           maxWidth: 'none',
-          overflow: 'hidden' // Prevent text from escaping container
+          overflow: 'visible' // Prevent text from escaping container
         }
         }
       >
