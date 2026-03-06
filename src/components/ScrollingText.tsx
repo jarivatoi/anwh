@@ -169,7 +169,8 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
         position: 'relative',
         width: '100%',
         maxWidth: '100%',
-        overflow: 'hidden' // Contain text within parent boundaries
+       // overflow: 'hidden' // Contain text within parent boundaries
+      overflow: 'visible' // Allow text to scroll fully without chopping
       }
       }
     >
