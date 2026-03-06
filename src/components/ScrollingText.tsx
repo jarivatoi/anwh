@@ -183,7 +183,7 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
           overflow: 'visible', // Prevent text from being chopped
          marginLeft: -2,
          marginRight: -2,
-          padding: 0,
+          padding: 2,
         }}
       >
         {children || text}
