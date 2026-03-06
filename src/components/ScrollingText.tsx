@@ -181,8 +181,8 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
          minWidth: '100%', // Stretch to fill container width
           maxWidth: 'none',
           overflow: 'visible', // Prevent text from being chopped
-         marginLeft: -5,
-         marginRight: -5,
+         marginLeft: -2,
+         marginRight: -2,
           padding: 0,
         }}
       >
