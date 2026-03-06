@@ -252,7 +252,6 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
           minWidth: '100%',
           maxWidth: 'none',
           overflow: 'hidden' // Prevent text from escaping container
-      
         }
         }
       >
