@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { ScrollingTextAnimator } from '../utils/scrollingTextAnimator';
 
@@ -9,15 +8,17 @@ interface ScrollingTextProps {
   pauseDuration?: number;
   scrollDuration?: number;
   easing?: string;
+  onReset?: () => void; // Callback when animation is reset
 }
 
 export const ScrollingText: React.FC<ScrollingTextProps> = ({ 
   text, 
   className = '', 
   children,
-  pauseDuration = 1,
-  scrollDuration = 2.5,
-  easing = 'power2.inOut'
+  pauseDuration = 2,
+  scrollDuration = 6,
+  easing = 'power2.inOut',
+  onReset
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
@@ -31,6 +32,9 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
 
       const container = containerRef.current;
       const textElement = textRef.current;
+      
+      // Ensure initial state is set correctly
+      textElement.style.willChange = 'transform';
       
       // Stop any existing animation
       if (animatorRef.current) {
@@ -61,8 +65,8 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
         setNeedsScrolling(true);
         
         // Use enhanced timing for longer text with spaces
-        const enhancedPauseDuration = (hasSpaces && isLongText) ? 3 : pauseDuration;
-        const enhancedScrollDuration = (hasSpaces && isLongText) ? 7 : scrollDuration;
+        const enhancedPauseDuration = (hasSpaces && isLongText) ? pauseDuration + 1 : pauseDuration;
+        const enhancedScrollDuration = (hasSpaces && isLongText) ? scrollDuration + 1 : scrollDuration;
         const enhancedEasing = (hasSpaces && isLongText) ? 'power1.inOut' : easing;
         
         // Create animator with TweenMax-style enhanced timing
@@ -75,7 +79,6 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
           easing: enhancedEasing
         });
         
-        console.log('🎬 Started enhanced TweenMax animation for text:', currentText);
         
         // Add scroll detection
         const handleScroll = () => {
@@ -100,7 +103,27 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
         scrollListenerRef.current = handleScroll;
       } else {
         setNeedsScrolling(false);
-        console.log('✅ Text fits in container, no animation needed');
+        
+        // Smoothly reset the text position to the left when text no longer overflows
+        if (textElement.style.transform !== 'translateX(0px)') {
+          textElement.style.transition = 'transform 0.3s ease-out';
+          textElement.style.transform = 'translateX(0px)';
+          
+          // Remove transition after animation completes
+          setTimeout(() => {
+            textElement.style.transition = '';
+            // Notify that reset occurred
+            if (onReset) {
+              onReset();
+            }
+          }, 300);
+        }
+        
+        // Stop any existing animation
+        if (animatorRef.current) {
+          (animatorRef.current as ScrollingTextAnimator).stop();
+          animatorRef.current = null;
+        }
       }
     };
 
@@ -109,14 +132,51 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
     
     // Recheck on window resize
     const handleResize = () => {
-      setTimeout(checkAndAnimate, 100);
+      checkAndAnimate();
     };
     
     window.addEventListener('resize', handleResize);
     
-    // Recheck when content changes
-    const observer = new MutationObserver(() => {
-      setTimeout(checkAndAnimate, 50);
+    // Recheck when content changes with smarter handling for add/remove scenarios
+    let timeoutId: NodeJS.Timeout;
+    const observer = new MutationObserver((mutations) => {
+      // Clear any existing timeout to debounce multiple rapid changes
+      clearTimeout(timeoutId);
+      
+      // Detect if this is likely an add/remove item scenario
+      const isContentChange = mutations.some(mutation => 
+        mutation.type === 'childList' || 
+        mutation.type === 'characterData'
+      );
+      
+      if (isContentChange) {
+        // When content changes (add/remove items), smoothly reset and restart
+        if (animatorRef.current) {
+          (animatorRef.current as ScrollingTextAnimator).stop();
+          animatorRef.current = null;
+        }
+        
+        // Smoothly reset transform to initial state for clean restart
+        if (textRef.current) {
+          // Use CSS transition for smooth reset
+          textRef.current.style.transition = 'transform 0.2s ease-out';
+          textRef.current.style.transform = 'translateX(0px)';
+          
+          // Remove transition after animation completes
+          setTimeout(() => {
+            if (textRef.current) {
+              textRef.current.style.transition = '';
+            }
+            // Notify that reset occurred
+            if (onReset) {
+              onReset();
+            }
+          }, 200);
+        }
+        
+        // Restart animation after a brief delay to handle rapid updates
+        timeoutId = setTimeout(checkAndAnimate, 150);
+      }
     });
     
     if (containerRef.current) {
@@ -128,6 +188,7 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
     }
     
     return () => {
+      clearTimeout(timeoutId);
       window.removeEventListener('resize', handleResize);
       observer.disconnect();
       
@@ -150,8 +211,17 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
     return () => {
       // Clean up scroll listener on unmount
       if (scrollListenerRef.current) {
-        window.removeEventListener('scroll', scrollListenerRef.current, { passive: true } as any);
-        document.removeEventListener('scroll', scrollListenerRef.current, { passive: true } as any);
+        // Remove the filtered scroll handler
+        const filteredScrollHandler = scrollListenerRef.current;
+        window.removeEventListener('scroll', filteredScrollHandler as any, { passive: true } as any);
+        
+        // Remove scroll listeners from parent elements
+        let parent = containerRef.current?.parentElement;
+        while (parent && parent !== document.body) {
+          parent.removeEventListener('scroll', scrollListenerRef.current as any, { passive: true } as any);
+          parent = parent.parentElement;
+        }
+        
         scrollListenerRef.current = null;
       }
       
@@ -179,9 +249,9 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
         className="whitespace-nowrap"
         style={{
           display: 'inline-block',
-          minWidth: 'fit-content',
+          minWidth: '100%',
           maxWidth: 'none',
-          overflow: 'visible' // Prevent text from escaping container
+          overflow: 'hidden' // Prevent text from escaping container
         }
         }
       >
