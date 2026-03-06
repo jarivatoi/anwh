@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { ScrollingTextAnimator } from '../utils/scrollingTextAnimator';
 
@@ -169,8 +170,7 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
         position: 'relative',
         width: '100%',
         maxWidth: '100%',
-       overflow: 'hidden' // Contain text within parent boundaries
-      //overflow: 'visible' // Allow text to scroll fully without chopping
+        overflow: 'hidden' // Contain text within parent boundaries
       }
       }
     >
@@ -178,13 +178,10 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
         ref={textRef}
         className="whitespace-nowrap"
         style={{
-          //display: 'inline-block',
-          display: 'block',
-          //minWidth: '100%',
-         minWidth: 'fit-content',
+          display: 'inline-block',
+          minWidth: '100%',
           maxWidth: 'none',
-          //overflow: 'hidden' // Prevent text from escaping container
-        overflow: 'visible', // Prevent text from being chopped
+          overflow: 'hidden' // Prevent text from escaping container
         }
         }
       >
