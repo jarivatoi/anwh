@@ -70,9 +70,16 @@ export class ScrollingTextAnimator {
     const containerWidth = container.offsetWidth;
     const textWidth = textElement.scrollWidth;
     
+    // Get computed margins from text element
+    const computedStyle = window.getComputedStyle(textElement);
+    const marginLeft = parseFloat(computedStyle.marginLeft) || 0;
+    const marginRight = parseFloat(computedStyle.marginRight) || 0;
+    
     console.log('📏 ScrollingTextAnimator dimensions:', {
       containerWidth,
       textWidth,
+      marginLeft,
+      marginRight,
       needsScrolling: textWidth > containerWidth
     });
     
@@ -81,8 +88,9 @@ export class ScrollingTextAnimator {
       return;
     }
     
-    // Calculate scroll distance with padding
-    const scrollDistance = textWidth - containerWidth; // No padding - exact fit
+    // Calculate scroll distance with padding and margin compensation
+    // Negative margins extend the text beyond container, so we add them back
+    const scrollDistance = textWidth - containerWidth + marginLeft + marginRight;
     
     // Create TweenMax timeline for longer text with spaces
     this.timeline = gsap.timeline({ 
