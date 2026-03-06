@@ -168,7 +168,7 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
       className={`w-full ${className}`}
       style={{
         position: 'relative',
-        width: 'fit-content',
+        width: '100%',
         maxWidth: '100%',
         overflow: 'hidden' // Contain text within parent boundaries
       }
