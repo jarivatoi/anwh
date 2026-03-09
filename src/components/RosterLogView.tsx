@@ -197,50 +197,26 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
     <div className="bg-white rounded-lg">
       {/* Filters */}
       <div className="p-2 sm:p-4 border-b border-gray-200 bg-gray-50">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-          {/* Filter Type */}
-          <div className="flex items-center space-x-2">
-            <FileText className="w-5 h-5 text-gray-600" />
-            <label className="text-sm font-medium text-gray-700">Show:</label>
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value as 'all' | 'nameChanges')}
-              className="px-2 py-1 sm:px-3 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
-            >
-              <option value="all">
-                All Roster Edits{(() => {
-                  const count = monthFilteredEntries.filter(e => (e.change_description || e.last_edited_by) && !(e.change_description === 'Imported from PDF' || e.change_description?.includes('Saturday 4-10 converted to 12-10')) && e.last_edited_by !== 'ADMIN').length;
-                  return count > 0 ? ` (${count})` : '';
-                })()}
-              </option>
-              <option value="nameChanges">
-                Name Changes Only{(() => {
-                  const count = monthFilteredEntries.filter(e => e.change_description?.includes('Name changed from')).length;
-                  return count > 0 ? ` (${count})` : '';
-                })()}
-              </option>
-            </select>
-          </div>
-          
-          {/* Staff Filter */}
-          <div className="flex items-center space-x-2">
-            <User className="w-5 h-5 text-gray-600" />
-            <label className="text-sm font-medium text-gray-700">Filter by Staff:</label>
-            <select
-              value={selectedStaff}
-              onChange={(e) => setSelectedStaff(e.target.value)}
-              className="px-2 py-1 sm:px-3 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm flex-1 sm:flex-none"
-            >
-              <option value="all">
-                All Staff{filteredEntries.length > 0 ? ` (${filteredEntries.length} entries)` : ''}
-              </option>
-              {uniqueStaffNames.map(name => (
+        <div className="flex items-center space-x-2">
+          <User className="w-5 h-5 text-gray-600" />
+          <label className="text-sm font-medium text-gray-700">Filter by Staff:</label>
+          <select
+            value={selectedStaff}
+            onChange={(e) => setSelectedStaff(e.target.value)}
+            className="px-2 py-1 sm:px-3 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm flex-1 sm:flex-none"
+          >
+            <option value="all">
+              All Staff{filteredEntries.length > 0 ? ` (${filteredEntries.length})` : ''}
+            </option>
+            {uniqueStaffNames.map(name => {
+              const staffCount = staffFilteredEntries.filter(e => e.last_edited_by === name).length;
+              return (
                 <option key={name} value={name}>
-                  {name}
+                  {name}{staffCount > 0 ? ` (${staffCount})` : ''}
                 </option>
-              ))}
-            </select>
-          </div>
+              );
+            })}
+          </select>
         </div>
       </div>
 
