@@ -206,13 +206,13 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
             className="px-2 py-1 sm:px-3 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm flex-1 sm:flex-none"
           >
             <option value="all">
-              All Staff{filteredEntries.length > 0 ? ` (${filteredEntries.length} Entries)` : ''}
+              All Staff{filteredEntries.length > 0 ? ` (${filteredEntries.length} Edits)` : ''}
             </option>
             {uniqueStaffNames.map(name => {
               const staffCount = staffFilteredEntries.filter(e => e.last_edited_by === name).length;
               return (
                 <option key={name} value={name}>
-                  {name}{staffCount > 0 ? ` (${staffCount} Edits)` : ''}
+                  {name}{staffCount > 0 ? ` (${staffCount})` : ''}
                 </option>
               );
             })}
