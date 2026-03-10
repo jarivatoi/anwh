@@ -663,13 +663,23 @@ class WorkScheduleDB {
 
       // Save each note
       Object.entries(dateNotes).forEach(([date, note]) => {
-        if (note && note.trim() !== '') {
+         if (note && note.trim() !== '') {
+          // Save non-empty notes
           const request = store.put({ date, note });
           request.onsuccess = () => {
             console.log(`💾 Saved note for ${date}`);
           };
           request.onerror = () => {
             console.error(`❌ Failed to save note for ${date}:`, request.error);
+          };
+        } else {
+          // Delete empty notes from database
+          const deleteRequest = store.delete(date);
+          deleteRequest.onsuccess = () => {
+            console.log(`🗑️ Deleted note for ${date}`);
+          };
+          deleteRequest.onerror = () => {
+            console.error(`❌ Failed to delete note for ${date}:`, deleteRequest.error);
           };
         }
       });
