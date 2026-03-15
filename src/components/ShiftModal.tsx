@@ -342,22 +342,22 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
             padding: window.innerWidth > window.innerHeight ? '8px' : '24px'
           }}
         >
-          {/* Special Date Checkbox - only show if not Sunday */}
-          {(
-            <div className="flex items-center justify-center space-x-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg mb-4">
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isSpecialDate}
-                  onChange={handleSpecialDateToggle}
-                  className="w-4 h-4 text-yellow-600 focus:ring-yellow-500 focus:ring-2 rounded"
-                />
-                <span className="text-sm font-medium text-yellow-800 select-none">
-                  Special Date
-                </span>
-              </label>
-            </div>
-          )}
+          {/* Special Date Checkbox - HIDDEN as per user request (auto-detected from roster) */}
+          {/* 
+          <div className="flex items-center justify-center space-x-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg mb-4">
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isSpecialDate}
+                onChange={handleSpecialDateToggle}
+                className="w-4 h-4 text-yellow-600 focus:ring-yellow-500 focus:ring-2 rounded"
+              />
+              <span className="text-sm font-medium text-yellow-800 select-none">
+                Special Date
+              </span>
+            </label>
+          </div>
+          */}
           
           {/* Sunday info message - only show if NOT special */}
           {isSunday && !isSpecialDate && (
