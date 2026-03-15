@@ -230,10 +230,16 @@ function App() {
     return () => window.removeEventListener('bulkCalendarUpdate', handleBulkCalendarUpdate as EventListener);
   }, [setSchedule, setSpecialDates]);
   
-  // Function to check roster entries for special dates and update calendar
-  const syncRosterSpecialDatesToCalendar = async () => {
+  // Function to check roster entries for special dates and update calendar - SAFE VERSION
+  const syncRosterSpecialDatesToCalendar = useCallback(async () => {
     try {
       console.log('🔍 Syncing roster special dates to calendar...');
+      
+      // Only proceed if Supabase is available
+      if (!fetchRosterEntries) {
+        console.warn('⚠️ fetchRosterEntries not available, skipping sync');
+        return;
+      }
       
       // Fetch all roster entries (with timeout protection)
       const timeoutPromise = new Promise<never>((_, reject) => 
@@ -282,15 +288,19 @@ function App() {
       console.warn('⚠️ Skipping roster special date sync:', error instanceof Error ? error.message : error);
       // Don't fail the app - just skip the sync
     }
-  };
+  }, [setSpecialDates, setSpecialDateTexts, setRefreshKey]);
   
-  // Sync roster special dates when app loads (after main app is shown)
+  // Sync roster special dates when app loads (after main app is shown) - NON-BLOCKING
   useEffect(() => {
     if (showMainApp) {
-      // Defer sync to not block UI
-      setTimeout(() => {
+      console.log('🚀 Scheduling roster special date sync...');
+      // Use requestIdleCallback or fallback to setTimeout for non-blocking sync
+      const scheduleSync = window.requestIdleCallback || ((cb: any) => setTimeout(cb, 100));
+      
+      scheduleSync(() => {
+        console.log('⚙️ Running roster special date sync in background...');
         syncRosterSpecialDatesToCalendar();
-      }, 100);
+      });
     }
   }, [showMainApp]);
   
