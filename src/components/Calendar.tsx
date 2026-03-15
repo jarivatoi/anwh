@@ -1243,20 +1243,24 @@ export const Calendar: React.FC<CalendarProps> = ({
                     {/* Content container - only takes needed space */}
                     <div className={`flex flex-col items-center justify-start space-y-0.5 sm:space-y-1 px-0.5 select-none min-w-0 ${isPastDate(day) ? 'z-30' : ''}`}>
                       {/* Special date indicator with actual roster text */}
-                      {hasSpecialDate && (
-                        <div 
-                          className="special-text text-[8px] sm:text-[9px] text-red-500 font-bold leading-none mt-0.5 flex justify-center select-none"
-                        >
-                          <ScrollingText 
-                            text={specialDateTexts[dateKey] || "SPECIAL"} 
-                            pauseDuration={2}
-                            scrollDuration={4}
-                            className="text-center select-none"
+                      {(() => {
+                        const dateKey = formatDateKey(day);
+                        const hasRosterSpecialText = specialDateTexts[dateKey];
+                        return hasSpecialDate && (
+                          <div 
+                            className="special-text text-[8px] sm:text-[9px] text-red-500 font-bold leading-none mt-0.5 flex justify-center select-none"
                           >
-                            <div className="text-center select-none">{specialDateTexts[dateKey] || "SPECIAL"}</div>
-                          </ScrollingText>
-                        </div>
-                      )}
+                            <ScrollingText 
+                              text={hasRosterSpecialText || "SPECIAL"} 
+                              pauseDuration={2}
+                              scrollDuration={4}
+                              className="text-center select-none"
+                            >
+                              <div className="text-center select-none">{hasRosterSpecialText || "SPECIAL"}</div>
+                            </ScrollingText>
+                          </div>
+                        );
+                      })()}
                       
                       {/* All shifts displayed */}
                       {dayShifts.map((shiftId, idx) => {
