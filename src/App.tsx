@@ -16,6 +16,7 @@ import { DaySchedule, SpecialDates, Settings, ExportData, DateNotes } from './ty
 import { gsap } from 'gsap';
 import { RosterPanel } from './components/RosterPanel';
 import { syncRosterToCalendar } from './utils/rosterCalendarSync';
+import { fetchRosterEntries } from './utils/rosterApi';
 
 function App() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -48,6 +49,9 @@ function App() {
 
   // Add date notes state
   const [dateNotes, setDateNotes] = useState<DateNotes>({});
+
+  // Add special date texts state (stores the actual remarks text from roster)
+  const [specialDateTexts, setSpecialDateTexts] = useState<Record<string, string>>({});
 
   // Add manual mode state
   const [useManualMode, setUseManualMode] = useState(false);
@@ -182,10 +186,10 @@ function App() {
     return () => window.removeEventListener('navigateToMonth', handleNavigateToMonth as EventListener);
   }, [schedule, specialDates]);
   
-  // Handle bulk calendar updates from calendar export
+  // Listen for bulk calendar updates from calendar export
   useEffect(() => {
     const handleBulkCalendarUpdate = (event: CustomEvent) => {
-      const { calendarUpdates, specialDateUpdates, editorName, source } = event.detail;
+      const { calendarUpdates, specialDateUpdates, editorName, source, entries } = event.detail;
       
       // Confirm receipt
       window.dispatchEvent(new CustomEvent('bulkUpdateReceived'));
@@ -225,6 +229,70 @@ function App() {
     window.addEventListener('bulkCalendarUpdate', handleBulkCalendarUpdate as EventListener);
     return () => window.removeEventListener('bulkCalendarUpdate', handleBulkCalendarUpdate as EventListener);
   }, [setSchedule, setSpecialDates]);
+  
+  // Function to check roster entries for special dates and update calendar
+  const syncRosterSpecialDatesToCalendar = async () => {
+    try {
+      console.log('🔍 Syncing roster special dates to calendar...');
+      
+      // Fetch all roster entries
+      const allRosterEntries = await fetchRosterEntries();
+      
+      // Check each entry for special date info
+      const specialDateFlags: Record<string, boolean> = {};
+      const specialDateTextMap: Record<string, string> = {};
+      
+      allRosterEntries.forEach(entry => {
+        if (entry.change_description && entry.change_description.includes('Special Date:')) {
+          const match = entry.change_description.match(/Special Date:\s*([^;]+)/);
+          if (match && match[1].trim()) {
+            const specialText = match[1].trim();
+            specialDateFlags[entry.date] = true;
+            specialDateTextMap[entry.date] = specialText;
+            console.log(`🌟 Found special date in roster: ${entry.date} - "${specialText}"`);
+          }
+        }
+      });
+      
+      // Update special dates state if any found
+      if (Object.keys(specialDateFlags).length > 0) {
+        console.log(`✅ Updating calendar with ${Object.keys(specialDateFlags).length} special dates from roster`);
+        
+        // Update special date flags
+        setSpecialDates(prev => ({
+          ...prev,
+          ...specialDateFlags
+        }));
+        
+        // Update special date texts
+        setSpecialDateTexts(prev => ({
+          ...prev,
+          ...specialDateTextMap
+        }));
+        
+        // Force refresh calculations
+        setRefreshKey(prev => prev + 1);
+      }
+    } catch (error) {
+      console.error('❌ Error syncing roster special dates:', error);
+    }
+  };
+  
+  // Sync roster special dates when app loads
+  useEffect(() => {
+    syncRosterSpecialDatesToCalendar();
+  }, []);
+  
+  // Also sync when roster is refreshed (listen for rosterUpdated event)
+  useEffect(() => {
+    const handleRosterUpdate = () => {
+      console.log('🔄 Roster updated detected, syncing special dates...');
+      syncRosterSpecialDatesToCalendar();
+    };
+    
+    window.addEventListener('rosterUpdated', handleRosterUpdate as EventListener);
+    return () => window.removeEventListener('rosterUpdated', handleRosterUpdate as EventListener);
+  }, []);
   
   // Listen for tab switch requests
   useEffect(() => {
@@ -805,6 +873,7 @@ function App() {
               schedule={schedule}
               specialDates={specialDates}
               dateNotes={dateNotes}
+              specialDateTexts={specialDateTexts}
               setDateNotes={setDateNotes}
               onDateClick={handleDateClick}
               onNavigateMonth={navigateMonth}
