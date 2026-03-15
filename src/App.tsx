@@ -235,8 +235,13 @@ function App() {
     try {
       console.log('🔍 Syncing roster special dates to calendar...');
       
-      // Fetch all roster entries
-      const allRosterEntries = await fetchRosterEntries();
+      // Fetch all roster entries (with timeout protection)
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout fetching roster entries')), 5000)
+      );
+      
+      const fetchPromise = fetchRosterEntries();
+      const allRosterEntries = await Promise.race([fetchPromise, timeoutPromise]);
       
       // Check each entry for special date info
       const specialDateFlags: Record<string, boolean> = {};
@@ -274,14 +279,20 @@ function App() {
         setRefreshKey(prev => prev + 1);
       }
     } catch (error) {
-      console.error('❌ Error syncing roster special dates:', error);
+      console.warn('⚠️ Skipping roster special date sync:', error instanceof Error ? error.message : error);
+      // Don't fail the app - just skip the sync
     }
   };
   
-  // Sync roster special dates when app loads
+  // Sync roster special dates when app loads (after main app is shown)
   useEffect(() => {
-    syncRosterSpecialDatesToCalendar();
-  }, []);
+    if (showMainApp) {
+      // Defer sync to not block UI
+      setTimeout(() => {
+        syncRosterSpecialDatesToCalendar();
+      }, 100);
+    }
+  }, [showMainApp]);
   
   // Also sync when roster is refreshed (listen for rosterUpdated event)
   useEffect(() => {
