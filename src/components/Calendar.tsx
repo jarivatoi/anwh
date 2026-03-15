@@ -21,6 +21,7 @@ interface CalendarProps {
   schedule: DaySchedule;
   specialDates: SpecialDates;
   dateNotes?: DateNotes;
+  specialDateTexts?: Record<string, string>; // Actual special date text from roster
   onDateClick: (day: number) => void;
   onNavigateMonth: (direction: 'prev' | 'next') => void;
   totalAmount: number;
@@ -42,6 +43,7 @@ export const Calendar: React.FC<CalendarProps> = ({
   schedule,
   specialDates,
   dateNotes = {},
+  specialDateTexts = {},
   onDateClick,
   onNavigateMonth,
   totalAmount,
@@ -1240,18 +1242,18 @@ export const Calendar: React.FC<CalendarProps> = ({
                     
                     {/* Content container - only takes needed space */}
                     <div className={`flex flex-col items-center justify-start space-y-0.5 sm:space-y-1 px-0.5 select-none min-w-0 ${isPastDate(day) ? 'z-30' : ''}`}>
-                      {/* Special date indicator */}
+                      {/* Special date indicator with actual roster text */}
                       {hasSpecialDate && (
                         <div 
                           className="special-text text-[8px] sm:text-[9px] text-red-500 font-bold leading-none mt-0.5 flex justify-center select-none"
                         >
                           <ScrollingText 
-                            text="SPECIAL" 
+                            text={specialDateTexts[dateKey] || "SPECIAL"} 
                             pauseDuration={2}
-                            scrollDuration={3}
+                            scrollDuration={4}
                             className="text-center select-none"
                           >
-                            <div className="text-center select-none">SPECIAL</div>
+                            <div className="text-center select-none">{specialDateTexts[dateKey] || "SPECIAL"}</div>
                           </ScrollingText>
                         </div>
                       )}
