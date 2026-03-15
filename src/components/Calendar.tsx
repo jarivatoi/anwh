@@ -1245,7 +1245,14 @@ export const Calendar: React.FC<CalendarProps> = ({
                         <div 
                           className="special-text text-[8px] sm:text-[9px] text-red-500 font-bold leading-none mt-0.5 flex justify-center select-none"
                         >
-                          <div className="text-center select-none">SPECIAL</div>
+                          <ScrollingText 
+                            text="SPECIAL" 
+                            pauseDuration={2}
+                            scrollDuration={3}
+                            className="text-center select-none"
+                          >
+                            <div className="text-center select-none">SPECIAL</div>
+                          </ScrollingText>
                         </div>
                       )}
                       
@@ -1257,7 +1264,14 @@ export const Calendar: React.FC<CalendarProps> = ({
                             key={`${shiftId}-${idx}`}
                             className={`shift-text text-[8px] sm:text-[11px] font-bold leading-tight text-black flex-shrink-0 w-full select-none whitespace-nowrap overflow-hidden ${isPastDate(day) ? 'opacity-60' : ''}`}
                           >
-                            <div className="text-center select-none truncate px-0.5">{shift.time}</div>
+                            <ScrollingText 
+                              text={shift.time} 
+                              pauseDuration={2}
+                              scrollDuration={4}
+                              className="text-center select-none truncate px-0.5"
+                            >
+                              <div className="text-center select-none truncate px-0.5">{shift.time}</div>
+                            </ScrollingText>
                           </div>
                         ) : null;
                       })}
