@@ -290,18 +290,66 @@ function App() {
     }
   }, [setSpecialDates, setSpecialDateTexts, setRefreshKey]);
   
-  // Sync roster special dates when app loads (after main app is shown) - NON-BLOCKING
+  // Sync roster special dates when app loads (after main app is shown) - COMPLETELY SAFE
   useEffect(() => {
-    if (showMainApp) {
-      console.log('🚀 Scheduling roster special date sync...');
-      // Use requestIdleCallback or fallback to setTimeout for non-blocking sync
-      const scheduleSync = window.requestIdleCallback || ((cb: any) => setTimeout(cb, 100));
-      
-      scheduleSync(() => {
-        console.log('⚙️ Running roster special date sync in background...');
-        syncRosterSpecialDatesToCalendar();
-      });
-    }
+    if (!showMainApp) return;
+    
+    // Use a completely isolated async call that won't affect main app
+    const runSync = async () => {
+      try {
+        console.log('🚀 Starting background roster special date sync...');
+        
+        // Wait a bit to ensure main app is stable
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        console.log('⚙️ Fetching roster entries...');
+        let allRosterEntries;
+        try {
+          // Try to fetch with timeout
+          const fetchPromise = fetchRosterEntries();
+          const timeoutPromise = new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout')), 5000)
+          );
+          allRosterEntries = await Promise.race([fetchPromise, timeoutPromise]);
+        } catch (fetchError) {
+          console.warn('⚠️ Cannot fetch roster entries:', fetchError);
+          return; // Just exit, don't crash
+        }
+        
+        console.log(`📊 Processing ${allRosterEntries.length} roster entries...`);
+        
+        // Process entries
+        const specialDateFlags: Record<string, boolean> = {};
+        const specialDateTextMap: Record<string, string> = {};
+        
+        allRosterEntries.forEach(entry => {
+          if (entry.change_description && entry.change_description.includes('Special Date:')) {
+            const match = entry.change_description.match(/Special Date:\s*([^;]+)/);
+            if (match && match[1].trim()) {
+              const specialText = match[1].trim();
+              specialDateFlags[entry.date] = true;
+              specialDateTextMap[entry.date] = specialText;
+            }
+          }
+        });
+        
+        // Update states safely
+        if (Object.keys(specialDateFlags).length > 0) {
+          console.log(`✅ Found ${Object.keys(specialDateFlags).length} special dates`);
+          
+          setSpecialDates(prev => ({ ...prev, ...specialDateFlags }));
+          setSpecialDateTexts(prev => ({ ...prev, ...specialDateTextMap }));
+          setRefreshKey(prev => prev + 1);
+        }
+        
+      } catch (error) {
+        console.warn('⚠️ Background sync failed (app continues):', error);
+        // App continues normally even if sync fails
+      }
+    };
+    
+    // Run in background
+    runSync();
   }, [showMainApp]);
   
   // Also sync when roster is refreshed (listen for rosterUpdated event)
