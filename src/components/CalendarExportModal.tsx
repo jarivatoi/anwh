@@ -94,7 +94,7 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
       return;
     }
     
-    // SECOND: Validate passcode (as a confirmation step)
+    // SECOND: Validate passcode and ensure it belongs to the logged-in user
     const passcodeResult = await validatePasscode(authCode);
     console.log('✅ Passcode validated:', passcodeResult);
     
@@ -103,7 +103,17 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
       return;
     }
     
-    // Use the LOGGED-IN USER's details, not the passcode owner
+    // CRITICAL: Check if the passcode belongs to the logged-in user
+    // Prevent using someone else's passcode even if valid
+    if (passcodeResult.userId !== session.userId) {
+      console.error('❌ PASSCODE MISMATCH: Logged in as', session.name, session.surname, 'but passcode belongs to', passcodeResult.name, passcodeResult.surname);
+      setAuthError('Invalid Passcode');
+      return;
+    }
+    
+    console.log('✅ Passcode ownership verified: User is authorized');
+    
+    // Use the LOGGED-IN USER's details for roster matching
     const authenticatedStaffName = `${session.surname}, ${session.name}`;
     const authenticatedSurname = session.surname;
     const authenticatedIdNumber = session.idNumber; // Use ID number for unique matching
