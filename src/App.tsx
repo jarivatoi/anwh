@@ -34,7 +34,8 @@ import ProfileTab from './components/ProfileTab';
 import { 
   saveUserSession, 
   removeUserSession,
-  saveLastUsedIdNumber
+  saveLastUsedIdNumber,
+  getUserSession
 } from './utils/indexedDB';
 
 // Type Definitions
@@ -330,7 +331,14 @@ function App() {
     }
     
     try {
-      // Save session to IndexedDB
+      // Clear any existing session first to prevent conflicts
+      const existingSession = await getUserSession();
+      if (existingSession && existingSession.userId !== sess.userId) {
+        console.log('🔄 Clearing old session for:', existingSession.name, existingSession.surname);
+        await removeUserSession();
+      }
+      
+      // Save new session to IndexedDB
       await saveUserSession({ 
         userId: sess.userId, 
         idNumber: sess.idNumber, 
@@ -338,6 +346,8 @@ function App() {
         surname: sess.surname,
         name: sess.name
       });
+      
+      console.log('✅ New session saved for:', sess.name, sess.surname, sess.userId);
       
       // Store ID for auto-fill
       await saveLastUsedIdNumber(sess.idNumber);
