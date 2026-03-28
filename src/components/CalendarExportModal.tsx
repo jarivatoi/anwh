@@ -4,6 +4,7 @@ import { X, Download, Calendar, User, Clock, CheckCircle, AlertTriangle, Eye, Ey
 import { validatePasscode } from '../utils/passcodeAuth';
 import { fetchRosterEntries } from '../utils/rosterApi';
 import { calendarExportManager, ExportResult } from '../utils/calendarExport';
+import { getUserSession } from '../utils/indexedDB';
 
 interface CalendarExportModalProps {
   isOpen: boolean;
@@ -84,18 +85,29 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
       return;
     }
 
-    const result = await validatePasscode(authCode);
-    console.log('✅ Authenticated as:', result);
+    // FIRST: Get the currently logged-in user from session
+    const session = await getUserSession();
+    console.log('📋 Current logged-in session:', session);
     
-    if (!result || !result.isValid) {
+    if (!session) {
+      setAuthError('No active session found. Please log in first.');
+      return;
+    }
+    
+    // SECOND: Validate passcode (as a confirmation step)
+    const passcodeResult = await validatePasscode(authCode);
+    console.log('✅ Passcode validated:', passcodeResult);
+    
+    if (!passcodeResult || !passcodeResult.isValid) {
       setAuthError('Invalid passcode');
       return;
     }
     
-    const authenticatedStaffName = `${result.surname}, ${result.name}`;
-    const authenticatedSurname = result.surname;
-    const authenticatedIdNumber = result.idNumber; // Use ID number for unique matching
-    const isAdmin = result.isAdmin;
+    // Use the LOGGED-IN USER's details, not the passcode owner
+    const authenticatedStaffName = `${session.surname}, ${session.name}`;
+    const authenticatedSurname = session.surname;
+    const authenticatedIdNumber = session.idNumber; // Use ID number for unique matching
+    const isAdmin = session.isAdmin;
 
     console.log('🔄 Starting calendar export process...');
     setIsExporting(true);
