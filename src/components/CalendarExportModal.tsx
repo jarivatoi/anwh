@@ -93,7 +93,8 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
     }
     
     const authenticatedStaffName = `${result.surname}, ${result.name}`;
-    const authenticatedSurname = result.surname; // Use only surname for matching
+    const authenticatedSurname = result.surname;
+    const authenticatedIdNumber = result.idNumber; // Use ID number for unique matching
     const isAdmin = result.isAdmin;
 
     console.log('🔄 Starting calendar export process...');
@@ -107,6 +108,18 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
       const allEntries = await fetchRosterEntries();
       console.log(`📊 Total entries: ${allEntries.length}`);
       
+      // Log authenticated user details for debugging
+      console.log('👤 Authenticated user:', {
+        authenticatedStaffName,
+        authenticatedSurname,
+        authenticatedIdNumber,
+        isAdmin
+      });
+      
+      // Build the expected roster_display_name format: SURNAME_IDNUMBER
+      const expectedRosterName = `${(authenticatedSurname || '').toUpperCase()}_${(authenticatedIdNumber || '').toUpperCase()}`;
+      console.log('🔍 Expected roster display name:', expectedRosterName);
+      
       // Filter entries - For ADMIN, show all entries; for others, only their own
       const staffEntries = allEntries.filter(entry => {
         const entryDate = new Date(entry.date);
@@ -119,16 +132,25 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
           return true;
         }
         
-        // For regular users, match by SURNAME only (not full name)
-        // Extract surname from assigned_name (format: "SURNAME, Firstname" or just "SURNAME" or "SURNAME(R)")
-        let entrySurname = entry.assigned_name.split(',')[0].trim().toUpperCase();
-        // Remove (R) suffix if present
-        entrySurname = entrySurname.replace(/\(R\)$/i, '').trim();
-        const authSurname = (authenticatedSurname || '').trim().toUpperCase();
+        // For regular users, match by ID-based roster_display_name
+        // Format: SURNAME_IDNUMBER or SURNAME_(Name)_IDNUMBER
+        // We need to check if the entry's assigned_name starts with SURNAME_ and ends with _IDNUMBER
+        const entryAssignedName = entry.assigned_name.trim().toUpperCase();
         
-        console.log(`🔍 Filtering entry: ${entry.assigned_name} | Entry surname: ${entrySurname} | Auth surname: ${authSurname} | Match: ${entrySurname === authSurname}`);
+        // Simple approach: Check if assigned_name contains both surname and ID number
+        const hasSurname = entryAssignedName.startsWith(`${(authenticatedSurname || '').toUpperCase()}_`);
+        const hasIdNumber = entryAssignedName.endsWith(`_${(authenticatedIdNumber || '').toUpperCase()}`);
         
-        return entrySurname === authSurname;
+        // Also handle (R) variants - strip (R) before comparison
+        const entryWithoutR = entryAssignedName.replace('(R)', '');
+        const expectedWithoutR = expectedRosterName.replace('(R)', '');
+        const exactMatch = entryWithoutR === expectedWithoutR;
+        
+        const matches = exactMatch || (hasSurname && hasIdNumber);
+        
+        console.log(`🔍 Entry: ${entry.assigned_name} | Surname match: ${hasSurname} | ID match: ${hasIdNumber} | Exact: ${exactMatch} | Final: ${matches}`);
+        
+        return matches;
       });
       
       console.log(`📊 Found ${staffEntries.length} entries for ${authenticatedStaffName}`);
