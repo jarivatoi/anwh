@@ -411,12 +411,20 @@ const AdminPanel: React.FC = () => {
       } else {
         await clearMonthRosterEntries(selectedYear, selectedMonth, currentUser?.institution_code || undefined)
       }
-      alert(`✅ Successfully cleared ${clearType === 'all' ? 'all roster data' : 'month data'} for ${currentUser?.institution_code || 'all institutions'}`)
+      // Show success toast notification
+      setNotification({
+        message: `✅ Successfully cleared ${clearType === 'all' ? 'all roster data' : 'month data'} for ${currentUser?.institution_code || 'all institutions'}`,
+        type: 'success'
+      })
       setShowClearConfirm(false)
       setShowQuickActions(false)
     } catch (error) {
       console.error('Failed to clear data:', error)
-      alert('Failed to clear data. Please try again.')
+      // Show error toast notification
+      setNotification({
+        message: '❌ Failed to clear data. Please try again.',
+        type: 'error'
+      })
     } finally {
       setIsClearing(false)
     }
@@ -459,10 +467,7 @@ const AdminPanel: React.FC = () => {
         type: errorCount > 0 ? 'error' : 'success'
       });
       
-      // Force reload of roster data after a short delay
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
+
     } catch (error) {
       console.error('❌ PDF import failed:', error);
       (window as any).batchImportMode = false;
@@ -639,8 +644,22 @@ const AdminPanel: React.FC = () => {
         
         switch(sortBy) {
           case 'last_login':
-            const dateA = a.last_login ? new Date(a.last_login).getTime() : 0;
-            const dateB = b.last_login ? new Date(b.last_login).getTime() : 0;
+            // Handle "never" logins - they should always go to the bottom
+            const aHasLogin = !!a.last_login;
+            const bHasLogin = !!b.last_login;
+            
+            // If one has login and other doesn't, prioritize the one with login
+            if (aHasLogin && !bHasLogin) return -1;
+            if (!aHasLogin && bHasLogin) return 1;
+            
+            // If both have no login, sort by surname
+            if (!aHasLogin && !bHasLogin) {
+              return a.surname.toLowerCase().localeCompare(b.surname.toLowerCase());
+            }
+            
+            // Both have login - sort by date
+            const dateA = new Date(a.last_login!).getTime();
+            const dateB = new Date(b.last_login!).getTime();
             comparison = dateA - dateB;
             break;
           case 'institution':
@@ -1162,7 +1181,7 @@ const AdminPanel: React.FC = () => {
                         flexWrap: 'wrap',
                         gap: '8px'
                       }}>
-                        <span>{s.name} {s.surname}</span>
+                        <span>{s.surname} {s.name}</span>
                         {currentUser?.id_number === '5274' && s.institution_code && (
                           <span style={{ 
                             fontSize: '12px', 
