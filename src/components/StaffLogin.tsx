@@ -359,26 +359,11 @@ const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onRegister, sho
       // Update last login
       await supabase.from('staff_users').update({ last_login: new Date().toISOString() }).eq('id', row.id)
       
-      // Create new session in Supabase
-      try {
-        await supabase
-          .from('user_sessions')
-          .insert({
-            user_id: row.id,
-            device_info: navigator.userAgent
-          });
-        console.log('✅ Supabase session created for user:', row.id);
-      } catch (error) {
-        console.error('⚠️ Failed to create Supabase session:', error);
-        // Continue anyway - IndexedDB session will still work
-      }
-      
       // Store the ID number for future logins
       try {
         await saveLastUsedIdNumber(row.id_number);
       } catch (error) {
         console.warn('Could not save ID number:', error);
-        localStorage.setItem('last_used_id_number', row.id_number);
       }
       
       onLoginSuccess({ 
