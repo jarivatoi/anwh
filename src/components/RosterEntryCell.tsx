@@ -9,6 +9,7 @@ import { useLongPress } from '../hooks/useLongPress';
 import { ScrollingText } from './ScrollingText';
 import { supabase } from '../lib/supabase';
 import { formatDisplayNameForUI } from '../utils/rosterDisplayName';
+import { getUserSession } from '../utils/indexedDB';
 
 interface RosterEntryCellProps {
   entry: RosterEntry;
@@ -120,11 +121,33 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
   });
 
   const handleAuthSubmit = async () => {
-    const result = await validatePasscode(authCode);
-    if (!result || !result.isValid) {
+    // FIRST: Get the currently logged-in user from session
+    const session = await getUserSession();
+    console.log('📋 RosterEntryCell - Current logged-in session:', session);
+    
+    if (!session) {
+      setAuthError('No active session found. Please log in first.');
+      return;
+    }
+    
+    // SECOND: Validate passcode and ensure it belongs to the logged-in user
+    const passcodeResult = await validatePasscode(authCode);
+    console.log('✅ Passcode validated:', passcodeResult);
+    
+    if (!passcodeResult || !passcodeResult.isValid) {
       setAuthError('Invalid passcode');
       return;
     }
+    
+    // CRITICAL: Check if the passcode belongs to the logged-in user
+    // Prevent using someone else's passcode even if valid
+    if (passcodeResult.userId !== session.userId) {
+      console.error('❌ PASSCODE MISMATCH: Logged in as', session.name, session.surname, 'but passcode belongs to', passcodeResult.name, passcodeResult.surname);
+      setAuthError('Invalid passcode');
+      return;
+    }
+    
+    console.log('✅ Passcode ownership verified: User is authorized');
     
     // Wait a bit to ensure staff data is loaded
     console.log('🔍 Auth successful, waiting for staff data...');
