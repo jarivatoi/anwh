@@ -12,27 +12,41 @@ export const validatePasscode = async (passcode: string): Promise<{
   isAdmin?: boolean;
 } | null> => {
   try {
+    console.log('🔍 Validating passcode:', passcode);
+    
     const { data, error } = await supabase
       .from('staff_users')
       .select('id, id_number, surname, name, is_admin')
       .eq('passcode', passcode)
       .eq('is_active', true)
-      .single();
+      .limit(1);
 
-    if (error || !data) {
+    console.log('📊 Supabase response:', { data, error });
+
+    if (error) {
+      console.error('❌ Passcode validation error:', error.message, error.details);
+      return null;
+    }
+    
+    if (!data || data.length === 0) {
+      console.warn('⚠️ No user found with passcode:', passcode);
       return null;
     }
 
+    // Take the first match (with duplicate passcodes, there might be multiple)
+    const user = data[0];
+    console.log('✅ Passcode validated for:', user.surname, user.name, '(userId:', user.id + ')');
+    
     return {
       isValid: true,
-      userId: data.id,
-      idNumber: data.id_number,
-      surname: data.surname,
-      name: data.name,
-      isAdmin: data.is_admin
+      userId: user.id,
+      idNumber: user.id_number,
+      surname: user.surname,
+      name: user.name,
+      isAdmin: user.is_admin
     };
   } catch (error) {
-    console.error('Error validating passcode:', error);
+    console.error('❌ Error validating passcode:', error);
     return null;
   }
 };
