@@ -1169,6 +1169,14 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     setTimeout(() => {
       printWindow.focus();
       printWindow.print();
+      
+      // Close the print window after print dialog is dismissed
+      // This works for both "Print" and "Cancel" actions
+      setTimeout(() => {
+        if (!printWindow.closed) {
+          printWindow.close();
+        }
+      }, 1000);
     }, 250);
     
     showToast('Print dialog opened', 'success');
