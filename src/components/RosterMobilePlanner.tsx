@@ -1597,7 +1597,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                   onDragStart={(e) => handleDragStart(e, group.name, group.members)}
                   onDragEnd={() => { setDraggedStaff(null); setDragOver(null); }}
                   style={{ 
-                    touchAction: 'pan-x',
+                    touchAction: 'pan-x pan-y',
                     userSelect: 'none',
                     WebkitUserSelect: 'none'
                   }}>
@@ -1638,7 +1638,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                     }}
                     className={`px-3 py-2 rounded border text-sm whitespace-nowrap cursor-move select-none ${isSelected ? 'bg-green-50 border-green-400' : showReplacing ? 'bg-purple-50 border-purple-300 text-purple-800' : 'bg-white border-gray-200'}`}
                     style={{ 
-                      touchAction: 'pan-y',
+                      touchAction: 'pan-x pan-y',
                       userSelect: 'none',
                       WebkitUserSelect: 'none',
                       textOverflow: 'clip',
