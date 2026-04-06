@@ -861,7 +861,33 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
           showToast(`Added ${draggedStaff.groupMembers.length} staff`, 'success');
         }
       } else {
-        addStaffToCell(draggedStaff.name, dateKey, shiftId);
+        // Single staff drop - check for empty (R) slots
+        const key = `${dateKey}-${shiftId}`;
+        const existing = rosterAssignments[key] || [];
+
+        // Check if staff already exists in this cell (with or without (R))
+        if (existing.some(a => a.staffName === draggedStaff.name)) {
+          showToast('Already assigned', 'error');
+          setDraggedStaff(null);
+          setDragOver(null);
+          return;
+        }
+        
+        const emptyRIndex = existing.findIndex(a => !a.staffName && a.markers.includes('(R)'));
+        if (emptyRIndex !== -1) {
+          // Fill the empty (R) slot with this staff + (R) marker
+          setRosterAssignments(prev => {
+            const updated = { ...prev };
+            const assignments = [...(updated[key] || [])];
+            assignments[emptyRIndex] = { staffName: draggedStaff.name, markers: ['(R)'] };
+            updated[key] = assignments;
+            return updated;
+          });
+          showToast(`${draggedStaff.name}(R) assigned to (R) slot`, 'success');
+        } else {
+          // No empty (R) slot, add normally
+          addStaffToCell(draggedStaff.name, dateKey, shiftId);
+        }
       }
     }
     
@@ -1557,7 +1583,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                             onPointerCancel={!isPlaceholder ? handleAssignmentPointerCancel : undefined}>
                             <span>
                               {isPlaceholder ? (
-                                <span className="text-purple-600">(R) - empty slot</span>
+                                <span className="text-purple-600">(R)</span>
                               ) : (
                                 <>
                                   {a.markers.filter(m => m !== '(R)').map((m, i) => <span key={i} className="font-bold">{m}</span>)}
