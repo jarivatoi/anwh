@@ -1583,10 +1583,26 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
         {/* Scrollable staff list area */}
         <div 
           ref={staffListScrollRef}
-          className="overflow-x-auto overflow-y-hidden"
-          style={{ 
-            WebkitOverflowScrolling: 'touch',
-            touchAction: 'pan-x'
+          className="overflow-x-auto overflow-y-hidden cursor-grab active:cursor-grabbing"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+          onMouseDown={(e) => {
+            const el = e.currentTarget;
+            const startX = e.pageX - el.offsetLeft;
+            const scrollLeft = el.scrollLeft;
+            
+            const handleMouseMove = (e: MouseEvent) => {
+              const x = e.pageX - el.offsetLeft;
+              const walkX = (x - startX) * 2; // Scroll speed
+              el.scrollLeft = scrollLeft - walkX;
+            };
+            
+            const handleMouseUp = () => {
+              el.removeEventListener('mousemove', handleMouseMove);
+              el.removeEventListener('mouseup', handleMouseUp);
+            };
+            
+            el.addEventListener('mousemove', handleMouseMove);
+            el.addEventListener('mouseup', handleMouseUp);
           }}>
           <div className="flex gap-2 p-2 min-w-max">
             {showGroups ? (
@@ -1597,7 +1613,6 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                   onDragStart={(e) => handleDragStart(e, group.name, group.members)}
                   onDragEnd={() => { setDraggedStaff(null); setDragOver(null); }}
                   style={{ 
-                    touchAction: 'pan-x pan-y',
                     userSelect: 'none',
                     WebkitUserSelect: 'none'
                   }}>
@@ -1638,7 +1653,6 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                     }}
                     className={`px-3 py-2 rounded border text-sm whitespace-nowrap cursor-move select-none ${isSelected ? 'bg-green-50 border-green-400' : showReplacing ? 'bg-purple-50 border-purple-300 text-purple-800' : 'bg-white border-gray-200'}`}
                     style={{ 
-                      touchAction: 'pan-x pan-y',
                       userSelect: 'none',
                       WebkitUserSelect: 'none',
                       textOverflow: 'clip',
