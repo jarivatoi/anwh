@@ -1420,10 +1420,6 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
             <Settings className="w-5 h-5" />
           </button>
           
-          <button onClick={() => setCalendarZoom(1)} className="p-2 hover:bg-gray-100 rounded text-xs font-semibold">
-            {calendarZoom.toFixed(1)}x
-          </button>
-          
           {onClose && (
             <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded">
             </button>
@@ -1486,7 +1482,42 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
       {/* Calendar - Separate scrollable container */}
       <div 
         className="flex-1 overflow-auto cursor-grab active:cursor-grabbing"
-        style={{ WebkitOverflowScrolling: 'touch', position: 'relative' }}
+        style={{ WebkitOverflowScrolling: 'touch', position: 'relative', touchAction: 'none' }}
+        onTouchStart={(e) => {
+          if (e.touches.length === 2) {
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            const distance = Math.sqrt(
+              Math.pow(touch2.clientX - touch1.clientX, 2) +
+              Math.pow(touch2.clientY - touch1.clientY, 2)
+            );
+            setLastTouchDistance(distance);
+          }
+        }}
+        onTouchMove={(e) => {
+          if (e.touches.length === 2) {
+            e.preventDefault();
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            const distance = Math.sqrt(
+              Math.pow(touch2.clientX - touch1.clientX, 2) +
+              Math.pow(touch2.clientY - touch1.clientY, 2)
+            );
+            if (lastTouchDistance > 0) {
+              const scale = distance / lastTouchDistance;
+              setCalendarZoom(prev => {
+                const newZoom = prev * scale;
+                return Math.min(Math.max(newZoom, 0.5), 2);
+              });
+            }
+            setLastTouchDistance(distance);
+          }
+        }}
+        onTouchEnd={(e) => {
+          if (e.touches.length < 2) {
+            setLastTouchDistance(0);
+          }
+        }}
         onMouseDown={(e) => {
           // Don't start calendar scroll if we're dragging a staff or assignment
           if (pointerDragState || assignmentDrag) {
