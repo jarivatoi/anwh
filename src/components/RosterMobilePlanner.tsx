@@ -1601,6 +1601,16 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                   : formatDisplayNameForUI(staff.display_name);
                 return (
                   <div key={staff.id}
+                    draggable={!isSelected}
+                    onDragStart={(e) => {
+                      console.log('🎯 HTML5 Drag started:', staff.display_name);
+                      if (longPressTimer) {
+                        clearTimeout(longPressTimer);
+                        setLongPressTimer(null);
+                      }
+                      handleDragStart(e, staff.display_name);
+                    }}
+                    onDragEnd={() => { setDraggedStaff(null); setDragOver(null); }}
                     onPointerDown={(e) => {
                       console.log('👆 Pointer down on:', staff.display_name, '- Selected:', isSelected);
                       handlePointerDown(e, staff.display_name);
