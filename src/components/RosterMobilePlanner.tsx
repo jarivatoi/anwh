@@ -91,6 +91,8 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
   
   // Clear roster confirmation modal
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [calendarZoom, setCalendarZoom] = useState<number>(1);
+  const [lastTouchDistance, setLastTouchDistance] = useState<number>(0);
   
   // Assignment drag state for moving between cells
   const [assignmentDrag, setAssignmentDrag] = useState<{
@@ -1410,9 +1412,12 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
             <Settings className="w-5 h-5" />
           </button>
           
+          <button onClick={() => setCalendarZoom(1)} className="p-2 hover:bg-gray-100 rounded text-xs font-semibold">
+            {calendarZoom.toFixed(1)}x
+          </button>
+          
           {onClose && (
             <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded">
-              <X className="w-5 h-5" />
             </button>
           )}
         </div>
@@ -1505,7 +1510,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
           el.addEventListener('mouseup', handleMouseUp);
         }}>
       
-        <table className="w-full text-xs min-w-max">
+        <table className="w-full text-xs min-w-max" style={{ transform: `scale(${calendarZoom})`, transformOrigin: 'top left', transition: 'transform 0.1s ease' }}>
           <thead className="sticky top-0 bg-gray-100 z-40 shadow-md">
             <tr>
               <th className="border p-1 bg-gray-200 w-16 sticky left-0 z-50">Shift</th>
