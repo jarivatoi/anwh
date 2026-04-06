@@ -780,6 +780,17 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
         const parsed = JSON.parse(dragData);
         if (parsed.type === 'assignment') {
           console.log('🔄 Moving assignment from', parsed.sourceDateKey, parsed.sourceShiftId, 'to', dateKey, shiftId);
+          
+          // Check for duplicate in target cell
+          const targetKey = `${dateKey}-${shiftId}`;
+          const targetAssignments = rosterAssignments[targetKey] || [];
+          if (targetAssignments.some((a: any) => a.staffName === parsed.staffName)) {
+            showToast('Already assigned in this cell', 'error');
+            setDraggedStaff(null);
+            setDragOver(null);
+            return;
+          }
+          
           // Remove from source
           setRosterAssignments(prev => {
             const updated = { ...prev };
@@ -788,7 +799,6 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
             updated[sourceKey] = sourceAssignments.filter((_: any, idx: number) => idx !== parsed.sourceIndex);
             
             // Add to target
-            const targetKey = `${dateKey}-${shiftId}`;
             const targetAssignments = updated[targetKey] || [];
             updated[targetKey] = [...targetAssignments, { staffName: parsed.staffName, markers: parsed.markers }];
             
