@@ -773,6 +773,38 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     e.preventDefault();
     console.log('📥 Drop received at:', dateKey, shiftId);
     
+    // Check if this is an assignment drag (cell to cell)
+    const dragData = e.dataTransfer.getData('text/plain');
+    if (dragData) {
+      try {
+        const parsed = JSON.parse(dragData);
+        if (parsed.type === 'assignment') {
+          console.log('🔄 Moving assignment from', parsed.sourceDateKey, parsed.sourceShiftId, 'to', dateKey, shiftId);
+          // Remove from source
+          setRosterAssignments(prev => {
+            const updated = { ...prev };
+            const sourceKey = `${parsed.sourceDateKey}-${parsed.sourceShiftId}`;
+            const sourceAssignments = updated[sourceKey] || [];
+            updated[sourceKey] = sourceAssignments.filter((_: any, idx: number) => idx !== parsed.sourceIndex);
+            
+            // Add to target
+            const targetKey = `${dateKey}-${shiftId}`;
+            const targetAssignments = updated[targetKey] || [];
+            updated[targetKey] = [...targetAssignments, { staffName: parsed.staffName, markers: parsed.markers }];
+            
+            return updated;
+          });
+          showToast('Assignment moved', 'success');
+          setDraggedStaff(null);
+          setDragOver(null);
+          return;
+        }
+      } catch (err) {
+        // Not JSON, continue with normal drop
+      }
+    }
+    
+    // Normal drop from staff list
     if (draggedStaff) {
       if (draggedStaff.groupMembers) {
         draggedStaff.groupMembers.forEach(m => addStaffToCell(m, dateKey, shiftId));
@@ -1270,39 +1302,6 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
   }
 `}</style>
 
-      {/* Drag ghost element for pointer drag */}
-      {pointerDragState?.isDragging && (
-        <div 
-          className="fixed bg-white border-2 border-blue-500 rounded-lg shadow-xl px-4 py-2 z-[10000] pointer-events-none"
-          style={{
-            left: pointerDragState.currentX,
-            top: pointerDragState.currentY,
-            transform: 'translate(-50%, -50%)',
-            opacity: 0.9
-          }}>
-          <div className="text-sm font-bold text-blue-700">{pointerDragState.staffName}</div>
-          {pointerDragState.groupMembers && (
-            <div className="text-xs text-gray-600">+{pointerDragState.groupMembers.length - 1} more</div>
-          )}
-        </div>
-      )}
-
-      {/* Assignment drag ghost */}
-      {assignmentDrag?.isDragging && (
-        <div 
-          className="fixed bg-white border-2 border-green-500 rounded-lg shadow-xl px-4 py-2 z-[10000] pointer-events-none"
-          style={{
-            left: assignmentDrag.currentX,
-            top: assignmentDrag.currentY,
-            transform: 'translate(-50%, -50%)',
-            opacity: 0.95,
-            minWidth: '100px',
-            textAlign: 'center'
-          }}>
-          <div className="text-sm font-bold text-green-700">{assignmentDrag.staffName}</div>
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b">
         {/* Month Selector - Centered */}
@@ -1480,8 +1479,23 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                         assignments.map((a, idx) => (
                           <div 
                             key={idx} 
+                            draggable
+                            onDragStart={(e) => {
+                              console.log('🎯 Assignment drag started:', a.staffName, 'from', dateKey, shift.id);
+                              e.dataTransfer.setData('text/plain', JSON.stringify({
+                                type: 'assignment',
+                                staffName: a.staffName,
+                                markers: a.markers,
+                                sourceDateKey: dateKey,
+                                sourceShiftId: shift.id,
+                                sourceIndex: idx
+                              }));
+                              e.dataTransfer.effectAllowed = 'move';
+                              setDraggedStaff({ name: a.staffName });
+                            }}
+                            onDragEnd={() => { setDraggedStaff(null); setDragOver(null); }}
                             className="text-[10px] bg-white px-1 py-0.5 mb-1 rounded relative cursor-move select-none pr-4"
-                            style={{ pointerEvents: assignmentDrag?.isDragging ? 'none' : 'auto', wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                            style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
                             onPointerDown={(e) => handleAssignmentPointerDown(e, dateKey, shift.id, idx, a.staffName)}
                             onPointerMove={handleAssignmentPointerMove}
                             onPointerUp={handleAssignmentPointerUp}
