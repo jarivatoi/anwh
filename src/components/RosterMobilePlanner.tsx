@@ -47,12 +47,13 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
   const [groupNameInput, setGroupNameInput] = useState('');
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [selectedStaffForEdit, setSelectedStaffForEdit] = useState<Set<string>>(new Set());
+  const [replacingCount, setReplacingCount] = useState<number>(0);
   
   // Selection and drag state
   const [selectedStaff, setSelectedStaff] = useState<Set<string>>(new Set());
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [rosterAssignments, setRosterAssignments] = useState<Record<string, Array<{ staffName: string; markers: string[] }>>>({});
-  const [draggedStaff, setDraggedStaff] = useState<{ name: string; groupMembers?: string[] } | null>(null);
+  const [draggedStaff, setDraggedStaff] = useState<{ name: string; groupMembers?: string[]; replacingMarkers?: string[] } | null>(null);
   const [dragOver, setDragOver] = useState<{ dateKey: string; shiftId: string } | null>(null);
   
   // Unified pointer drag state (works for both mouse and touch)
@@ -206,7 +207,11 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
 
   const openEditGroup = (group: StaffGroup) => {
     setEditingGroupId(group.id);
-    setSelectedStaffForEdit(new Set(group.members));
+    // Filter out (R) entries to get actual staff members
+    const staffMembers = group.members.filter(m => m !== '(R)');
+    const rCount = group.members.filter(m => m === '(R)').length;
+    setSelectedStaffForEdit(new Set(staffMembers));
+    setReplacingCount(rCount);
   };
 
   const saveEditedGroup = async () => {
@@ -215,14 +220,21 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
       return;
     }
     try {
+      // Add (R) placeholders to the members array
+      const members = Array.from(selectedStaffForEdit);
+      for (let i = 0; i < replacingCount; i++) {
+        members.push('(R)');
+      }
+      
       await supabase
         .from('staff_groups')
-        .update({ members: Array.from(selectedStaffForEdit) })
+        .update({ members })
         .eq('id', editingGroupId);
       setGroups(prev => prev.map(g => 
-        g.id === editingGroupId ? { ...g, members: Array.from(selectedStaffForEdit) } : g
+        g.id === editingGroupId ? { ...g, members } : g
       ));
       setEditingGroupId(null);
+      setReplacingCount(0);
       showToast('Group updated', 'success');
     } catch (error: any) {
       showToast(error.message, 'error');
@@ -754,7 +766,16 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
       setLongPressTimer(null);
     }
     
-    setDraggedStaff({ name, groupMembers: members });
+    // If dragging a group, extract (R) count and filter them out
+    let groupMembers = members;
+    let replacingMarkers: string[] = [];
+    if (members) {
+      const rCount = members.filter(m => m === '(R)').length;
+      replacingMarkers = Array(rCount).fill('(R)');
+      groupMembers = members.filter(m => m !== '(R)');
+    }
+    
+    setDraggedStaff({ name, groupMembers, replacingMarkers: replacingMarkers.length > 0 ? replacingMarkers : undefined });
     e.dataTransfer.effectAllowed = 'copy';
     e.dataTransfer.setData('text/plain', name);
   };
@@ -817,8 +838,28 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     // Normal drop from staff list
     if (draggedStaff) {
       if (draggedStaff.groupMembers) {
-        draggedStaff.groupMembers.forEach(m => addStaffToCell(m, dateKey, shiftId));
-        showToast(`Added ${draggedStaff.groupMembers.length} staff`, 'success');
+        // Add each group member WITHOUT (R) markers
+        draggedStaff.groupMembers.forEach(m => {
+          addStaffToCell(m, dateKey, shiftId, []);
+        });
+        
+        // Add (R) placeholders as separate entries
+        if (draggedStaff.replacingMarkers && draggedStaff.replacingMarkers.length > 0) {
+          const key = `${dateKey}-${shiftId}`;
+          const rCount = draggedStaff.replacingMarkers.length;
+          setRosterAssignments(prev => {
+            const existing = prev[key] || [];
+            const rPlaceholders = Array(rCount).fill(null).map(() => ({ staffName: '', markers: ['(R)'] }));
+            return {
+              ...prev,
+              [key]: [...existing, ...rPlaceholders]
+            };
+          });
+          const msg = `Added ${draggedStaff.groupMembers.length} staff + ${rCount}(R) placeholder(s)`;
+          showToast(msg, 'success');
+        } else {
+          showToast(`Added ${draggedStaff.groupMembers.length} staff`, 'success');
+        }
       } else {
         addStaffToCell(draggedStaff.name, dateKey, shiftId);
       }
@@ -914,19 +955,19 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     fetchAvailableCenters();
   }, [institutionCode]);
 
-  const addStaffToCell = (staffName: string, dateKey: string, shiftId: string) => {
+  const addStaffToCell = (staffName: string, dateKey: string, shiftId: string, markers?: string[]) => {
     const key = `${dateKey}-${shiftId}`;
     const existing = rosterAssignments[key] || [];
     if (existing.some(a => a.staffName === staffName)) {
       showToast('Already assigned', 'error');
       return;
     }
-    const markers = showReplacing ? ['(R)'] : [];
+    const assignmentMarkers = markers || (showReplacing ? ['(R)'] : []);
     setRosterAssignments(prev => ({
       ...prev,
-      [key]: [...(prev[key] || []), { staffName, markers }]
+      [key]: [...(prev[key] || []), { staffName, markers: assignmentMarkers }]
     }));
-    showToast(`${staffName}${showReplacing ? '(R)' : ''} added`, 'success');
+    showToast(`${staffName}${assignmentMarkers.length > 0 ? assignmentMarkers.join('') : ''} added`, 'success');
   };
 
   const removeAssignment = (dateKey: string, shiftId: string, idx: number) => {
@@ -1486,11 +1527,13 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                       {assignments.length === 0 ? (
                         <div className="text-gray-400 text-[10px] text-center py-2">Drop</div>
                       ) : (
-                        assignments.map((a, idx) => (
+                        assignments.map((a, idx) => {
+                          const isPlaceholder = !a.staffName && a.markers.includes('(R)');
+                          return (
                           <div 
                             key={idx} 
-                            draggable
-                            onDragStart={(e) => {
+                            draggable={!isPlaceholder}
+                            onDragStart={!isPlaceholder ? (e) => {
                               console.log('🎯 Assignment drag started:', a.staffName, 'from', dateKey, shift.id);
                               e.dataTransfer.setData('text/plain', JSON.stringify({
                                 type: 'assignment',
@@ -1502,43 +1545,54 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                               }));
                               e.dataTransfer.effectAllowed = 'move';
                               setDraggedStaff({ name: a.staffName });
-                            }}
-                            onDragEnd={() => { setDraggedStaff(null); setDragOver(null); }}
-                            className="text-[10px] bg-white px-1 py-0.5 mb-1 rounded relative cursor-move select-none pr-4"
+                            } : undefined}
+                            onDragEnd={!isPlaceholder ? () => { setDraggedStaff(null); setDragOver(null); } : undefined}
+                            className={`text-[10px] px-1 py-0.5 mb-1 rounded relative cursor-move select-none pr-4 ${
+                              isPlaceholder ? 'bg-purple-50 border border-purple-300 text-purple-700 font-semibold' : 'bg-white'
+                            }`}
                             style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
-                            onPointerDown={(e) => handleAssignmentPointerDown(e, dateKey, shift.id, idx, a.staffName)}
-                            onPointerMove={handleAssignmentPointerMove}
-                            onPointerUp={handleAssignmentPointerUp}
-                            onPointerCancel={handleAssignmentPointerCancel}>
+                            onPointerDown={(e) => !isPlaceholder && handleAssignmentPointerDown(e, dateKey, shift.id, idx, a.staffName)}
+                            onPointerMove={!isPlaceholder ? handleAssignmentPointerMove : undefined}
+                            onPointerUp={!isPlaceholder ? handleAssignmentPointerUp : undefined}
+                            onPointerCancel={!isPlaceholder ? handleAssignmentPointerCancel : undefined}>
                             <span>
-                              {a.markers.filter(m => m !== '(R)').map((m, i) => <span key={i} className="font-bold">{m}</span>)}
-                              {a.staffName}
-                              {a.markers.includes('(R)') && <span className="font-semibold">(R)</span>}
+                              {isPlaceholder ? (
+                                <span className="text-purple-600">(R) - empty slot</span>
+                              ) : (
+                                <>
+                                  {a.markers.filter(m => m !== '(R)').map((m, i) => <span key={i} className="font-bold">{m}</span>)}
+                                  {a.staffName}
+                                  {a.markers.includes('(R)') && <span className="font-semibold">(R)</span>}
+                                </>
+                              )}
                             </span>
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // Cancel any pending long press
-                                if (cellLongPress?.timer) {
-                                  clearTimeout(cellLongPress.timer);
-                                  setCellLongPress(null);
-                                }
-                                removeAssignment(dateKey, shift.id, idx);
-                              }} 
-                              onTouchStart={(e) => {
-                                e.stopPropagation();
-                                // Cancel any pending long press
-                                if (cellLongPress?.timer) {
-                                  clearTimeout(cellLongPress.timer);
-                                  setCellLongPress(null);
-                                }
-                              }}
-                              className="absolute right-0.5 top-0 text-red-500 font-bold px-1 z-10"
-                              style={{ lineHeight: '1' }}>
-                              ×
-                            </button>
+                            {!isPlaceholder && (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Cancel any pending long press
+                                  if (cellLongPress?.timer) {
+                                    clearTimeout(cellLongPress.timer);
+                                    setCellLongPress(null);
+                                  }
+                                  removeAssignment(dateKey, shift.id, idx);
+                                }} 
+                                onTouchStart={(e) => {
+                                  e.stopPropagation();
+                                  // Cancel any pending long press
+                                  if (cellLongPress?.timer) {
+                                    clearTimeout(cellLongPress.timer);
+                                    setCellLongPress(null);
+                                  }
+                                }}
+                                className="absolute right-0.5 top-0 text-red-500 font-bold px-1 z-10"
+                                style={{ lineHeight: '1' }}>
+                                ×
+                              </button>
+                            )}
                           </div>
-                        ))
+                        );
+                        })
                       )}
                     </td>
                   );
@@ -1624,7 +1678,8 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                     </div>
                   </div>
                   <div className="text-[10px] text-gray-700 mt-1">
-                    {group.members.map((m, i) => <div key={i}>• {m}</div>)}
+                    {group.members.filter(m => m !== '(R)').map((m, i) => <div key={i}>• {m}</div>)}
+                    {group.members.filter(m => m === '(R)').map((m, i) => <div key={`r-${i}`} className="text-purple-600 font-semibold">{m}</div>)}
                   </div>
                 </div>
               ))
@@ -1769,9 +1824,37 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                   </button>
                 );
               })}
+              
+              {/* (R) Replacing section */}
+              <div className="mt-3 pt-3 border-t">
+                <div className="text-xs text-gray-600 font-medium mb-2">Replacing (R)</div>
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => setReplacingCount(prev => Math.max(0, prev - 1))}
+                    className="w-10 h-10 bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold text-xl flex items-center justify-center">
+                    −
+                  </button>
+                  <div className="flex-1 text-center">
+                    <div className="text-2xl font-bold text-purple-700">{replacingCount}</div>
+                    <div className="text-xs text-gray-500">{replacingCount === 1 ? 'replacer' : 'replacers'}</div>
+                  </div>
+                  <button 
+                    onClick={() => setReplacingCount(prev => prev + 1)}
+                    className="w-10 h-10 bg-green-500 hover:bg-green-600 text-white rounded-lg font-bold text-xl flex items-center justify-center">
+                    +
+                  </button>
+                </div>
+                {replacingCount > 0 && (
+                  <div className="mt-2 text-xs text-gray-600">
+                    {Array.from({ length: replacingCount }, (_, i) => (
+                      <div key={i} className="text-purple-600 font-semibold">(R)</div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => setEditingGroupId(null)} className="flex-1 px-3 py-2 bg-gray-200 rounded">Cancel</button>
+              <button onClick={() => { setEditingGroupId(null); setReplacingCount(0); }} className="flex-1 px-3 py-2 bg-gray-200 rounded">Cancel</button>
               <button onClick={saveEditedGroup} className="flex-1 px-3 py-2 bg-blue-600 text-white rounded">Save</button>
             </div>
           </div>
