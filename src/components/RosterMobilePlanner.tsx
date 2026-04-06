@@ -1541,14 +1541,8 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
 
       {/* Staff List Panel - Separate scrollable container */}
       <div className="bg-gray-50 border-t flex flex-col" style={{ maxHeight: '40vh' }}>
-        {/* Header with swipe gesture support */}
-        <div 
-          className="flex items-center justify-between p-2 border-b cursor-grab active:cursor-grabbing select-none"
-          onPointerDown={handleStaffListHeaderPointerDown}
-          onPointerMove={handleStaffListHeaderPointerMove}
-          onPointerUp={handleStaffListHeaderPointerUp}
-          onPointerCancel={handleStaffListHeaderPointerUp}
-          style={{ touchAction: 'pan-y' }}>
+        {/* Header */}
+        <div className="flex items-center justify-between p-2 border-b">
           <div className="text-xs text-gray-600 font-medium">
             {showGroups 
               ? 'Staff Groups' 
@@ -1579,8 +1573,11 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
         {/* Scrollable staff list area */}
         <div 
           ref={staffListScrollRef}
-          className="overflow-x-auto overflow-y-hidden" 
-          style={{ WebkitOverflowScrolling: 'touch' }}>
+          className="overflow-x-auto overflow-y-hidden"
+          style={{ 
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-x'
+          }}>
           <div className="flex gap-2 p-2 min-w-max">
             {showGroups ? (
               groups.map(group => (
