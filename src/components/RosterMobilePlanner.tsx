@@ -1483,7 +1483,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
       {/* Calendar - Separate scrollable container */}
       <div 
         className="flex-1 overflow-auto cursor-grab active:cursor-grabbing"
-        style={{ WebkitOverflowScrolling: 'touch', position: 'relative', touchAction: 'none' }}
+        style={{ WebkitOverflowScrolling: 'touch', position: 'relative', touchAction: 'pan-x pan-y pinch-zoom' }}
         onTouchStart={(e) => {
           if (e.touches.length === 2) {
             const touch1 = e.touches[0];
