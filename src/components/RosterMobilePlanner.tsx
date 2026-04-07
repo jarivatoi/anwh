@@ -1151,6 +1151,19 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
       night: '22hrs-9hrs'
     };
     
+    // Find the longest staff name to calculate column width
+    let maxLength = 0;
+    Object.values(rosterAssignments).forEach((assignments: any) => {
+      assignments.forEach((a: any) => {
+        if (a.staffName && a.staffName.length > maxLength) {
+          maxLength = a.staffName.length;
+        }
+      });
+    });
+    
+    // Calculate column width based on longest name (approx 7px per character + padding)
+    const columnWidth = Math.max(120, maxLength * 7 + 20);
+    
     weeks.forEach((week, weekIndex) => {
       // Format dates as DD MM YYYY
       const formatDate = (date: Date) => {
@@ -1169,13 +1182,12 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                 ${['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'].map((dayName, dayIndex) => {
                   const day = week.find(d => d.getDay() === dayIndex);
                   if (!day) {
-                    return `<th style="background-color: #f3f4f6 !important; border: 1px solid #d1d5db; padding: 3px; text-align: center; font-size: 7px; color: black;">
-                      ${dayName}
+                    return `<th style="width: ${columnWidth}px; background-color: #f3f4f6 !important; border: 1px solid #d1d5db; padding: 3px; text-align: center; font-size: 7px; color: black;">
                     </th>`;
                   }
                   const dateStr = formatDate(day);
-                  return `<th style="background-color: #f3f4f6 !important; border: 1px solid #d1d5db; padding: 3px; text-align: center; font-size: 7px; color: black; text-decoration: none;">
-                    ${dayName}<br>${dateStr}
+                  return `<th style="width: ${columnWidth}px; background-color: #f3f4f6 !important; border: 1px solid #d1d5db; padding: 3px; text-align: center; font-size: 7px; color: black;">
+                    <span style="text-decoration: none; color: black;">${dayName}</span><br><span style="text-decoration: none; color: black;">${dateStr}</span>
                   </th>`;
                 }).join('')}
               </tr>
@@ -1189,7 +1201,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                   ${[0, 1, 2, 3, 4, 5, 6].map(dayIndex => {
                     const day = week.find(d => d.getDay() === dayIndex);
                     if (!day) {
-                      return '<td style="border: 1px solid #d1d5db; padding: 3px; min-height: 20px; background-color: white;"></td>';
+                      return `<td style="width: ${columnWidth}px; border: 1px solid #d1d5db; padding: 3px; min-height: 20px; background-color: white;"></td>`;
                     }
                     
                     const dateKey = formatDateKey(day);
@@ -1203,7 +1215,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                       const hasReplacing = assignment.markers && assignment.markers.includes('(R)');
                       const replacingSuffix = hasReplacing ? ' (R)' : '';
                       
-                      return `<div style="background-color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 2px; font-size: 8px; line-height: 1.2; color: black;">
+                      return `<div style="background-color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 2px; font-size: 8px; line-height: 1.2; color: black; text-align: justify;">
                         ${markersPrefix ? `<span style="color: black; font-weight: bold;">${markersPrefix}</span>` : ''}${assignment.staffName}${replacingSuffix ? `<span style="color: black;">${replacingSuffix}</span>` : ''}
                       </div>`;
                     }).join('');
@@ -1211,7 +1223,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                     // Add minimum height for empty cells
                     const emptyCellHeight = assignments.length === 0 ? 'min-height: 20px;' : '';
                     
-                    return `<td style="border: 1px solid #d1d5db; padding: 3px; vertical-align: top; background-color: white !important; ${emptyCellHeight} text-align: center;">
+                    return `<td style="width: ${columnWidth}px; border: 1px solid #d1d5db; padding: 3px; vertical-align: top; background-color: white !important; ${emptyCellHeight} text-align: center;">
                       ${cellContent}
                     </td>`;
                   }).join('')}
@@ -1283,15 +1295,30 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
         }
       };
       
+      // For mobile: add touch event listener to detect when user returns
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible' && printWindowRef.current && !printWindowRef.current.closed) {
+          setTimeout(() => {
+            if (printWindowRef.current && !printWindowRef.current.closed) {
+              printWindowRef.current.close();
+              printWindowRef.current = null;
+            }
+          }, 500);
+        }
+      };
+      
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      
       printWindow.print();
       
-      // Fallback: close after 2 seconds if onafterprint doesn't fire
+      // Fallback: close after 3 seconds if onafterprint doesn't fire
       setTimeout(() => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
         if (!printWindow.closed) {
           printWindow.close();
           printWindowRef.current = null;
         }
-      }, 2000);
+      }, 3000);
     }, 250);
     
     showToast('Print dialog opened', 'success');
@@ -1680,8 +1707,8 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                 const yearNum = String(day.getFullYear());
                 return (
                   <th key={day.toISOString()} className="border p-1 bg-gray-100" style={{ minWidth: `${120 * calendarZoom}px` }}>
-                    <div className="font-bold" style={{ fontSize: `${10 * calendarZoom}px`, color: 'black' }}>{dayName}</div>
-                    <div style={{ fontSize: `${9 * calendarZoom}px`, color: 'black', textDecoration: 'none' }}>{dayNum} {monthNum} {yearNum}</div>
+                    <div className="font-bold" style={{ fontSize: `${10 * calendarZoom}px`, color: 'black', textDecoration: 'none' }}>{dayName}</div>
+                    <div style={{ fontSize: `${9 * calendarZoom}px`, color: 'black', textDecoration: 'none', background: 'transparent' }}>{dayNum} <span style={{ color: 'black' }}>{monthNum}</span> <span style={{ color: 'black' }}>{yearNum}</span></div>
                   </th>
                 );
               })}
