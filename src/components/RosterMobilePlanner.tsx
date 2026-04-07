@@ -1537,8 +1537,8 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
             const y = e.pageY - el.offsetTop;
             const walkX = (x - startX) * 2; // Scroll speed
             const walkY = (y - startY) * 2;
-            el.scrollLeft = scrollLeft - walkX;
-            el.scrollTop = scrollTop - walkY;
+            el.scrollLeft = scrollLeft + walkX;
+            el.scrollTop = scrollTop + walkY;
           };
           
           const handleMouseUp = () => {
@@ -1717,7 +1717,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
             const handleMouseMove = (e: MouseEvent) => {
               const x = e.pageX - el.offsetLeft;
               const walkX = (x - startX) * 2; // Scroll speed
-              el.scrollLeft = scrollLeft - walkX;
+              el.scrollLeft = scrollLeft + walkX;
             };
             
             const handleMouseUp = () => {
