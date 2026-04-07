@@ -1700,7 +1700,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                             onPointerUp={!isPlaceholder ? handleAssignmentPointerUp : undefined}
                             onPointerCancel={!isPlaceholder ? handleAssignmentPointerCancel : undefined}>
                             {isPlaceholder ? (
-                              <div style={{ position: 'relative', textAlign: 'center' }}>
+                              <span style={{ display: 'inline-block' }}>
                                 <span className="text-purple-600">(R)</span>
                                 <button 
                                   onClick={(e) => {
@@ -1722,20 +1722,20 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                                   }}
                                   className="text-red-500 font-bold cursor-pointer"
                                   style={{ 
-                                    position: 'absolute',
-                                    top: `-${5 * calendarZoom}px`,
-                                    right: `${2 * calendarZoom}px`,
+                                    display: 'inline-block',
+                                    verticalAlign: 'top',
                                     lineHeight: '1',
                                     padding: 0,
-                                    fontSize: `${14 * calendarZoom}px`,
+                                    marginLeft: `${3 * calendarZoom}px`,
+                                    fontSize: `${10 * calendarZoom}px`,
                                     background: 'none',
                                     border: 'none'
                                   }}>
                                   ×
                                 </button>
-                              </div>
+                              </span>
                             ) : (
-                              <span style={{ position: 'relative', display: 'inline-block' }}>
+                              <span>
                                 {a.markers.filter(m => m !== '(R)').map((m, i) => <span key={i} className="font-bold">{m}</span>)}
                                 {a.staffName}
                                 {a.markers.includes('(R)') && <span>(R)</span>}
@@ -1759,12 +1759,12 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                                   }}
                                   className="text-red-500 font-bold cursor-pointer"
                                   style={{ 
-                                    position: 'absolute',
-                                    top: `-${5 * calendarZoom}px`,
-                                    right: `-${10 * calendarZoom}px`,
+                                    display: 'inline-block',
+                                    verticalAlign: 'top',
                                     lineHeight: '1',
                                     padding: 0,
-                                    fontSize: `${14 * calendarZoom}px`,
+                                    marginLeft: `${3 * calendarZoom}px`,
+                                    fontSize: `${10 * calendarZoom}px`,
                                     background: 'none',
                                     border: 'none'
                                   }}>
