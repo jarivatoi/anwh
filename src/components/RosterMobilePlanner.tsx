@@ -1638,9 +1638,10 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                               fontSize: `${10 * calendarZoom}px`,
                               marginBottom: `${4 * calendarZoom}px`,
                               paddingLeft: `${4 * calendarZoom}px`,
-                              paddingRight: `${16 * calendarZoom}px`,
+                              paddingRight: `${14 * calendarZoom}px`,
                               paddingTop: `${2 * calendarZoom}px`,
-                              paddingBottom: `${2 * calendarZoom}px`
+                              paddingBottom: `${2 * calendarZoom}px`,
+                              position: 'relative'
                             }}
                             onPointerDown={(e) => !isPlaceholder && handleAssignmentPointerDown(e, dateKey, shift.id, idx, a.staffName)}
                             onPointerMove={!isPlaceholder ? handleAssignmentPointerMove : undefined}
@@ -1676,13 +1677,16 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                                     setCellLongPress(null);
                                   }
                                 }}
-                                className="absolute text-red-500 font-bold z-10"
+                                className="text-red-500 font-bold cursor-pointer"
                                 style={{ 
-                                  lineHeight: '1',
+                                  position: 'absolute',
+                                  top: `${1 * calendarZoom}px`,
                                   right: `${2 * calendarZoom}px`,
-                                  top: 0,
-                                  padding: `${2 * calendarZoom}px`,
-                                  fontSize: `${12 * calendarZoom}px`
+                                  lineHeight: '1',
+                                  padding: 0,
+                                  fontSize: `${14 * calendarZoom}px`,
+                                  background: 'none',
+                                  border: 'none'
                                 }}>
                                 ×
                               </button>
