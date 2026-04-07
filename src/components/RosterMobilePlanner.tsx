@@ -1550,20 +1550,23 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
           el.addEventListener('mouseup', handleMouseUp);
         }}>
       
-        <div style={{ fontSize: `${calendarZoom * 100}%`, width: '100%' }}>
-        <table className="w-full text-xs min-w-max">
+        {/* Calendar Table - Single table with sticky headers, zoom via inline styles */}
+        <table className="w-full text-xs min-w-max" style={{ 
+          width: `${100 * calendarZoom}%`,
+          minWidth: `${100 * calendarZoom}%`
+        }}>
           <thead className="sticky top-0 bg-gray-100 z-40 shadow-md">
             <tr>
-              <th className="border p-1 bg-gray-200 w-16 sticky left-0 z-50">Shift</th>
+              <th className="border p-1 bg-gray-200 sticky left-0 z-50" style={{ width: `${16 * calendarZoom}px` }}>Shift</th>
               {days.map(day => {
                 const dayName = day.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
                 const dayNum = String(day.getDate()).padStart(2, '0');
                 const monthNum = String(day.getMonth() + 1).padStart(2, '0');
                 const yearNum = String(day.getFullYear());
                 return (
-                  <th key={day.toISOString()} className="border p-1 bg-gray-100 min-w-[70px] whitespace-nowrap">
-                    <div className="text-[10px] font-bold">{dayName}</div>
-                    <div className="text-[9px]">{dayNum} {monthNum} {yearNum}</div>
+                  <th key={day.toISOString()} className="border p-1 bg-gray-100 whitespace-nowrap" style={{ minWidth: `${70 * calendarZoom}px` }}>
+                    <div className="font-bold" style={{ fontSize: `${10 * calendarZoom}px` }}>{dayName}</div>
+                    <div style={{ fontSize: `${9 * calendarZoom}px` }}>{dayNum} {monthNum} {yearNum}</div>
                   </th>
                 );
               })}
@@ -1573,8 +1576,16 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
             {shifts.map(shift => (
               <tr key={shift.id}>
                 <td 
-                  className="border p-2 bg-gray-100 font-bold sticky left-0 z-30 text-xs min-w-[70px] shadow-lg"
-                  style={{ backgroundColor: '#f3f4f6' }}>
+                  className="border p-2 bg-gray-100 font-bold text-xs"
+                  style={{ 
+                    position: 'sticky', 
+                    left: 0, 
+                    zIndex: 30, 
+                    backgroundColor: '#f3f4f6',
+                    minWidth: `${70 * calendarZoom}px`,
+                    boxShadow: '2px 0 5px rgba(0,0,0,0.1)',
+                    padding: `${8 * calendarZoom}px`
+                  }}>
                   <div className="flex flex-col items-center leading-tight">
                     {shift.label.split('\n').map((line, i) => (
                       <span key={i}>{line}</span>
@@ -1673,8 +1684,6 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
             ))}
           </tbody>
         </table>
-      </div>
-
       </div>
       {/* Staff List Panel - Separate scrollable container */}
       <div className="bg-gray-50 border-t flex flex-col" style={{ maxHeight: '40vh' }}>
