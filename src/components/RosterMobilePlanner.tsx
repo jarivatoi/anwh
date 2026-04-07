@@ -19,9 +19,6 @@ const showToast = (message: string, type: 'error' | 'success' = 'error') => {
   }, 2000);
 };
 
-// Track if HTML5 drag has been completed/cancelled
-let html5DragCancelled = false;
-
 interface RosterMobilePlannerProps {
   onClose: () => void;
   institutionCode: string | null;
@@ -249,11 +246,11 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
 
   // Long press for selection
   const handleLongPressStart = (staffName: string) => {
-    console.log('👆 Long press started on:', staffName);
+    
     
     // Don't start long press if we're already dragging
     if (pointerDragState?.isDragging || assignmentDrag?.isDragging) {
-      console.log('❌ Long press blocked - already dragging');
+      
       return;
     }
     
@@ -264,26 +261,26 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     }
     
     const timer = setTimeout(() => {
-      console.log('⏰ Timeout callback fired! Checking conditions...');
-      console.log('   longPressTimer:', longPressTimer ? 'exists' : 'null');
-      console.log('   pointerDragState?.isDragging:', pointerDragState?.isDragging);
-      console.log('   assignmentDrag?.isDragging:', assignmentDrag?.isDragging);
+      
+      
+      
+      
       
       // Triple-check: ensure timer still exists and we're not dragging
       if (!longPressTimer || pointerDragState?.isDragging || assignmentDrag?.isDragging) {
-        console.log('❌ Long press cancelled - drag detected or timer cleared');
+        
         return;
       }
       
-      console.log('✅ All checks passed - toggling selection');
+      
       setSelectedStaff(prev => {
         const newSet = new Set(prev);
         if (newSet.has(staffName)) {
           newSet.delete(staffName);
-          console.log('✅ Deselected:', staffName);
+          
         } else {
           newSet.add(staffName);
-          console.log('✅ Selected:', staffName);
+          
         }
         return newSet;
       });
@@ -293,11 +290,9 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
   };
 
   const handleLongPressEnd = () => {
-    console.log('👆 Long press ended');
     if (longPressTimer) {
       clearTimeout(longPressTimer);
       setLongPressTimer(null);
-      console.log('❌ Long press cancelled (released too early)');
     }
   };
 
@@ -306,7 +301,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     // Only handle primary button (left click) or touch
     if (e.button !== 0 && e.pointerType === 'mouse') return;
     
-    console.log('👆 Pointer down:', name);
+    
     
     // If dragging a group, extract (R) count and filter them out
     let groupMembers = members;
@@ -334,11 +329,8 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
       tapCount: 1,
       lastTapTime: Date.now(),
       cancelled: false
-    };
-    
-    // Reset HTML5 drag cancelled flag for new drag
-    html5DragCancelled = false;
-    
+    }
+        
     setPointerDragState(dragInfo);
     
     // Capture pointer to track movement outside element
@@ -346,22 +338,17 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     
     // Add global listeners for move and up events using native events
     const handleGlobalMove = (e: PointerEvent) => {
-      // Exit early if drag info doesn't exist, was cancelled, or HTML5 drag was completed
-      if (!dragInfo || dragInfo.cancelled || html5DragCancelled) {
-        if (html5DragCancelled) {
-          console.log('⚠️ HTML5 drag was cancelled, preventing new drag');
-        }
+      // Exit early if drag info doesn't exist or was cancelled
+      if (!dragInfo || dragInfo.cancelled) {
         return;
       }
       
       const deltaX = Math.abs(e.clientX - dragInfo.startX);
       const deltaY = Math.abs(e.clientY - dragInfo.startY);
       
-      console.log('📍 Global pointer move - deltaX:', deltaX.toFixed(1), 'deltaY:', deltaY.toFixed(1));
-      
       // If moved more than 10px, start dragging
       if (!dragInfo.isDragging && (deltaX > 10 || deltaY > 10)) {
-        console.log('🎯 Drag started:', dragInfo.staffName);
+        
         dragInfo.isDragging = true;
         
         // Cancel any pending double-tap
@@ -382,11 +369,11 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
         if (cell) {
           const dateKey = (cell as HTMLElement).dataset.dateKey || '';
           const shiftId = (cell as HTMLElement).dataset.shiftId || '';
-          console.log('✅ Found cell:', dateKey, shiftId);
+          
           dragInfo.dropTarget = { dateKey, shiftId };
           setDragOver({ dateKey, shiftId });
         } else {
-          console.log('❌ No cell found under pointer');
+          
           dragInfo.dropTarget = null;
           setDragOver(null);
         }
@@ -394,8 +381,8 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     };
     
     const handleGlobalUp = (e: PointerEvent) => {
-      console.log('🛑 DRAG STOPPED - pointer up detected');
-      console.log('👆 Global pointer up - isDragging:', dragInfo.isDragging, 'dropTarget:', dragInfo.dropTarget);
+      
+      
       
       // Immediately mark drag as ended and cancelled to prevent any further move events
       const wasDragging = dragInfo.isDragging;
@@ -404,11 +391,11 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
       dragInfo.dropTarget = null;
       dragInfo.cancelled = true; // Mark as cancelled to stop all further processing
       
-      console.log('🧹 Clearing all drag state...');
+      
       
       if (wasDragging && dropTarget) {
         // Drop the staff on cell
-        console.log('📥 Drop at:', dropTarget.dateKey, dropTarget.shiftId);
+        
         if (dragInfo.groupMembers) {
           dragInfo.groupMembers.forEach(m => addStaffToCell(m, dropTarget.dateKey, dropTarget.shiftId));
           
@@ -434,7 +421,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
           addStaffToCell(dragInfo.staffName, dropTarget.dateKey, dropTarget.shiftId);
         }
       } else {
-        console.log('⚠️ Released outside cell or not dragging');
+        
       }
       
       // Always clear all drag state when pointer is released
@@ -442,7 +429,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
       setPointerDragState(null);
       setDragOver(null);
       
-      console.log('✅ All drag state cleared - draggedStaff: null, pointerDragState: null, dragOver: null');
+      
       
       if (!wasDragging) {
         // Check for double tap
@@ -451,15 +438,15 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
         
         if (timeDiff < 300 && dragInfo.tapCount === 1) {
           // Double tap detected!
-          console.log('👆👆 Double tap detected on:', name);
+          
           setSelectedStaff(prev => {
             const newSet = new Set(prev);
             if (newSet.has(name)) {
               newSet.delete(name);
-              console.log('✅ Deselected:', name);
+              
             } else {
               newSet.add(name);
-              console.log('✅ Selected:', name);
+              
             }
             return newSet;
           });
@@ -475,7 +462,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
           }, 300);
         }
       } else {
-        console.log('⚠️ Dragging but no drop target');
+        
       }
       
       setPointerDragState(null);
@@ -498,27 +485,25 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!pointerDragState) {
-      console.log('⚠️ handlePointerMove called but no pointerDragState');
+      
       return;
     }
     
     const deltaX = Math.abs(e.clientX - pointerDragState.startX);
     const deltaY = Math.abs(e.clientY - pointerDragState.startY);
     
-    console.log('📍 Pointer move - deltaX:', deltaX.toFixed(1), 'deltaY:', deltaY.toFixed(1), 'isDragging:', pointerDragState.isDragging);
-    
     // If moved more than 10px, start dragging
     if (!pointerDragState.isDragging && (deltaX > 10 || deltaY > 10)) {
-      console.log('🎯 Drag started:', pointerDragState.staffName);
+      
       
       // Immediately cancel and nullify long press timer
       if (longPressTimer) {
-        console.log('❌ Cancelling long press timer due to drag');
+        
         clearTimeout(longPressTimer);
         setLongPressTimer(null);
-        console.log('✅ Long press timer cleared and set to null');
+        
       } else {
-        console.log('⚠️ No long press timer to cancel');
+        
       }
       
       // Update to dragging state with current position
@@ -540,23 +525,23 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     // Check what's under the pointer (only when actively dragging)
     if (pointerDragState.isDragging && pointerDragState) {
       const el = document.elementFromPoint(e.clientX, e.clientY);
-      console.log('🔍 Element under pointer:', el?.tagName, el?.className);
+      
       const cell = el?.closest('[data-cell]');
       
       if (cell) {
         const dateKey = (cell as HTMLElement).dataset.dateKey || '';
         const shiftId = (cell as HTMLElement).dataset.shiftId || '';
-        console.log('✅ Found cell:', dateKey, shiftId);
+        
         setDragOver({ dateKey, shiftId });
       } else {
-        console.log('❌ No cell found under pointer');
+        
         setDragOver(null);
       }
     }
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
-    console.log('👆 Pointer up - pointerDragState:', pointerDragState ? 'exists' : 'null', 'dragOver:', dragOver ? `${dragOver.dateKey}-${dragOver.shiftId}` : 'null');
+    
     
     if (!pointerDragState) {
       handleLongPressEnd();
@@ -565,7 +550,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     
     if (pointerDragState.isDragging && dragOver) {
       // Drop the staff on cell
-      console.log('📥 Drop at:', dragOver.dateKey, dragOver.shiftId);
+      
       if (pointerDragState.groupMembers) {
         pointerDragState.groupMembers.forEach(m => addStaffToCell(m, dragOver.dateKey, dragOver.shiftId));
         
@@ -591,7 +576,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
         addStaffToCell(pointerDragState.staffName, dragOver.dateKey, dragOver.shiftId);
       }
     } else {
-      console.log('⚠️ Released outside cell or not dragging - clearing state');
+      
     }
     
     // Always clear all drag state when pointer is released
@@ -613,7 +598,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
 
   // Long press on cell assignment to toggle markers (like desktop right-click)
   const handleAssignmentLongPressStart = (dateKey: string, shiftId: string, index: number, staffName: string) => {
-    console.log('👆 Assignment long press started:', staffName);
+    
     
     // Clear any existing timer
     if (cellLongPress?.timer) {
@@ -623,11 +608,11 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     const timer = setTimeout(() => {
       // Check if we're currently dragging - if so, don't show marker menu
       if (assignmentDrag?.isDragging) {
-        console.log('⚠️ Cancelling long press - assignment is being dragged');
+        
         return;
       }
       
-      console.log('⏰ Assignment long press triggered! Showing marker menu');
+      
       setShowMarkerMenu({
         visible: true,
         dateKey,
@@ -640,11 +625,11 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
   };
 
   const handleAssignmentLongPressEnd = () => {
-    console.log('👆 Assignment long press ended');
+    
     if (cellLongPress?.timer) {
       clearTimeout(cellLongPress.timer);
       setCellLongPress(null);
-      console.log('❌ Assignment long press cancelled');
+      
     }
   };
 
@@ -694,10 +679,8 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     // If already dragging another assignment, ignore this
     if (assignmentDrag?.isDragging) return;
     
-    // Reset HTML5 drag cancelled flag for assignment drag
-    html5DragCancelled = false;
     
-    console.log('👆 Assignment pointer down:', staffName);
+    
     
     setAssignmentDrag({
       isDragging: false,
@@ -725,10 +708,10 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     
     // If moved more than 5px, start dragging (lower threshold to prevent long press)
     if (!assignmentDrag.isDragging && (deltaX > 5 || deltaY > 5)) {
-      console.log('🎯 Assignment drag started:', assignmentDrag.staffName);
+      
       
       // Cancel long press IMMEDIATELY before setting dragging state
-      console.log('❌ Cancelling assignment long press due to drag');
+      
       handleAssignmentLongPressEnd();
       
       setAssignmentDrag(prev => prev ? { ...prev, isDragging: true } : null);
@@ -767,7 +750,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     
     if (assignmentDrag.isDragging && dragOver) {
       // Move assignment to new cell
-      console.log('📥 Assignment drop at:', dragOver.dateKey, dragOver.shiftId);
+      
       
       const sourceKey = `${assignmentDrag.sourceDateKey}-${assignmentDrag.sourceShiftId}`;
       const targetKey = `${dragOver.dateKey}-${dragOver.shiftId}`;
@@ -853,8 +836,6 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
 
   // Desktop HTML5 drag handlers (fallback)
   const handleDragStart = (e: React.DragEvent, name: string, members?: string[]) => {
-    console.log('🎯 HTML5 Drag started:', name);
-    html5DragCancelled = false; // Reset flag for new drag
     
     // Clear any previous incomplete drag state
     setDraggedStaff(null);
@@ -863,7 +844,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     
     // Cancel any pending long press timer
     if (longPressTimer) {
-      console.log('❌ Cancelling long press timer due to HTML5 drag');
+      
       clearTimeout(longPressTimer);
       setLongPressTimer(null);
     }
@@ -897,7 +878,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
 
   const handleDrop = (e: React.DragEvent, dateKey: string, shiftId: string) => {
     e.preventDefault();
-    console.log('📥 Drop received at:', dateKey, shiftId);
+    
     
     // Check if this is an assignment drag (cell to cell)
     const dragData = e.dataTransfer.getData('text/plain');
@@ -905,7 +886,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
       try {
         const parsed = JSON.parse(dragData);
         if (parsed.type === 'assignment') {
-          console.log('🔄 Moving assignment from', parsed.sourceDateKey, parsed.sourceShiftId, 'to', dateKey, shiftId);
+          
           
           // Check for duplicate in target cell
           const targetKey = `${dateKey}-${shiftId}`;
@@ -1001,15 +982,13 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     }
     
     // ALWAYS clear all drag state after drop
-    console.log('🛑 DRAG STOPPED - clearing all state after drop');
-    html5DragCancelled = true; // Prevent pointer move from starting new drag
     setDraggedStaff(null);
     setPointerDragState(null);
     setDragOver(null);
   };
 
   const handleDragEnd = () => {
-    console.log('🏁 Drag ended');
+    
     setDraggedStaff(null);
     setDragOver(null);
   };
@@ -1046,7 +1025,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
         })
         .map(({ id, display_name }: { id: string; display_name: string }) => ({ id, display_name })); // Remove original_name
       
-      console.log('✅ Staff loaded:', mappedData.length, 'staff members');
+      
       setStaffList(mappedData);
     } catch (error: any) {
       showToast(error.message || 'Failed to load staff', 'error');
@@ -1636,7 +1615,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
         onMouseDown={(e) => {
           // Don't start calendar scroll if we're dragging a staff or assignment
           if (pointerDragState || assignmentDrag) {
-            console.log('⚠️ Skipping calendar scroll - drag in progress');
+            
             return;
           }
           
@@ -1732,7 +1711,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                             key={idx} 
                             draggable={!isPlaceholder}
                             onDragStart={!isPlaceholder ? (e) => {
-                              console.log('🎯 Assignment drag started:', a.staffName, 'from', dateKey, shift.id);
+                              
                               e.dataTransfer.setData('text/plain', JSON.stringify({
                                 type: 'assignment',
                                 staffName: a.staffName,
@@ -1935,7 +1914,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                   <div key={staff.id}
                     draggable={!isSelected}
                     onDragStart={(e) => {
-                      console.log('🎯 HTML5 Drag started:', staff.display_name);
+                      
                       if (longPressTimer) {
                         clearTimeout(longPressTimer);
                         setLongPressTimer(null);
@@ -1944,7 +1923,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                     }}
                     onDragEnd={() => { setDraggedStaff(null); setDragOver(null); }}
                     onPointerDown={(e) => {
-                      console.log('👆 Pointer down on:', staff.display_name, '- Selected:', isSelected);
+                      
                       handlePointerDown(e, staff.display_name);
                     }}
                     className={`px-3 py-2 rounded border text-sm whitespace-nowrap cursor-move select-none ${isSelected ? 'bg-green-50 border-green-400' : showReplacing ? 'bg-purple-50 border-purple-300 text-purple-800' : 'bg-white border-gray-200'}`}
