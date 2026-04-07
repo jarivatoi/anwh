@@ -1606,9 +1606,13 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, dateKey, shift.id)}
                       className={`${shift.color} border p-1 align-top`}
-                      style={{ minHeight: `${80 * calendarZoom}px`, padding: `${4 * calendarZoom}px` }}
+                      style={{ minHeight: `${80 * calendarZoom}px`, padding: `${4 * calendarZoom}px`, position: 'relative' }}
                     >
-                      {assignments.length === 0 ? (
+                      {dragOver?.dateKey === dateKey && dragOver?.shiftId === shift.id ? (
+                        <div className="text-green-700 font-bold text-center py-2" style={{ fontSize: `${9 * calendarZoom}px` }}>
+                          {shift.label.replace('\n-\n', '-')}
+                        </div>
+                      ) : assignments.length === 0 ? (
                         <div className="text-gray-400 text-center py-2" style={{ fontSize: `${10 * calendarZoom}px` }}>Drop</div>
                       ) : (
                         assignments.map((a, idx) => {
@@ -1638,7 +1642,8 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                               fontSize: `${10 * calendarZoom}px`,
                               marginBottom: `${4 * calendarZoom}px`,
                               padding: `${2 * calendarZoom}px`,
-                              lineHeight: '1.2'
+                              lineHeight: '1.2',
+                              textAlign: 'center'
                             }}
                             onPointerDown={(e) => !isPlaceholder && handleAssignmentPointerDown(e, dateKey, shift.id, idx, a.staffName)}
                             onPointerMove={!isPlaceholder ? handleAssignmentPointerMove : undefined}
