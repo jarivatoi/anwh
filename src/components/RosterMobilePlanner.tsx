@@ -75,6 +75,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     scrollLeft: number;
   } | null>(null);
   const staffListScrollRef = React.useRef<HTMLDivElement>(null);
+  const printWindowRef = React.useRef<Window | null>(null);
   
   // Cell assignment long press for marker toggle
   const [cellLongPress, setCellLongPress] = useState<{
@@ -1072,6 +1073,16 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     fetchGroups();
     fetchAvailableCenters();
   }, [institutionCode]);
+  
+  // Cleanup: close print window when component unmounts
+  useEffect(() => {
+    return () => {
+      if (printWindowRef.current && !printWindowRef.current.closed) {
+        printWindowRef.current.close();
+        printWindowRef.current = null;
+      }
+    };
+  }, []);
 
   const addStaffToCell = (staffName: string, dateKey: string, shiftId: string, markers?: string[]) => {
     const key = `${dateKey}-${shiftId}`;
@@ -1110,6 +1121,9 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
       showToast('Please allow popups to print', 'error');
       return;
     }
+    
+    // Store reference to print window
+    printWindowRef.current = printWindow;
 
     const monthName = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     
@@ -1138,10 +1152,6 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     };
     
     weeks.forEach((week, weekIndex) => {
-      // Get week date range for header
-      const weekStart = week[0];
-      const weekEnd = week[week.length - 1];
-      
       // Format dates as DD MM YYYY
       const formatDate = (date: Date) => {
         const day = String(date.getDate()).padStart(2, '0');
@@ -1150,20 +1160,19 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
         return `${day} ${month} ${year}`;
       };
       
-      const weekHeader = `${formatDate(weekStart)} - ${formatDate(weekEnd)}`;
-      
       weeksHtml += `
-        <div style="margin-bottom: 30px;">
-          <h2 style="text-align: center; font-size: 14px; margin-bottom: 10px; color: #374151;">${weekHeader}</h2>
+        <div style="margin-bottom: 15px;">
           <table style="width: 100%; border-collapse: collapse; font-size: 8px;">
             <thead>
               <tr>
-                <th style="width: 80px; background-color: #f3f4f6 !important; border: 1px solid #d1d5db; padding: 3px; font-weight: 600;"></th>
-                ${['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'].map((dayName, dayIndex) => {
+                <th style="width: 80px; background-color: #f3f4f6 !important; border: 1px solid #d1d5db; padding: 3px; font-weight: 600; color: black;"></th>
+                ${[0, 1, 2, 3, 4, 5, 6].map(dayIndex => {
                   const day = week.find(d => d.getDay() === dayIndex);
-                  const dateStr = day ? formatDate(day) : '';
-                  return `<th style="background-color: #f3f4f6 !important; border: 1px solid #d1d5db; padding: 3px; text-align: center; font-size: 7px;">
-                    ${dayName}<br>${dateStr}
+                  if (!day) return '';
+                  const dayNames = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+                  const dateStr = formatDate(day);
+                  return `<th style="background-color: #f3f4f6 !important; border: 1px solid #d1d5db; padding: 3px; text-align: center; font-size: 7px; color: black; text-decoration: none;">
+                    ${dayNames[dayIndex]}<br>${dateStr}
                   </th>`;
                 }).join('')}
               </tr>
@@ -1171,14 +1180,12 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
             <tbody>
               ${shifts.map(shift => `
                 <tr>
-                  <td style="background-color: #f3f4f6 !important; border: 1px solid #d1d5db; padding: 3px; font-weight: bold; text-align: center; vertical-align: middle; width: 80px; font-size: 7px;">
+                  <td style="background-color: #f3f4f6 !important; border: 1px solid #d1d5db; padding: 3px; font-weight: bold; text-align: center; vertical-align: middle; width: 80px; font-size: 7px; color: black;">
                     ${shiftLabels[shift.id as keyof typeof shiftLabels]}
                   </td>
                   ${[0, 1, 2, 3, 4, 5, 6].map(dayIndex => {
                     const day = week.find(d => d.getDay() === dayIndex);
-                    if (!day) {
-                      return '<td style="border: 1px solid #d1d5db; padding: 3px;"></td>';
-                    }
+                    if (!day) return '';
                     
                     const dateKey = formatDateKey(day);
                     const key = `${dateKey}-${shift.id}`;
@@ -1191,14 +1198,15 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                       const hasReplacing = assignment.markers && assignment.markers.includes('(R)');
                       const replacingSuffix = hasReplacing ? ' (R)' : '';
                       
-                      return `<div style="background-color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 2px; font-size: 8px; line-height: 1.2;">
-                        ${markersPrefix ? `<span style="color: black; font-weight: bold;">${markersPrefix}</span>` : ''}${assignment.staffName}${replacingSuffix ? `<span style="color: black; font-weight: 600;">${replacingSuffix}</span>` : ''}
+                      return `<div style="background-color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 2px; font-size: 8px; line-height: 1.2; color: black;">
+                        ${markersPrefix ? `<span style="color: black; font-weight: bold;">${markersPrefix}</span>` : ''}${assignment.staffName}${replacingSuffix ? `<span style="color: black;">${replacingSuffix}</span>` : ''}
                       </div>`;
                     }).join('');
                     
-                    const bgColor = shift.id === 'morning' ? '#eff6ff' : shift.id === 'evening' ? '#fff7ed' : '#faf5ff';
+                    // Add minimum height for empty cells
+                    const emptyCellHeight = assignments.length === 0 ? 'min-height: 20px;' : '';
                     
-                    return `<td style="border: 1px solid #d1d5db; padding: 3px; vertical-align: top; background-color: ${bgColor} !important;">
+                    return `<td style="border: 1px solid #d1d5db; padding: 3px; vertical-align: top; background-color: white !important; ${emptyCellHeight}">
                       ${cellContent}
                     </td>`;
                   }).join('')}
@@ -1268,6 +1276,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
       setTimeout(() => {
         if (!printWindow.closed) {
           printWindow.close();
+          printWindowRef.current = null; // Clear reference
         }
       }, 1000);
     }, 250);
