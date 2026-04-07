@@ -1186,8 +1186,8 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                     </th>`;
                   }
                   const dateStr = formatDate(day);
-                  return `<th style="width: ${columnWidth}px; background-color: #f3f4f6 !important; border: 1px solid #d1d5db; padding: 3px; text-align: center; font-size: 7px; color: black;">
-                    <span style="text-decoration: none; color: black;">${dayName}</span><br><span style="text-decoration: none; color: black;">${dateStr}</span>
+                  return `<th style="width: ${columnWidth}px; background-color: #f3f4f6 !important; border: 1px solid #d1d5db; padding: 3px; text-align: center; font-size: 7px; color: black !important;">
+                    <span style="text-decoration: none !important; color: black !important;">${dayName}</span><br><span style="text-decoration: none !important; color: black !important; background: transparent !important;">${dateStr}</span>
                   </th>`;
                 }).join('')}
               </tr>
@@ -1263,9 +1263,15 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
             box-sizing: border-box;
           }
           
+          a {
+            color: black !important;
+            text-decoration: none !important;
+          }
+          
           body {
             font-family: Arial, sans-serif;
             padding: 10px;
+            color: black !important;
           }
           
           h1 {
