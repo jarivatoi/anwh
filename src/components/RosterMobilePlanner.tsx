@@ -378,7 +378,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
       console.log('👆 Global pointer up - isDragging:', dragInfo.isDragging, 'dropTarget:', dragInfo.dropTarget);
       
       if (dragInfo.isDragging && dragInfo.dropTarget) {
-        // Drop the staff
+        // Drop the staff on cell
         console.log('📥 Drop at:', dragInfo.dropTarget.dateKey, dragInfo.dropTarget.shiftId);
         if (dragInfo.groupMembers) {
           dragInfo.groupMembers.forEach(m => addStaffToCell(m, dragInfo.dropTarget!.dateKey, dragInfo.dropTarget!.shiftId));
@@ -404,7 +404,16 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
         } else {
           addStaffToCell(dragInfo.staffName, dragInfo.dropTarget.dateKey, dragInfo.dropTarget.shiftId);
         }
-      } else if (!dragInfo.isDragging) {
+      } else {
+        console.log('⚠️ Released outside cell - clearing drag state');
+      }
+      
+      // Always clear all drag state when pointer is released
+      setDraggedStaff(null);
+      setPointerDragState(null);
+      setDragOver(null);
+      
+      if (!dragInfo.isDragging) {
         // Check for double tap
         const currentTime = Date.now();
         const timeDiff = currentTime - dragInfo.lastTapTime;
@@ -524,7 +533,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     }
     
     if (pointerDragState.isDragging && dragOver) {
-      // Drop the staff
+      // Drop the staff on cell
       console.log('📥 Drop at:', dragOver.dateKey, dragOver.shiftId);
       if (pointerDragState.groupMembers) {
         pointerDragState.groupMembers.forEach(m => addStaffToCell(m, dragOver.dateKey, dragOver.shiftId));
@@ -550,14 +559,11 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
       } else {
         addStaffToCell(pointerDragState.staffName, dragOver.dateKey, dragOver.shiftId);
       }
-    } else if (!pointerDragState.isDragging) {
-      // It was a click/tap without movement - cancel long press
-      console.log('👆 Quick tap - cancelling long press');
-      handleLongPressEnd();
     } else {
-      console.log('⚠️ Dragging but no drop target');
+      console.log('⚠️ Released outside cell or not dragging - clearing state');
     }
     
+    // Always clear all drag state when pointer is released
     setPointerDragState(null);
     setDragOver(null);
     
