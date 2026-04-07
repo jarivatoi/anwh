@@ -317,6 +317,10 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
       groupMembers = members.filter(m => m !== '(R)');
     }
     
+    // Clear any previous incomplete drag state before starting new drag
+    setDraggedStaff(null);
+    setDragOver(null);
+    
     const dragInfo = {
       isDragging: false,
       staffName: name,
@@ -851,6 +855,11 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
   const handleDragStart = (e: React.DragEvent, name: string, members?: string[]) => {
     console.log('🎯 HTML5 Drag started:', name);
     html5DragCancelled = false; // Reset flag for new drag
+    
+    // Clear any previous incomplete drag state
+    setDraggedStaff(null);
+    setDragOver(null);
+    setPointerDragState(null);
     
     // Cancel any pending long press timer
     if (longPressTimer) {
