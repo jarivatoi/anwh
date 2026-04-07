@@ -1537,8 +1537,8 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
             const y = e.pageY - el.offsetTop;
             const walkX = (x - startX) * 2; // Scroll speed
             const walkY = (y - startY) * 2;
-            el.scrollLeft = scrollLeft + walkX;
-            el.scrollTop = scrollTop + walkY;
+            el.scrollLeft = scrollLeft - walkX;
+            el.scrollTop = scrollTop - walkY;
           };
           
           const handleMouseUp = () => {
@@ -1550,7 +1550,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
           el.addEventListener('mouseup', handleMouseUp);
         }}>
       
-        <div style={{ transform: `scale(${calendarZoom})`, transformOrigin: 'top left', transition: 'transform 0.1s ease', width: `${100 / calendarZoom}%` }}>
+        <div style={{ transform: `scale(${calendarZoom})`, transformOrigin: 'top left', transition: 'transform 0.1s ease', width: `${100 / calendarZoom}%`, minWidth: `${100 / calendarZoom}%` }}>
         <table className="w-full text-xs min-w-max">
           <thead className="sticky top-0 bg-gray-100 z-40 shadow-md">
             <tr>
@@ -1674,6 +1674,8 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
           </tbody>
         </table>
       </div>
+
+      </div>
       {/* Staff List Panel - Separate scrollable container */}
       <div className="bg-gray-50 border-t flex flex-col" style={{ maxHeight: '40vh' }}>
         {/* Header */}
@@ -1718,7 +1720,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
             const handleMouseMove = (e: MouseEvent) => {
               const x = e.pageX - el.offsetLeft;
               const walkX = (x - startX) * 2; // Scroll speed
-              el.scrollLeft = scrollLeft + walkX;
+              el.scrollLeft = scrollLeft - walkX;
             };
             
             const handleMouseUp = () => {
