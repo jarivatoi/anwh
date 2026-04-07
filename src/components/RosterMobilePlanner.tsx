@@ -1564,7 +1564,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                 const monthNum = String(day.getMonth() + 1).padStart(2, '0');
                 const yearNum = String(day.getFullYear());
                 return (
-                  <th key={day.toISOString()} className="border p-1 bg-gray-100 whitespace-nowrap" style={{ minWidth: `${70 * calendarZoom}px` }}>
+                  <th key={day.toISOString()} className="border p-1 bg-gray-100" style={{ minWidth: `${120 * calendarZoom}px` }}>
                     <div className="font-bold" style={{ fontSize: `${10 * calendarZoom}px` }}>{dayName}</div>
                     <div style={{ fontSize: `${9 * calendarZoom}px` }}>{dayNum} {monthNum} {yearNum}</div>
                   </th>
@@ -1635,8 +1635,6 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                               isPlaceholder ? 'bg-purple-50 border border-purple-300 text-purple-700 font-semibold' : 'bg-white'
                             }`}
                             style={{ 
-                              wordBreak: 'break-word', 
-                              overflowWrap: 'break-word',
                               fontSize: `${10 * calendarZoom}px`,
                               marginBottom: `${4 * calendarZoom}px`,
                               paddingLeft: `${4 * calendarZoom}px`,
