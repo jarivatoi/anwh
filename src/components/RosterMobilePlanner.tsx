@@ -1550,7 +1550,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
           el.addEventListener('mouseup', handleMouseUp);
         }}>
       
-        <table className="w-full text-xs min-w-max" style={{ fontSize: `${0.75 * calendarZoom}rem`, transition: 'font-size 0.1s ease' }}>
+        <table className="w-full text-xs min-w-max" style={{ zoom: calendarZoom, transition: 'zoom 0.1s ease' }}>
           <thead className="sticky top-0 bg-gray-100 z-40 shadow-md">
             <tr>
               <th className="border p-1 bg-gray-200 w-16 sticky left-0 z-50">Shift</th>
