@@ -1174,7 +1174,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
       };
       
       weeksHtml += `
-        <div style="margin-bottom: 15px;">
+        <div style="margin-bottom: 15px; page-break-inside: auto; page-break-after: auto;">
           <table style="width: 100%; border-collapse: collapse; font-size: 8px;">
             <thead>
               <tr>
@@ -1255,6 +1255,19 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
               print-color-adjust: exact;
               -webkit-print-color-adjust: exact;
             }
+            
+            table {
+              page-break-inside: auto;
+            }
+            
+            tr {
+              page-break-inside: avoid;
+              page-break-after: auto;
+            }
+            
+            div {
+              page-break-inside: auto;
+            }
           }
           
           * {
@@ -1272,6 +1285,9 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
             font-family: Arial, sans-serif;
             padding: 10px;
             color: black !important;
+            margin: 0;
+            height: auto;
+            overflow: visible;
           }
           
           h1 {
