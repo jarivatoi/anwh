@@ -1637,17 +1637,17 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                             style={{ 
                               fontSize: `${10 * calendarZoom}px`,
                               marginBottom: `${4 * calendarZoom}px`,
-                              paddingLeft: `${4 * calendarZoom}px`,
-                              paddingRight: `${14 * calendarZoom}px`,
-                              paddingTop: `${2 * calendarZoom}px`,
-                              paddingBottom: `${2 * calendarZoom}px`,
-                              position: 'relative'
+                              padding: `${2 * calendarZoom}px ${14 * calendarZoom}px ${2 * calendarZoom}px ${4 * calendarZoom}px`,
+                              position: 'relative',
+                              display: 'flex',
+                              alignItems: 'flex-start',
+                              justifyContent: 'space-between'
                             }}
                             onPointerDown={(e) => !isPlaceholder && handleAssignmentPointerDown(e, dateKey, shift.id, idx, a.staffName)}
                             onPointerMove={!isPlaceholder ? handleAssignmentPointerMove : undefined}
                             onPointerUp={!isPlaceholder ? handleAssignmentPointerUp : undefined}
                             onPointerCancel={!isPlaceholder ? handleAssignmentPointerCancel : undefined}>
-                            <span>
+                            <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {isPlaceholder ? (
                                 <span className="text-purple-600">(R)</span>
                               ) : (
@@ -1677,13 +1677,11 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                                     setCellLongPress(null);
                                   }
                                 }}
-                                className="text-red-500 font-bold cursor-pointer"
+                                className="text-red-500 font-bold cursor-pointer flex-shrink-0"
                                 style={{ 
-                                  position: 'absolute',
-                                  top: `${1 * calendarZoom}px`,
-                                  right: `${2 * calendarZoom}px`,
                                   lineHeight: '1',
                                   padding: 0,
+                                  marginLeft: `${4 * calendarZoom}px`,
                                   fontSize: `${14 * calendarZoom}px`,
                                   background: 'none',
                                   border: 'none'
