@@ -1206,7 +1206,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                     // Add minimum height for empty cells
                     const emptyCellHeight = assignments.length === 0 ? 'min-height: 20px;' : '';
                     
-                    return `<td style="border: 1px solid #d1d5db; padding: 3px; vertical-align: top; background-color: white !important; ${emptyCellHeight}">
+                    return `<td style="border: 1px solid #d1d5db; padding: 3px; vertical-align: top; background-color: white !important; ${emptyCellHeight} text-align: center;">
                       ${cellContent}
                     </td>`;
                   }).join('')}
