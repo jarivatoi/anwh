@@ -1166,13 +1166,16 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
             <thead>
               <tr>
                 <th style="width: 80px; background-color: #f3f4f6 !important; border: 1px solid #d1d5db; padding: 3px; font-weight: 600; color: black;"></th>
-                ${[0, 1, 2, 3, 4, 5, 6].map(dayIndex => {
+                ${['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'].map((dayName, dayIndex) => {
                   const day = week.find(d => d.getDay() === dayIndex);
-                  if (!day) return '';
-                  const dayNames = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+                  if (!day) {
+                    return `<th style="background-color: #f3f4f6 !important; border: 1px solid #d1d5db; padding: 3px; text-align: center; font-size: 7px; color: black;">
+                      ${dayName}
+                    </th>`;
+                  }
                   const dateStr = formatDate(day);
                   return `<th style="background-color: #f3f4f6 !important; border: 1px solid #d1d5db; padding: 3px; text-align: center; font-size: 7px; color: black; text-decoration: none;">
-                    ${dayNames[dayIndex]}<br>${dateStr}
+                    ${dayName}<br>${dateStr}
                   </th>`;
                 }).join('')}
               </tr>
@@ -1185,7 +1188,9 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                   </td>
                   ${[0, 1, 2, 3, 4, 5, 6].map(dayIndex => {
                     const day = week.find(d => d.getDay() === dayIndex);
-                    if (!day) return '';
+                    if (!day) {
+                      return '<td style="border: 1px solid #d1d5db; padding: 3px; min-height: 20px; background-color: white;"></td>';
+                    }
                     
                     const dateKey = formatDateKey(day);
                     const key = `${dateKey}-${shift.id}`;
@@ -1667,8 +1672,8 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                 const yearNum = String(day.getFullYear());
                 return (
                   <th key={day.toISOString()} className="border p-1 bg-gray-100" style={{ minWidth: `${120 * calendarZoom}px` }}>
-                    <div className="font-bold" style={{ fontSize: `${10 * calendarZoom}px` }}>{dayName}</div>
-                    <div style={{ fontSize: `${9 * calendarZoom}px` }}>{dayNum} {monthNum} {yearNum}</div>
+                    <div className="font-bold" style={{ fontSize: `${10 * calendarZoom}px`, color: 'black' }}>{dayName}</div>
+                    <div style={{ fontSize: `${9 * calendarZoom}px`, color: 'black', textDecoration: 'none' }}>{dayNum} {monthNum} {yearNum}</div>
                   </th>
                 );
               })}
