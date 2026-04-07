@@ -1495,7 +1495,18 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
         className="flex-1 overflow-auto cursor-grab active:cursor-grabbing"
         style={{ WebkitOverflowScrolling: 'touch', position: 'relative', touchAction: 'none' }}
         onTouchStart={(e) => {
-          if (e.touches.length === 1) {
+          if (e.touches.length === 2) {
+            // Two finger pinch - capture initial distance
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            const distance = Math.sqrt(
+              Math.pow(touch2.clientX - touch1.clientX, 2) +
+              Math.pow(touch2.clientY - touch1.clientY, 2)
+            );
+            setLastTouchDistance(distance);
+            // Clear single-finger swipe state
+            setCalendarSwipe(null);
+          } else if (e.touches.length === 1) {
             // Single finger - handle swipe scrolling
             const touch = e.touches[0];
             setCalendarSwipe({
@@ -1504,42 +1515,32 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
               scrollLeft: e.currentTarget.scrollLeft,
               scrollTop: e.currentTarget.scrollTop
             });
-          } else if (e.touches.length === 2) {
+          }
+        }}
+        onTouchMove={(e) => {
+          if (e.touches.length === 2 && lastTouchDistance > 0) {
+            // Two finger pinch - zoom
+            e.preventDefault();
             const touch1 = e.touches[0];
             const touch2 = e.touches[1];
             const distance = Math.sqrt(
               Math.pow(touch2.clientX - touch1.clientX, 2) +
               Math.pow(touch2.clientY - touch1.clientY, 2)
             );
+            const scale = distance / lastTouchDistance;
+            setCalendarZoom(prev => {
+              const newZoom = prev * scale;
+              return Math.min(Math.max(newZoom, 0.5), 2);
+            });
             setLastTouchDistance(distance);
-          }
-        }}
-        onTouchMove={(e) => {
-          if (e.touches.length === 1 && calendarSwipe && calendarScrollRef.current) {
+          } else if (e.touches.length === 1 && calendarSwipe && calendarScrollRef.current) {
             // Single finger swipe - scroll the calendar
             e.preventDefault();
             const touch = e.touches[0];
             const deltaX = touch.clientX - calendarSwipe.startX;
             const deltaY = touch.clientY - calendarSwipe.startY;
-            // Adjust for zoom level
-            calendarScrollRef.current.scrollLeft = calendarSwipe.scrollLeft - (deltaX / calendarZoom);
-            calendarScrollRef.current.scrollTop = calendarSwipe.scrollTop - (deltaY / calendarZoom);
-          } else if (e.touches.length === 2) {
-            e.preventDefault();
-            const touch1 = e.touches[0];
-            const touch2 = e.touches[1];
-            const distance = Math.sqrt(
-              Math.pow(touch2.clientX - touch1.clientX, 2) +
-              Math.pow(touch2.clientY - touch1.clientY, 2)
-            );
-            if (lastTouchDistance > 0) {
-              const scale = distance / lastTouchDistance;
-              setCalendarZoom(prev => {
-                const newZoom = prev * scale;
-                return Math.min(Math.max(newZoom, 0.5), 2);
-              });
-            }
-            setLastTouchDistance(distance);
+            calendarScrollRef.current.scrollLeft = calendarSwipe.scrollLeft - deltaX;
+            calendarScrollRef.current.scrollTop = calendarSwipe.scrollTop - deltaY;
           }
         }}
         onTouchEnd={(e) => {
