@@ -94,15 +94,6 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
   const [calendarZoom, setCalendarZoom] = useState<number>(1);
   const [lastTouchDistance, setLastTouchDistance] = useState<number>(0);
   
-  // Calendar swipe state for touch scrolling after zoom
-  const [calendarSwipe, setCalendarSwipe] = useState<{
-    startX: number;
-    startY: number;
-    scrollLeft: number;
-    scrollTop: number;
-  } | null>(null);
-  const calendarScrollRef = React.useRef<HTMLDivElement>(null);
-  
   // Assignment drag state for moving between cells
   const [assignmentDrag, setAssignmentDrag] = useState<{
     isDragging: boolean;
@@ -1491,12 +1482,10 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
 
       {/* Calendar - Separate scrollable container */}
       <div 
-        ref={calendarScrollRef}
         className="flex-1 overflow-auto cursor-grab active:cursor-grabbing"
-        style={{ WebkitOverflowScrolling: 'touch', position: 'relative', touchAction: 'none' }}
+        style={{ WebkitOverflowScrolling: 'touch', position: 'relative', touchAction: 'pan-x pan-y pinch-zoom' }}
         onTouchStart={(e) => {
           if (e.touches.length === 2) {
-            // Two finger pinch - capture initial distance
             const touch1 = e.touches[0];
             const touch2 = e.touches[1];
             const distance = Math.sqrt(
@@ -1504,22 +1493,10 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
               Math.pow(touch2.clientY - touch1.clientY, 2)
             );
             setLastTouchDistance(distance);
-            // Clear single-finger swipe state
-            setCalendarSwipe(null);
-          } else if (e.touches.length === 1) {
-            // Single finger - handle swipe scrolling
-            const touch = e.touches[0];
-            setCalendarSwipe({
-              startX: touch.clientX,
-              startY: touch.clientY,
-              scrollLeft: e.currentTarget.scrollLeft,
-              scrollTop: e.currentTarget.scrollTop
-            });
           }
         }}
         onTouchMove={(e) => {
-          if (e.touches.length === 2 && lastTouchDistance > 0) {
-            // Two finger pinch - zoom
+          if (e.touches.length === 2) {
             e.preventDefault();
             const touch1 = e.touches[0];
             const touch2 = e.touches[1];
@@ -1527,28 +1504,19 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
               Math.pow(touch2.clientX - touch1.clientX, 2) +
               Math.pow(touch2.clientY - touch1.clientY, 2)
             );
-            const scale = distance / lastTouchDistance;
-            setCalendarZoom(prev => {
-              const newZoom = prev * scale;
-              return Math.min(Math.max(newZoom, 0.5), 2);
-            });
+            if (lastTouchDistance > 0) {
+              const scale = distance / lastTouchDistance;
+              setCalendarZoom(prev => {
+                const newZoom = prev * scale;
+                return Math.min(Math.max(newZoom, 0.5), 2);
+              });
+            }
             setLastTouchDistance(distance);
-          } else if (e.touches.length === 1 && calendarSwipe && calendarScrollRef.current) {
-            // Single finger swipe - scroll the calendar
-            e.preventDefault();
-            const touch = e.touches[0];
-            const deltaX = touch.clientX - calendarSwipe.startX;
-            const deltaY = touch.clientY - calendarSwipe.startY;
-            calendarScrollRef.current.scrollLeft = calendarSwipe.scrollLeft - deltaX;
-            calendarScrollRef.current.scrollTop = calendarSwipe.scrollTop - deltaY;
           }
         }}
         onTouchEnd={(e) => {
           if (e.touches.length < 2) {
             setLastTouchDistance(0);
-          }
-          if (e.touches.length === 0) {
-            setCalendarSwipe(null);
           }
         }}
         onMouseDown={(e) => {
@@ -1582,7 +1550,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
           el.addEventListener('mouseup', handleMouseUp);
         }}>
       
-        <div style={{ width: `${100 / calendarZoom}%`, minWidth: `${100 / calendarZoom}%`, fontSize: `${calendarZoom * 100}%`, transition: 'all 0.1s ease' }}>
+        <div style={{ fontSize: `${calendarZoom * 100}%`, width: '100%' }}>
         <table className="w-full text-xs min-w-max">
           <thead className="sticky top-0 bg-gray-100 z-40 shadow-md">
             <tr>
