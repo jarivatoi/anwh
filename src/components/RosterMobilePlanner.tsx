@@ -786,6 +786,30 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
     setDragOver({ dateKey, shiftId });
+    
+    // Create custom drag image showing shift time
+    const shift = shifts.find(s => s.id === shiftId);
+    if (shift && !e.dataTransfer['_customDragImageSet']) {
+      e.dataTransfer['_customDragImageSet'] = true;
+      const dragImage = document.createElement('div');
+      dragImage.style.cssText = `
+        position: absolute;
+        top: -1000px;
+        left: -1000px;
+        background: #16a34a;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: bold;
+        white-space: nowrap;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+      `;
+      dragImage.textContent = shift.label.replace('\n-\n', '-');
+      document.body.appendChild(dragImage);
+      e.dataTransfer.setDragImage(dragImage, dragImage.offsetWidth / 2, dragImage.offsetHeight / 2);
+      setTimeout(() => document.body.removeChild(dragImage), 0);
+    }
   };
 
   const handleDragLeave = () => {
@@ -1606,13 +1630,9 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, dateKey, shift.id)}
                       className={`${shift.color} border p-1 align-top`}
-                      style={{ minHeight: `${80 * calendarZoom}px`, padding: `${4 * calendarZoom}px`, position: 'relative' }}
+                      style={{ minHeight: `${80 * calendarZoom}px`, padding: `${4 * calendarZoom}px` }}
                     >
-                      {dragOver?.dateKey === dateKey && dragOver?.shiftId === shift.id ? (
-                        <div className="text-green-700 font-bold text-center py-2" style={{ fontSize: `${9 * calendarZoom}px` }}>
-                          {shift.label.replace('\n-\n', '-')}
-                        </div>
-                      ) : assignments.length === 0 ? (
+                      {assignments.length === 0 ? (
                         <div className="text-gray-400 text-center py-2" style={{ fontSize: `${10 * calendarZoom}px` }}>Drop</div>
                       ) : (
                         assignments.map((a, idx) => {
