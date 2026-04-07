@@ -94,6 +94,15 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
   const [calendarZoom, setCalendarZoom] = useState<number>(1);
   const [lastTouchDistance, setLastTouchDistance] = useState<number>(0);
   
+  // Calendar swipe state for touch scrolling after zoom
+  const [calendarSwipe, setCalendarSwipe] = useState<{
+    startX: number;
+    startY: number;
+    scrollLeft: number;
+    scrollTop: number;
+  } | null>(null);
+  const calendarScrollRef = React.useRef<HTMLDivElement>(null);
+  
   // Assignment drag state for moving between cells
   const [assignmentDrag, setAssignmentDrag] = useState<{
     isDragging: boolean;
@@ -1482,10 +1491,20 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
 
       {/* Calendar - Separate scrollable container */}
       <div 
+        ref={calendarScrollRef}
         className="flex-1 overflow-auto cursor-grab active:cursor-grabbing"
-        style={{ WebkitOverflowScrolling: 'touch', position: 'relative', touchAction: 'pan-x pan-y pinch-zoom' }}
+        style={{ WebkitOverflowScrolling: 'touch', position: 'relative', touchAction: 'none' }}
         onTouchStart={(e) => {
-          if (e.touches.length === 2) {
+          if (e.touches.length === 1) {
+            // Single finger - handle swipe scrolling
+            const touch = e.touches[0];
+            setCalendarSwipe({
+              startX: touch.clientX,
+              startY: touch.clientY,
+              scrollLeft: e.currentTarget.scrollLeft,
+              scrollTop: e.currentTarget.scrollTop
+            });
+          } else if (e.touches.length === 2) {
             const touch1 = e.touches[0];
             const touch2 = e.touches[1];
             const distance = Math.sqrt(
@@ -1496,7 +1515,16 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
           }
         }}
         onTouchMove={(e) => {
-          if (e.touches.length === 2) {
+          if (e.touches.length === 1 && calendarSwipe && calendarScrollRef.current) {
+            // Single finger swipe - scroll the calendar
+            e.preventDefault();
+            const touch = e.touches[0];
+            const deltaX = touch.clientX - calendarSwipe.startX;
+            const deltaY = touch.clientY - calendarSwipe.startY;
+            // Adjust for zoom level
+            calendarScrollRef.current.scrollLeft = calendarSwipe.scrollLeft - (deltaX / calendarZoom);
+            calendarScrollRef.current.scrollTop = calendarSwipe.scrollTop - (deltaY / calendarZoom);
+          } else if (e.touches.length === 2) {
             e.preventDefault();
             const touch1 = e.touches[0];
             const touch2 = e.touches[1];
@@ -1517,6 +1545,9 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
         onTouchEnd={(e) => {
           if (e.touches.length < 2) {
             setLastTouchDistance(0);
+          }
+          if (e.touches.length === 0) {
+            setCalendarSwipe(null);
           }
         }}
         onMouseDown={(e) => {
