@@ -1550,8 +1550,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
           el.addEventListener('mouseup', handleMouseUp);
         }}>
       
-        <div style={{ transform: `scale(${calendarZoom})`, transformOrigin: 'top left', transition: 'transform 0.1s ease', width: `${100 / calendarZoom}%`, minWidth: `${100 / calendarZoom}%` }}>
-        <table className="w-full text-xs min-w-max">
+        <table className="w-full text-xs min-w-max" style={{ fontSize: `${0.75 * calendarZoom}rem`, transition: 'font-size 0.1s ease' }}>
           <thead className="sticky top-0 bg-gray-100 z-40 shadow-md">
             <tr>
               <th className="border p-1 bg-gray-200 w-16 sticky left-0 z-50">Shift</th>
@@ -1673,8 +1672,6 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
             ))}
           </tbody>
         </table>
-      </div>
-
       </div>
       {/* Staff List Panel - Separate scrollable container */}
       <div className="bg-gray-50 border-t flex flex-col" style={{ maxHeight: '40vh' }}>
