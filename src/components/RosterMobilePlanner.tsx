@@ -1637,8 +1637,8 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                             style={{ 
                               fontSize: `${10 * calendarZoom}px`,
                               marginBottom: `${4 * calendarZoom}px`,
-                              padding: `${2 * calendarZoom}px ${4 * calendarZoom}px`,
-                              position: 'relative'
+                              padding: `${2 * calendarZoom}px`,
+                              lineHeight: '1.2'
                             }}
                             onPointerDown={(e) => !isPlaceholder && handleAssignmentPointerDown(e, dateKey, shift.id, idx, a.staffName)}
                             onPointerMove={!isPlaceholder ? handleAssignmentPointerMove : undefined}
@@ -1647,12 +1647,10 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                             {isPlaceholder ? (
                               <span className="text-purple-600">(R)</span>
                             ) : (
-                              <>
-                                <span>
-                                  {a.markers.filter(m => m !== '(R)').map((m, i) => <span key={i} className="font-bold">{m}</span>)}
-                                  {a.staffName}
-                                  {a.markers.includes('(R)') && <span className="font-semibold">(R)</span>}
-                                </span>
+                              <span>
+                                {a.markers.filter(m => m !== '(R)').map((m, i) => <span key={i} className="font-bold">{m}</span>)}
+                                {a.staffName}
+                                {a.markers.includes('(R)') && <span className="font-semibold">(R)</span>}
                                 <button 
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -1673,18 +1671,18 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                                   }}
                                   className="text-red-500 font-bold cursor-pointer"
                                   style={{ 
-                                    position: 'absolute',
-                                    top: `${2 * calendarZoom}px`,
-                                    right: `${4 * calendarZoom}px`,
+                                    display: 'inline-block',
+                                    verticalAlign: 'top',
                                     lineHeight: '1',
                                     padding: 0,
+                                    marginLeft: `${3 * calendarZoom}px`,
                                     fontSize: `${14 * calendarZoom}px`,
                                     background: 'none',
                                     border: 'none'
                                   }}>
                                   ×
                                 </button>
-                              </>
+                              </span>
                             )}
                           </div>
                         );
