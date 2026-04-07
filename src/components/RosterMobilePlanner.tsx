@@ -1676,6 +1676,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                                     lineHeight: '1',
                                     padding: 0,
                                     marginLeft: `${3 * calendarZoom}px`,
+                                    marginTop: `-${1 * calendarZoom}px`,
                                     fontSize: `${14 * calendarZoom}px`,
                                     background: 'none',
                                     border: 'none'
