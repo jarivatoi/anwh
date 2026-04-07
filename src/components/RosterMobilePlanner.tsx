@@ -61,6 +61,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     isDragging: boolean;
     staffName: string;
     groupMembers?: string[];
+    replacingMarkers?: string[];
     startX: number;
     startY: number;
     currentX: number;
@@ -304,10 +305,20 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     
     console.log('👆 Pointer down:', name);
     
+    // If dragging a group, extract (R) count and filter them out
+    let groupMembers = members;
+    let replacingMarkers: string[] = [];
+    if (members) {
+      const rCount = members.filter(m => m === '(R)').length;
+      replacingMarkers = Array(rCount).fill('(R)');
+      groupMembers = members.filter(m => m !== '(R)');
+    }
+    
     const dragInfo = {
       isDragging: false,
       staffName: name,
-      groupMembers: members,
+      groupMembers: groupMembers,
+      replacingMarkers: replacingMarkers.length > 0 ? replacingMarkers : undefined,
       startX: e.clientX,
       startY: e.clientY,
       currentX: e.clientX,
@@ -371,7 +382,25 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
         console.log('📥 Drop at:', dragInfo.dropTarget.dateKey, dragInfo.dropTarget.shiftId);
         if (dragInfo.groupMembers) {
           dragInfo.groupMembers.forEach(m => addStaffToCell(m, dragInfo.dropTarget!.dateKey, dragInfo.dropTarget!.shiftId));
-          showToast(`Added ${dragInfo.groupMembers.length} staff`, 'success');
+          
+          // Add (R) placeholders if any
+          if (dragInfo.replacingMarkers && dragInfo.replacingMarkers.length > 0) {
+            const key = `${dragInfo.dropTarget.dateKey}-${dragInfo.dropTarget.shiftId}`;
+            const rCount = dragInfo.replacingMarkers.length;
+            setRosterAssignments(prev => {
+              const existing = prev[key] || [];
+              const existingRCount = existing.filter(a => !a.staffName && a.markers.includes('(R)')).length;
+              const additionalRNeeded = Math.max(0, rCount - existingRCount);
+              const rPlaceholders = Array(additionalRNeeded).fill(null).map(() => ({ staffName: '', markers: ['(R)'] }));
+              return {
+                ...prev,
+                [key]: [...existing, ...rPlaceholders]
+              };
+            });
+            showToast(`Added ${dragInfo.groupMembers.length} staff + ${rCount}(R)`, 'success');
+          } else {
+            showToast(`Added ${dragInfo.groupMembers.length} staff`, 'success');
+          }
         } else {
           addStaffToCell(dragInfo.staffName, dragInfo.dropTarget.dateKey, dragInfo.dropTarget.shiftId);
         }
@@ -499,7 +528,25 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
       console.log('📥 Drop at:', dragOver.dateKey, dragOver.shiftId);
       if (pointerDragState.groupMembers) {
         pointerDragState.groupMembers.forEach(m => addStaffToCell(m, dragOver.dateKey, dragOver.shiftId));
-        showToast(`Added ${pointerDragState.groupMembers.length} staff`, 'success');
+        
+        // Add (R) placeholders if any
+        if (pointerDragState.replacingMarkers && pointerDragState.replacingMarkers.length > 0) {
+          const key = `${dragOver.dateKey}-${dragOver.shiftId}`;
+          const rCount = pointerDragState.replacingMarkers.length;
+          setRosterAssignments(prev => {
+            const existing = prev[key] || [];
+            const existingRCount = existing.filter(a => !a.staffName && a.markers.includes('(R)')).length;
+            const additionalRNeeded = Math.max(0, rCount - existingRCount);
+            const rPlaceholders = Array(additionalRNeeded).fill(null).map(() => ({ staffName: '', markers: ['(R)'] }));
+            return {
+              ...prev,
+              [key]: [...existing, ...rPlaceholders]
+            };
+          });
+          showToast(`Added ${pointerDragState.groupMembers.length} staff + ${rCount}(R)`, 'success');
+        } else {
+          showToast(`Added ${pointerDragState.groupMembers.length} staff`, 'success');
+        }
       } else {
         addStaffToCell(pointerDragState.staffName, dragOver.dateKey, dragOver.shiftId);
       }
@@ -786,30 +833,6 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
     setDragOver({ dateKey, shiftId });
-    
-    // Create custom drag image showing shift time
-    const shift = shifts.find(s => s.id === shiftId);
-    if (shift && !e.dataTransfer['_customDragImageSet']) {
-      e.dataTransfer['_customDragImageSet'] = true;
-      const dragImage = document.createElement('div');
-      dragImage.style.cssText = `
-        position: absolute;
-        top: -1000px;
-        left: -1000px;
-        background: #16a34a;
-        color: white;
-        padding: 8px 16px;
-        border-radius: 20px;
-        font-size: 14px;
-        font-weight: bold;
-        white-space: nowrap;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-      `;
-      dragImage.textContent = shift.label.replace('\n-\n', '-');
-      document.body.appendChild(dragImage);
-      e.dataTransfer.setDragImage(dragImage, dragImage.offsetWidth / 2, dragImage.offsetHeight / 2);
-      setTimeout(() => document.body.removeChild(dragImage), 0);
-    }
   };
 
   const handleDragLeave = () => {
@@ -875,7 +898,11 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
           const rCount = draggedStaff.replacingMarkers.length;
           setRosterAssignments(prev => {
             const existing = prev[key] || [];
-            const rPlaceholders = Array(rCount).fill(null).map(() => ({ staffName: '', markers: ['(R)'] }));
+            // Count existing (R) placeholders
+            const existingRCount = existing.filter(a => !a.staffName && a.markers.includes('(R)')).length;
+            // Only add new (R) placeholders if we need more
+            const additionalRNeeded = Math.max(0, rCount - existingRCount);
+            const rPlaceholders = Array(additionalRNeeded).fill(null).map(() => ({ staffName: '', markers: ['(R)'] }));
             return {
               ...prev,
               [key]: [...existing, ...rPlaceholders]
@@ -1010,11 +1037,14 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
   const addStaffToCell = (staffName: string, dateKey: string, shiftId: string, markers?: string[]) => {
     const key = `${dateKey}-${shiftId}`;
     const existing = rosterAssignments[key] || [];
-    if (existing.some(a => a.staffName === staffName)) {
+    const assignmentMarkers = markers || (showReplacing ? ['(R)'] : []);
+    
+    // Check for duplicate: same name AND same markers
+    if (existing.some(a => a.staffName === staffName && JSON.stringify(a.markers) === JSON.stringify(assignmentMarkers))) {
       showToast('Already assigned', 'error');
       return;
     }
-    const assignmentMarkers = markers || (showReplacing ? ['(R)'] : []);
+    
     setRosterAssignments(prev => ({
       ...prev,
       [key]: [...(prev[key] || []), { staffName, markers: assignmentMarkers }]
@@ -1675,7 +1705,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                               <span>
                                 {a.markers.filter(m => m !== '(R)').map((m, i) => <span key={i} className="font-bold">{m}</span>)}
                                 {a.staffName}
-                                {a.markers.includes('(R)') && <span className="font-semibold">(R)</span>}
+                                {a.markers.includes('(R)') && <span>(R)</span>}
                                 <button 
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -1798,7 +1828,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                   </div>
                   <div className="text-[10px] text-gray-700 mt-1">
                     {group.members.filter(m => m !== '(R)').map((m, i) => <div key={i}>• {m}</div>)}
-                    {group.members.filter(m => m === '(R)').map((m, i) => <div key={`r-${i}`} className="text-purple-600 font-semibold">{m}</div>)}
+                    {group.members.filter(m => m === '(R)').map((m, i) => <div key={`r-${i}`} className="text-purple-600">{m}</div>)}
                   </div>
                 </div>
               ))
@@ -1906,7 +1936,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
               <button 
                 onClick={() => toggleMarker('(R)')}
                 className="w-full px-3 py-2 bg-purple-50 hover:bg-purple-100 rounded border border-purple-200 text-left text-sm">
-                <span className="font-semibold">(R)</span> - Replacing
+                <span>(R)</span> - Replacing
               </button>
 
               {/* Center markers - toggle */}
@@ -1966,7 +1996,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                 {replacingCount > 0 && (
                   <div className="mt-2 text-xs text-gray-600">
                     {Array.from({ length: replacingCount }, (_, i) => (
-                      <div key={i} className="text-purple-600 font-semibold">(R)</div>
+                      <div key={i} className="text-purple-600">(R)</div>
                     ))}
                   </div>
                 )}
@@ -2011,6 +2041,23 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                   Yes, Clear Roster
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Drag Drop Target Indicator - Shows shift info when dragging over a cell */}
+      {dragOver && (
+        <div className="fixed inset-0 pointer-events-none z-[10000] flex items-center justify-center">
+          <div className="bg-green-600 text-white px-8 py-4 rounded-2xl shadow-2xl">
+            <div className="text-2xl font-bold text-center">
+              {(() => {
+                const shift = shifts.find(s => s.id === dragOver.shiftId);
+                return shift ? shift.label.replace('\n-\n', '-') : '';
+              })()}
+            </div>
+            <div className="text-sm text-center mt-1 opacity-90">
+              {dragOver.dateKey}
             </div>
           </div>
         </div>
