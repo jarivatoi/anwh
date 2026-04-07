@@ -599,8 +599,6 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
 
   // Long press on cell assignment to toggle markers (like desktop right-click)
   const handleAssignmentLongPressStart = (dateKey: string, shiftId: string, index: number, staffName: string) => {
-    
-    
     // Clear any existing timer
     if (cellLongPress?.timer) {
       clearTimeout(cellLongPress.timer);
@@ -695,8 +693,10 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
       currentY: e.clientY
     });
     
-    // Start long press timer
-    handleAssignmentLongPressStart(dateKey, shiftId, index, staffName);
+    // Only start long press timer on touch devices, not desktop mouse
+    if (e.pointerType !== 'mouse') {
+      handleAssignmentLongPressStart(dateKey, shiftId, index, staffName);
+    }
     
     (e.target as Element).setPointerCapture(e.pointerId);
   };
@@ -827,7 +827,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     
     if (staffListSwipe.isSwiping) {
       e.preventDefault();
-      staffListScrollRef.current.scrollLeft = staffListSwipe.scrollLeft - deltaX;
+      staffListScrollRef.current.scrollLeft = staffListSwipe.scrollLeft + deltaX;
     }
   };
 
@@ -1811,7 +1811,20 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                             onPointerDown={(e) => !isPlaceholder && handleAssignmentPointerDown(e, dateKey, shift.id, idx, a.staffName)}
                             onPointerMove={!isPlaceholder ? handleAssignmentPointerMove : undefined}
                             onPointerUp={!isPlaceholder ? handleAssignmentPointerUp : undefined}
-                            onPointerCancel={!isPlaceholder ? handleAssignmentPointerCancel : undefined}>
+                            onPointerCancel={!isPlaceholder ? handleAssignmentPointerCancel : undefined}
+                            onContextMenu={(e) => {
+                              e.preventDefault();
+                              if (!isPlaceholder) {
+                                // Open marker menu on right-click for desktop
+                                setShowMarkerMenu({
+                                  visible: true,
+                                  dateKey,
+                                  shiftId: shift.id,
+                                  index: idx,
+                                  staffName: a.staffName
+                                });
+                              }
+                            }}>
                             {isPlaceholder ? (
                               <span style={{ display: 'inline-block' }}>
                                 <span className="text-purple-600">(R)</span>
@@ -1941,7 +1954,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
             const handleMouseMove = (e: MouseEvent) => {
               const x = e.pageX - el.offsetLeft;
               const walkX = (x - startX) * 2; // Scroll speed
-              el.scrollLeft = scrollLeft - walkX;
+              el.scrollLeft = scrollLeft + walkX;
             };
             
             const handleMouseUp = () => {
