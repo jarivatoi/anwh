@@ -1605,10 +1605,11 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                       onDragOver={(e) => handleDragOver(e, dateKey, shift.id)}
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, dateKey, shift.id)}
-                      className={`${shift.color} border p-1 min-h-[80px] align-top`}
+                      className={`${shift.color} border p-1 align-top`}
+                      style={{ minHeight: `${80 * calendarZoom}px`, padding: `${4 * calendarZoom}px` }}
                     >
                       {assignments.length === 0 ? (
-                        <div className="text-gray-400 text-[10px] text-center py-2">Drop</div>
+                        <div className="text-gray-400 text-center py-2" style={{ fontSize: `${10 * calendarZoom}px` }}>Drop</div>
                       ) : (
                         assignments.map((a, idx) => {
                           const isPlaceholder = !a.staffName && a.markers.includes('(R)');
@@ -1630,10 +1631,19 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                               setDraggedStaff({ name: a.staffName });
                             } : undefined}
                             onDragEnd={!isPlaceholder ? () => { setDraggedStaff(null); setDragOver(null); } : undefined}
-                            className={`text-[10px] px-1 py-0.5 mb-1 rounded relative cursor-move select-none pr-4 ${
+                            className={`px-1 py-0.5 mb-1 rounded relative cursor-move select-none pr-4 ${
                               isPlaceholder ? 'bg-purple-50 border border-purple-300 text-purple-700 font-semibold' : 'bg-white'
                             }`}
-                            style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                            style={{ 
+                              wordBreak: 'break-word', 
+                              overflowWrap: 'break-word',
+                              fontSize: `${10 * calendarZoom}px`,
+                              marginBottom: `${4 * calendarZoom}px`,
+                              paddingLeft: `${4 * calendarZoom}px`,
+                              paddingRight: `${16 * calendarZoom}px`,
+                              paddingTop: `${2 * calendarZoom}px`,
+                              paddingBottom: `${2 * calendarZoom}px`
+                            }}
                             onPointerDown={(e) => !isPlaceholder && handleAssignmentPointerDown(e, dateKey, shift.id, idx, a.staffName)}
                             onPointerMove={!isPlaceholder ? handleAssignmentPointerMove : undefined}
                             onPointerUp={!isPlaceholder ? handleAssignmentPointerUp : undefined}
@@ -1668,8 +1678,14 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                                     setCellLongPress(null);
                                   }
                                 }}
-                                className="absolute right-0.5 top-0 text-red-500 font-bold px-1 z-10"
-                                style={{ lineHeight: '1' }}>
+                                className="absolute text-red-500 font-bold z-10"
+                                style={{ 
+                                  lineHeight: '1',
+                                  right: `${2 * calendarZoom}px`,
+                                  top: 0,
+                                  padding: `${2 * calendarZoom}px`,
+                                  fontSize: `${12 * calendarZoom}px`
+                                }}>
                                 ×
                               </button>
                             )}
