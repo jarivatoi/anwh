@@ -1700,7 +1700,41 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                             onPointerUp={!isPlaceholder ? handleAssignmentPointerUp : undefined}
                             onPointerCancel={!isPlaceholder ? handleAssignmentPointerCancel : undefined}>
                             {isPlaceholder ? (
-                              <span className="text-purple-600">(R)</span>
+                              <span>
+                                <span className="text-purple-600">(R)</span>
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Cancel any pending long press
+                                    if (cellLongPress?.timer) {
+                                      clearTimeout(cellLongPress.timer);
+                                      setCellLongPress(null);
+                                    }
+                                    removeAssignment(dateKey, shift.id, idx);
+                                  }} 
+                                  onTouchStart={(e) => {
+                                    e.stopPropagation();
+                                    // Cancel any pending long press
+                                    if (cellLongPress?.timer) {
+                                      clearTimeout(cellLongPress.timer);
+                                      setCellLongPress(null);
+                                    }
+                                  }}
+                                  className="text-red-500 font-bold cursor-pointer"
+                                  style={{ 
+                                    display: 'inline-block',
+                                    verticalAlign: 'top',
+                                    lineHeight: '1',
+                                    padding: 0,
+                                    marginLeft: `${3 * calendarZoom}px`,
+                                    marginTop: `-${1 * calendarZoom}px`,
+                                    fontSize: `${14 * calendarZoom}px`,
+                                    background: 'none',
+                                    border: 'none'
+                                  }}>
+                                  ×
+                                </button>
+                              </span>
                             ) : (
                               <span>
                                 {a.markers.filter(m => m !== '(R)').map((m, i) => <span key={i} className="font-bold">{m}</span>)}
