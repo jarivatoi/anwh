@@ -1291,7 +1291,8 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
         }
         
         table {
-          page-break-inside: auto;
+          page-break-inside: avoid;
+          page-break-after: always;
         }
         
         tr {
@@ -1300,7 +1301,13 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
         }
         
         div {
-          page-break-inside: auto;
+          page-break-inside: avoid;
+        }
+        
+        /* Ensure each week stays together */
+        div[style*="margin-bottom: 15px"] {
+          page-break-inside: avoid;
+          page-break-after: always;
         }
       }
     `;
