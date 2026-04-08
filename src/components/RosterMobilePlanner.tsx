@@ -95,7 +95,20 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [calendarZoom, setCalendarZoom] = useState<number>(1);
   const [lastTouchDistance, setLastTouchDistance] = useState<number>(0);
-  const [fitToPage, setFitToPage] = useState<boolean>(false);
+  
+  // Delete all modal for clearing specific date/shift
+  interface DeleteAllModal {
+    visible: boolean;
+    dateKey: string;
+    dateDisplay: string;
+    availableShifts: Array<{ id: string; label: string; count: number }>;
+  }
+  const [deleteAllModal, setDeleteAllModal] = useState<DeleteAllModal>({
+    visible: false,
+    dateKey: '',
+    dateDisplay: '',
+    availableShifts: []
+  });
   
   // Assignment drag state for moving between cells
   const [assignmentDrag, setAssignmentDrag] = useState<{
@@ -544,12 +557,13 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
 
   const handlePointerUp = (e: React.PointerEvent) => {
     
-    
+     // If we have pointer drag state, it means a drag was in progress
     if (!pointerDragState) {
       handleLongPressEnd();
       return;
     }
     
+    // If was dragging and has a valid drop target, perform the drop
     if (pointerDragState.isDragging && dragOver) {
       // Drop the staff on cell
       
@@ -577,13 +591,13 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
       } else {
         addStaffToCell(pointerDragState.staffName, dragOver.dateKey, dragOver.shiftId);
       }
-    } else {
-      
     }
+    // If was dragging but NO drop target, the drag is cancelled - do nothing
     
-    // Always clear all drag state when pointer is released
+    // CRITICAL: Always clear ALL drag-related state when pointer is released
     setPointerDragState(null);
     setDragOver(null);
+    setDraggedStaff(null); // Also clear HTML5 drag state to prevent any confusion
     
     // Release pointer capture
     try {
@@ -594,8 +608,10 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
   };
 
   const handlePointerCancel = () => {
+    // Clear all drag-related state immediately
     setPointerDragState(null);
     setDragOver(null);
+    setDraggedStaff(null);
   };
 
   // Long press on cell assignment to toggle markers (like desktop right-click)
@@ -1116,7 +1132,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
   };
 
   // Print roster to PDF (same weekly format as desktop RosterPlanner)
-  const handlePrintRoster = (fitToOnePage: boolean = false) => {
+  const handlePrintRoster = () => {
     // Close any existing print window first to prevent blocking
     if (printWindowRef.current && !printWindowRef.current.closed) {
       printWindowRef.current.close();
@@ -1181,7 +1197,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
       };
       
       weeksHtml += `
-        <div style="margin-bottom: 15px; page-break-inside: auto; page-break-after: auto;">
+        <div class="week-container" style="margin-bottom: 15px; page-break-inside: auto; page-break-after: auto;">
           <table style="width: 100%; border-collapse: collapse; font-size: 8px;">
             <thead>
               <tr>
@@ -1246,84 +1262,76 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     });
     
     // Build complete HTML for printing
-    const fitToPageStyles = fitToOnePage ? `
-      @media print {
-        @page {
-          size: portrait;
-          margin: 5mm;
-        }
-        
-        body {
-          print-color-adjust: exact;
-          -webkit-print-color-adjust: exact;
-          transform: scale(0.75);
-          transform-origin: top center;
-        }
-        
-        table {
-          page-break-inside: avoid;
-        }
-        
-        tr {
-          page-break-inside: avoid;
-          page-break-after: auto;
-        }
-        
-        div {
-          page-break-inside: avoid;
-        }
-        
-        h1 {
-          font-size: 14px !important;
-          margin-bottom: 10px !important;
-        }
-      }
-    ` : `
-      @media print {
-        @page {
-          size: landscape;
-          margin: 10mm;
-        }
-        
-        body {
-          print-color-adjust: exact;
-          -webkit-print-color-adjust: exact;
-        }
-        
-        table {
-          page-break-inside: avoid;
-          page-break-after: always;
-        }
-        
-        tr {
-          page-break-inside: avoid;
-          page-break-after: auto;
-        }
-        
-        div {
-          page-break-inside: avoid;
-        }
-        
-        /* Ensure each week stays together */
-        div[style*="margin-bottom: 15px"] {
-          page-break-inside: avoid;
-          page-break-after: always;
-        }
-      }
-    `;
-    
     const html = `
       <!DOCTYPE html>
       <html>
       <head>
         <title>Roster Planner - ${monthName}</title>
         <style>
-          ${fitToPageStyles}
+          @media print {
+            @page {
+              size: landscape;
+              margin: 10mm;
+            }
+            
+            body {
+              print-color-adjust: exact;
+              -webkit-print-color-adjust: exact;
+              margin: 0;
+              padding: 0;
+            }
+            
+            /* Center content on each page - padding will be calculated dynamically */
+            .print-container {
+              display: block;
+              width: 100%;
+              padding-top: 0;
+              transition: padding-top 0.1s ease;
+            }
+            
+            .print-container h1 {
+              text-align: center;
+              margin: 0 0 10px 0;
+            }
+            
+            .print-container > div {
+              margin: 0 auto;
+            }
+            
+            /* Ensure each week stays together and is never cut */
+            table {
+              page-break-inside: avoid;
+              page-break-after: always;
+            }
+            
+            tr {
+              page-break-inside: avoid;
+              page-break-after: auto;
+            }
+            
+            div {
+              page-break-inside: avoid;
+            }
+            
+            /* Ensure week containers are never split */
+            div[style*="margin-bottom: 15px"] {
+              page-break-inside: avoid;
+              page-break-after: always;
+            }
+            
+            h1 {
+              page-break-inside: avoid;
+            }
+          }
           
           * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+          }
+          
+          html {
+            height: 100%;
           }
           
           a {
@@ -1336,7 +1344,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
             padding: 10px;
             color: black !important;
             margin: 0;
-            height: auto;
+            height: 100%;
             overflow: visible;
           }
           
@@ -1349,8 +1357,10 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
         </style>
       </head>
       <body>
-        <h1>Roster Planner - ${monthName}</h1>
-        ${weeksHtml}
+        <div class="print-container">
+          <h1>Roster Planner - ${monthName}</h1>
+          ${weeksHtml}
+        </div>
       </body>
       </html>
     `;
@@ -1358,8 +1368,26 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     printWindow.document.write(html);
     printWindow.document.close();
     
-    // Wait for content to load then print
+    // Wait for content to load then calculate and apply centering
     setTimeout(() => {
+      // Calculate and center each week individually on its own page
+      const weekContainers = printWindow.document.querySelectorAll('.week-container');
+      
+      // Get the printable area height (page height - margins)
+      // A4 landscape = 210mm, margins = 10mm each side = 190mm usable
+      // At 96 DPI: 190mm ≈ 718px
+      const pageHeight = 718;
+      
+      weekContainers.forEach((container) => {
+        const weekHeight = container.scrollHeight;
+        const remainingSpace = Math.max(0, pageHeight - weekHeight);
+        const topPadding = Math.floor(remainingSpace / 2);
+        
+        // Apply calculated padding to center this week
+        (container as HTMLElement).style.paddingTop = `${topPadding}px`;
+        (container as HTMLElement).style.display = 'block';
+      });
+      
       printWindow.focus();
       
       // Listen for afterprint event (fires when print dialog is closed, whether printed or cancelled)
@@ -1394,7 +1422,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
           printWindowRef.current = null;
         }
       }, 3000);
-    }, 250);
+    }, 500);
     
     showToast('Print dialog opened', 'success');
   };
@@ -1553,6 +1581,89 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     }
   };
 
+  // Show delete all modal for a specific date
+  const showDeleteAllModal = (dateKey: string, dateDisplay: string) => {
+    // Check which shifts have staff
+    const availableShifts = shifts
+      .map(shift => {
+        const assignmentKey = `${dateKey}-${shift.id}`;
+        const assignments = rosterAssignments[assignmentKey] || [];
+        return {
+          id: shift.id,
+          label: shift.label.replace('\n-\n', '-'),
+          count: assignments.length
+        };
+      })
+      .filter(shift => shift.count > 0); // Only show shifts with staff
+    
+    if (availableShifts.length === 0) {
+      showToast('No staff assigned on this date', 'error');
+      return;
+    }
+    
+    setDeleteAllModal({
+      visible: true,
+      dateKey,
+      dateDisplay,
+      availableShifts
+    });
+  };
+
+  // Delete all staff from a specific shift
+  const deleteShiftStaff = (shiftId: string) => {
+    const { dateKey } = deleteAllModal;
+    const assignmentKey = `${dateKey}-${shiftId}`;
+    
+    setRosterAssignments(prev => {
+      const updated = { ...prev };
+      delete updated[assignmentKey];
+      
+      // Calculate remaining shifts from the updated state
+      const remainingShifts = shifts
+        .map(shift => {
+          if (shift.id === shiftId) return null; // Exclude deleted shift
+          const key = `${dateKey}-${shift.id}`;
+          const count = (updated[key] || []).length;
+          return count > 0 ? { id: shift.id, label: shift.label.replace('\n-\n', '-'), count } : null;
+        })
+        .filter((s): s is { id: string; label: string; count: number } => s !== null);
+      
+      // Store for use after state update
+      (window as any).__remainingShiftsData = remainingShifts;
+      
+      return updated;
+    });
+    
+    showToast(`Cleared ${shifts.find(s => s.id === shiftId)?.label.replace('\n-\n', '-')}`, 'success');
+    
+    // Update modal after state has updated
+    setTimeout(() => {
+      const remainingShifts = (window as any).__remainingShiftsData || [];
+      
+      if (remainingShifts.length === 0) {
+        closeDeleteAllModal();
+      } else {
+        // Update modal with remaining shifts directly
+        setDeleteAllModal(prev => ({
+          ...prev,
+          availableShifts: remainingShifts
+        }));
+      }
+      
+      delete (window as any).__remainingShiftsData;
+    }, 150);
+  };
+
+  // Close delete all modal
+  const closeDeleteAllModal = () => {
+    setDeleteAllModal({
+      visible: false,
+      dateKey: '',
+      dateDisplay: '',
+      availableShifts: []
+    });
+  };
+
   // Cancel clear roster
   const cancelClearRoster = () => {
     setShowClearConfirm(false);
@@ -1652,24 +1763,13 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
           >
             <button
               onClick={() => {
-                handlePrintRoster(false);
+                handlePrintRoster();
                 setShowSettings(false);
               }}
               className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
             >
               <span>🖨️</span>
               <span>Print Roster</span>
-            </button>
-            
-            <button
-              onClick={() => {
-                handlePrintRoster(true);
-                setShowSettings(false);
-              }}
-              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
-            >
-              <span>📄</span>
-              <span>Print (Fit to 1 Page)</span>
             </button>
             
             <button
@@ -1791,10 +1891,31 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                 const dayNum = String(day.getDate()).padStart(2, '0');
                 const monthNum = String(day.getMonth() + 1).padStart(2, '0');
                 const yearNum = String(day.getFullYear());
+                const dateKey = formatDateKey(day);
+                
+                // Check if this date has any staff assigned
+                const hasStaff = shifts.some(shift => {
+                  const key = `${dateKey}-${shift.id}`;
+                  return (rosterAssignments[key] || []).length > 0;
+                });
+                
+                const dateDisplay = `${dayNum} ${monthNum} ${yearNum}`;
+                
                 return (
-                  <th key={day.toISOString()} className="border p-1 bg-gray-100" style={{ minWidth: `${120 * calendarZoom}px` }}>
+                  <th key={day.toISOString()} className="border p-1 bg-gray-100 relative group" style={{ minWidth: `${120 * calendarZoom}px` }}>
                     <div className="font-bold" style={{ fontSize: `${10 * calendarZoom}px`, color: 'black', textDecoration: 'none' }}>{dayName}</div>
                     <div style={{ fontSize: `${9 * calendarZoom}px`, color: 'black', textDecoration: 'none', background: 'transparent' }}>{dayNum} <span style={{ color: 'black' }}>{monthNum}</span> <span style={{ color: 'black' }}>{yearNum}</span></div>
+                    {/* X button positioned absolute on the right */}
+                    {hasStaff && (
+                      <button
+                        onClick={() => showDeleteAllModal(dateKey, dateDisplay)}
+                        className="absolute right-1 top-1/2 -translate-y-1/2 text-red-500 hover:text-red-700 transition-colors"
+                        style={{ fontSize: `${16 * calendarZoom}px`, opacity: 0.7 }}
+                        title="Clear staff for this date"
+                      >
+                        ×
+                      </button>
+                    )}
                   </th>
                 );
               })}
@@ -1858,7 +1979,11 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                               e.dataTransfer.effectAllowed = 'move';
                               setDraggedStaff({ name: a.staffName });
                             } : undefined}
-                            onDragEnd={!isPlaceholder ? () => { setDraggedStaff(null); setDragOver(null); } : undefined}
+                            onDragEnd={!isPlaceholder ? () => { 
+                              setDraggedStaff(null); 
+                              setDragOver(null);
+                              setPointerDragState(null); // Clear pointer state too
+                            } : undefined}
                             className={`px-1 py-0.5 mb-1 rounded relative cursor-move select-none pr-4 ${
                               isPlaceholder ? 'bg-purple-50 border border-purple-300 text-purple-700 font-semibold' : 'bg-white'
                             }`}
@@ -2216,6 +2341,48 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
         </div>
       )}
 
+      {/* Delete All Staff Modal */}
+      {deleteAllModal.visible && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10001]">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-gray-800 mb-4">Clear Staff Assignments</h3>
+              
+              <div className="mb-4">
+                <p className="text-sm text-gray-700 mb-3">
+                  Select which shift(s) to clear for date <span className="font-semibold">{deleteAllModal.dateDisplay}</span>:
+                </p>
+                
+                <div className="space-y-2">
+                  {deleteAllModal.availableShifts.map(shift => (
+                    <button
+                      key={shift.id}
+                      onClick={() => deleteShiftStaff(shift.id)}
+                      className="w-full flex items-center justify-between px-4 py-3 text-left bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-colors"
+                    >
+                      <div>
+                        <div className="font-semibold text-gray-800">{shift.label}</div>
+                        <div className="text-xs text-gray-600">{shift.count} staff member(s)</div>
+                      </div>
+                      <span className="text-red-600 font-bold text-xl">×</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  onClick={closeDeleteAllModal}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Clear Roster Confirmation Modal */}
       {showClearConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]">
@@ -2254,7 +2421,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
 
       {/* Drag Drop Target Indicator - Shows shift info when dragging over a cell */}
       {dragOver && (
-        <div className="fixed inset-0 pointer-events-none z-[10000] flex justify-center pt-8">
+        <div className="fixed top-0 left-0 right-0 pointer-events-none z-[10000] flex justify-center pt-8">
           <div className="bg-green-600 text-white px-8 py-4 rounded-2xl shadow-2xl">
             <div className="text-2xl font-bold text-center">
               {(() => {
