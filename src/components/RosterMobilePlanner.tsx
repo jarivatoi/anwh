@@ -599,6 +599,8 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
 
   // Long press on cell assignment to toggle markers (like desktop right-click)
   const handleAssignmentLongPressStart = (dateKey: string, shiftId: string, index: number, staffName: string) => {
+    
+    
     // Clear any existing timer
     if (cellLongPress?.timer) {
       clearTimeout(cellLongPress.timer);
@@ -693,10 +695,8 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
       currentY: e.clientY
     });
     
-    // Only start long press timer on touch devices, not desktop mouse
-    if (e.pointerType !== 'mouse') {
-      handleAssignmentLongPressStart(dateKey, shiftId, index, staffName);
-    }
+    // Start long press timer
+    handleAssignmentLongPressStart(dateKey, shiftId, index, staffName);
     
     (e.target as Element).setPointerCapture(e.pointerId);
   };
@@ -827,7 +827,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     
     if (staffListSwipe.isSwiping) {
       e.preventDefault();
-      staffListScrollRef.current.scrollLeft = staffListSwipe.scrollLeft + deltaX;
+      staffListScrollRef.current.scrollLeft = staffListSwipe.scrollLeft - deltaX;
     }
   };
 
@@ -866,10 +866,11 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
 
   const handleDragOver = (e: React.DragEvent, dateKey: string, shiftId: string) => {
     e.preventDefault();
-    e.stopPropagation();
-    e.dataTransfer.dropEffect = 'move';
-    // Always allow drops - the data is in dataTransfer object
-    setDragOver({ dateKey, shiftId });
+    e.dataTransfer.dropEffect = 'copy';
+    // Only set dragOver if there's an active drag
+    if (draggedStaff || pointerDragState?.isDragging) {
+      setDragOver({ dateKey, shiftId });
+    }
   };
 
   const handleDragLeave = () => {
@@ -878,20 +879,19 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
 
   const handleDrop = (e: React.DragEvent, dateKey: string, shiftId: string) => {
     e.preventDefault();
-    e.stopPropagation();
+    
     
     // Check if this is an assignment drag (cell to cell)
     const dragData = e.dataTransfer.getData('text/plain');
-    
     if (dragData) {
       try {
         const parsed = JSON.parse(dragData);
-        
         if (parsed.type === 'assignment') {
+          
+          
           // Check for duplicate in target cell
           const targetKey = `${dateKey}-${shiftId}`;
           const targetAssignments = rosterAssignments[targetKey] || [];
-          
           if (targetAssignments.some((a: any) => a.staffName === parsed.staffName)) {
             showToast('Already assigned in this cell', 'error');
             setDraggedStaff(null);
@@ -1783,7 +1783,21 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                           return (
                           <div 
                             key={idx} 
-                            draggable={false}
+                            draggable={!isPlaceholder}
+                            onDragStart={!isPlaceholder ? (e) => {
+                              
+                              e.dataTransfer.setData('text/plain', JSON.stringify({
+                                type: 'assignment',
+                                staffName: a.staffName,
+                                markers: a.markers,
+                                sourceDateKey: dateKey,
+                                sourceShiftId: shift.id,
+                                sourceIndex: idx
+                              }));
+                              e.dataTransfer.effectAllowed = 'move';
+                              setDraggedStaff({ name: a.staffName });
+                            } : undefined}
+                            onDragEnd={!isPlaceholder ? () => { setDraggedStaff(null); setDragOver(null); } : undefined}
                             className={`px-1 py-0.5 mb-1 rounded relative cursor-move select-none pr-4 ${
                               isPlaceholder ? 'bg-purple-50 border border-purple-300 text-purple-700 font-semibold' : 'bg-white'
                             }`}
@@ -1797,19 +1811,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                             onPointerDown={(e) => !isPlaceholder && handleAssignmentPointerDown(e, dateKey, shift.id, idx, a.staffName)}
                             onPointerMove={!isPlaceholder ? handleAssignmentPointerMove : undefined}
                             onPointerUp={!isPlaceholder ? handleAssignmentPointerUp : undefined}
-                            onPointerCancel={!isPlaceholder ? handleAssignmentPointerCancel : undefined}
-                            onContextMenu={(e) => {
-                              e.preventDefault();
-                              if (!isPlaceholder) {
-                                // Open marker menu on right-click for desktop
-                                setShowMarkerMenu({
-                                  visible: true,
-                                  dateKey,
-                                  shiftId: shift.id,
-                                  index: idx
-                                });
-                              }
-                            }}>
+                            onPointerCancel={!isPlaceholder ? handleAssignmentPointerCancel : undefined}>
                             {isPlaceholder ? (
                               <span style={{ display: 'inline-block' }}>
                                 <span className="text-purple-600">(R)</span>
@@ -1939,7 +1941,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
             const handleMouseMove = (e: MouseEvent) => {
               const x = e.pageX - el.offsetLeft;
               const walkX = (x - startX) * 2; // Scroll speed
-              el.scrollLeft = scrollLeft + walkX;
+              el.scrollLeft = scrollLeft - walkX;
             };
             
             const handleMouseUp = () => {
