@@ -1168,36 +1168,7 @@ const AdminPanel: React.FC = () => {
                 )}
               </button>
               
-              {/* 6. Maintenance Mode - Only visible to admin 5274 */}
-              {currentUser?.id_number === '5274' && (
-                <button
-                  onClick={() => {
-                    handleToggleMaintenanceMode()
-                    setShowQuickActions(false)
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    textAlign: 'left',
-                    background: 'white',
-                    border: 'none',
-                    borderBottom: '1px solid #f3f4f6',
-                    color: maintenanceMode ? '#dc2626' : '#ea580c',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '14px'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#fff7ed'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-                >
-                  <Wrench className="w-4 h-4" />
-                  {maintenanceMode ? 'Disable Maintenance Mode' : 'Enable Maintenance Mode (Currently OFF)'}
-                </button>
-                )}
-              
-              {/* Admin Only - 8. Roster Planner */}
+              {/* 7. Roster Planner - Only visible to admin 5274 */}
               {currentUser?.id_number === '5274' && (
               <button
                 onClick={() => {
@@ -1226,7 +1197,7 @@ const AdminPanel: React.FC = () => {
               </button>
                         )}
               
-              {/* Admin Only - 8b. Roster Planner (Mobile) */}
+              {/* 8. Roster Planner (Mobile) - Only visible to admin 5274 */}
               {currentUser?.id_number === '5274' && (
               <button
                 onClick={() => {
@@ -1254,6 +1225,35 @@ const AdminPanel: React.FC = () => {
                 Roster Planner (Mobile)
               </button>
                         )}
+              
+              {/* 9. Maintenance Mode - Only visible to admin 5274 */}
+              {currentUser?.id_number === '5274' && (
+                <button
+                  onClick={() => {
+                    handleToggleMaintenanceMode()
+                    setShowQuickActions(false)
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    textAlign: 'left',
+                    background: 'white',
+                    border: 'none',
+                    borderBottom: '1px solid #f3f4f6',
+                    color: maintenanceMode ? '#dc2626' : '#ea580c',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '14px'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#fff7ed'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                >
+                  <Wrench className="w-4 h-4" />
+                  {maintenanceMode ? 'Disable Maintenance Mode' : 'Enable Maintenance Mode (Currently OFF)'}
+                </button>
+                )}
               {/* 9. Clear Database */}
               <button
                 onClick={() => {
