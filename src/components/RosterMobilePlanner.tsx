@@ -1664,6 +1664,28 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     });
   };
 
+  // Clear all shifts for the selected date
+  const deleteAllShiftsForDate = () => {
+    const { dateKey, availableShifts } = deleteAllModal;
+    
+    // Clear all shifts
+    setRosterAssignments(prev => {
+      const updated = { ...prev };
+      availableShifts.forEach(shift => {
+        const assignmentKey = `${dateKey}-${shift.id}`;
+        delete updated[assignmentKey];
+      });
+      return updated;
+    });
+    
+    showToast(`Cleared all shifts for ${deleteAllModal.dateDisplay}`, 'success');
+    
+    // Close modal after clearing
+    setTimeout(() => {
+      closeDeleteAllModal();
+    }, 100);
+  };
+
   // Cancel clear roster
   const cancelClearRoster = () => {
     setShowClearConfirm(false);
@@ -2370,7 +2392,13 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                 </div>
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-between gap-3">
+                <button
+                  onClick={deleteAllShiftsForDate}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded transition-colors"
+                >
+                  Clear All
+                </button>
                 <button
                   onClick={closeDeleteAllModal}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
