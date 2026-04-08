@@ -1116,6 +1116,12 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
 
   // Print roster to PDF (same weekly format as desktop RosterPlanner)
   const handlePrintRoster = () => {
+    // Close any existing print window first to prevent blocking
+    if (printWindowRef.current && !printWindowRef.current.closed) {
+      printWindowRef.current.close();
+      printWindowRef.current = null;
+    }
+    
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       showToast('Please allow popups to print', 'error');
@@ -2193,7 +2199,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
 
       {/* Drag Drop Target Indicator - Shows shift info when dragging over a cell */}
       {dragOver && (
-        <div className="fixed inset-0 pointer-events-none z-[10000] flex items-center justify-center">
+        <div className="fixed inset-0 pointer-events-none z-[10000] flex justify-center pt-8">
           <div className="bg-green-600 text-white px-8 py-4 rounded-2xl shadow-2xl">
             <div className="text-2xl font-bold text-center">
               {(() => {
