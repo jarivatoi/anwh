@@ -42,6 +42,24 @@ export class PDFLoader {
     const viewport = page.getViewport({ scale: 1.0 });
     const textContent = await page.getTextContent();
     
+    console.log('📄 Text content info:', {
+      itemCount: textContent.items.length,
+      hasText: textContent.items.length > 0,
+      viewportHeight: viewport.height,
+      viewportWidth: viewport.width
+    });
+    
+    // Log first few items for debugging
+    if (textContent.items.length > 0) {
+      console.log('📄 Sample text items:', textContent.items.slice(0, 5).map((item: any) => ({
+        text: item.str,
+        x: item.transform[4],
+        y: item.transform[5]
+      })));
+    } else {
+      console.warn('⚠️ NO TEXT ITEMS FOUND - This PDF may contain scanned images instead of selectable text');
+    }
+    
     // Convert text items to structured data with coordinates
     const items = textContent.items.map((item: any) => ({
       text: item.str.trim(),
