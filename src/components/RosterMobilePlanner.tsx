@@ -95,6 +95,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [calendarZoom, setCalendarZoom] = useState<number>(1);
   const [lastTouchDistance, setLastTouchDistance] = useState<number>(0);
+  const [fitToPage, setFitToPage] = useState<boolean>(false);
   
   // Assignment drag state for moving between cells
   const [assignmentDrag, setAssignmentDrag] = useState<{
@@ -1115,7 +1116,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
   };
 
   // Print roster to PDF (same weekly format as desktop RosterPlanner)
-  const handlePrintRoster = () => {
+  const handlePrintRoster = (fitToOnePage: boolean = false) => {
     // Close any existing print window first to prevent blocking
     if (printWindowRef.current && !printWindowRef.current.closed) {
       printWindowRef.current.close();
@@ -1245,36 +1246,72 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     });
     
     // Build complete HTML for printing
+    const fitToPageStyles = fitToOnePage ? `
+      @media print {
+        @page {
+          size: portrait;
+          margin: 5mm;
+        }
+        
+        body {
+          print-color-adjust: exact;
+          -webkit-print-color-adjust: exact;
+          transform: scale(0.75);
+          transform-origin: top center;
+        }
+        
+        table {
+          page-break-inside: avoid;
+        }
+        
+        tr {
+          page-break-inside: avoid;
+          page-break-after: auto;
+        }
+        
+        div {
+          page-break-inside: avoid;
+        }
+        
+        h1 {
+          font-size: 14px !important;
+          margin-bottom: 10px !important;
+        }
+      }
+    ` : `
+      @media print {
+        @page {
+          size: landscape;
+          margin: 10mm;
+        }
+        
+        body {
+          print-color-adjust: exact;
+          -webkit-print-color-adjust: exact;
+        }
+        
+        table {
+          page-break-inside: auto;
+        }
+        
+        tr {
+          page-break-inside: avoid;
+          page-break-after: auto;
+        }
+        
+        div {
+          page-break-inside: auto;
+        }
+      }
+    `;
+    
     const html = `
       <!DOCTYPE html>
       <html>
       <head>
         <title>Roster Planner - ${monthName}</title>
         <style>
-          @media print {
-            @page {
-              size: landscape;
-              margin: 10mm;
-            }
-            
-            body {
-              print-color-adjust: exact;
-              -webkit-print-color-adjust: exact;
-            }
-            
-            table {
-              page-break-inside: auto;
-            }
-            
-            tr {
-              page-break-inside: avoid;
-              page-break-after: auto;
-            }
-            
-            div {
-              page-break-inside: auto;
-            }
-          }
+          ${fitToPageStyles}
           
           * {
             margin: 0;
@@ -1608,13 +1645,24 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
           >
             <button
               onClick={() => {
-                handlePrintRoster();
+                handlePrintRoster(false);
                 setShowSettings(false);
               }}
               className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
             >
               <span>🖨️</span>
               <span>Print Roster</span>
+            </button>
+            
+            <button
+              onClick={() => {
+                handlePrintRoster(true);
+                setShowSettings(false);
+              }}
+              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+            >
+              <span>📄</span>
+              <span>Print (Fit to 1 Page)</span>
             </button>
             
             <button
