@@ -67,6 +67,7 @@ export const RosterPlanner: React.FC<RosterPlannerProps> = ({ onClose, instituti
   // Edit group modal state
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [selectedStaffForEdit, setSelectedStaffForEdit] = useState<Set<string>>(new Set());
+  const [replacingCount, setReplacingCount] = useState<number>(0);
   
   // Track roster assignments: key = "date-shiftId", value = array of assignments
   interface Assignment {
@@ -487,6 +488,28 @@ export const RosterPlanner: React.FC<RosterPlannerProps> = ({ onClose, instituti
     });
   };
 
+  // Clear all shifts for the selected date
+  const deleteAllShiftsForDate = () => {
+    const { dateKey, availableShifts } = deleteAllModal;
+    
+    // Clear all shifts
+    setRosterAssignments(prev => {
+      const updated = { ...prev };
+      availableShifts.forEach(shift => {
+        const assignmentKey = `${dateKey}-${shift.id}`;
+        delete updated[assignmentKey];
+      });
+      return updated;
+    });
+    
+    showToast(`Cleared all shifts for ${deleteAllModal.dateDisplay}`, 'success');
+    
+    // Close modal after clearing
+    setTimeout(() => {
+      closeDeleteAllModal();
+    }, 100);
+  };
+
   // Print roster to PDF
   const handlePrintRoster = () => {
     const printWindow = window.open('', '_blank');
@@ -567,6 +590,7 @@ export const RosterPlanner: React.FC<RosterPlannerProps> = ({ onClose, instituti
             font-size: 8px;
             margin-bottom: 10px;
             page-break-inside: avoid;
+            table-layout: fixed;
           }
           
           th, td {
@@ -574,6 +598,17 @@ export const RosterPlanner: React.FC<RosterPlannerProps> = ({ onClose, instituti
             padding: 3px;
             vertical-align: middle;
             text-align: center;
+          }
+          
+          /* Fixed column widths for date headers */
+          th:first-child {
+            width: 70px;
+            min-width: 70px;
+            max-width: 70px;
+          }
+          
+          th:not(:first-child) {
+            width: auto;
           }
           
           th {
@@ -983,7 +1018,11 @@ export const RosterPlanner: React.FC<RosterPlannerProps> = ({ onClose, instituti
   // Open edit group modal
   const openEditGroup = (group: StaffGroup) => {
     setEditingGroupId(group.id);
-    setSelectedStaffForEdit(new Set(group.members));
+    // Filter out (R) markers and count them
+    const rCount = group.members.filter(m => m === '(R)').length;
+    const actualMembers = group.members.filter(m => m !== '(R)');
+    setReplacingCount(rCount);
+    setSelectedStaffForEdit(new Set(actualMembers));
   };
 
   // Toggle staff selection in edit modal
@@ -1011,11 +1050,17 @@ export const RosterPlanner: React.FC<RosterPlannerProps> = ({ onClose, instituti
     const group = groups.find(g => g.id === editingGroupId);
     if (!group) return;
 
+    // Build members array with (R) markers at the end
+    const membersWithR = [
+      ...Array.from(selectedStaffForEdit),
+      ...Array(replacingCount).fill('(R)')
+    ];
+
     // Check if duplicate group exists
     const sortedMembers = [...selectedStaffForEdit].sort().join(',');
     const isDuplicate = groups.some(g => 
       g.id !== editingGroupId && 
-      [...g.members].sort().join(',') === sortedMembers
+      [...g.members.filter(m => m !== '(R)' )].sort().join(',') === sortedMembers
     );
 
     if (isDuplicate) {
@@ -1026,17 +1071,18 @@ export const RosterPlanner: React.FC<RosterPlannerProps> = ({ onClose, instituti
     try {
       const { error } = await supabase
         .from('staff_groups')
-        .update({ members: Array.from(selectedStaffForEdit) })
+        .update({ members: membersWithR })
         .eq('id', editingGroupId);
 
       if (error) throw error;
 
       setGroups(prev => prev.map(g => 
-        g.id === editingGroupId ? { ...g, members: Array.from(selectedStaffForEdit) } : g
+        g.id === editingGroupId ? { ...g, members: membersWithR } : g
       ));
 
       setEditingGroupId(null);
       setSelectedStaffForEdit(new Set());
+      setReplacingCount(0);
       showToast('Group updated', 'success');
     } catch (error: any) {
       console.error('Error updating group:', error);
@@ -1048,6 +1094,7 @@ export const RosterPlanner: React.FC<RosterPlannerProps> = ({ onClose, instituti
   const cancelEditGroup = () => {
     setEditingGroupId(null);
     setSelectedStaffForEdit(new Set());
+    setReplacingCount(0);
   };
 
   // Drag group to cell - adds all members individually
@@ -1545,12 +1592,9 @@ export const RosterPlanner: React.FC<RosterPlannerProps> = ({ onClose, instituti
                         
                         <div className="font-bold text-purple-900 text-sm mb-1 pr-16">{group.name}</div>
                         <div className="text-xs text-gray-700 space-y-0.5">
-                          {group.members.slice(0, 3).map((member, idx) => (
+                          {group.members.map((member, idx) => (
                             <div key={idx}>• {member}</div>
                           ))}
-                          {group.members.length > 3 && (
-                            <div className="text-gray-500 italic">+{group.members.length - 3} more</div>
-                          )}
                         </div>
                         <div className="absolute bottom-1 right-2 text-xs text-purple-600 font-semibold">
                           {group.members.length} Staff
@@ -1728,7 +1772,13 @@ export const RosterPlanner: React.FC<RosterPlannerProps> = ({ onClose, instituti
                   </div>
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex justify-between gap-3">
+                  <button
+                    onClick={deleteAllShiftsForDate}
+                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded transition-colors"
+                  >
+                    Clear All
+                  </button>
                   <button
                     onClick={closeDeleteAllModal}
                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
@@ -1868,6 +1918,37 @@ export const RosterPlanner: React.FC<RosterPlannerProps> = ({ onClose, instituti
                   
                   <div className="mt-3 text-sm text-gray-600">
                     Selected: <span className="font-semibold text-purple-700">{selectedStaffForEdit.size}</span> Staff
+                  </div>
+
+                  {/* (R) Replacing section */}
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="text-sm text-gray-700 font-medium mb-3">Replacing (R)</div>
+                    <div className="flex items-center gap-4">
+                      <button 
+                        onClick={() => setReplacingCount(prev => Math.max(0, prev - 1))}
+                        className="w-12 h-12 bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold text-2xl flex items-center justify-center transition-colors">
+                        −
+                      </button>
+                      <div className="flex-1 text-center">
+                        <div className="text-3xl font-bold text-purple-700">{replacingCount}</div>
+                        <div className="text-xs text-gray-500">{replacingCount === 1 ? 'replacer' : 'replacers'}</div>
+                      </div>
+                      <button 
+                        onClick={() => setReplacingCount(prev => prev + 1)}
+                        className="w-12 h-12 bg-green-500 hover:bg-green-600 text-white rounded-lg font-bold text-2xl flex items-center justify-center transition-colors">
+                        +
+                      </button>
+                    </div>
+                    {replacingCount > 0 && (
+                      <div className="mt-3 text-xs text-gray-600">
+                        <div className="font-medium mb-1">Will add to group:</div>
+                        <div className="flex flex-wrap gap-1">
+                          {Array.from({ length: replacingCount }, (_, i) => (
+                            <span key={i} className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-semibold">(R)</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
