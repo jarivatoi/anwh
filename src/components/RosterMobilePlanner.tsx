@@ -866,11 +866,10 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
 
   const handleDragOver = (e: React.DragEvent, dateKey: string, shiftId: string) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
-    // Only set dragOver if there's an active drag
-    if (draggedStaff || pointerDragState?.isDragging) {
-      setDragOver({ dateKey, shiftId });
-    }
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    // Always allow drops - the data is in dataTransfer object
+    setDragOver({ dateKey, shiftId });
   };
 
   const handleDragLeave = () => {
@@ -879,19 +878,20 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
 
   const handleDrop = (e: React.DragEvent, dateKey: string, shiftId: string) => {
     e.preventDefault();
-    
+    e.stopPropagation();
     
     // Check if this is an assignment drag (cell to cell)
     const dragData = e.dataTransfer.getData('text/plain');
+    
     if (dragData) {
       try {
         const parsed = JSON.parse(dragData);
+        
         if (parsed.type === 'assignment') {
-          
-          
           // Check for duplicate in target cell
           const targetKey = `${dateKey}-${shiftId}`;
           const targetAssignments = rosterAssignments[targetKey] || [];
+          
           if (targetAssignments.some((a: any) => a.staffName === parsed.staffName)) {
             showToast('Already assigned in this cell', 'error');
             setDraggedStaff(null);
@@ -1783,21 +1783,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                           return (
                           <div 
                             key={idx} 
-                            draggable={!isPlaceholder}
-                            onDragStart={!isPlaceholder ? (e) => {
-                              
-                              e.dataTransfer.setData('text/plain', JSON.stringify({
-                                type: 'assignment',
-                                staffName: a.staffName,
-                                markers: a.markers,
-                                sourceDateKey: dateKey,
-                                sourceShiftId: shift.id,
-                                sourceIndex: idx
-                              }));
-                              e.dataTransfer.effectAllowed = 'move';
-                              setDraggedStaff({ name: a.staffName });
-                            } : undefined}
-                            onDragEnd={!isPlaceholder ? () => { setDraggedStaff(null); setDragOver(null); } : undefined}
+                            draggable={false}
                             className={`px-1 py-0.5 mb-1 rounded relative cursor-move select-none pr-4 ${
                               isPlaceholder ? 'bg-purple-50 border border-purple-300 text-purple-700 font-semibold' : 'bg-white'
                             }`}
@@ -1820,8 +1806,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                                   visible: true,
                                   dateKey,
                                   shiftId: shift.id,
-                                  index: idx,
-                                  staffName: a.staffName
+                                  index: idx
                                 });
                               }
                             }}>
