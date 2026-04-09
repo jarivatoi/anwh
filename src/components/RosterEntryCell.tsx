@@ -790,7 +790,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
                       pauseDuration={2}
                       scrollDuration={6}
                       leftOffset={offsetWidth}
-                      style={{ marginTop: '-5px' }}
+                      style={{ marginTop: '-4px' }}
                     />
                   }
                   backContent={
