@@ -174,13 +174,12 @@ const FlipCard: React.FC<FlipCardProps> = ({
   return (
     <div 
       ref={cardRef}
-      className={`relative inline-flex items-center justify-center align-middle ${className}`}
+      className={`relative inline-flex justify-center align-middle ${className}`}
       style={{
         transformStyle: "preserve-3d",
         WebkitTransformStyle: "preserve-3d",
         textAlign: "center",
         display: "inline-flex",
-        alignItems: "center",
         justifyContent: "center",
         verticalAlign: "middle",
         // iPhone 7 specific optimizations
@@ -205,7 +204,8 @@ const FlipCard: React.FC<FlipCardProps> = ({
           zIndex: 2,
           display: "flex",
           alignItems: "center",
-          justifyContent: "center"
+          justifyContent: "center",
+          paddingTop: "0px"
         }}
       >
         {frontContent}
@@ -230,7 +230,8 @@ const FlipCard: React.FC<FlipCardProps> = ({
           zIndex: 1,
           display: "flex",
           alignItems: "center",
-          justifyContent: "center"
+          justifyContent: "center",
+          paddingTop: "0px"
         }}
       >
         {backContent}
