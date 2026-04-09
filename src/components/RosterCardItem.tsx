@@ -278,10 +278,10 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
          border: isEditing ? '2px solid #ffd700' : 'none'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5px' }}>
+        <div className="flex items-center gap-0.5 max-w-full min-w-0">
           {hasCenterRemark && (
             <span 
-              className="text-red-600 font-bold"
+              className="text-red-600 font-bold flex-shrink-0"
               style={{ fontSize: window.innerWidth > window.innerHeight ? '14px' : '16px', lineHeight: 1, marginTop: '-1px' }}
             >
               *
@@ -293,6 +293,7 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
               console.log('👆 Clicked on name, opening staff selection...');
               setShowAuthModal(true);
             }}
+            className="relative flex-1 min-w-0"
             style={{ cursor: 'pointer' }}
           >
             {entry.shift_marker ? (
@@ -301,12 +302,15 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
                   <ScrollingText 
                     text={formatDisplayNameForUI(entry.assigned_name)}
                     className="text-center w-full"
+                    pauseDuration={2}
+                    scrollDuration={6}
                     style={{
                       color: getTextColor(),
                       fontWeight: '500',
-                      fontSize: 'inherit',
+                      fontSize: window.innerWidth > window.innerHeight ? '10px' : '12px',
                       textAlign: 'center',
                       width: '100%',
+                      maxWidth: '100%',
                       border: 'none',
                       outline: 'none',
                       filter: isEditing ? 'brightness(1.2) contrast(1.1)' : 'none',
@@ -316,7 +320,7 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
                   />
                 }
                 backContent={
-                  <span style={{ fontSize: window.innerWidth > window.innerHeight ? '9px' : '11px', fontWeight: '500', lineHeight: 1, color: getTextColor(), whiteSpace: 'nowrap', marginTop: '-5px' }}>
+                  <span style={{ fontSize: window.innerWidth > window.innerHeight ? '9px' : '11px', fontWeight: '500', lineHeight: 1, color: getTextColor(), whiteSpace: 'nowrap' }}>
                     ({entry.shift_marker.toUpperCase()})
                   </span>
                 }
@@ -329,12 +333,15 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
               <ScrollingText 
                 text={formatDisplayNameForUI(entry.assigned_name)}
                 className="text-center w-full"
+                pauseDuration={3}
+                scrollDuration={8}
                 style={{
                   color: getTextColor(),
                   fontWeight: '500',
-                  fontSize: 'inherit',
+                  fontSize: window.innerWidth > window.innerHeight ? '10px' : '12px',
                   textAlign: 'center',
                   width: '100%',
+                  maxWidth: '100%',
                   border: 'none',
                   outline: 'none',
                   filter: isEditing ? 'brightness(1.2) contrast(1.1)' : 'none',
