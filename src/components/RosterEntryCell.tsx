@@ -767,7 +767,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
         ) : null}
 
         <div 
-          className="flex items-center justify-center w-full min-w-0"
+          className="flex justify-center w-full min-w-0"
           onDoubleClick={handleDoubleClick}
         >
           <div className="flex items-center gap-0.5 max-w-full min-w-0">
@@ -790,6 +790,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
                       pauseDuration={2}
                       scrollDuration={6}
                       leftOffset={offsetWidth}
+                      style={{ marginTop: '-5px' }}
                     />
                   }
                   backContent={
