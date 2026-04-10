@@ -187,6 +187,14 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     // Start with all available staff (except ADMIN)
     let filtered = availableStaff.filter(name => name !== 'ADMIN');
     
+    // Get the base name of the currently assigned staff
+    const currentAssignedBaseName = getBaseName(entry.assigned_name);
+    const currentAssignedIsRVariant = entry.assigned_name.includes('(R)');
+    
+    // Check if current user is Admin 5274 (super admin)
+    const currentIdNumber = (window as any).currentUserIdNumber;
+    const isSuperAdmin = currentIdNumber === '5274';
+    
     // For admin users, show all staff (they might want to reassign staff)
     if (!isAdmin) {
       // For non-admin users, filter out other staff that are already assigned to this shift
@@ -197,10 +205,68 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
           return true;
         }
         // Filter out other staff who are already assigned to this shift
-        return !assignedStaff.includes(name);
+        if (assignedStaff.includes(name)) {
+          return false;
+        }
+        
+        // Filter out (R) variants to prevent duplicates
+        const candidateBaseName = getBaseName(name);
+        const candidateIsRVariant = name.includes('(R)');
+        
+        // Check if current user is the owner of this staff entry
+        // Extract ID from the candidate name if it exists (format: NAME_IDNUMBER or NAME_IDNUMBER(R))
+        const candidateIdNumber = name.split('_').length > 1 
+          ? name.split('_').pop()?.replace('(R)', '').trim() 
+          : null;
+        const isOwner = candidateIdNumber && candidateIdNumber === currentIdNumber;
+        
+        // If current entry is base name (e.g., NARAYYA), filter out (R) variant (NARAYYA(R))
+        // UNLESS the current user is the owner (they need to see their own (R) to swap)
+        if (!currentAssignedIsRVariant && candidateIsRVariant && candidateBaseName === currentAssignedBaseName) {
+          if (isOwner) {
+            console.log('✅ Allowing owner to see their (R) variant:', name);
+            return true;
+          }
+          console.log('🚫 Filtering out (R) variant:', name, 'because base name is assigned:', entry.assigned_name);
+          return false;
+        }
+        
+        // If current entry is (R) variant (e.g., NARAYYA(R)), filter out base name (NARAYYA)
+        // UNLESS the current user is the owner (they need to see their own base name to swap)
+        if (currentAssignedIsRVariant && !candidateIsRVariant && candidateBaseName === currentAssignedBaseName) {
+          if (isOwner) {
+            console.log('✅ Allowing owner to see their base name:', name);
+            return true;
+          }
+          console.log('🚫 Filtering out base name:', name, 'because (R) variant is assigned:', entry.assigned_name);
+          return false;
+        }
+        
+        return true;
+      });
+    } else if (!isSuperAdmin) {
+      // For regular admins (not 5274), also filter out (R) variants to prevent duplicates
+      filtered = filtered.filter(name => {
+        // Filter out (R) variants to prevent duplicates
+        const candidateBaseName = getBaseName(name);
+        const candidateIsRVariant = name.includes('(R)');
+        
+        // If current entry is base name (e.g., NARAYYA), filter out (R) variant (NARAYYA(R))
+        if (!currentAssignedIsRVariant && candidateIsRVariant && candidateBaseName === currentAssignedBaseName) {
+          console.log('🚫 Admin filtering out (R) variant:', name, 'because base name is assigned:', entry.assigned_name);
+          return false;
+        }
+        
+        // If current entry is (R) variant (e.g., NARAYYA(R)), filter out base name (NARAYYA)
+        if (currentAssignedIsRVariant && !candidateIsRVariant && candidateBaseName === currentAssignedBaseName) {
+          console.log('🚫 Admin filtering out base name:', name, 'because (R) variant is assigned:', entry.assigned_name);
+          return false;
+        }
+        
+        return true;
       });
     }
-    // For admin users, don't filter out already assigned staff - they can reassign them
+    // For Admin 5274 (super admin), don't filter - they can see and assign both variants
       
     console.log('🔍 filtered after removing assigned staff:', filtered);
 
@@ -645,7 +711,12 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                   e.id !== entry?.id
                 );
                 
-                const isSelected = selectedStaff === staffName;
+                // Show as selected if it's the current selection OR if it's assigned to this shift
+                const isSelected = selectedStaff === staffName || 
+                  allEntriesForShift.some(e => 
+                    e.assigned_name === staffName && 
+                    e.shift_type === entry.shift_type
+                  );
                 
                 return (
                   <StaffItem
