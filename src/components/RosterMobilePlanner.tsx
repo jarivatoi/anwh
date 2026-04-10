@@ -1006,9 +1006,9 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
   };
 
   const handleDragEnd = () => {
-    
     setDraggedStaff(null);
     setDragOver(null);
+    setPointerDragState(null);
   };
 
   const fetchStaffList = async () => {
@@ -2167,7 +2167,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                   className="bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-300 rounded-lg px-2 py-2 min-w-[120px] cursor-move"
                   draggable
                   onDragStart={(e) => handleDragStart(e, group.name, group.members)}
-                  onDragEnd={() => { setDraggedStaff(null); setDragOver(null); }}
+                  onDragEnd={() => { setDraggedStaff(null); setDragOver(null); setPointerDragState(null); }}
                   style={{ 
                     userSelect: 'none',
                     WebkitUserSelect: 'none'
@@ -2203,7 +2203,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                       }
                       handleDragStart(e, staff.display_name);
                     }}
-                    onDragEnd={() => { setDraggedStaff(null); setDragOver(null); }}
+                    onDragEnd={() => { setDraggedStaff(null); setDragOver(null); setPointerDragState(null); }}
                     onPointerDown={(e) => {
                       
                       handlePointerDown(e, staff.display_name);
