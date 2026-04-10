@@ -55,6 +55,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
   const [rosterAssignments, setRosterAssignments] = useState<Record<string, Array<{ staffName: string; markers: string[] }>>>({});
   const [draggedStaff, setDraggedStaff] = useState<{ name: string; groupMembers?: string[]; replacingMarkers?: string[] } | null>(null);
   const [dragOver, setDragOver] = useState<{ dateKey: string; shiftId: string } | null>(null);
+  const [dragType, setDragType] = useState<'staff' | 'assignment' | null>(null);
   
   // Unified pointer drag state (works for both mouse and touch)
   const [pointerDragState, setPointerDragState] = useState<{
@@ -912,8 +913,12 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
 
   const handleDragOver = (e: React.DragEvent, dateKey: string, shiftId: string) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
-    console.log('🟢 handleDragOver', { dateKey, shiftId, draggedStaff });
+    
+    // Use dragType state to determine the drop effect
+    const dropEffect: 'copy' | 'move' = dragType === 'assignment' ? 'move' : 'copy';
+    
+    e.dataTransfer.dropEffect = dropEffect;
+    console.log('🟢 handleDragOver', { dateKey, shiftId, draggedStaff, dragType, dropEffect });
     
     // CRITICAL: Always set dragOver for ANY drag (staff or assignment)
     // The actual drop logic will check e.dataTransfer for assignment data
@@ -934,6 +939,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     const staffToDrop = draggedStaff;
     setDraggedStaff(null);
     setDragOver(null);
+    setDragType(null); // Clear drag type
     setPointerDragState(null);
     
     // Check if this is an assignment drag (cell to cell)
@@ -2046,27 +2052,15 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                               
                               e.dataTransfer.setData('text/plain', dragData);
                               e.dataTransfer.effectAllowed = 'move';
-                              
-                              // Set a custom drag image for better visibility
-                              const dragEl = document.createElement('div');
-                              dragEl.style.padding = '8px 12px';
-                              dragEl.style.background = '#3b82f6';
-                              dragEl.style.color = 'white';
-                              dragEl.style.borderRadius = '4px';
-                              dragEl.style.fontSize = '12px';
-                              dragEl.style.fontWeight = 'bold';
-                              dragEl.textContent = a.staffName;
-                              document.body.appendChild(dragEl);
-                              e.dataTransfer.setDragImage(dragEl, 0, 0);
-                              setTimeout(() => document.body.removeChild(dragEl), 0);
+                              setDragType('assignment'); // Track that this is an assignment drag
                               
                               console.log('📦 Drag data set:', dragData);
-                              // CRITICAL: Do NOT set draggedStaff for assignments - it's handled via dataTransfer
                             } : undefined}
                             onDragEnd={!isPlaceholder ? () => { 
+                              console.log('🔴 Assignment onDragEnd');
                               setDraggedStaff(null); 
                               setDragOver(null);
-                              setPointerDragState(null); // Clear pointer state too
+                              setDragType(null); // Clear drag type
                             } : undefined}
                             className={`px-1 py-0.5 mb-1 rounded relative cursor-move select-none pr-4 ${
                               isPlaceholder ? 'bg-purple-50 border border-purple-300 text-purple-700 font-semibold' : 'bg-white'
@@ -2078,15 +2072,6 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                               lineHeight: '1.2',
                               textAlign: 'center'
                             }}
-                            onPointerDown={(e) => {
-                              // Only use pointer drag for touch devices, not mouse
-                              if (e.pointerType === 'touch') {
-                                !isPlaceholder && handleAssignmentPointerDown(e, dateKey, shift.id, idx, a.staffName);
-                              }
-                            }}
-                            onPointerMove={!isPlaceholder ? handleAssignmentPointerMove : undefined}
-                            onPointerUp={!isPlaceholder ? handleAssignmentPointerUp : undefined}
-                            onPointerCancel={!isPlaceholder ? handleAssignmentPointerCancel : undefined}
                             onContextMenu={!isPlaceholder ? (e) => {
                               e.preventDefault();
                               setShowMarkerMenu({
