@@ -2516,7 +2516,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
 
       {/* Drag Drop Target Indicator - Shows shift info when dragging over a cell */}
       {dragOver && (
-        <div className="fixed top-0 left-0 right-0 pointer-events-none z-[10000] flex justify-center pt-8">
+        <div className="fixed top-0 left-0 right-0 pointer-events-none z-[10001] flex justify-center pt-8">
           <div className="bg-green-600 text-white px-8 py-4 rounded-2xl shadow-2xl">
             <div className="text-2xl font-bold text-center">
               {(() => {
