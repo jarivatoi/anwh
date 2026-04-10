@@ -196,8 +196,25 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
         if (entry && name === entry.assigned_name) {
           return true;
         }
-        // Filter out other staff who are already assigned to this shift
-        return !assignedStaff.includes(name);
+        
+        // Filter out staff who are already assigned to this shift
+        if (assignedStaff.includes(name)) {
+          return false;
+        }
+        
+        // CRITICAL FIX: Filter out (R) variants of staff who are already assigned
+        // Example: If NARAYYA is assigned, other staff should not see NARAYYA(R)
+        // Only NARAYYA themselves should see NARAYYA(R)
+        if (name.includes('(R)')) {
+          const baseName = name.replace(/\(R\)$/, '').trim();
+          // If the base name (without R) is already assigned, filter out this (R) variant
+          if (assignedStaff.includes(baseName)) {
+            console.log(`🚫 Filtering out ${name} because ${baseName} is already assigned`);
+            return false;
+          }
+        }
+        
+        return true;
       });
     }
     // For admin users, don't filter out already assigned staff - they can reassign them
