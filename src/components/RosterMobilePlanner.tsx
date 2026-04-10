@@ -664,6 +664,10 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
         shiftId,
         index
       });
+      
+      // CRITICAL: Cancel pointer drag when marker modal opens
+      setPointerDragState(null);
+      setAssignmentDrag(null);
     }, 1500); // 1.5 seconds for mobile
     
     setCellLongPress({ dateKey, shiftId, index, timer });
@@ -2084,6 +2088,9 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                             onPointerCancel={!isPlaceholder ? handleAssignmentPointerCancel : undefined}
                             onContextMenu={!isPlaceholder ? (e) => {
                               e.preventDefault();
+                              // Cancel any active pointer drag
+                              setPointerDragState(null);
+                              setAssignmentDrag(null);
                               setShowMarkerMenu({
                                 visible: true,
                                 dateKey,
