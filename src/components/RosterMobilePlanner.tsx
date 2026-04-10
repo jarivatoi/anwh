@@ -83,9 +83,6 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     up: ((e: PointerEvent) => void) | null;
   }>({ move: null, up: null });
   
-  // Ref to immediately block drag operations after drop (sync, no async delay)
-  const isDragBlockedRef = React.useRef(false);
-  
   // Cell assignment long press for marker toggle
   const [cellLongPress, setCellLongPress] = useState<{
     dateKey: string;
@@ -726,8 +723,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     // If already dragging another assignment, ignore this
     if (assignmentDrag?.isDragging) return;
     
-    
-    
+    console.log('🟣 handleAssignmentPointerDown', { dateKey, shiftId, index, staffName, pointerType: e.pointerType });
     
     setAssignmentDrag({
       isDragging: false,
@@ -741,8 +737,11 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
       currentY: e.clientY
     });
     
-    // Start long press timer
-    handleAssignmentLongPressStart(dateKey, shiftId, index, staffName);
+    // CRITICAL: Only start long press timer for TOUCH devices, not mouse
+    // On desktop/mouse, we want immediate dragging without long press
+    if (e.pointerType === 'touch') {
+      handleAssignmentLongPressStart(dateKey, shiftId, index, staffName);
+    }
     
     (e.target as Element).setPointerCapture(e.pointerId);
   };
@@ -914,17 +913,11 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
   const handleDragOver = (e: React.DragEvent, dateKey: string, shiftId: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
+    console.log('🟢 handleDragOver', { dateKey, shiftId, draggedStaff });
     
-    // CRITICAL: Block drag over if a drop has already occurred
-    if (isDragBlockedRef.current) {
-      console.log('🚫 handleDragOver blocked - drop already occurred');
-      return;
-    }
-    
-    // Only set dragOver if there's an active drag
-    if (draggedStaff || pointerDragState?.isDragging) {
-      setDragOver({ dateKey, shiftId });
-    }
+    // CRITICAL: Always set dragOver for ANY drag (staff or assignment)
+    // The actual drop logic will check e.dataTransfer for assignment data
+    setDragOver({ dateKey, shiftId });
   };
 
   const handleDragLeave = () => {
@@ -934,10 +927,8 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
   const handleDrop = (e: React.DragEvent, dateKey: string, shiftId: string) => {
     e.preventDefault();
     
-    console.log('🔵 handleDrop called', { dateKey, shiftId, draggedStaff });
-    
-    // CRITICAL: Block any further drag operations immediately (sync)
-    isDragBlockedRef.current = true;
+    console.log('🔵🔵🔵 handleDrop CALLED!!!', { dateKey, shiftId, draggedStaff });
+    console.log('📦 e.dataTransfer.getData:', e.dataTransfer.getData('text/plain'));
     
     // CRITICAL: Capture draggedStaff immediately and clear it to prevent multiple drops
     const staffToDrop = draggedStaff;
@@ -1061,8 +1052,6 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     setDraggedStaff(null);
     setDragOver(null);
     setPointerDragState(null);
-    // Reset the block so future drags work
-    isDragBlockedRef.current = false;
   };
 
   const fetchStaffList = async () => {
@@ -2044,17 +2033,35 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                             key={idx} 
                             draggable={!isPlaceholder}
                             onDragStart={!isPlaceholder ? (e) => {
+                              console.log('🟠 Assignment onDragStart', { staffName: a.staffName, dateKey, shiftId: shift.id, idx });
                               
-                              e.dataTransfer.setData('text/plain', JSON.stringify({
+                              const dragData = JSON.stringify({
                                 type: 'assignment',
                                 staffName: a.staffName,
                                 markers: a.markers,
                                 sourceDateKey: dateKey,
                                 sourceShiftId: shift.id,
                                 sourceIndex: idx
-                              }));
+                              });
+                              
+                              e.dataTransfer.setData('text/plain', dragData);
                               e.dataTransfer.effectAllowed = 'move';
-                              setDraggedStaff({ name: a.staffName });
+                              
+                              // Set a custom drag image for better visibility
+                              const dragEl = document.createElement('div');
+                              dragEl.style.padding = '8px 12px';
+                              dragEl.style.background = '#3b82f6';
+                              dragEl.style.color = 'white';
+                              dragEl.style.borderRadius = '4px';
+                              dragEl.style.fontSize = '12px';
+                              dragEl.style.fontWeight = 'bold';
+                              dragEl.textContent = a.staffName;
+                              document.body.appendChild(dragEl);
+                              e.dataTransfer.setDragImage(dragEl, 0, 0);
+                              setTimeout(() => document.body.removeChild(dragEl), 0);
+                              
+                              console.log('📦 Drag data set:', dragData);
+                              // CRITICAL: Do NOT set draggedStaff for assignments - it's handled via dataTransfer
                             } : undefined}
                             onDragEnd={!isPlaceholder ? () => { 
                               setDraggedStaff(null); 
@@ -2071,10 +2078,24 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                               lineHeight: '1.2',
                               textAlign: 'center'
                             }}
-                            onPointerDown={(e) => !isPlaceholder && handleAssignmentPointerDown(e, dateKey, shift.id, idx, a.staffName)}
+                            onPointerDown={(e) => {
+                              // Only use pointer drag for touch devices, not mouse
+                              if (e.pointerType === 'touch') {
+                                !isPlaceholder && handleAssignmentPointerDown(e, dateKey, shift.id, idx, a.staffName);
+                              }
+                            }}
                             onPointerMove={!isPlaceholder ? handleAssignmentPointerMove : undefined}
                             onPointerUp={!isPlaceholder ? handleAssignmentPointerUp : undefined}
-                            onPointerCancel={!isPlaceholder ? handleAssignmentPointerCancel : undefined}>
+                            onPointerCancel={!isPlaceholder ? handleAssignmentPointerCancel : undefined}
+                            onContextMenu={!isPlaceholder ? (e) => {
+                              e.preventDefault();
+                              setShowMarkerMenu({
+                                visible: true,
+                                dateKey,
+                                shiftId: shift.id,
+                                index: idx
+                              });
+                            } : undefined}>
                             {isPlaceholder ? (
                               <span style={{ display: 'inline-block' }}>
                                 <span className="text-purple-600">(R)</span>
@@ -2222,7 +2243,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                   className="bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-300 rounded-lg px-2 py-2 min-w-[120px] cursor-move"
                   draggable
                   onDragStart={(e) => handleDragStart(e, group.name, group.members)}
-                  onDragEnd={() => { setDraggedStaff(null); setDragOver(null); setPointerDragState(null); isDragBlockedRef.current = false; }}
+                  onDragEnd={() => { setDraggedStaff(null); setDragOver(null); setPointerDragState(null); }}
                   style={{ 
                     userSelect: 'none',
                     WebkitUserSelect: 'none'
@@ -2258,7 +2279,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                       }
                       handleDragStart(e, staff.display_name);
                     }}
-                    onDragEnd={() => { setDraggedStaff(null); setDragOver(null); setPointerDragState(null); isDragBlockedRef.current = false; }}
+                    onDragEnd={() => { setDraggedStaff(null); setDragOver(null); setPointerDragState(null); }}
                     className={`px-3 py-2 rounded border text-sm whitespace-nowrap cursor-move select-none ${isSelected ? 'bg-green-50 border-green-400' : showReplacing ? 'bg-purple-50 border-purple-300 text-purple-800' : 'bg-white border-gray-200'}`}
                     style={{ 
                       userSelect: 'none',
