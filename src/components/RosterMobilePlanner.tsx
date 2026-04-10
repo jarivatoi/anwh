@@ -2072,6 +2072,16 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                               lineHeight: '1.2',
                               textAlign: 'center'
                             }}
+                            onPointerDown={(e) => {
+                              // Only use pointer drag for touch devices (mobile long press)
+                              // Desktop mouse uses HTML5 drag
+                              if (e.pointerType === 'touch' && !isPlaceholder) {
+                                handleAssignmentPointerDown(e, dateKey, shift.id, idx, a.staffName);
+                              }
+                            }}
+                            onPointerMove={!isPlaceholder ? handleAssignmentPointerMove : undefined}
+                            onPointerUp={!isPlaceholder ? handleAssignmentPointerUp : undefined}
+                            onPointerCancel={!isPlaceholder ? handleAssignmentPointerCancel : undefined}
                             onContextMenu={!isPlaceholder ? (e) => {
                               e.preventDefault();
                               setShowMarkerMenu({
