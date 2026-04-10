@@ -197,69 +197,48 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     
     // For admin users, show all staff (they might want to reassign staff)
     if (!isAdmin) {
-      // For non-admin users, filter out other staff that are already assigned to this shift
-      // (but keep the currently assigned staff so they can be re-selected)
+      // For non-admin users, filter based on whether current entry has (R) or not
       filtered = filtered.filter(name => {
-        // Allow the currently assigned staff member to be shown
-        if (entry && name === entry.assigned_name) {
-          return true;
-        }
-        // Filter out other staff who are already assigned to this shift
-        if (assignedStaff.includes(name)) {
-          return false;
-        }
-        
-        // Filter out (R) variants to prevent duplicates
         const candidateBaseName = getBaseName(name);
         const candidateIsRVariant = name.includes('(R)');
         
-        // Check if current user is the owner of this staff entry
-        // Extract ID from the candidate name if it exists (format: NAME_IDNUMBER or NAME_IDNUMBER(R))
-        const candidateIdNumber = name.split('_').length > 1 
-          ? name.split('_').pop()?.replace('(R)', '').trim() 
-          : null;
-        const isOwner = candidateIdNumber && candidateIdNumber === currentIdNumber;
-        
-        // If current entry is base name (e.g., NARAYYA), filter out (R) variant (NARAYYA(R))
-        // UNLESS the current user is the owner (they need to see their own (R) to swap)
-        if (!currentAssignedIsRVariant && candidateIsRVariant && candidateBaseName === currentAssignedBaseName) {
-          if (isOwner) {
-            console.log('✅ Allowing owner to see their (R) variant:', name);
-            return true;
+        // If current entry is base name (e.g., NARAYYA without (R))
+        // Show only names WITHOUT (R) variant
+        if (!currentAssignedIsRVariant) {
+          // Filter out all (R) variants
+          if (candidateIsRVariant) {
+            console.log('🚫 Filtering out (R) variant for base name entry:', name);
+            return false;
           }
-          console.log('🚫 Filtering out (R) variant:', name, 'because base name is assigned:', entry.assigned_name);
-          return false;
         }
         
-        // If current entry is (R) variant (e.g., NARAYYA(R)), filter out base name (NARAYYA)
-        // UNLESS the current user is the owner (they need to see their own base name to swap)
-        if (currentAssignedIsRVariant && !candidateIsRVariant && candidateBaseName === currentAssignedBaseName) {
-          if (isOwner) {
-            console.log('✅ Allowing owner to see their base name:', name);
-            return true;
+        // If current entry is (R) variant (e.g., NARAYYA(R))
+        // Show only names WITH (R) variant
+        if (currentAssignedIsRVariant) {
+          // Filter out all base names
+          if (!candidateIsRVariant) {
+            console.log('🚫 Filtering out base name for (R) variant entry:', name);
+            return false;
           }
-          console.log('🚫 Filtering out base name:', name, 'because (R) variant is assigned:', entry.assigned_name);
-          return false;
         }
         
         return true;
       });
     } else if (!isSuperAdmin) {
-      // For regular admins (not 5274), also filter out (R) variants to prevent duplicates
+      // For regular admins (not 5274), apply same filtering logic
       filtered = filtered.filter(name => {
-        // Filter out (R) variants to prevent duplicates
         const candidateBaseName = getBaseName(name);
         const candidateIsRVariant = name.includes('(R)');
         
-        // If current entry is base name (e.g., NARAYYA), filter out (R) variant (NARAYYA(R))
-        if (!currentAssignedIsRVariant && candidateIsRVariant && candidateBaseName === currentAssignedBaseName) {
-          console.log('🚫 Admin filtering out (R) variant:', name, 'because base name is assigned:', entry.assigned_name);
+        // If current entry is base name, filter out (R) variants
+        if (!currentAssignedIsRVariant && candidateIsRVariant) {
+          console.log('🚫 Admin filtering out (R) variant:', name);
           return false;
         }
         
-        // If current entry is (R) variant (e.g., NARAYYA(R)), filter out base name (NARAYYA)
-        if (currentAssignedIsRVariant && !candidateIsRVariant && candidateBaseName === currentAssignedBaseName) {
-          console.log('🚫 Admin filtering out base name:', name, 'because (R) variant is assigned:', entry.assigned_name);
+        // If current entry is (R) variant, filter out base names
+        if (currentAssignedIsRVariant && !candidateIsRVariant) {
+          console.log('🚫 Admin filtering out base name:', name);
           return false;
         }
         
@@ -704,19 +683,16 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
               </div>
             ) : (
               filteredStaff.map((staffName) => {
-                // Check if this EXACT staff member is already assigned to the same shift
+                // Check if this EXACT staff member is already assigned to the same shift (excluding current entry)
                 const isAssignedToSameShift = allEntriesForShift.some(e => 
                   e.assigned_name === staffName && 
                   e.shift_type === entry.shift_type &&
                   e.id !== entry?.id
                 );
                 
-                // Show as selected if it's the current selection OR if it's assigned to this shift
-                const isSelected = selectedStaff === staffName || 
-                  allEntriesForShift.some(e => 
-                    e.assigned_name === staffName && 
-                    e.shift_type === entry.shift_type
-                  );
+                // Show as selected (blue tick) only for the current entry being edited
+                // Other assigned staff will show as greyed out via isAssignedToSameShift
+                const isSelected = selectedStaff === staffName;
                 
                 return (
                   <StaffItem
