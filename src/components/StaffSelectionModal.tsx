@@ -393,7 +393,6 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     
     // Admin can manage any staff member
     if (isAdmin) {
-      console.log('✅ Admin managing center for:', staffName);
       setCenterManagementModal({ isOpen: true, staffName });
       return;
     }
