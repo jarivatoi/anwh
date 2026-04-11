@@ -220,15 +220,18 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
         // If current entry is base name (e.g., NARAYYA without (R))
         // Show only names WITHOUT (R) variant
         if (!currentAssignedIsRVariant) {
-          // Filter out (R) variants UNLESS they're already assigned
+          // Filter out (R) variants UNLESS they're already assigned (show greyed out)
           if (candidateIsRVariant && !isAssignedToShift) {
             return false;
           }
           
-          // IMPORTANT: If the (R) variant of this base name staff is already assigned,
-          // filter out this base name candidate to prevent duplicates
+          // If the (R) variant of this base name staff is already assigned,
+          // filter out this base name candidate (unless it's the current entry or already assigned)
           // e.g., If NARAYYA(R) is assigned, filter out NARAYYA from the list
-          if (!candidateIsRVariant && assignedRVariants.includes(candidateBaseName)) {
+          if (!candidateIsRVariant && 
+              assignedRVariants.includes(candidateBaseName) && 
+              name !== entry.assigned_name && 
+              !isAssignedToShift) {
             return false;
           }
         }
@@ -236,15 +239,18 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
         // If current entry is (R) variant (e.g., NARAYYA(R))
         // Show only names WITH (R) variant, BUT also show base names that are assigned
         if (currentAssignedIsRVariant) {
-          // Filter out base names UNLESS they're already assigned to this shift
+          // Filter out base names UNLESS they're already assigned to this shift (show greyed out)
           if (!candidateIsRVariant && !isAssignedToShift) {
             return false;
           }
           
-          // IMPORTANT: If the base name variant of this (R) staff is already assigned,
-          // filter out this (R) candidate to prevent duplicates
+          // If the base name variant of this (R) staff is already assigned,
+          // filter out this (R) candidate (unless it's the current entry or already assigned)
           // e.g., If PITTEA is assigned, filter out PITTEA(R) from the list
-          if (candidateIsRVariant && assignedBaseNames.includes(candidateBaseName)) {
+          if (candidateIsRVariant && 
+              assignedBaseNames.includes(candidateBaseName) && 
+              name !== entry.assigned_name && 
+              !isAssignedToShift) {
             return false;
           }
         }
@@ -272,23 +278,32 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
           e.assigned_name === name && e.shift_type === entry.shift_type
         );
         
-        // If current entry is base name, filter out (R) variants (unless assigned)
+        // If current entry is base name, filter out (R) variants (unless assigned - show greyed out)
         if (!currentAssignedIsRVariant && candidateIsRVariant && !isAssignedToShift) {
           return false;
         }
         
         // If current entry is base name, filter out base names if their (R) variant is assigned
-        if (!currentAssignedIsRVariant && !candidateIsRVariant && assignedRVariantsAdmin.includes(candidateBaseName)) {
+        // (unless it's the current entry or already assigned - show greyed out)
+        if (!currentAssignedIsRVariant && 
+            !candidateIsRVariant && 
+            assignedRVariantsAdmin.includes(candidateBaseName) && 
+            name !== entry.assigned_name && 
+            !isAssignedToShift) {
           return false;
         }
         
-        // If current entry is (R) variant, filter out base names (unless assigned)
+        // If current entry is (R) variant, filter out base names (unless assigned - show greyed out)
         if (currentAssignedIsRVariant && !candidateIsRVariant && !isAssignedToShift) {
           return false;
         }
         
         // If base name is already assigned, filter out the (R) variant
-        if (candidateIsRVariant && assignedBaseNamesAdmin.includes(candidateBaseName)) {
+        // (unless it's the current entry or already assigned - show greyed out)
+        if (candidateIsRVariant && 
+            assignedBaseNamesAdmin.includes(candidateBaseName) && 
+            name !== entry.assigned_name && 
+            !isAssignedToShift) {
           return false;
         }
         
