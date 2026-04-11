@@ -72,8 +72,8 @@ const FlipCard: React.FC<FlipCardProps> = ({
       position: "relative",
       zIndex: 2,
       // iPhone 7 specific fixes - EXACTLY like Goldenstrenew
-      transform: "rotateY(0deg) translateZ(0px)",
-      WebkitTransform: "rotateY(0deg) translateZ(0px)",
+      transform: "rotateY(0deg) translateZ(1px)",
+      WebkitTransform: "rotateY(0deg) translateZ(1px)",
       transformOrigin: "center center",
       WebkitTransformOrigin: "center center"
     });
@@ -93,8 +93,8 @@ const FlipCard: React.FC<FlipCardProps> = ({
       WebkitTransformOrigin: "center center",
       zIndex: 1,
       // iPhone 7 specific fixes - EXACTLY like Goldenstrenew
-      transform: "rotateY(180deg) translateZ(0px)",
-      WebkitTransform: "rotateY(180deg) translateZ(0px)"
+      transform: "rotateY(180deg) translateZ(1px)",
+      WebkitTransform: "rotateY(180deg) translateZ(1px)"
     });
 
     // Create flip animation timeline
@@ -127,8 +127,8 @@ const FlipCard: React.FC<FlipCardProps> = ({
           transformOrigin: "50% 50%",
           WebkitTransformOrigin: "50% 50%",
           force3D: true,
-          transform: "rotateY(+=180deg) translateZ(0px)",
-          WebkitTransform: "rotateY(+=180deg) translateZ(0px)",
+          transform: "rotateY(+=180deg) translateZ(1px)",
+          WebkitTransform: "rotateY(+=180deg) translateZ(1px)",
           overwrite: "auto",
           onComplete: () => setIsFlipped(prev => !prev)
         }, 0)
@@ -151,14 +151,14 @@ const FlipCard: React.FC<FlipCardProps> = ({
       gsap.set([front, back], { 
         rotationY: 0,
         force3D: true,
-        transform: "rotateY(0deg) translateZ(0px)",
-        WebkitTransform: "rotateY(0deg) translateZ(0px)"
+        transform: "rotateY(0deg) translateZ(1px)",
+        WebkitTransform: "rotateY(0deg) translateZ(1px)"
       });
       gsap.set(back, { 
         rotationY: 180,
         force3D: true,
-        transform: "rotateY(180deg) translateZ(0px)",
-        WebkitTransform: "rotateY(180deg) translateZ(0px)"
+        transform: "rotateY(180deg) translateZ(1px)",
+        WebkitTransform: "rotateY(180deg) translateZ(1px)"
       });
 
       setIsFlipped(false);
@@ -205,7 +205,7 @@ const FlipCard: React.FC<FlipCardProps> = ({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          paddingTop: "0px"
+          paddingTop: "1px"
         }}
       >
         {frontContent}
