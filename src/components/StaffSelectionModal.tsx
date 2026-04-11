@@ -222,7 +222,6 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
         if (!currentAssignedIsRVariant) {
           // Filter out (R) variants UNLESS they're already assigned
           if (candidateIsRVariant && !isAssignedToShift) {
-            console.log('🚫 Filtering out (R) variant for base name entry:', name);
             return false;
           }
           
@@ -230,7 +229,6 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
           // filter out this base name candidate to prevent duplicates
           // e.g., If NARAYYA(R) is assigned, filter out NARAYYA from the list
           if (!candidateIsRVariant && assignedRVariants.includes(candidateBaseName)) {
-            console.log('🚫 Filtering out base name because (R) variant is assigned:', name);
             return false;
           }
         }
@@ -240,7 +238,6 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
         if (currentAssignedIsRVariant) {
           // Filter out base names UNLESS they're already assigned to this shift
           if (!candidateIsRVariant && !isAssignedToShift) {
-            console.log('🚫 Filtering out base name for (R) variant entry:', name);
             return false;
           }
           
@@ -248,13 +245,7 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
           // filter out this (R) candidate to prevent duplicates
           // e.g., If PITTEA is assigned, filter out PITTEA(R) from the list
           if (candidateIsRVariant && assignedBaseNames.includes(candidateBaseName)) {
-            console.log('🚫 Filtering out (R) variant because base name is assigned:', name);
             return false;
-          }
-          
-          // Show base names that are assigned (they'll appear as ticked/greyed out)
-          if (!candidateIsRVariant && isAssignedToShift) {
-            console.log('✅ Showing assigned base name for visibility:', name);
           }
         }
         
@@ -283,25 +274,21 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
         
         // If current entry is base name, filter out (R) variants (unless assigned)
         if (!currentAssignedIsRVariant && candidateIsRVariant && !isAssignedToShift) {
-          console.log('🚫 Admin filtering out (R) variant:', name);
           return false;
         }
         
         // If current entry is base name, filter out base names if their (R) variant is assigned
         if (!currentAssignedIsRVariant && !candidateIsRVariant && assignedRVariantsAdmin.includes(candidateBaseName)) {
-          console.log('🚫 Admin filtering out base name because (R) variant is assigned:', name);
           return false;
         }
         
         // If current entry is (R) variant, filter out base names (unless assigned)
         if (currentAssignedIsRVariant && !candidateIsRVariant && !isAssignedToShift) {
-          console.log('🚫 Admin filtering out base name:', name);
           return false;
         }
         
         // If base name is already assigned, filter out the (R) variant
         if (candidateIsRVariant && assignedBaseNamesAdmin.includes(candidateBaseName)) {
-          console.log('🚫 Admin filtering out (R) variant because base name is assigned:', name);
           return false;
         }
         
