@@ -54,7 +54,7 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
     
     // Exclude entries edited by ADMIN (main admin 5274)
     // Check for various formats: 'ADMIN', '5274', 'admin-5274', etc.
-    // BUT allow center management changes to show
+    // BUT allow center management changes and shift marker changes to show
     if (entry.last_edited_by) {
       const isAdmin5274 = 
         entry.last_edited_by === 'ADMIN' ||
@@ -63,12 +63,17 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
         entry.last_edited_by.includes('(5274)') ||
         entry.last_edited_by.toLowerCase().includes('admin');
       
-      // Only filter out admin edits if it's NOT a center change
+      // Only filter out admin edits if it's NOT a center change AND NOT a shift marker change
       const isCenterChange = entry.change_description && 
         (entry.change_description.includes('- Center:') || 
          entry.change_description.includes('- Removed:'));
       
-      if (isAdmin5274 && !isCenterChange) {
+      // Check if change_description contains ANY shift marker actions (by anyone)
+      const hasShiftMarkerActions = entry.change_description && 
+        (entry.change_description.includes('as marker for his shift') ||
+         entry.change_description.includes('Cleared shift marker'));
+      
+      if (isAdmin5274 && !isCenterChange && !hasShiftMarkerActions) {
         return false;
       }
     }
@@ -616,13 +621,13 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
                         
                         logEntries.forEach((logEntry, idx) => {
                           // Match format: [timestamp] Editor Name: Added "First" as marker for his shift (Night Duty)
-                          const match = logEntry.match(/\[([^\]]+)\]\s+([^:]+):\s+Added\s+"(\w+)"\s+as marker for his shift/);
-                          if (match) {
-                            const [, timestampRaw, editorName, marker] = match;
+                          const addMatch = logEntry.match(/\[([^\]]+)\]\s+([^:]+):\s+Added\s+"(\w+)"\s+as marker for his shift/);
+                          if (addMatch) {
+                            const [, timestampRaw, editorName, marker] = addMatch;
                             const timestamp = timestampRaw;
                             
                             elements.push(
-                              <div key={`marker-${idx}`} className="w-full overflow-hidden">
+                              <div key={`marker-add-${idx}`} className="w-full overflow-hidden">
                                 <ScrollingText className="w-full">
                                   <div className="flex items-center space-x-1 whitespace-nowrap">
                                     <span className="text-gray-900 font-medium">
@@ -631,6 +636,31 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
                                     <ArrowRight className="w-4 h-4 text-gray-600 flex-shrink-0" />
                                     <div className="font-medium text-purple-700 flex items-center space-x-2">
                                       <span>(Added "{marker}" as marker for his shift)</span>
+                                      <span className="text-xs text-gray-500">• {timestamp}</span>
+                                    </div>
+                                  </div>
+                                </ScrollingText>
+                              </div>
+                            );
+                            return;
+                          }
+                          
+                          // Match format: [timestamp] Editor Name: Cleared shift marker
+                          const clearMatch = logEntry.match(/\[([^\]]+)\]\s+([^:]+):\s+Cleared shift marker/);
+                          if (clearMatch) {
+                            const [, timestampRaw, editorName] = clearMatch;
+                            const timestamp = timestampRaw;
+                            
+                            elements.push(
+                              <div key={`marker-clear-${idx}`} className="w-full overflow-hidden">
+                                <ScrollingText className="w-full">
+                                  <div className="flex items-center space-x-1 whitespace-nowrap">
+                                    <span className="text-gray-900 font-medium">
+                                      {formatDisplayNameForUI(entry.assigned_name)}
+                                    </span>
+                                    <ArrowRight className="w-4 h-4 text-gray-600 flex-shrink-0" />
+                                    <div className="font-medium text-red-600 flex items-center space-x-2">
+                                      <span>(Cleared shift marker)</span>
                                       <span className="text-xs text-gray-500">• {timestamp}</span>
                                     </div>
                                   </div>
