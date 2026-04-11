@@ -205,7 +205,7 @@ const FlipCard: React.FC<FlipCardProps> = ({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          paddingTop: "1px"
+          paddingTop: "0px"
         }}
       >
         {frontContent}
@@ -231,7 +231,7 @@ const FlipCard: React.FC<FlipCardProps> = ({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          paddingTop: "1px"
+          paddingTop: "0px"
         }}
       >
         {backContent}
