@@ -264,7 +264,7 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
     return Array.from(staffNames).filter(name => staffWithEdits.has(name)).sort();
   };
 
-  // Count total edit actions per staff member (center changes, name changes, and general edits)
+  // Count total edit actions per staff member (center changes, name changes, shift marker changes, and general edits)
   const getStaffActionCount = (staffName: string) => {
     let totalCount = 0;
     
@@ -281,6 +281,24 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
               totalCount++;
             }
           }
+          
+          // Match shift marker add/remove actions with timestamp format
+          const markerAddMatch = logEntry.match(/\[([^\]]+)\]\s+([^:]+):\s+Added\s+"(\w+)"\s+as marker for his shift/);
+          const markerRemoveMatch = logEntry.match(/\[([^\]]+)\]\s+([^:]+):\s+Removed\s+"(\w+)"\s+as marker for his shift/);
+          
+          if (markerAddMatch) {
+            const editorName = markerAddMatch[2].trim();
+            if (getDisplayName(editorName) === staffName) {
+              totalCount++;
+            }
+          }
+          
+          if (markerRemoveMatch) {
+            const editorName = markerRemoveMatch[2].trim();
+            if (getDisplayName(editorName) === staffName) {
+              totalCount++;
+            }
+          }
         });
       }
       
@@ -292,6 +310,10 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
           (entry.change_description.includes('Center Added') || 
            entry.change_description.includes('Center Removed'));
         
+        const hasShiftMarkerLogs = entry.change_description && 
+          (entry.change_description.includes('as marker for his shift') || 
+           entry.change_description.includes('Removed "') && entry.change_description.includes('as marker for his shift'));
+        
         // Check if this is a name change entry
         const isNameChange = entry.change_description && 
           entry.change_description.includes('Name changed from') &&
@@ -302,7 +324,7 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
           totalCount++;
         }
         // Count general edits without detailed logs
-        else if (!hasCenterLogs) {
+        else if (!hasCenterLogs && !hasShiftMarkerLogs) {
           totalCount++;
         }
       }
@@ -465,12 +487,13 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
                       // Separate name change from timestamped center actions
                       const nameChangePart = logEntries.find(e => e.includes('Name changed from'));
                       const centerActionParts = logEntries.filter(e => e.match(/\[([^\]]+)\]\s+([^:]+):\s+Center (Added|Removed):/));
+                      const shiftMarkerParts = logEntries.filter(e => e.match(/\[([^\]]+)\]\s+([^:]+):\s+(Added "\w+" as marker for his shift|Removed "\w+" as marker for his shift)/));
                       
                       // Extract name match for later use
                       const nameMatch = nameChangePart?.match(/Name changed from "([^"]+)" to "([^"]+)"/);
                       
-                      // If we have both name change AND center actions, render them as separate rows
-                      if (nameChangePart && centerActionParts.length > 0) {
+                      // If we have name change AND (center actions OR shift markers), render them all
+                      if (nameChangePart && (centerActionParts.length > 0 || shiftMarkerParts.length > 0)) {
                         const elements = [];
                         
                         // Row 1: Name change
@@ -529,6 +552,60 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
                                     <ArrowRight className="w-4 h-4 text-gray-600 flex-shrink-0" />
                                     <div className={`font-medium flex items-center space-x-2 ${wasAdded ? 'text-indigo-700' : 'text-red-700'}`}>
                                       <span>({wasAdded ? 'Added posting to' : 'Removed posting from'} {centerName})</span>
+                                      <span className="text-xs text-gray-500">• {timestamp}</span>
+                                    </div>
+                                  </div>
+                                </ScrollingText>
+                              </div>
+                            );
+                          }
+                        });
+                        
+                        // Row N+: Each shift marker action as separate row
+                        shiftMarkerParts.forEach((logEntry, idx) => {
+                          const addMatch = logEntry.match(/\[([^\]]+)\]\s+([^:]+):\s+Added\s+"(\w+)"\s+as marker for his shift/);
+                          const removeMatch = logEntry.match(/\[([^\]]+)\]\s+([^:]+):\s+Removed\s+"(\w+)"\s+as marker for his shift/);
+                          
+                          if (addMatch) {
+                            const [, timestamp, editorName, marker] = addMatch;
+                            let displayName = entry.assigned_name;
+                            if (displayName.match(/[A-Z0-9]\(R\)$/)) {
+                              displayName = displayName.replace(/\(R\)$/, '').trim();
+                            }
+                            
+                            elements.push(
+                              <div key={`marker-${idx}`} className="w-full overflow-hidden">
+                                <ScrollingText className="w-full">
+                                  <div className="flex items-center space-x-1 whitespace-nowrap">
+                                    <span className="text-gray-900 font-medium">
+                                      {formatDisplayNameForUI(displayName)}
+                                    </span>
+                                    <ArrowRight className="w-4 h-4 text-gray-600 flex-shrink-0" />
+                                    <div className="font-medium text-purple-700 flex items-center space-x-2">
+                                      <span>(Added "{marker}" as marker for his shift)</span>
+                                      <span className="text-xs text-gray-500">• {timestamp}</span>
+                                    </div>
+                                  </div>
+                                </ScrollingText>
+                              </div>
+                            );
+                          } else if (removeMatch) {
+                            const [, timestamp, editorName, marker] = removeMatch;
+                            let displayName = entry.assigned_name;
+                            if (displayName.match(/[A-Z0-9]\(R\)$/)) {
+                              displayName = displayName.replace(/\(R\)$/, '').trim();
+                            }
+                            
+                            elements.push(
+                              <div key={`marker-remove-${idx}`} className="w-full overflow-hidden">
+                                <ScrollingText className="w-full">
+                                  <div className="flex items-center space-x-1 whitespace-nowrap">
+                                    <span className="text-gray-900 font-medium">
+                                      {formatDisplayNameForUI(displayName)}
+                                    </span>
+                                    <ArrowRight className="w-4 h-4 text-gray-600 flex-shrink-0" />
+                                    <div className="font-medium text-red-600 flex items-center space-x-2">
+                                      <span>(Removed "{marker}" as marker for his shift)</span>
                                       <span className="text-xs text-gray-500">• {timestamp}</span>
                                     </div>
                                   </div>
@@ -619,10 +696,15 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
                         const logEntries = entry.change_description.split('|').map(e => e.trim());
                         const elements: JSX.Element[] = [];
                         
+                        console.log('🔎 Parsing shift markers from:', entry.change_description);
+                        
                         logEntries.forEach((logEntry, idx) => {
+                          console.log(`  Log entry ${idx}:`, logEntry);
+                          
                           // Match format: [timestamp] Editor Name: Added "First" as marker for his shift (Night Duty)
                           const addMatch = logEntry.match(/\[([^\]]+)\]\s+([^:]+):\s+Added\s+"(\w+)"\s+as marker for his shift/);
                           if (addMatch) {
+                            console.log('  ✅ Found ADD marker:', addMatch[3]);
                             const [, timestampRaw, editorName, marker] = addMatch;
                             const timestamp = timestampRaw;
                             
@@ -645,14 +727,15 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
                             return;
                           }
                           
-                          // Match format: [timestamp] Editor Name: Cleared shift marker
-                          const clearMatch = logEntry.match(/\[([^\]]+)\]\s+([^:]+):\s+Cleared shift marker/);
-                          if (clearMatch) {
-                            const [, timestampRaw, editorName] = clearMatch;
+                          // Match format: [timestamp] Editor Name: Removed "FULL" as marker for his shift
+                          const removeMatch = logEntry.match(/\[([^\]]+)\]\s+([^:]+):\s+Removed\s+"(\w+)"\s+as marker for his shift/);
+                          if (removeMatch) {
+                            console.log('  ✅ Found REMOVE marker:', removeMatch[3]);
+                            const [, timestampRaw, editorName, marker] = removeMatch;
                             const timestamp = timestampRaw;
                             
                             elements.push(
-                              <div key={`marker-clear-${idx}`} className="w-full overflow-hidden">
+                              <div key={`marker-remove-${idx}`} className="w-full overflow-hidden">
                                 <ScrollingText className="w-full">
                                   <div className="flex items-center space-x-1 whitespace-nowrap">
                                     <span className="text-gray-900 font-medium">
@@ -660,7 +743,7 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
                                     </span>
                                     <ArrowRight className="w-4 h-4 text-gray-600 flex-shrink-0" />
                                     <div className="font-medium text-red-600 flex items-center space-x-2">
-                                      <span>(Cleared shift marker)</span>
+                                      <span>(Removed "{marker}" as marker for his shift)</span>
                                       <span className="text-xs text-gray-500">• {timestamp}</span>
                                     </div>
                                   </div>
@@ -669,6 +752,8 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
                             );
                           }
                         });
+                        
+                        console.log('  Total marker elements found:', elements.length);
                         
                         if (elements.length > 0) {
                           return <>{elements}</>;
@@ -695,7 +780,8 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
                                                 entry.change_description?.includes('- Center:') || 
                                                 entry.change_description?.includes('- Removed:');
                           
-                          const isShiftMarkerChange = entry.change_description?.includes('as marker for his shift');
+                          const isShiftMarkerChange = entry.change_description?.includes('as marker for his shift') ||
+                                                     entry.change_description?.includes('Cleared shift marker');
                           
                           if (isCenterChange || isShiftMarkerChange) {
                             return null; // Don't show duplicate
