@@ -200,6 +200,11 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
       .filter(e => e.shift_type === entry.shift_type)
       .map(e => getBaseName(e.assigned_name));
     
+    // Get (R) variants that are assigned to this shift
+    const assignedRVariants = allEntriesForShift
+      .filter(e => e.shift_type === entry.shift_type && e.assigned_name.includes('(R)'))
+      .map(e => getBaseName(e.assigned_name));
+    
     // For admin users, show all staff (they might want to reassign staff)
     if (!isAdmin) {
       // For non-admin users, filter based on whether current entry has (R) or not
@@ -215,9 +220,17 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
         // If current entry is base name (e.g., NARAYYA without (R))
         // Show only names WITHOUT (R) variant
         if (!currentAssignedIsRVariant) {
-          // Filter out all (R) variants
+          // Filter out (R) variants UNLESS they're already assigned
           if (candidateIsRVariant && !isAssignedToShift) {
             console.log('🚫 Filtering out (R) variant for base name entry:', name);
+            return false;
+          }
+          
+          // IMPORTANT: If the (R) variant of this base name staff is already assigned,
+          // filter out this base name candidate to prevent duplicates
+          // e.g., If NARAYYA(R) is assigned, filter out NARAYYA from the list
+          if (!candidateIsRVariant && assignedRVariants.includes(candidateBaseName)) {
+            console.log('🚫 Filtering out base name because (R) variant is assigned:', name);
             return false;
           }
         }
@@ -254,6 +267,11 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
         .filter(e => e.shift_type === entry.shift_type)
         .map(e => getBaseName(e.assigned_name));
       
+      // Get (R) variants that are assigned to this shift
+      const assignedRVariantsAdmin = allEntriesForShift
+        .filter(e => e.shift_type === entry.shift_type && e.assigned_name.includes('(R)'))
+        .map(e => getBaseName(e.assigned_name));
+      
       filtered = filtered.filter(name => {
         const candidateBaseName = getBaseName(name);
         const candidateIsRVariant = name.includes('(R)');
@@ -266,6 +284,12 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
         // If current entry is base name, filter out (R) variants (unless assigned)
         if (!currentAssignedIsRVariant && candidateIsRVariant && !isAssignedToShift) {
           console.log('🚫 Admin filtering out (R) variant:', name);
+          return false;
+        }
+        
+        // If current entry is base name, filter out base names if their (R) variant is assigned
+        if (!currentAssignedIsRVariant && !candidateIsRVariant && assignedRVariantsAdmin.includes(candidateBaseName)) {
+          console.log('🚫 Admin filtering out base name because (R) variant is assigned:', name);
           return false;
         }
         
