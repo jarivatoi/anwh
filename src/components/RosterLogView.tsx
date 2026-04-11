@@ -26,7 +26,6 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
   // Listen for real-time updates
   useEffect(() => {
     const handleRealtimeUpdate = (event: CustomEvent) => {
-      console.log('📡 Log view received real-time update:', event.detail);
       
       // Force component re-render to show real-time changes
       setRefreshKey(prev => prev + 1);
@@ -155,7 +154,6 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
         const date = new Date(timestamp);
         return isNaN(date.getTime()) ? new Date(0) : date;
       } catch (error) {
-        console.warn('Failed to parse timestamp:', timestamp, error);
         return new Date(0); // Very old date for unparseable timestamps
       }
     };
@@ -696,15 +694,11 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
                         const logEntries = entry.change_description.split('|').map(e => e.trim());
                         const elements: JSX.Element[] = [];
                         
-                        console.log('🔎 Parsing shift markers from:', entry.change_description);
-                        
                         logEntries.forEach((logEntry, idx) => {
-                          console.log(`  Log entry ${idx}:`, logEntry);
                           
                           // Match format: [timestamp] Editor Name: Added "First" as marker for his shift (Night Duty)
                           const addMatch = logEntry.match(/\[([^\]]+)\]\s+([^:]+):\s+Added\s+"(\w+)"\s+as marker for his shift/);
                           if (addMatch) {
-                            console.log('  ✅ Found ADD marker:', addMatch[3]);
                             const [, timestampRaw, editorName, marker] = addMatch;
                             const timestamp = timestampRaw;
                             
@@ -730,7 +724,6 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
                           // Match format: [timestamp] Editor Name: Removed "FULL" as marker for his shift
                           const removeMatch = logEntry.match(/\[([^\]]+)\]\s+([^:]+):\s+Removed\s+"(\w+)"\s+as marker for his shift/);
                           if (removeMatch) {
-                            console.log('  ✅ Found REMOVE marker:', removeMatch[3]);
                             const [, timestampRaw, editorName, marker] = removeMatch;
                             const timestamp = timestampRaw;
                             
@@ -752,8 +745,6 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
                             );
                           }
                         });
-                        
-                        console.log('  Total marker elements found:', elements.length);
                         
                         if (elements.length > 0) {
                           return <>{elements}</>;
