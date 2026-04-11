@@ -787,8 +787,8 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
                     <ScrollingText 
                       text={displayName}
                       className="text-left"
-                      pauseDuration={2}
-                      scrollDuration={6}
+                      pauseDuration={1.5}
+                      scrollDuration={3}
                       leftOffset={offsetWidth}
                       style={{ marginTop: '-5px' }}
                     />
