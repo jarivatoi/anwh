@@ -255,15 +255,20 @@ export const useRosterData = () => {
         }
       )
       .subscribe((status: string) => {
+        console.log('🔔 Realtime subscription status:', status);
         if (isMountedRef.current) {
           if (status === 'SUBSCRIBED') {
             setRealtimeStatus('connected');
+            console.log('✅ Realtime connected successfully');
           } else if (status === 'CHANNEL_ERROR') {
             setRealtimeStatus('error');
+            console.error('❌ Realtime channel error');
           } else if (status === 'TIMED_OUT') {
             setRealtimeStatus('error');
+            console.error('⏱️ Realtime connection timed out');
           } else if (status === 'CLOSED') {
             setRealtimeStatus('disconnected');
+            console.log('🔌 Realtime connection closed');
           }
         }
       });
@@ -275,9 +280,10 @@ export const useRosterData = () => {
 
     // Cleanup
     return () => {
+      console.log('🧹 Cleaning up realtime channel');
       supabase.removeChannel(channel);
     };
-  }, [loadEntries]);
+  }, []); // Remove loadEntries from dependencies to prevent recreating channel
 
   // Load roster entries when currentUser is ready (separate from real-time setup)
   useEffect(() => {
