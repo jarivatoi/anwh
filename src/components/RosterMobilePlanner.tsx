@@ -1186,7 +1186,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
   };
 
   // Print roster to PDF (same weekly format as desktop RosterPlanner)
-  const handlePrintRoster = () => {
+  const handlePrintRoster = (fitToPage = false) => {
     // Close any existing print window first to prevent blocking
     if (printWindowRef.current && !printWindowRef.current.closed) {
       printWindowRef.current.close();
@@ -1241,7 +1241,36 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     // Calculate column width based on longest name (approx 7px per character + padding)
     const columnWidth = Math.max(120, maxLength * 7 + 20);
     
+    // For fit-to-page, calculate scale percentage
+    const scalePercent = fitToPage ? '55%' : '100%';
+    const fontSize = fitToPage ? '62.5%' : '100%'; // 5px is 62.5% of 8px
+    const headerFontSize = fitToPage ? '57.1%' : '100%'; // 4px is 57.1% of 7px
+    const cellPadding = fitToPage ? '33.3%' : '100%'; // 1px is 33.3% of 3px
+    const cellContentPadding = fitToPage ? '25%' : '100%';
+    const cellContentMargin = fitToPage ? '25%' : '100%';
+    const cellContentFontSize = fitToPage ? '62.5%' : '100%';
+    const weekMargin = fitToPage ? '13.3%' : '100%'; // 2px is 13.3% of 15px
+    const titleFontSize = fitToPage ? '55.6%' : '100%'; // 10px is 55.6% of 18px
+    const titleMargin = fitToPage ? '15%' : '100%'; // 3px is 15% of 20px
+    const emptyCellHeight = fitToPage ? '50%' : '100%'; // 10px is 50% of 20px
+    
     weeks.forEach((week, weekIndex) => {
+      // Check if this week has any staff assignments or (R) markers
+      const weekHasAssignments = week.some(day => {
+        const dateKey = formatDateKey(day);
+        // Check all shifts for this day
+        return shifts.some(shift => {
+          const key = `${dateKey}-${shift.id}`;
+          const assignments = rosterAssignments[key] || [];
+          return assignments.length > 0;
+        });
+      });
+      
+      // Skip weeks with no assignments
+      if (!weekHasAssignments) {
+        return;
+      }
+      
       // Format dates as DD MM YYYY
       const formatDate = (date: Date) => {
         const day = String(date.getDate()).padStart(2, '0');
@@ -1251,19 +1280,19 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
       };
       
       weeksHtml += `
-        <div class="week-container" style="margin-bottom: 15px; page-break-inside: auto; page-break-after: auto;">
-          <table style="width: 100%; border-collapse: collapse; font-size: 8px;">
+        <div class="week-container" style="margin-bottom: 0; page-break-inside: auto; page-break-after: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: ${fitToPage ? '5px' : '8px'};">
             <thead>
               <tr>
-                <th style="width: 80px; background-color: #f3f4f6 !important; border: 1px solid #d1d5db; padding: 3px; font-weight: 600; color: black;"></th>
+                <th style="width: 80px; background-color: #f3f4f6 !important; border: 1px solid #d1d5db; padding: ${fitToPage ? '1px' : '3px'}; font-weight: 600; color: black;"></th>
                 ${['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'].map((dayName, dayIndex) => {
                   const day = week.find(d => d.getDay() === dayIndex);
                   if (!day) {
-                    return `<th style="width: ${columnWidth}px; background-color: #f3f4f6 !important; border: 1px solid #d1d5db; padding: 3px; text-align: center; font-size: 7px; color: black;">
+                    return `<th style="width: ${columnWidth}px; background-color: #f3f4f6 !important; border: 1px solid #d1d5db; padding: ${fitToPage ? '1px' : '3px'}; text-align: center; font-size: ${fitToPage ? '4px' : '7px'}; color: black;">
                     </th>`;
                   }
                   const dateStr = formatDate(day);
-                  return `<th style="width: ${columnWidth}px; background-color: #f3f4f6 !important; border: 1px solid #d1d5db; padding: 3px; text-align: center; font-size: 7px; color: black !important;">
+                  return `<th style="width: ${columnWidth}px; background-color: #f3f4f6 !important; border: 1px solid #d1d5db; padding: ${fitToPage ? '1px' : '3px'}; text-align: center; font-size: ${fitToPage ? '4px' : '7px'}; color: black !important;">
                     <span style="text-decoration: none !important; color: black !important;">${dayName}</span><br><span style="text-decoration: none !important; color: black !important; background: transparent !important;">${dateStr}</span>
                   </th>`;
                 }).join('')}
@@ -1272,13 +1301,13 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
             <tbody>
               ${shifts.map(shift => `
                 <tr>
-                  <td style="background-color: #f3f4f6 !important; border: 1px solid #d1d5db; padding: 3px; font-weight: bold; text-align: center; vertical-align: middle; width: 80px; font-size: 7px; color: black;">
+                  <td style="background-color: #f3f4f6 !important; border: 1px solid #d1d5db; padding: ${fitToPage ? '1px' : '3px'}; font-weight: bold; text-align: center; vertical-align: middle; width: 80px; font-size: ${fitToPage ? '4px' : '7px'}; color: black;">
                     ${shiftLabels[shift.id as keyof typeof shiftLabels]}
                   </td>
                   ${[0, 1, 2, 3, 4, 5, 6].map(dayIndex => {
                     const day = week.find(d => d.getDay() === dayIndex);
                     if (!day) {
-                      return `<td style="width: ${columnWidth}px; border: 1px solid #d1d5db; padding: 3px; min-height: 20px; background-color: white;"></td>`;
+                      return `<td style="width: ${columnWidth}px; border: 1px solid #d1d5db; padding: ${fitToPage ? '1px' : '3px'}; min-height: ${fitToPage ? '10px' : '20px'}; background-color: white;"></td>`;
                     }
                     
                     const dateKey = formatDateKey(day);
@@ -1292,14 +1321,14 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
                       const hasReplacing = assignment.markers && assignment.markers.includes('(R)');
                       const replacingSuffix = hasReplacing ? ' (R)' : '';
                       
-                      return `<div style="background-color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 2px; font-size: 8px; line-height: 1.2; color: black; text-align: center;">
+                      return `<div style="background-color: white; padding: ${fitToPage ? '0.5px 1px' : '2px 4px'}; margin-bottom: ${fitToPage ? '0.5px' : '2px'}; border-radius: 2px; font-size: ${fitToPage ? '5px' : '8px'}; line-height: 1.2; color: black; text-align: center;">
                         ${markersPrefix ? `<span style="color: black; font-weight: bold;">${markersPrefix}</span>` : ''}${assignment.staffName}${replacingSuffix ? `<span style="color: black;">${replacingSuffix}</span>` : ''}
                       </div>`;
                     }).join('');
                     
                     // Add minimum height for empty cells
-                    const emptyCellHeight = assignments.length === 0 ? 'min-height: 20px;' : '';
-                    const cellStyle = `width: ${columnWidth}px; border: 1px solid #d1d5db; padding: 3px; vertical-align: top; background-color: white !important; ${emptyCellHeight} text-align: center;`;
+                    const emptyCellHeightStyle = assignments.length === 0 ? `min-height: ${fitToPage ? '10px' : '20px'};` : '';
+                    const cellStyle = `width: ${columnWidth}px; border: 1px solid #d1d5db; padding: ${fitToPage ? '1px' : '3px'}; vertical-align: top; background-color: white !important; ${emptyCellHeightStyle} text-align: center;`;
                     
                     return `<td style="${cellStyle}">
                       <div style="text-align: center;">
@@ -1323,6 +1352,57 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
         <title>Roster Planner - ${monthName}</title>
         <style>
           @media print {
+            ${fitToPage ? `
+            @page {
+              size: A4 portrait;
+              margin: 3mm;
+            }
+            
+            html, body {
+              print-color-adjust: exact;
+              -webkit-print-color-adjust: exact;
+              margin: 0;
+              padding: 0;
+            }
+            
+            .print-container {
+              display: block;
+              width: 100%;
+              padding-top: 0;
+              zoom: 0.65;
+            }
+            
+            .print-container h1 {
+              text-align: center;
+              margin: 0 0 3px 0;
+            }
+            
+            table {
+              page-break-inside: avoid !important;
+              page-break-after: auto !important;
+              page-break-before: auto !important;
+            }
+            
+            tr {
+              page-break-inside: avoid !important;
+              page-break-after: auto !important;
+            }
+            
+            div {
+              page-break-inside: avoid !important;
+            }
+            
+            div[style*="margin-bottom: 15px"] {
+              page-break-inside: avoid !important;
+              page-break-after: auto !important;
+              page-break-before: auto !important;
+              margin-bottom: 2px !important;
+            }
+            
+            h1 {
+              page-break-inside: avoid !important;
+            }
+            ` : `
             @page {
               size: landscape;
               margin: 10mm;
@@ -1335,7 +1415,6 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
               padding: 0;
             }
             
-            /* Center content on each page - padding will be calculated dynamically */
             .print-container {
               display: block;
               width: 100%;
@@ -1352,7 +1431,6 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
               margin: 0 auto;
             }
             
-            /* Ensure each week stays together and is never cut */
             table {
               page-break-inside: avoid;
               page-break-after: always;
@@ -1367,7 +1445,6 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
               page-break-inside: avoid;
             }
             
-            /* Ensure week containers are never split */
             div[style*="margin-bottom: 15px"] {
               page-break-inside: avoid;
               page-break-after: always;
@@ -1376,6 +1453,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
             h1 {
               page-break-inside: avoid;
             }
+            `}
           }
           
           * {
@@ -1412,7 +1490,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
       </head>
       <body>
         <div class="print-container">
-          <h1>Roster Planner - ${monthName}</h1>
+          <h1 style="font-size: ${fitToPage ? '10px' : '18px'}; margin-bottom: ${fitToPage ? '3px' : '20px'};">Roster Planner - ${monthName}</h1>
           ${weeksHtml}
         </div>
       </body>
@@ -1422,61 +1500,32 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
     printWindow.document.write(html);
     printWindow.document.close();
     
-    // Wait for content to load then calculate and apply centering
+    // Wait for content to load then calculate optimal zoom to fill page
     setTimeout(() => {
-      // Calculate and center each week individually on its own page
-      const weekContainers = printWindow.document.querySelectorAll('.week-container');
-      
-      // Get the printable area height (page height - margins)
-      // A4 landscape = 210mm, margins = 10mm each side = 190mm usable
-      // At 96 DPI: 190mm ≈ 718px
-      const pageHeight = 718;
-      
-      weekContainers.forEach((container) => {
-        const weekHeight = container.scrollHeight;
-        const remainingSpace = Math.max(0, pageHeight - weekHeight);
-        const topPadding = Math.floor(remainingSpace / 2);
-        
-        // Apply calculated padding to center this week
-        (container as HTMLElement).style.paddingTop = `${topPadding}px`;
-        (container as HTMLElement).style.display = 'block';
-      });
+      if (fitToPage) {
+        // Measure the actual content height
+        const container = printWindow.document.querySelector('.print-container');
+        if (container) {
+          const contentHeight = container.scrollHeight;
+          
+          // A4 portrait with 3mm margins = ~1050px usable height
+          const pageHeight = 1050;
+          
+          // Calculate zoom to fill the page (95% to leave small margin)
+          const optimalZoom = Math.min((pageHeight * 0.95) / contentHeight, 1);
+          
+          console.log(`📄 Content height: ${contentHeight}px, Optimal zoom: ${(optimalZoom * 100).toFixed(1)}%`);
+          
+          // Apply the calculated zoom
+          const style = printWindow.document.createElement('style');
+          style.textContent = `.print-container { zoom: ${optimalZoom} !important; }`;
+          printWindow.document.head.appendChild(style);
+        }
+      }
       
       printWindow.focus();
-      
-      // Listen for afterprint event (fires when print dialog is closed, whether printed or cancelled)
-      printWindow.onafterprint = () => {
-        if (!printWindow.closed) {
-          printWindow.close();
-          printWindowRef.current = null;
-        }
-      };
-      
-      // For mobile: add touch event listener to detect when user returns
-      const handleVisibilityChange = () => {
-        if (document.visibilityState === 'visible' && printWindowRef.current && !printWindowRef.current.closed) {
-          setTimeout(() => {
-            if (printWindowRef.current && !printWindowRef.current.closed) {
-              printWindowRef.current.close();
-              printWindowRef.current = null;
-            }
-          }, 500);
-        }
-      };
-      
-      document.addEventListener('visibilitychange', handleVisibilityChange);
-      
       printWindow.print();
-      
-      // Fallback: close after 3 seconds if onafterprint doesn't fire
-      setTimeout(() => {
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-        if (!printWindow.closed) {
-          printWindow.close();
-          printWindowRef.current = null;
-        }
-      }, 3000);
-    }, 500);
+    }, 300);
     
     showToast('Print dialog opened', 'success');
   };
@@ -1803,7 +1852,7 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <h2 className="text-xl font-bold text-gray-800">Roster Planner - {monthName}</h2>
+          <h2 className="text-xl font-bold text-gray-800">X-Ray {institutionCode || ''} - {monthName}</h2>
           <button
             onClick={nextMonth}
             className="p-2 hover:bg-gray-100 rounded"
@@ -1846,6 +1895,17 @@ export const RosterMobilePlanner: React.FC<RosterMobilePlannerProps> = ({ onClos
             >
               <span>🖨️</span>
               <span>Print Roster</span>
+            </button>
+            
+            <button
+              onClick={() => {
+                handlePrintRoster(true);
+                setShowSettings(false);
+              }}
+              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+            >
+              <span>📄</span>
+              <span>Fit to A4 Page</span>
             </button>
             
             <button
