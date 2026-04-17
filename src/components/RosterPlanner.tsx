@@ -511,7 +511,7 @@ export const RosterPlanner: React.FC<RosterPlannerProps> = ({ onClose, instituti
   };
 
   // Print roster to PDF
-  const handlePrintRoster = () => {
+  const handlePrintRoster = (fitToPage = false) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       showToast('Please allow popups to print', 'error');
@@ -555,6 +555,31 @@ export const RosterPlanner: React.FC<RosterPlannerProps> = ({ onClose, instituti
         <title>Roster Planner - ${monthName}</title>
         <style>
           @media print {
+            ${fitToPage ? `
+            @page {
+              size: A4 portrait;
+              margin: 3mm;
+            }
+            
+            body {
+              print-color-adjust: exact;
+              -webkit-print-color-adjust: exact;
+              transform: scale(0.55);
+              transform-origin: top center;
+            }
+            
+            h1 {
+              font-size: 11px !important;
+              margin-bottom: 3px !important;
+            }
+            
+            table {
+              page-break-after: auto !important;
+              page-break-before: auto !important;
+              page-break-inside: avoid !important;
+              margin-bottom: 2px !important;
+            }
+            ` : `
             @page {
               size: landscape;
               margin: 5mm;
@@ -564,6 +589,7 @@ export const RosterPlanner: React.FC<RosterPlannerProps> = ({ onClose, instituti
               print-color-adjust: exact;
               -webkit-print-color-adjust: exact;
             }
+            `}
           }
           
           * {
@@ -1228,7 +1254,7 @@ export const RosterPlanner: React.FC<RosterPlannerProps> = ({ onClose, instituti
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <h2 className="text-xl font-bold text-gray-800">Roster Planner - {monthName}</h2>
+            <h2 className="text-xl font-bold text-gray-800">X-Ray {institutionCode || ''} - {monthName}</h2>
             <button
               onClick={nextMonth}
               className="p-2 hover:bg-gray-100 rounded"
@@ -1264,6 +1290,17 @@ export const RosterPlanner: React.FC<RosterPlannerProps> = ({ onClose, instituti
                 >
                   <span>🖨️</span>
                   <span>Print Roster</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    handlePrintRoster(true);
+                    setShowSettings(false);
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+                >
+                  <span>📄</span>
+                  <span>Fit to A4 Page</span>
                 </button>
                 
                 <button
@@ -1329,6 +1366,22 @@ export const RosterPlanner: React.FC<RosterPlannerProps> = ({ onClose, instituti
               });
 
               return weeks.map((week, weekIndex) => {
+                // Check if this week has any staff assignments or (R) markers
+                const weekHasAssignments = week.some(day => {
+                  const dateKey = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+                  // Check all shifts for this day
+                  return shifts.some(shift => {
+                    const key = `${dateKey}-${shift.id}`;
+                    const assignments = rosterAssignments[key] || [];
+                    return assignments.length > 0;
+                  });
+                });
+                
+                // Skip weeks with no assignments
+                if (!weekHasAssignments) {
+                  return null;
+                }
+                
                 // Get week date range for header
                 const weekStart = week[0];
                 const weekEnd = week[week.length - 1];
@@ -1489,7 +1542,7 @@ export const RosterPlanner: React.FC<RosterPlannerProps> = ({ onClose, instituti
                     </table>
                   </div>
                 );
-              });
+              }).filter(Boolean);
             })()}
           </div>
 
