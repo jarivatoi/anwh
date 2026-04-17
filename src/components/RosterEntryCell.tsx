@@ -493,6 +493,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
 
       console.log('✅ RosterEntryCell: Received updated entry from updateRosterEntry:', updatedEntry);
       console.log('📋 VERIFICATION - New name:', updatedEntry.assigned_name, '| Old name:', entry.assigned_name);
+      console.log('🔄 Real-time sync should now update the display with deduplication');
 
       if (onUpdate) {
         await onUpdate(updatedEntry);
