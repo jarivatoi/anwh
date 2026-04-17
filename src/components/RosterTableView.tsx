@@ -266,7 +266,10 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     
     try {
       console.log('🔄 Manual refresh triggered in table view');
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Actually call the onRefresh function to reload data from database
+      if (onRefresh) {
+        await onRefresh();
+      }
       setLastUpdateTime(new Date().toLocaleTimeString());
       console.log('✅ Manual refresh completed');
     } catch (error) {
