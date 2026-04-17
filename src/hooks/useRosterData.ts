@@ -218,22 +218,20 @@ export const useRosterData = () => {
             // Handle different types of changes
             if (payload.eventType === 'INSERT' && payload.new) {
               setEntries(prev => {
-                const exists = prev.some(entry => entry.id === payload.new.id);
-                if (!exists) {
-                  return [payload.new as RosterEntry, ...prev];
-                }
-                return prev;
+                const updatedEntries = [...prev, payload.new as RosterEntry];
+                return deduplicateRosterEntries(updatedEntries);
               });
             } else if (payload.eventType === 'UPDATE' && payload.new) {
-              setEntries(prev => 
-                prev.map(entry => 
+              setEntries(prev => {
+                const updatedEntries = prev.map(entry => 
                   entry.id === payload.new.id ? payload.new as RosterEntry : entry
-                )
-              );
+                );
+                // CRITICAL: Re-run deduplication after update because the dedup key
+                // (date|shift|assigned_name) may have changed if the name was edited
+                return deduplicateRosterEntries(updatedEntries);
+              });
             } else if (payload.eventType === 'DELETE' && payload.old) {
-              setEntries(prev => 
-                prev.filter(entry => entry.id !== payload.old.id)
-              );
+              setEntries(prev => prev.filter(entry => entry.id !== payload.old.id));
             }
 
             // Dispatch custom event for other components
