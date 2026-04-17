@@ -288,7 +288,7 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
           {hasCenterRemark && (
             <span 
               className="text-red-600 font-bold flex-shrink-0"
-              style={{ fontSize: window.innerWidth > window.innerHeight ? '14px' : '16px', lineHeight: 1, marginTop: '-1px' }}
+              style={{ fontSize: window.innerWidth > window.innerHeight ? '14px' : '16px', lineHeight: 1, marginTop: '3px' }}
             >
               *
             </span>
