@@ -1159,10 +1159,8 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
       entries: []
     });
     
-    if (syncResult) {
-      setRefreshKey(prev => prev + 1);
-    }
-  }, [scheduleTitle, setSchedule, setSpecialDates]); // ✅ Removed schedule and specialDates
+    // Note: No need to trigger refresh - real-time sync handles roster updates automatically
+  }, [scheduleTitle, setSchedule, setSpecialDates]);
 
   const handleForceCalendarRefresh = useCallback(() => {
     setRefreshKey(prev => prev + 1);
