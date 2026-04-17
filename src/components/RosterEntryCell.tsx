@@ -763,7 +763,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
               <span 
                 ref={asteriskRef}
                 className="text-red-600 font-bold flex-shrink-0"
-                style={{ fontSize: window.innerWidth > window.innerHeight ? '14px' : '16px', lineHeight: 1, marginTop: '-5px' }}
+                style={{ fontSize: window.innerWidth > window.innerHeight ? '14px' : '16px', lineHeight: 1, marginTop: '3px' }}
               >
                 *
               </span>
