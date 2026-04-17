@@ -24,6 +24,14 @@ if (supabaseUrl &&
       auth: {
         persistSession: false, // Disable session persistence to avoid CORS issues
       },
+      realtime: {
+        params: {
+          eventsPerSecond: 10
+        },
+        headers: {
+          apikey: supabaseAnonKey
+        }
+      },
       global: {
         fetch: (url, options = {}) => {
           // Add timeout and better error handling to all fetch requests
