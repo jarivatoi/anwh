@@ -123,25 +123,26 @@ export const useRosterData = () => {
       // Deduplicate entries - keep only the LATEST entry per date/shift/person
       const deduplicatedData = data ? deduplicateRosterEntries(data) : [];
       
-      if (isMountedRef.current) {
-        setEntries(deduplicatedData);
-      }
-
       // If no data found and we filtered by institution, try without filter as fallback
       if ((!data || data.length === 0) && userInstitution) {
-        const { data: allData } = await supabase
+        const { data: allData, error: allDataError } = await supabase
           .from('roster_entries')
           .select('*')
           .order('date', { ascending: false })
           .order('created_at', { ascending: false });
+        
+        if (allDataError) {
+          console.error('Error fetching unfiltered data:', allDataError);
+        }
         
         if (isMountedRef.current) {
           const deduplicatedAllData = allData ? deduplicateRosterEntries(allData) : [];
           setEntries(deduplicatedAllData);
         }
       } else {
+        // Use the already-deduplicated data
         if (isMountedRef.current) {
-          setEntries(data || []);
+          setEntries(deduplicatedData);
         }
       }
     } catch (err) {
@@ -212,6 +213,15 @@ export const useRosterData = () => {
         (payload: any) => {
           try {
             if (!isMountedRef.current) {
+              return;
+            }
+
+            // Check if this event is for the user's institution
+            const userInstitution = currentUserRef.current?.posting_institution || currentUserRef.current?.institution_code;
+            const eventInstitution = payload.new?.institution_code || payload.old?.institution_code;
+            
+            // If user has institution filter and event has different institution, skip it
+            if (userInstitution && eventInstitution && userInstitution !== eventInstitution) {
               return;
             }
 
