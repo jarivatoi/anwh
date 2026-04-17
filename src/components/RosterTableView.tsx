@@ -251,7 +251,7 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   // Listen for real-time updates
   useEffect(() => {
     const handleRealtimeUpdate = (event: CustomEvent) => {
-      console.log('📡 Table view received real-time update:', event.detail);
+      // Real-time update received - data is already updated via useRosterData
     };
 
     window.addEventListener('rosterRealtimeUpdate', handleRealtimeUpdate as EventListener);
