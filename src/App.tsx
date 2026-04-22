@@ -960,6 +960,10 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
           // Update React state to match
           setSpecialDates(mergedSpecialDates);
           setSpecialDateTexts(mergedSpecialDateTexts);
+        } else {
+          // No roster data - ensure React state matches IndexedDB
+          setSpecialDates(persistedSpecialDates);
+          setSpecialDateTexts(persistedSpecialDateTexts);
         }
         
         if (isMounted) {
