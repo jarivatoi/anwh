@@ -847,13 +847,8 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
     // ONLY RUN ONCE - after initial load from IndexedDB
     // Use a ref to prevent re-running on every specialDates change
     if (hasRunRosterSyncRef.current) {
-      console.log('[SYNC] Already ran, skipping');
       return;
     }
-    
-    console.log('[SYNC] useEffect triggered, checking if ready...');
-    console.log('[SYNC] specialDatesRef.current:', specialDatesRef.current);
-    console.log('[SYNC] isSpecialDateTextsLoadedRef.current:', isSpecialDateTextsLoadedRef.current);
     
     // CRITICAL: Wait for BOTH specialDates and specialDateTexts to load from IndexedDB
     // This prevents race conditions on slow mobile devices
@@ -861,19 +856,13 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
     
     if (!specialDatesLoaded || !isSpecialDateTextsLoadedRef.current) {
       // Not both loaded yet, wait
-      console.log('[SYNC] Not ready yet, waiting...');
       return;
     }
     
-    console.log('[SYNC] Both ready, marking as running');
     hasRunRosterSyncRef.current = true;
     
     const runSync = async () => {
       try {
-        console.log('[SYNC] Starting sync, waiting for both to load...');
-        console.log('[SYNC] Initial specialDates:', specialDates);
-        console.log('[SYNC] Initial isSpecialDateTextsLoaded:', isSpecialDateTextsLoaded);
-        
         // CRITICAL: Wait for BOTH specialDates and specialDateTexts to load from IndexedDB
         // Await promises to guarantee both are ready before continuing
         await Promise.all([
@@ -881,7 +870,6 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
           new Promise<void>((resolve) => {
             const check = () => {
               if (Object.keys(specialDatesRef.current).length > 0) {
-                console.log('[SYNC] specialDates loaded:', specialDatesRef.current);
                 resolve();
               } else {
                 setTimeout(check, 50);
@@ -893,7 +881,6 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
           new Promise<void>((resolve) => {
             const check = () => {
               if (isSpecialDateTextsLoadedRef.current) {
-                console.log('[SYNC] specialDateTexts loaded:', specialDateTextsRef.current);
                 resolve();
               } else {
                 setTimeout(check, 50);
@@ -903,15 +890,10 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
           })
         ]);
         
-        console.log('[SYNC] Both loaded, reading from IndexedDB...');
-        
         // BOTH are now guaranteed to be loaded from IndexedDB
         // Read actual persisted data from IndexedDB to avoid React state race conditions
         const persistedSpecialDates = await workScheduleDB.getSpecialDates();
         const persistedSpecialDateTexts = await workScheduleDB.getMetadata<Record<string, string>>('specialDateTexts') || {};
-        
-        console.log('[SYNC] Persisted from IndexedDB - specialDates:', persistedSpecialDates);
-        console.log('[SYNC] Persisted from IndexedDB - specialDateTexts:', persistedSpecialDateTexts);
         
         let allRosterEntries;
         
@@ -956,10 +938,6 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
         });
         
         if (Object.keys(rosterSpecialDates).length > 0) {
-          console.log('[SYNC] Has roster data, merging...');
-          console.log('[SYNC] Roster special dates:', rosterSpecialDates);
-          console.log('[SYNC] Roster text map:', rosterTextMap);
-          
           // STRATEGY: Use persisted IndexedDB data as base, then roster overrides
           // This avoids React state race conditions entirely
           
@@ -975,9 +953,6 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
             mergedSpecialDateTexts[date] = rosterText;
           });
           
-          console.log('[SYNC] Merged specialDates:', mergedSpecialDates);
-          console.log('[SYNC] Merged specialDateTexts:', mergedSpecialDateTexts);
-          
           // Save merged data directly to IndexedDB
           await workScheduleDB.setSpecialDates(mergedSpecialDates);
           await workScheduleDB.setMetadata('specialDateTexts', mergedSpecialDateTexts);
@@ -985,14 +960,6 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
           // Update React state to match
           setSpecialDates(mergedSpecialDates);
           setSpecialDateTexts(mergedSpecialDateTexts);
-          console.log('[SYNC] Saved to IndexedDB and updated React state');
-        } else {
-          console.log('[SYNC] No roster data, using persisted data only');
-          // No roster data - just use persisted data
-          setSpecialDates(persistedSpecialDates);
-          setSpecialDateTexts(persistedSpecialDateTexts);
-          console.log('[SYNC] Set React state to persisted - specialDates:', persistedSpecialDates);
-          console.log('[SYNC] Set React state to persisted - specialDateTexts:', persistedSpecialDateTexts);
         }
         
         if (isMounted) {
@@ -1255,8 +1222,6 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
   }, [handleRosterCalendarSync, handleForceCalendarRefresh]);
 
   const toggleSpecialDate = useCallback(async (dateKey: string, isSpecial: boolean) => {
-    console.log('[toggleSpecialDate] Date:', dateKey, 'isSpecial:', isSpecial);
-    
     // CRITICAL: Update both states simultaneously to prevent flicker
     // Don't await them sequentially - batch the updates together
     
@@ -1267,7 +1232,6 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
       } else {
         delete newSpecialDates[dateKey];
       }
-      console.log('[toggleSpecialDate] Setting specialDates:', newSpecialDates);
       return newSpecialDates;
     });
     
@@ -1283,13 +1247,11 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
           delete newTexts[dateKey];
         }
       }
-      console.log('[toggleSpecialDate] Setting specialDateTexts:', newTexts);
       return newTexts;
     });
     
     // Wait for both updates to complete
     await Promise.all([specialDatesPromise, specialDateTextsPromise]);
-    console.log('[toggleSpecialDate] Both updates completed');
   }, [setSpecialDates, setSpecialDateTexts]);
 
   const closeModal = () => {
