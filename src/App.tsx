@@ -791,21 +791,39 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
       
       // Always sync - even if no special dates found (to handle removals)
       
-      // CRITICAL: Load current manual dates from IndexedDB first
+      // CRITICAL: Load current data from IndexedDB first
       const persistedSpecialDates = await workScheduleDB.getSpecialDates();
       const persistedSpecialDateTexts = await workScheduleDB.getMetadata<Record<string, string>>('specialDateTexts') || {};
       
-      // Merge: Start with persisted manual dates
-      const mergedSpecialDates = { ...persistedSpecialDates };
-      const mergedSpecialDateTexts = { ...persistedSpecialDateTexts };
+      // Identify manual special dates (text === 'SPECIAL') vs roster-synced dates
+      const manualSpecialDates: Record<string, boolean> = {};
+      const rosterSyncedDates: Record<string, boolean> = {};
       
-      // Apply roster dates on top (roster wins for overlapping dates)
-      Object.entries(specialDateFlags).forEach(([date, isSpecial]) => {
-        mergedSpecialDates[date] = isSpecial;
+      Object.keys(persistedSpecialDates).forEach(date => {
+        const text = persistedSpecialDateTexts[date];
+        if (text === 'SPECIAL') {
+          // This is a manual special date - preserve it
+          manualSpecialDates[date] = true;
+        } else {
+          // This is a roster-synced date
+          rosterSyncedDates[date] = true;
+        }
       });
       
-      Object.entries(specialDateTextMap).forEach(([date, text]) => {
-        mergedSpecialDateTexts[date] = text;
+      // Start merge with manual dates (always preserved)
+      const mergedSpecialDates = { ...manualSpecialDates };
+      const mergedSpecialDateTexts: Record<string, string> = {};
+      
+      // Preserve manual date texts
+      Object.keys(manualSpecialDates).forEach(date => {
+        mergedSpecialDateTexts[date] = 'SPECIAL';
+      });
+      
+      // Apply CURRENT roster dates (roster wins for roster-synced dates)
+      // This automatically removes roster dates that are no longer in roster
+      Object.entries(specialDateFlags).forEach(([date, isSpecial]) => {
+        mergedSpecialDates[date] = isSpecial;
+        mergedSpecialDateTexts[date] = specialDateTextMap[date] || '';
       });
       
       // CRITICAL: Persist merged data to IndexedDB to prevent data loss
@@ -939,19 +957,33 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
         });
         
         if (Object.keys(rosterSpecialDates).length > 0) {
-          // STRATEGY: Use persisted IndexedDB data as base, then roster overrides
-          // This avoids React state race conditions entirely
+          // STRATEGY: Separate manual vs roster-synced dates
+          // This ensures manual dates persist and roster removals work
           
-          // Merge specialDates: persisted + roster
-          const mergedSpecialDates = { ...persistedSpecialDates };
-          Object.entries(rosterSpecialDates).forEach(([date, isSpecial]) => {
-            mergedSpecialDates[date] = isSpecial;
+          // Identify manual special dates (text === 'SPECIAL')
+          const manualSpecialDates: Record<string, boolean> = {};
+          
+          Object.keys(persistedSpecialDates).forEach(date => {
+            const text = persistedSpecialDateTexts[date];
+            if (text === 'SPECIAL') {
+              // This is a manual special date - preserve it
+              manualSpecialDates[date] = true;
+            }
           });
           
-          // Merge specialDateTexts: persisted + roster
-          const mergedSpecialDateTexts = { ...persistedSpecialDateTexts };
-          Object.entries(rosterTextMap).forEach(([date, rosterText]) => {
-            mergedSpecialDateTexts[date] = rosterText;
+          // Start merge with manual dates (always preserved)
+          const mergedSpecialDates = { ...manualSpecialDates };
+          const mergedSpecialDateTexts: Record<string, string> = {};
+          
+          // Preserve manual date texts
+          Object.keys(manualSpecialDates).forEach(date => {
+            mergedSpecialDateTexts[date] = 'SPECIAL';
+          });
+          
+          // Apply CURRENT roster dates (automatically removes deleted roster dates)
+          Object.entries(rosterSpecialDates).forEach(([date, isSpecial]) => {
+            mergedSpecialDates[date] = isSpecial;
+            mergedSpecialDateTexts[date] = rosterTextMap[date] || '';
           });
           
           // Save merged data directly to IndexedDB
@@ -962,9 +994,20 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
           setSpecialDates(mergedSpecialDates);
           setSpecialDateTexts(mergedSpecialDateTexts);
         } else {
-          // No roster data - ensure React state matches IndexedDB
-          setSpecialDates(persistedSpecialDates);
-          setSpecialDateTexts(persistedSpecialDateTexts);
+          // No roster data - preserve only manual dates, clear roster-synced dates
+          const manualSpecialDates: Record<string, boolean> = {};
+          const manualSpecialDateTexts: Record<string, string> = {};
+          
+          Object.keys(persistedSpecialDates).forEach(date => {
+            const text = persistedSpecialDateTexts[date];
+            if (text === 'SPECIAL') {
+              manualSpecialDates[date] = true;
+              manualSpecialDateTexts[date] = 'SPECIAL';
+            }
+          });
+          
+          setSpecialDates(manualSpecialDates);
+          setSpecialDateTexts(manualSpecialDateTexts);
         }
         
         if (isMounted) {
