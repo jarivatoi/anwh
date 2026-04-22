@@ -1025,7 +1025,7 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
   
   // Initialize content animation
   useEffect(() => {
-    if (contentRef.current && showMainApp) {
+    if (contentRef.current && !artificialLoading) {
       gsap.fromTo(contentRef.current,
         {
           opacity: 0,
@@ -1043,7 +1043,7 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
         }
       );
     }
-  }, [showMainApp]);
+  }, [artificialLoading]);
 
   const handleTabChange = (newTab: 'calendar' | 'settings' | 'data' | 'roster' | 'profile') => {
     setActiveTab(newTab);
