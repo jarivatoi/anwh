@@ -1568,7 +1568,8 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
             paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
             paddingTop: 'env(safe-area-inset-top)',
             transform: 'translate3d(0,0,0)',
-            backfaceVisibility: 'hidden'
+            backfaceVisibility: 'hidden',
+            opacity: 0 // Hide until GSAP animation starts (prevents flash on mobile)
           }}
         >
           {activeTab === 'calendar' ? (
