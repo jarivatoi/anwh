@@ -204,8 +204,17 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
         // CRITICAL: Reset the animation flag to allow realtime animation to play
         hasAnimatedRef.current = false;
         
-        setOldName(eventOldName);
-        setNewName(eventNewName);
+        // Format names to strip ID before animation
+        const formattedOldName = formatDisplayNameForUI(eventOldName);
+        const formattedNewName = formatDisplayNameForUI(eventNewName);
+        
+        // CRITICAL: Set refs to match the editing user's flow
+        // This prevents double animation when entry.assigned_name updates
+        animationOldNameRef.current = formattedOldName;
+        setPendingNewAssignedName(eventNewName); // Store raw name for override ref
+        
+        setOldName(formattedOldName);
+        setNewName(formattedNewName);
         setAnimateNameChange(true);
       }
     };
@@ -288,12 +297,10 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
 
   const longPressHandlers = useLongPress({
     onLongPress: () => {
-      console.log('🔥 Long press detected on entry:', entry.id);
       setShowAuthModal(true);
     },
     onDoublePress: () => {
       if (hasBeenEdited(entry) && onShowDetails && entry.last_edited_by !== 'ADMIN') {
-        console.log('👆👆 Double press detected on edited entry:', entry.id);
         onShowDetails(entry);
       }
     },
@@ -332,7 +339,6 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
       const session = await getUserSession();
       
       if (!session) {
-        console.error('❌ No active session found');
         return;
       }
       
@@ -349,7 +355,6 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
         .eq('id', session.userId);
       
       if (!userData || userData.length === 0) {
-        console.error('❌ PASSCODE MISMATCH: Passcode does not belong to logged-in user');
         return;
       }
       
@@ -369,8 +374,6 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
         textColor: textColor
       }, editorName);
 
-      console.log('✅ Database update successful, triggering animation');
-      
       // Reset the animation flag to allow new animation
       hasAnimatedRef.current = false;
       
@@ -396,7 +399,6 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
       setAuthCode('');
       
     } catch (error) {
-      console.error('Failed to update entry:', error);
       alert('Failed to update entry. Please try again.');
       // Stop animation on error too
       setIsEditing(false);
@@ -469,7 +471,6 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
           <div
             onClick={(e: React.MouseEvent) => {
               e.stopPropagation();
-              console.log('👆 Clicked on name, opening staff selection...');
               setShowAuthModal(true);
             }}
             className="relative flex-1 min-w-0"
