@@ -280,8 +280,17 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
         // CRITICAL: Reset the animation flag to allow realtime animation to play
         hasAnimatedRef.current = false;
         
-        setOldName(eventOldName);
-        setNewName(eventNewName);
+        // Format names to strip ID before animation
+        const formattedOldName = formatDisplayNameForUI(eventOldName);
+        const formattedNewName = formatDisplayNameForUI(eventNewName);
+        
+        // CRITICAL: Set refs to match the editing user's flow
+        // This prevents double animation when entry.assigned_name updates
+        animationOldNameRef.current = formattedOldName;
+        setPendingNewAssignedName(eventNewName); // Store raw name for override ref
+        
+        setOldName(formattedOldName);
+        setNewName(formattedNewName);
         setAnimateNameChange(true);
       }
     };
@@ -336,12 +345,10 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
 
   const longPressHandlers = useLongPress({
     onLongPress: () => {
-      console.log('🔥 Long press detected on entry:', entry.id);
       setShowAuthModal(true);
     },
     onDoublePress: () => {
       if (hasBeenEdited(entry) && onShowDetails) {
-        console.log('👆👆 Double press detected on edited entry:', entry.id);
         onShowDetails(entry);
       }
     },
@@ -350,23 +357,14 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
 
   // Handle double-click for desktop (opens edit details modal)
   const handleDoubleClick = () => {
-    console.log('🖱️🖱️ Double-click triggered');
-    console.log('   Entry ID:', entry.id);
-    console.log('   Has been edited:', hasBeenEdited(entry));
-    console.log('   change_description:', entry.change_description);
-    console.log('   last_edited_by:', entry.last_edited_by);
-    
     if (!hasBeenEdited(entry)) {
-      console.log('⚠️ Entry has not been edited, skipping modal');
       return;
     }
     
     if (!onShowDetails) {
-      console.log('⚠️ onShowDetails not provided');
       return;
     }
     
-    console.log('✅ Opening edit details modal...');
     onShowDetails(entry);
   };
 
@@ -378,8 +376,6 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
   let longPressInterval: NodeJS.Timeout | null = null;
   
   const handleLongPressStart = (e: React.TouchEvent | React.MouseEvent) => {
-    console.log('👇 Long press started on entry:', entry.id);
-    
     // Prevent default to avoid conflicts with normal clicking
     e.preventDefault();
     e.stopPropagation();
@@ -399,13 +395,11 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
     
     // Start the long press timer
     const timer = setTimeout(() => {
-      console.log('⏰ Stage 1 reached - showing RED glow for staff selection');
       setShowRipple(true);
       setLongPressStage('stage1');
       
       // Stage 2: 2.5s - Toggle ripple to GREEN
       longPressInterval = setTimeout(() => {
-        console.log('⏰ Stage 2 reached - showing GREEN ripple for marker modal');
         // Set stage IMMEDIATELY so release detection is accurate
         setLongPressStage('stage2');
         
@@ -417,7 +411,6 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
         
         // Stage 3: 4s - Reset if still holding (no second green ripple)
         const resetTimer = setTimeout(() => {
-          console.log('⏰ Timeout reached - resetting (held too long past 4s)');
           setShowRipple(false);
           setLongPressStage('idle');
         }, 1500); // 1.5 seconds after stage 2 (total 4s)
@@ -432,7 +425,6 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
   };
 
   const handleLongPressEnd = () => {
-    console.log('👆 Long press released at stage:', longPressStage);
     
     // Clear all timers immediately
     if (longPressInterval) {
@@ -446,20 +438,17 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
     // Determine action based on stage
     if (longPressStage === 'stage1') {
       // Released between 1.5s-2.5s → Open staff selection modal
-      console.log('✅ Released in stage 1 - opening staff selection modal');
       setShowAuthModal(true);
       // Stop and reset - user committed to action
       setShowRipple(false);
       setLongPressStage('idle');
     } else if (longPressStage === 'stage2') {
       // Released after 2.5s → Open shift marker modal, then reset
-      console.log('✅ Released in stage 2 - opening shift marker modal');
       setShowShiftMarkerModal(true);
       setShowRipple(false);
       setLongPressStage('idle');
     } else {
       // Released before 1.5s → Just reset (no animation should be visible)
-      console.log('❌ Released too early - resetting');
       setShowRipple(false);
       setLongPressStage('idle');
     }
@@ -468,7 +457,6 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
   const handleAuthSubmit = async () => {
     // FIRST: Get the currently logged-in user from session
     const session = await getUserSession();
-    console.log('📋 RosterEntryCell - Current logged-in session:', session);
     
     if (!session) {
       setAuthError('No active session found. Please log in first.');
@@ -477,7 +465,6 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
     
     // SECOND: Validate passcode and ensure it belongs to the logged-in user
     const passcodeResult = await validatePasscode(authCode);
-    console.log('✅ Passcode validated:', passcodeResult);
     
     if (!passcodeResult || !passcodeResult.isValid) {
       setAuthError('Invalid passcode');
@@ -494,20 +481,15 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
       .single();
     
     if (!userData || userData.passcode !== authCode) {
-      console.error('❌ PASSCODE MISMATCH: Passcode does not belong to logged-in user');
       setAuthError('Invalid passcode');
       return;
     }
     
-    console.log('✅ Passcode verified: User is authorized');
-    
     // Wait a bit to ensure staff data is loaded
-    console.log('🔍 Auth successful, waiting for staff data...');
     setTimeout(() => {
       setShowAuthModal(false);
       setShowStaffModal(true);
       setAuthError('');
-      console.log('🔍 Opening staff modal with staff names:', staffNames);
     }, 100);
   };
 
@@ -516,26 +498,14 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
   };
 
   const handleStaffSelectWithColor = async (newStaffName: string, textColor?: string) => {
-    console.log('🎨 RosterEntryCell: handleStaffSelectWithColor called with:', {
-      newStaffName,
-      textColor,
-      currentAssignedName: entry.assigned_name,
-      overrideName: overrideNameRef.current,
-      entryId: entry.id
-    });
-    
     // Use override name if available for comparison
     const currentAssignedName = overrideNameRef.current || entry.assigned_name;
     
     if (newStaffName === currentAssignedName) {
-      console.log('🎨 RosterEntryCell: Name unchanged, checking color change...');
-      
       // For ADMIN: Allow color-only changes even if name is the same
       if (textColor && textColor !== getTextColor()) {
-        console.log('🎨 RosterEntryCell: Color-only change detected, proceeding with update');
         // Continue with the update for color change
       } else {
-        console.log('🎨 RosterEntryCell: No changes detected, closing modal');
         setShowStaffModal(false);
         return;
       }
@@ -552,21 +522,12 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
       // Get the currently logged-in user from session
       const session = await getUserSession();
       
-      console.log('🔍 SESSION CHECK - Logged in user:', {
-        userId: session?.userId,
-        idNumber: session?.idNumber,
-        surname: session?.surname,
-        name: session?.name
-      });
-      
       if (!session) {
-        console.error('❌ No active session found');
         setAuthError('No active session found. Please log in first.');
         return;
       }
       
       const editorResult = await validatePasscode(authCode);
-      console.log('🔑 PASSCODE VALIDATION Result:', editorResult);
       
       if (!editorResult || !editorResult.isValid) return;
       
@@ -579,14 +540,7 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
         .eq('passcode', authCode)
         .eq('id', session.userId);
       
-      console.log('📊 PASSCODE OWNERSHIP CHECK:', {
-        sessionId: session.userId,
-        queryResult: userData,
-        hasMatch: userData && userData.length > 0
-      });
-      
       if (!userData || userData.length === 0) {
-        console.error('❌ PASSCODE MISMATCH: Passcode does not belong to logged-in user');
         setAuthError('Invalid passcode');
         return;
       }
@@ -599,21 +553,6 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
 
       // Use the LOGGED-IN USER's name as the editor (based on session ID)
       const editorName = `${session.surname}, ${session.name}`;
-
-      console.log('💾 SAVING EDITOR:', {
-        editorName,
-        entryId: entry.id,
-        oldAssignedName: entry.assigned_name,
-        newStaffName
-      });
-
-      console.log('🎨 RosterEntryCell: Updating entry with:', {
-        newStaffName,
-        textColor,
-        editorName,
-        sessionUserId: session.userId,
-        sessionIdNumber: session.idNumber
-      });
 
       // Preserve center information from original change_description if present
       const hasCenterInfo = entry.change_description && (entry.change_description.includes('- Center:') || entry.change_description.includes('Center Added:'));
@@ -651,8 +590,6 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
         textColor: textColor
       }, editorName);
 
-      console.log('✅ Database update successful, triggering animation');
-      
       // Reset the animation flag to allow new animation
       hasAnimatedRef.current = false;
       
@@ -679,7 +616,6 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
       setAuthCode('');
 
     } catch (error) {
-      console.error('Failed to update entry:', error);
       setErrorMessage('Failed to update entry. Please try again.');
       // Stop animation on error too
       setIsEditing(false);
@@ -720,8 +656,6 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
   };
 
   const handleMarkerSelect = async (marker: 'Early' | 'Late' | 'First' | 'Second' | 'AM' | 'FULL' | null, passcode: string) => {
-    console.log('🎯 Setting shift marker:', marker, 'with passcode');
-    
     // Get session to verify user
     const session = await getUserSession();
     
@@ -785,11 +719,8 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
       .eq('id', entry.id);
     
     if (error) {
-      console.error('❌ Error updating shift marker:', error);
       throw new Error('Failed to update shift marker');
     }
-    
-    console.log('✅ Shift marker updated successfully');
     
     // Notify parent to refresh
     if (onUpdate) {
