@@ -791,29 +791,30 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
       
       // Always sync - even if no special dates found (to handle removals)
       
-      // SYNC special dates - Manual loaded from IndexedDB, roster overrides
-      setSpecialDates(prev => {
-        const merged = { ...prev }; // Start with manual dates
-        
-        // Apply roster dates on top (roster wins)
-        Object.entries(specialDateFlags).forEach(([date, isSpecial]) => {
-          merged[date] = isSpecial;
-        });
-        
-        return merged;
+      // CRITICAL: Load current manual dates from IndexedDB first
+      const persistedSpecialDates = await workScheduleDB.getSpecialDates();
+      const persistedSpecialDateTexts = await workScheduleDB.getMetadata<Record<string, string>>('specialDateTexts') || {};
+      
+      // Merge: Start with persisted manual dates
+      const mergedSpecialDates = { ...persistedSpecialDates };
+      const mergedSpecialDateTexts = { ...persistedSpecialDateTexts };
+      
+      // Apply roster dates on top (roster wins for overlapping dates)
+      Object.entries(specialDateFlags).forEach(([date, isSpecial]) => {
+        mergedSpecialDates[date] = isSpecial;
       });
       
-      // SYNC special date texts - Manual loaded from IndexedDB, roster overrides
-      setSpecialDateTexts(prev => {
-        const merged = { ...prev }; // Start with manual texts
-        
-        // Apply roster texts on top (roster overrides manual 'SPECIAL')
-        Object.entries(specialDateTextMap).forEach(([date, text]) => {
-          merged[date] = text;
-        });
-        
-        return merged;
+      Object.entries(specialDateTextMap).forEach(([date, text]) => {
+        mergedSpecialDateTexts[date] = text;
       });
+      
+      // CRITICAL: Persist merged data to IndexedDB to prevent data loss
+      await workScheduleDB.setSpecialDates(mergedSpecialDates);
+      await workScheduleDB.setMetadata('specialDateTexts', mergedSpecialDateTexts);
+      
+      // Update React state to match persisted data
+      setSpecialDates(mergedSpecialDates);
+      setSpecialDateTexts(mergedSpecialDateTexts);
       
       // DON'T call setRefreshKey here - updating specialDates and specialDateTexts
       // already triggers re-renders, causing double reload on page refresh
