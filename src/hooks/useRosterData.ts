@@ -20,9 +20,14 @@ const deduplicateRosterEntries = (entries: RosterEntry[]): RosterEntry[] => {
   
   // For each group, keep only the LATEST entry (by last_edited_at)
   const result: RosterEntry[] = [];
+  const seenIds = new Set<string>(); // Track entry IDs to avoid duplicates
+  
   grouped.forEach((group, key) => {
     if (group.length === 1) {
-      result.push(group[0]);
+      if (!seenIds.has(group[0].id)) {
+        result.push(group[0]);
+        seenIds.add(group[0].id);
+      }
     } else {
       // Sort by last_edited_at descending and take the first (latest)
       const latest = group.sort((a, b) => {
@@ -31,7 +36,10 @@ const deduplicateRosterEntries = (entries: RosterEntry[]): RosterEntry[] => {
         return dateB - dateA; // Descending - latest first
       })[0];
       
-      result.push(latest);
+      if (!seenIds.has(latest.id)) {
+        result.push(latest);
+        seenIds.add(latest.id);
+      }
     }
   });
   
@@ -69,12 +77,12 @@ export const useRosterData = () => {
             .single();
           
           if (error) {
-            console.error('Error fetching user:', error);
+            // Error fetching user
           }
           setCurrentUser(userData || null);
         }
       } catch (err) {
-        console.error('Error loading current user:', err);
+        // Error loading current user
       }
     };
     
@@ -136,7 +144,7 @@ export const useRosterData = () => {
           .order('created_at', { ascending: false });
         
         if (allDataError) {
-          console.error('Error fetching unfiltered data:', allDataError);
+          // Error fetching unfiltered data
         }
         
         if (isMountedRef.current) {
@@ -150,7 +158,7 @@ export const useRosterData = () => {
         }
       }
     } catch (err) {
-      console.error('Error loading roster entries:', err);
+      // Error loading roster entries
       if (isMountedRef.current) {
         setError(err instanceof Error ? err.message : 'Failed to load roster entries');
       }
@@ -192,7 +200,7 @@ export const useRosterData = () => {
         }));
       }
     } catch (err) {
-      console.error('❌ Error removing entry:', err);
+      // Error removing entry
       throw err;
     }
   }, [entries]);
@@ -200,7 +208,6 @@ export const useRosterData = () => {
   // Register an entry ID as recently edited (to skip realtime for this user)
   // Can optionally update the entry in local state immediately or later
   const registerRecentEdit = useCallback((entryId: string, updatedData?: Partial<RosterEntry>, applyUpdateLater?: boolean) => {
-    console.log('📝 Registering recent edit:', entryId, updatedData, applyUpdateLater ? '(delayed update)' : '(immediate update)');
     recentlyEditedIdsRef.current.add(entryId);
     
     // If we have updated data and should apply immediately, update local state
@@ -216,13 +223,11 @@ export const useRosterData = () => {
     // Remove from tracking after timeout
     setTimeout(() => {
       recentlyEditedIdsRef.current.delete(entryId);
-      console.log('🗑️ Cleared recent edit tracking:', entryId);
     }, EDIT_TIMEOUT);
   }, []);
   
   // Apply pending update to an entry (called after animation completes)
   const applyPendingUpdate = useCallback((entryId: string, updatedData: Partial<RosterEntry>) => {
-    console.log('🔄 Applying pending update to entry:', entryId, updatedData);
     setEntries(prev => {
       const updatedEntries = prev.map(entry => 
         entry.id === entryId ? { ...entry, ...updatedData } : entry
@@ -266,7 +271,7 @@ export const useRosterData = () => {
             // Skip realtime update if this entry was recently edited by the current user
             const entryId = payload.new?.id || payload.old?.id;
             if (entryId && recentlyEditedIdsRef.current.has(entryId)) {
-              console.log('⏭️ Skipping realtime update for recently edited entry:', entryId);
+              // Skipping realtime update for recently edited entry
               return;
             }
 
@@ -286,32 +291,70 @@ export const useRosterData = () => {
                 }
               }));
             } else if (payload.eventType === 'UPDATE' && payload.new) {
-              // Check if this is a name change by comparing with existing entry
+              // Extract old/new names from change_description for reliable animation trigger
+              const changeDesc = payload.new.change_description || '';
+              let extractedOldName: string | null = null;
+              let extractedNewName: string | null = null;
+              
+              // Parse "Name changed from \"old\" to \"new\"" pattern
+              const nameChangeMatch = changeDesc.match(/Name changed from "([^"]+)" to "([^"]+)"/);
+              if (nameChangeMatch) {
+                extractedOldName = nameChangeMatch[1];
+                extractedNewName = nameChangeMatch[2];
+              }
+              
+              // Fallback: compare with existing entry if pattern not found
               const oldEntry = entries.find(e => e.id === payload.new.id);
-              const isNameChange = oldEntry && oldEntry.assigned_name !== payload.new.assigned_name;
+              const isNameChange = extractedOldName && extractedNewName ? true : 
+                                   (oldEntry?.assigned_name !== payload.new.assigned_name);
               
               setEntries(prev => {
-                const updatedEntries = prev.map(entry => 
-                  entry.id === payload.new.id ? payload.new as RosterEntry : entry
-                );
+                // CRITICAL: When name changes, the dedup key changes
+                // So we need to REMOVE the old entry (with old name) and add the new one
+                let updatedEntries: RosterEntry[];
+                
+                if (isNameChange && oldEntry && oldEntry.assigned_name !== payload.new.assigned_name) {
+                  // Name changed - remove old entry with old name, then add new entry
+                  updatedEntries = prev.filter(e => {
+                    // Remove the old version of this entry
+                    if (e.id === payload.new.id) return false;
+                    
+                    // Also remove any entry with the same date/shift but different ID and old name
+                    // This handles cases where dedup might have kept an older entry
+                    if (e.date === payload.new.date && 
+                        e.shift_type === payload.new.shift_type && 
+                        e.assigned_name === oldEntry.assigned_name &&
+                        e.id !== payload.new.id) {
+                      return false;
+                    }
+                    
+                    return true;
+                  });
+                  
+                  // Add the updated entry
+                  updatedEntries.push(payload.new as RosterEntry);
+                } else {
+                  // No name change - just update in place
+                  updatedEntries = prev.map(entry => 
+                    entry.id === payload.new.id ? payload.new as RosterEntry : entry
+                  );
+                }
+                
                 // CRITICAL: Re-run deduplication after update because the dedup key
                 // (date|shift|assigned_name) may have changed if the name was edited
                 return deduplicateRosterEntries(updatedEntries);
               });
               
               // If name changed, dispatch animation event for other users
-              if (isNameChange && oldEntry) {
-                console.log('🎬 Realtime name change detected for other users:', {
-                  entryId: payload.new.id,
-                  oldName: oldEntry.assigned_name,
-                  newName: payload.new.assigned_name
-                });
+              if (isNameChange) {
+                const oldNameToAnimate = extractedOldName || entries.find(e => e.id === payload.new.id)?.assigned_name;
+                const newNameToAnimate = extractedNewName || payload.new.assigned_name;
                 
                 window.dispatchEvent(new CustomEvent('rosterNameChangeAnimation', {
                   detail: {
                     entryId: payload.new.id,
-                    oldName: oldEntry.assigned_name,
-                    newName: payload.new.assigned_name
+                    oldName: oldNameToAnimate,
+                    newName: newNameToAnimate
                   }
                 }));
               }
@@ -325,25 +368,20 @@ export const useRosterData = () => {
             }));
 
           } catch (error) {
-            console.error('Error handling real-time update:', error);
+            // Error handling real-time update
           }
         }
       )
       .subscribe((status: string) => {
-        console.log('🔔 Realtime subscription status:', status);
         if (isMountedRef.current) {
           if (status === 'SUBSCRIBED') {
             setRealtimeStatus('connected');
-            console.log('✅ Realtime connected successfully');
           } else if (status === 'CHANNEL_ERROR') {
             setRealtimeStatus('error');
-            console.error('❌ Realtime channel error');
           } else if (status === 'TIMED_OUT') {
             setRealtimeStatus('error');
-            console.error('⏱️ Realtime connection timed out');
           } else if (status === 'CLOSED') {
             setRealtimeStatus('disconnected');
-            console.log('🔌 Realtime connection closed');
           }
         }
       });
@@ -355,7 +393,6 @@ export const useRosterData = () => {
 
     // Cleanup
     return () => {
-      console.log('🧹 Cleaning up realtime channel');
       supabase.removeChannel(channel);
     };
   }, []); // Remove loadEntries from dependencies to prevent recreating channel
@@ -370,7 +407,6 @@ export const useRosterData = () => {
   // Listen for custom event to reload user data (e.g., after posting change)
   useEffect(() => {
     const handleUserUpdate = async () => {
-      console.log('🔄 [useRosterData] User update event received, reloading user data...');
       const session = await getUserSession();
       if (session) {
         const { data: userData } = await supabase
@@ -379,7 +415,6 @@ export const useRosterData = () => {
           .eq('id', session.userId)
           .single();
         setCurrentUser(userData || null);
-        console.log('✅ [useRosterData] User reloaded with new posting:', userData?.posting_institution);
       }
     };
     
