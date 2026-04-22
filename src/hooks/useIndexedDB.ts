@@ -24,7 +24,6 @@ export function useIndexedDB<T>(
         : await workScheduleDB.getMetadata<T>(key);
       
       if (storedValue !== null) {
-        console.log(`[useIndexedDB] Loaded ${key} from IndexedDB:`, storedValue);
         // Special handling for workSettings to ensure shift combinations are present
         if (key === 'workSettings' && typeof storedValue === 'object' && storedValue !== null) {
           const settings = storedValue as any;
@@ -136,7 +135,6 @@ export function useScheduleData() {
         workScheduleDB.getDateNotes()
       ]);
       
-      console.log('[useScheduleData] Loaded from IndexedDB - specialDates:', specialDatesData);
       setScheduleState(scheduleData);
       setSpecialDatesState(specialDatesData);
       setDateNotesState(dateNotesData || {});
