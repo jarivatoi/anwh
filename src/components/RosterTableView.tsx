@@ -367,7 +367,6 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
     }
     
     // No need to manually refresh - Supabase realtime updates will handle it
-    console.log('✅ Entry updated, realtime sync will refresh the view');
   };
 
   // Handle special date long press
