@@ -24,6 +24,8 @@ interface RosterTableViewProps {
   onExportToCalendar: () => void;
   setActiveTab: (tab: 'calendar' | 'settings' | 'data' | 'roster') => void;
   staffNicknames?: Record<string, string>;
+  registerRecentEdit?: (entryId: string, updatedData?: Partial<RosterEntry>, applyUpdateLater?: boolean) => void;
+  applyPendingUpdate?: (entryId: string, updatedData: Partial<RosterEntry>) => void;
 }
 
 export const RosterTableView: React.FC<RosterTableViewProps> = ({
@@ -35,7 +37,9 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
   onDateChange,
   onExportToCalendar,
   setActiveTab,
-  staffNicknames
+  staffNicknames,
+  registerRecentEdit,
+  applyPendingUpdate
 }) => {
   // Listen for navigation events from parent components
   useEffect(() => {
@@ -983,9 +987,10 @@ export const RosterTableView: React.FC<RosterTableViewProps> = ({
                                 isSpecialDate={isSpecialDate(date)}
                                 specialDateInfo={getSpecialDateInfo(date)}
                                 availableStaff={availableStaff}
-                              
-              staffNicknames={staffNicknames}
-            />
+                                staffNicknames={staffNicknames}
+                                registerRecentEdit={registerRecentEdit}
+                                applyPendingUpdate={applyPendingUpdate}
+                              />
                             ))}
                           </div>
                         </td>
