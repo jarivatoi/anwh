@@ -510,8 +510,18 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
     specialDatesRef.current = specialDates;
   }, [specialDates]);
   
-  // AGGRESSIVE SYNC: Run immediately on mount, regardless of specialDates state
+  // AGGRESSIVE SYNC: Run AFTER useScheduleData() finishes loading to prevent race condition
   useEffect(() => {
+    // Don't run until schedule data is loaded from IndexedDB
+    if (isScheduleDataLoading) {
+      return;
+    }
+    
+    // Only run once after loading completes
+    if (hasRunRosterSyncRef.current) {
+      return;
+    }
+    
     const aggressiveSync = async () => {
       try {
         
@@ -519,10 +529,15 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
           return;
         }
         
+        // CRITICAL: Load from IndexedDB first to preserve manual special dates
+        // This prevents race condition where IndexedDB hasn't loaded yet
+        const persistedSpecialDates = await workScheduleDB.getSpecialDates();
+        const persistedSpecialDateTexts = await workScheduleDB.getMetadata<Record<string, string>>('specialDateTexts') || {};
+        
         const allRosterEntries = await fetchRosterEntries();
         
         const specialDateFlags: Record<string, boolean> = {};
-        const specialDateTexts: Record<string, string> = {};
+        const specialDateTextMap: Record<string, string> = {};
         
         allRosterEntries.forEach(entry => {
           
@@ -531,31 +546,61 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
             if (match && match[1].trim()) {
               const specialText = match[1].trim();
               specialDateFlags[entry.date] = true;
-              specialDateTexts[entry.date] = specialText;
+              specialDateTextMap[entry.date] = specialText;
             }
           }
         });
         
-        if (Object.keys(specialDateFlags).length > 0) {
+        // Identify manual special dates (text === 'SPECIAL') vs roster-synced dates
+        const manualSpecialDates: Record<string, boolean> = {};
+        const manualSpecialDateTexts: Record<string, string> = {};
+        
+        Object.keys(persistedSpecialDates).forEach(date => {
+          const text = persistedSpecialDateTexts[date];
+          if (text === 'SPECIAL') {
+            // This is a manual special date - preserve it
+            manualSpecialDates[date] = true;
+            manualSpecialDateTexts[date] = 'SPECIAL';
+          }
+        });
+        
+        // Start merge with manual dates (always preserved)
+        const mergedSpecialDates = { ...manualSpecialDates };
+        const mergedSpecialDateTexts: Record<string, string> = { ...manualSpecialDateTexts };
+        
+        // Apply CURRENT roster dates (roster wins for roster-synced dates)
+        Object.entries(specialDateFlags).forEach(([date, isSpecial]) => {
+          mergedSpecialDates[date] = isSpecial;
+          mergedSpecialDateTexts[date] = specialDateTextMap[date] || '';
+        });
+        
+        // CRITICAL: ALWAYS persist and update state if we have any manual dates
+        // This ensures manual dates show up even when there are no roster special dates
+        if (Object.keys(manualSpecialDates).length > 0) {
+          // Persist merged data to IndexedDB to prevent data loss
+          await workScheduleDB.setSpecialDates(mergedSpecialDates);
+          await workScheduleDB.setMetadata('specialDateTexts', mergedSpecialDateTexts);
           
-          setSpecialDates(prev => ({
-            ...prev,
-            ...specialDateFlags
-          }));
+          // Update React state to match persisted data
+          setSpecialDates(mergedSpecialDates);
+          setSpecialDateTexts(mergedSpecialDateTexts);
+        } else if (Object.keys(specialDateFlags).length > 0) {
+          // Only roster dates exist (no manual dates) - still sync them
+          await workScheduleDB.setSpecialDates(mergedSpecialDates);
+          await workScheduleDB.setMetadata('specialDateTexts', mergedSpecialDateTexts);
           
-          setSpecialDateTexts(prev => ({
-            ...prev,
-            ...specialDateTexts
-          }));
-        } else {
+          setSpecialDates(mergedSpecialDates);
+          setSpecialDateTexts(mergedSpecialDateTexts);
         }
       } catch (error) {
         console.error('❌ [AGGRESSIVE SYNC] Failed:', error);
       }
     };
     
+    // Mark as run to prevent re-execution
+    hasRunRosterSyncRef.current = true;
     aggressiveSync();
-  }, []); // Run once on mount
+  }, [isScheduleDataLoading]); // Re-check when loading state changes
   
   // No need for separate sync - roster sync handles specialDateTexts directly
   
