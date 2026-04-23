@@ -22,6 +22,9 @@ interface RosterCardViewProps {
   onRefresh: () => Promise<void>;
   selectedDate: Date;
   onDateChange: (date: Date) => void;
+  staffNicknames?: Record<string, string>;
+  registerRecentEdit?: (entryId: string, updatedData?: Partial<RosterEntry>, applyUpdateLater?: boolean) => void;
+  applyPendingUpdate?: (entryId: string, updatedData: Partial<RosterEntry>) => void;
 }
 
 export const RosterCardView: React.FC<RosterCardViewProps> = ({
@@ -30,7 +33,10 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
   realtimeStatus = 'disconnected',
   onRefresh,
   selectedDate,
-  onDateChange
+  onDateChange,
+  staffNicknames,
+  registerRecentEdit,
+  applyPendingUpdate
 }) => {
   // Listen for navigation events from parent components
   useEffect(() => {
@@ -734,6 +740,9 @@ export const RosterCardView: React.FC<RosterCardViewProps> = ({
                                   isSpecialDate={isSpecialDate(date)}
                                   specialDateInfo={getSpecialDateInfo(date)}
                                   availableStaff={availableStaff}
+                                  staffNicknames={staffNicknames}
+                                  registerRecentEdit={registerRecentEdit}
+                                  applyPendingUpdate={applyPendingUpdate}
                                 />
                               </div>
                             ))}
