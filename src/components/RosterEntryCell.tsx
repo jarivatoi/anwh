@@ -275,8 +275,21 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
     const handleRealtimeAnimation = (event: CustomEvent) => {
       const { entryId, oldName: eventOldName, newName: eventNewName } = event.detail;
       
+      console.log('📡 [ENTRY CELL] Received animation event:', {
+        entryId,
+        eventOldName,
+        eventNewName,
+        thisEntryId: entry.id,
+        isMatch: entryId === entry.id
+      });
+      
       // Only animate if this is the entry being updated
       if (entryId === entry.id && eventOldName && eventNewName) {
+        console.log('✨ [ENTRY CELL] Triggering animation for entry:', entry.id, {
+          oldName: eventOldName,
+          newName: eventNewName
+        });
+        
         // CRITICAL: Reset the animation flag to allow realtime animation to play
         hasAnimatedRef.current = false;
         
@@ -706,6 +719,30 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
     const newChangeDescription = entry.change_description 
       ? `${entry.change_description} | ${logEntry}`
       : logEntry;
+    
+    console.log('🔵 [MARKER UPDATE] Before database update:', {
+      entryId: entry.id,
+      oldMarker: entry.shift_marker,
+      newMarker: marker,
+      assignedName: entry.assigned_name,
+      willRegisterEdit: !!registerRecentEdit
+    });
+    
+    // Create the updated entry object for immediate local state update
+    const updatedEntry = {
+      ...entry,
+      shift_marker: marker || undefined,
+      change_description: newChangeDescription,
+      last_edited_by: editorName,
+      last_edited_at: formattedTimestamp
+    };
+    
+    // CRITICAL: Register this edit AND update local state immediately to avoid needing refresh
+    if (registerRecentEdit) {
+      console.log('🔵 [MARKER UPDATE] Calling registerRecentEdit for entry:', entry.id);
+      // Pass the updated data so it applies immediately (applyUpdateLater = false)
+      registerRecentEdit(entry.id, updatedEntry, false);
+    }
     
     // Update roster entry with shift_marker field (null clears it)
     const { error } = await supabase
