@@ -271,7 +271,6 @@ export const useRosterData = () => {
             // Skip realtime update if this entry was recently edited by the current user
             const entryId = payload.new?.id || payload.old?.id;
             if (entryId && recentlyEditedIdsRef.current.has(entryId)) {
-              // Skipping realtime update for recently edited entry
               return;
             }
 
@@ -303,10 +302,15 @@ export const useRosterData = () => {
                 extractedNewName = nameChangeMatch[2];
               }
               
-              // Fallback: compare with existing entry if pattern not found
+              // Find the old entry to compare
               const oldEntry = entries.find(e => e.id === payload.new.id);
+              
+              // CRITICAL: Only consider it a name change if:
+              // 1. We found the "Name changed from...to..." pattern in change_description, OR
+              // 2. The assigned_name ACTUALLY changed (compare old entry vs new payload)
+              // This prevents marker-only changes from triggering animation
               const isNameChange = extractedOldName && extractedNewName ? true : 
-                                   (oldEntry?.assigned_name !== payload.new.assigned_name);
+                                   (oldEntry && oldEntry.assigned_name !== payload.new.assigned_name && payload.new.assigned_name);
               
               setEntries(prev => {
                 // CRITICAL: When name changes, the dedup key changes
