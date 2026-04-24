@@ -288,8 +288,15 @@ export const StaffManagementModal = ({
   };
 
   const handleDelete = (staff: StaffUser) => {
-    if (staff.is_admin) {
-      alert('Cannot delete ADMIN account');
+    // Prevent deleting yourself
+    if (staff.id === currentUser?.id) {
+      alert('Cannot delete your own account');
+      return;
+    }
+    
+    // Only admin 5274 can delete other admin accounts
+    if (staff.is_admin && currentUser?.id_number !== '5274') {
+      alert('Cannot delete ADMIN account. Only master admin (5274) can delete admin accounts.');
       return;
     }
     
