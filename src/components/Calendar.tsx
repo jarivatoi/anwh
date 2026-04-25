@@ -1339,19 +1339,20 @@ export const Calendar: React.FC<CalendarProps> = ({
                         return (hasSpecialDateFlag || hasRosterSpecialText) ? (
                           <div 
                             className="special-text text-[8px] sm:text-[9px] text-red-500 font-bold leading-none mt-0.5 flex justify-center select-none"
-                            style={{ width: '100%', maxWidth: '100%' }}
                           >
                             {hasRosterSpecialText ? (
                               // Roster special text - use ScrollingText for long text
-                              <ScrollingText 
-                                key={`roster-special-${dateKey}-${hasRosterSpecialText}`}
-                                text={hasRosterSpecialText} 
-                                pauseDuration={2}
-                                scrollDuration={4}
-                                className="text-center select-none"
-                              >
-                                <div className="text-center select-none whitespace-nowrap">{hasRosterSpecialText}</div>
-                              </ScrollingText>
+                              <div style={{ width: '100%', maxWidth: '100%' }}>
+                                <ScrollingText 
+                                  key={`roster-special-${dateKey}-${hasRosterSpecialText}`}
+                                  text={hasRosterSpecialText} 
+                                  pauseDuration={2}
+                                  scrollDuration={4}
+                                  className="text-center select-none"
+                                >
+                                  <div className="text-center select-none whitespace-nowrap">{hasRosterSpecialText}</div>
+                                </ScrollingText>
+                              </div>
                             ) : (
                               // Manual special date (checkbox) - plain text, no scrolling
                               <div className="text-center select-none">SPECIAL</div>
