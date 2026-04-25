@@ -1338,30 +1338,22 @@ export const Calendar: React.FC<CalendarProps> = ({
                         // Show if EITHER manually marked OR has roster text
                         return (hasSpecialDateFlag || hasRosterSpecialText) ? (
                           <div 
-                            className="special-text text-[8px] sm:text-[9px] text-red-500 font-bold leading-none mt-0.5 flex justify-center select-none"
+                            className="special-text text-[8px] sm:text-[9px] text-red-500 font-bold leading-none mt-0.5 flex justify-center select-none transition-all duration-500 ease-in-out"
+                            style={{ 
+                              opacity: 1,
+                              width: '100%',
+                              maxWidth: '100%',
+                              overflow: 'hidden'
+                            }}
                           >
-                            {hasRosterSpecialText ? (
-                              // Roster special text - check if it's just "SPECIAL" or custom text
-                              hasRosterSpecialText === 'SPECIAL' ? (
-                                // Plain "SPECIAL" text - no scrolling, no width constraint
-                                <div className="text-center select-none">SPECIAL</div>
-                              ) : (
-                                // Custom roster text - use ScrollingText with width constraint
-                                <ScrollingText 
-                                  key={`roster-special-${dateKey}-${hasRosterSpecialText}`}
-                                  text={hasRosterSpecialText} 
-                                  pauseDuration={2}
-                                  scrollDuration={4}
-                                  className="text-center select-none"
-                                  style={{ width: '100%', maxWidth: '100%', minWidth: 0 }}
-                                >
-                                  <div className="text-center select-none whitespace-nowrap">{hasRosterSpecialText}</div>
-                                </ScrollingText>
-                              )
-                            ) : (
-                              // Manual special date (checkbox) - plain text, no scrolling
-                              <div className="text-center select-none">SPECIAL</div>
-                            )}
+                            <ScrollingText 
+                              text={hasRosterSpecialText || 'SPECIAL'} 
+                              pauseDuration={2}
+                              scrollDuration={4}
+                              className="text-center select-none animate-fadeIn"
+                            >
+                              <div className="text-center select-none transition-colors duration-300 whitespace-nowrap">{hasRosterSpecialText || 'SPECIAL'}</div>
+                            </ScrollingText>
                           </div>
                         ) : null;
                       })()}
