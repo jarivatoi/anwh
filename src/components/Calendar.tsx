@@ -1338,12 +1338,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                         // Show if EITHER manually marked OR has roster text
                         return (hasSpecialDateFlag || hasRosterSpecialText) ? (
                           <div 
-                            className="special-text text-[7px] sm:text-[8px] text-red-500 font-bold leading-none mt-0.5 flex justify-center select-none transition-all duration-500 ease-in-out"
-                            style={{ 
-                              opacity: 1,
-                              width: '100%',
-                              maxWidth: '100%'
-                            }}
+                            className="special-text text-[8px] sm:text-[9px] text-red-500 font-bold leading-none mt-0.5 flex justify-center select-none"
                           >
                             {hasRosterSpecialText ? (
                               // Roster special text - use ScrollingText for long text
@@ -1357,7 +1352,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                               </ScrollingText>
                             ) : (
                               // Manual special date (checkbox) - plain text, no scrolling
-                              <div className="text-center select-none whitespace-nowrap">SPECIAL</div>
+                              <div className="text-center select-none">SPECIAL</div>
                             )}
                           </div>
                         ) : null;
