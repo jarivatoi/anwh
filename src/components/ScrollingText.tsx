@@ -17,8 +17,8 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
   text, 
   className = '', 
   children,
-  pauseDuration = 1,
-  scrollDuration = 2.5,
+  pauseDuration = 1.5,
+  scrollDuration = 3,
   easing = 'power2.inOut',
   onReset,
   style,
@@ -258,9 +258,10 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
         position: 'relative',
         width: '100%',
         maxWidth: '100%',
-        overflow: 'visible' // Contain text within parent boundaries
-      }
-      }
+        overflow: 'hidden', // Contain text within parent boundaries
+        minWidth: 0, // Allow container to shrink on small screens
+        ...style // Merge custom styles (including responsive fontSize)
+      }}
     >
       <div 
         ref={textRef}
@@ -269,9 +270,11 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
           display: 'inline-block',
           minWidth: '100%',
           maxWidth: 'none',
-          overflow: 'visible' // Prevent text from escaping container
-        }
-        }
+          overflow: 'visible', // Allow text to expand for proper measurement
+          textOverflow: 'clip', // Don't show ellipsis, let it overflow for measurement
+          lineHeight: 1.2, // Better line height for small screens
+          ...style // Merge custom styles
+        }}
       >
         {children || text}
       </div>
