@@ -270,7 +270,8 @@ export const ScrollingText: React.FC<ScrollingTextProps> = ({
           display: 'inline-block',
           minWidth: '100%',
           maxWidth: 'none',
-          overflow: 'visible', // Allow text to expand for proper measurement
+         // overflow: 'visible', // Allow text to expand for proper measurement
+          overflow: 'hidden' // Prevent text from escaping container
           textOverflow: 'clip', // Don't show ellipsis, let it overflow for measurement
           lineHeight: 1.2, // Better line height for small screens
           ...style // Merge custom styles
