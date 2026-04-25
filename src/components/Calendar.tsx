@@ -1343,6 +1343,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                             {hasRosterSpecialText ? (
                               // Roster special text - use ScrollingText for long text
                               <ScrollingText 
+                                key={`roster-special-${dateKey}-${hasRosterSpecialText}`}
                                 text={hasRosterSpecialText} 
                                 pauseDuration={2}
                                 scrollDuration={4}
