@@ -1341,19 +1341,29 @@ export const Calendar: React.FC<CalendarProps> = ({
                             className="special-text text-[8px] sm:text-[9px] text-red-500 font-bold leading-none mt-0.5 flex justify-center select-none transition-all duration-500 ease-in-out"
                             style={{ 
                               opacity: 1,
-                              width: '100%',
-                              maxWidth: '100%',
-                              overflow: 'hidden'
+                              // Only apply width constraints for roster-sourced text (to enable scrolling)
+                              // Manual special dates should NOT have width constraints
+                              ...(hasRosterSpecialText ? {
+                                width: '100%',
+                                maxWidth: '100%',
+                                overflow: 'hidden'
+                              } : {})
                             }}
                           >
-                            <ScrollingText 
-                              text={hasRosterSpecialText || 'SPECIAL'} 
-                              pauseDuration={2}
-                              scrollDuration={4}
-                              className="text-center select-none animate-fadeIn"
-                            >
-                              <div className="text-center select-none transition-colors duration-300 whitespace-nowrap">{hasRosterSpecialText || 'SPECIAL'}</div> 
-                            </ScrollingText>
+                            {hasRosterSpecialText ? (
+                              // Roster special text - enable scrolling
+                              <ScrollingText 
+                                text={hasRosterSpecialText} 
+                                pauseDuration={2}
+                                scrollDuration={4}
+                                className="text-center select-none animate-fadeIn"
+                              >
+                                <div className="text-center select-none transition-colors duration-300 whitespace-nowrap">{hasRosterSpecialText}</div>
+                              </ScrollingText>
+                            ) : (
+                              // Manual special date - NO scrolling, just plain text
+                              <div className="text-center select-none transition-colors duration-300 whitespace-nowrap">SPECIAL</div>
+                            )}
                           </div>
                         ) : null;
                       })()}
