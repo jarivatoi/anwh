@@ -567,8 +567,24 @@ export const RosterEntryCell: React.FC<RosterEntryCellProps> = ({
       }
       
       // Register this edit BEFORE database update to block realtime immediately
+      // Pass the updated data so it applies immediately to local state (including color changes)
       if (registerRecentEdit) {
-        registerRecentEdit(entry.id, undefined, true); // true = apply update later
+        registerRecentEdit(entry.id, {
+          assigned_name: newStaffName,
+          text_color: textColor,
+          change_description: centerInfo 
+            ? `Name changed from "${entry.assigned_name}" to "${newStaffName}" | [${(() => {
+                const now = new Date();
+                const day = now.getDate().toString().padStart(2, '0');
+                const month = (now.getMonth() + 1).toString().padStart(2, '0');
+                const year = now.getFullYear();
+                const hour = now.getHours().toString().padStart(2, '0');
+                const minute = now.getMinutes().toString().padStart(2, '0');
+                const second = now.getSeconds().toString().padStart(2, '0');
+                return `${day}-${month}-${year} ${hour}:${minute}:${second}`;
+              })()} USER, Admin: Center Added: ${centerInfo}`
+            : `Name changed from "${entry.assigned_name}" to "${newStaffName}"`,
+        }, false); // false = apply immediately, not later
       }
 
       const updatedEntry = await updateRosterEntry(entry.id, {
