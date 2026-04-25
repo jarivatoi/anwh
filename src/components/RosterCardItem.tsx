@@ -362,8 +362,13 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
       const editorName = `${session.surname}, ${session.name}`;
 
       // Register this edit BEFORE database update to block realtime immediately
+      // Pass the updated data so it applies immediately to local state (including color changes)
       if (registerRecentEdit) {
-        registerRecentEdit(entry.id, undefined, true); // true = apply update later
+        registerRecentEdit(entry.id, {
+          assigned_name: newStaffName,
+          text_color: textColor,
+          change_description: `Name changed from "${entry.assigned_name}" to "${newStaffName}"`,
+        }, false); // false = apply immediately, not later
       }
 
       const updatedEntry = await updateRosterEntry(entry.id, {
