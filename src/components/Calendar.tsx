@@ -1343,16 +1343,16 @@ export const Calendar: React.FC<CalendarProps> = ({
                               opacity: 1,
                               width: '100%',
                               maxWidth: '100%',
-                              overflow: 'visible'
+                              overflow: 'hidden'
                             }}
                           >
                             <ScrollingText 
-                              text={hasRosterSpecialText || 'SPECIAL'} 
+                              text={hasRosterSpecialText} 
                               pauseDuration={2}
                               scrollDuration={4}
                               className="text-center select-none animate-fadeIn"
                             >
-                              <div className="text-center select-none transition-colors duration-300 whitespace-nowrap">{hasRosterSpecialText || 'SPECIAL'}</div>
+                              <div className="text-center select-none transition-colors duration-300 whitespace-nowrap">{hasRosterSpecialText}</div>
                             </ScrollingText>
                           </div>
                         ) : null;
