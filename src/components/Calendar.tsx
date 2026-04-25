@@ -1335,6 +1335,8 @@ export const Calendar: React.FC<CalendarProps> = ({
                         const dateKey = formatDateKey(day);
                         const hasSpecialDateFlag = specialDates[dateKey] === true;
                         const hasRosterSpecialText = specialDateTexts[dateKey];
+                        // Only treat as roster text if it exists AND is NOT the 'SPECIAL' placeholder
+                        const isActualRosterText = hasRosterSpecialText && hasRosterSpecialText !== 'SPECIAL';
                         // Show if EITHER manually marked OR has roster text
                         return (hasSpecialDateFlag || hasRosterSpecialText) ? (
                           <div 
@@ -1343,14 +1345,14 @@ export const Calendar: React.FC<CalendarProps> = ({
                               opacity: 1,
                               // Only apply width constraints for roster-sourced text (to enable scrolling)
                               // Manual special dates should NOT have width constraints
-                              ...(hasRosterSpecialText ? {
+                              ...(isActualRosterText ? {
                                 width: '100%',
                                 maxWidth: '100%',
                                 overflow: 'hidden'
                               } : {})
                             }}
                           >
-                            {hasRosterSpecialText ? (
+                            {isActualRosterText ? (
                               // Roster special text - enable scrolling
                               <ScrollingText 
                                 text={hasRosterSpecialText} 
