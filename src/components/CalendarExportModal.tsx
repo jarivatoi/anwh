@@ -258,7 +258,7 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
           }
           
           // Check if this base shift ID already exists (prevent duplicates)
-          // Extract base shift ID from existing shifts (e.g., '9-4' from '9-4-NARAYYA')
+          // Since manual shifts now also have staff suffix, we need to check base ID
           const existingShifts = calendarUpdates[date];
           const hasBaseShift = existingShifts.some((existingShift: string) => {
             const parts = existingShift.split('-');
@@ -267,7 +267,10 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
               const baseId = `${parts[0]}-${parts[1]}`;
               return baseId === calendarShiftId;
             }
-            // Simple format like 'N'
+            // Simple format like 'N' or 'N-NARAYYA'
+            if (parts.length > 1) {
+              return parts[0] === calendarShiftId;
+            }
             return existingShift === calendarShiftId;
           });
           
