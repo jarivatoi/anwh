@@ -256,11 +256,29 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
           if (!calendarUpdates[date]) {
             calendarUpdates[date] = [];
           }
-          // Create unique shift ID by combining shift type + staff name
-          // This ensures both NARAYYA and NARAYYA(R) can have shifts on the same date
-          const uniqueShiftId = `${calendarShiftId}-${entry.assigned_name.replace(/[^a-zA-Z0-9]/g, '')}`;
-          if (!calendarUpdates[date].includes(uniqueShiftId)) {
+          
+          // Check if this base shift ID already exists (prevent duplicates)
+          // Extract base shift ID from existing shifts (e.g., '9-4' from '9-4-NARAYYA')
+          const existingShifts = calendarUpdates[date];
+          const hasBaseShift = existingShifts.some((existingShift: string) => {
+            const parts = existingShift.split('-');
+            if (parts.length >= 2 && parts[0].match(/^\d+$/) && parts[1].match(/^\d+$/)) {
+              // Format like '9-4' or '9-4-NARAYYA'
+              const baseId = `${parts[0]}-${parts[1]}`;
+              return baseId === calendarShiftId;
+            }
+            // Simple format like 'N'
+            return existingShift === calendarShiftId;
+          });
+          
+          if (!hasBaseShift) {
+            // Create unique shift ID by combining shift type + staff name
+            // This ensures both NARAYYA and NARAYYA(R) can have shifts on the same date
+            const uniqueShiftId = `${calendarShiftId}-${entry.assigned_name.replace(/[^a-zA-Z0-9]/g, '')}`;
             calendarUpdates[date].push(uniqueShiftId);
+            console.log(`✅ Added shift: ${uniqueShiftId} on ${date}`);
+          } else {
+            console.log(`⚠️ Shift ${calendarShiftId} already exists on ${date}, skipping`);
           }
           
           // Check if this shift requires special date marking
