@@ -810,8 +810,6 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
             
             if (!alreadyExists) {
               allShifts.push(shift);
-            } else {
-              console.log(`⚠️ Shift ${newBaseId} already exists on ${date}, skipping`);
             }
           });
           
@@ -1234,21 +1232,16 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
     // Check if this shift is currently selected (by comparing base IDs)
     const isCurrentlySelected = currentShifts.some(s => {
       const baseId = getBaseShiftId(s);
-      console.log('🔍 Checking shift:', s, '-> base:', baseId, '=== target:', shiftId, '?', baseId === shiftId);
       return baseId === shiftId;
     });
-    
-    console.log('📊 Current shifts:', currentShifts, '| Target to remove:', shiftId, '| Is selected?', isCurrentlySelected);
     
     if (isCurrentlySelected) {
       // Remove shift - filter out any shifts that match this base ID
       const updatedShifts = currentShifts.filter(s => {
         const baseId = getBaseShiftId(s);
         const keep = baseId !== shiftId;
-        console.log('  Filtering:', s, '-> base:', baseId, '| keep?', keep);
         return keep;
       });
-      console.log('✅ After filter:', updatedShifts);
       setSchedule(prev => ({
         ...prev,
         [selectedDate]: updatedShifts.length > 0 ? updatedShifts : []
@@ -1278,9 +1271,6 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
           // Create unique shift ID: e.g., 'N-NARAYYAN280881240162C'
           const staffSuffix = `${session.surname.toUpperCase()}${session.idNumber.toUpperCase()}`;
           shiftWithSuffix = `${shiftId}-${staffSuffix}`;
-          console.log('✅ Adding shift with staff suffix:', shiftWithSuffix);
-        } else {
-          console.warn('⚠️ No user session found, adding shift without suffix');
         }
         
         setSchedule(prev => ({
