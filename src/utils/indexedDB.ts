@@ -55,7 +55,7 @@ interface DBSchema {
 class WorkScheduleDB {
   private db: IDBDatabase | null = null;
   private readonly dbName = 'WorkScheduleDB';
-  private readonly version = 5; // Incremented to match existing database version
+  private readonly version = 6; // Incremented to force upgrade and create missing object stores
   private initPromise: Promise<void> | null = null;
 
   async init(): Promise<void> {
@@ -546,23 +546,35 @@ class WorkScheduleDB {
   }
 
   async getMonthlySalary(year: number, month: number): Promise<number> {
-    const db = await this.ensureDB();
-    const monthKey = `${year}-${(month + 1).toString().padStart(2, '0')}`;
+    try {
+      const db = await this.ensureDB();
+      
+      // Check if object store exists
+      if (!db.objectStoreNames.contains('monthlySalaries')) {
+        console.warn('⚠️ monthlySalaries object store not found, returning 0');
+        return 0;
+      }
+      
+      const monthKey = `${year}-${(month + 1).toString().padStart(2, '0')}`;
 
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(['monthlySalaries'], 'readonly');
-      const store = transaction.objectStore('monthlySalaries');
-      const request = store.get(monthKey);
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['monthlySalaries'], 'readonly');
+        const store = transaction.objectStore('monthlySalaries');
+        const request = store.get(monthKey);
 
-      request.onsuccess = () => {
-        const result = request.result ? request.result.salary : 0;
-        resolve(result);
-      };
+        request.onsuccess = () => {
+          const result = request.result ? request.result.salary : 0;
+          resolve(result);
+        };
 
-      request.onerror = () => {
-        reject(new Error(`Failed to get monthly salary for ${monthKey}`));
-      };
-    });
+        request.onerror = () => {
+          reject(new Error(`Failed to get monthly salary for ${monthKey}`));
+        };
+      });
+    } catch (error) {
+      console.error('❌ Failed to load monthly salary:', error);
+      return 0; // Return 0 as fallback
+    }
   }
 
   async setMonthlySalary(year: number, month: number, salary: number): Promise<void> {
@@ -619,24 +631,36 @@ class WorkScheduleDB {
   }
 
   async getDateNotes(): Promise<Record<string, string>> {
-    const db = await this.ensureDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(['dateNotes'], 'readonly');
-      const store = transaction.objectStore('dateNotes');
-      const request = store.getAll();
+    try {
+      const db = await this.ensureDB();
+      
+      // Check if object store exists
+      if (!db.objectStoreNames.contains('dateNotes')) {
+        console.warn('⚠️ dateNotes object store not found, returning empty object');
+        return {};
+      }
+      
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['dateNotes'], 'readonly');
+        const store = transaction.objectStore('dateNotes');
+        const request = store.getAll();
 
-      request.onsuccess = () => {
-        const result: Record<string, string> = {};
-        request.result.forEach((item: { date: string; note: string }) => {
-          result[item.date] = item.note;
-        });
-        resolve(result);
-      };
+        request.onsuccess = () => {
+          const result: Record<string, string> = {};
+          request.result.forEach((item: { date: string; note: string }) => {
+            result[item.date] = item.note;
+          });
+          resolve(result);
+        };
 
-      request.onerror = () => {
-        reject(new Error('Failed to get date notes'));
-      };
-    });
+        request.onerror = () => {
+          reject(new Error('Failed to get date notes'));
+        };
+      });
+    } catch (error) {
+      console.error('❌ Failed to get date notes:', error);
+      return {}; // Return empty object as fallback
+    }
   }
 
   async setDateNotes(dateNotes: Record<string, string>): Promise<void> {
