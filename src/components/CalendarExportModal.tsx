@@ -79,8 +79,6 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
   };
 
   const handleExport = async () => {
-    console.log('🚀 EXPORT STARTED with auth code:', authCode);
-    
     if (!authCode || authCode.length < 4) {
       setAuthError('Please enter your authentication code');
       return;
@@ -88,7 +86,6 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
 
     // FIRST: Get the currently logged-in user from session
     const session = await getUserSession();
-    console.log('📋 Current logged-in session:', session);
     
     if (!session) {
       setAuthError('No active session found. Please log in first.');
@@ -97,7 +94,6 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
     
     // SECOND: Validate passcode and ensure it belongs to the logged-in user
     const passcodeResult = await validatePasscode(authCode);
-    console.log('✅ Passcode validated:', passcodeResult);
     
     if (!passcodeResult || !passcodeResult.isValid) {
       setAuthError('Invalid passcode');
@@ -114,12 +110,9 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
       .single();
     
     if (!userData || userData.passcode !== authCode) {
-      console.error('❌ PASSCODE MISMATCH: Passcode does not belong to logged-in user');
       setAuthError('Invalid passcode');
       return;
     }
-    
-    console.log('✅ Passcode verified: User is authorized');
     
     // Use the LOGGED-IN USER's details for roster matching
     const authenticatedStaffName = `${session.surname}, ${session.name}`;
@@ -127,28 +120,16 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
     const authenticatedIdNumber = session.idNumber; // Use ID number for unique matching
     const isAdmin = session.isAdmin;
 
-    console.log('🔄 Starting calendar export process...');
     setIsExporting(true);
     setStep('exporting');
     setAuthError('');
 
     try {
       // Fetch all roster entries
-      console.log('📊 Fetching roster entries...');
       const allEntries = await fetchRosterEntries();
-      console.log(`📊 Total entries: ${allEntries.length}`);
-      
-      // Log authenticated user details for debugging
-      console.log('👤 Authenticated user:', {
-        authenticatedStaffName,
-        authenticatedSurname,
-        authenticatedIdNumber,
-        isAdmin
-      });
       
       // Build the expected roster_display_name format: SURNAME_IDNUMBER
       const expectedRosterName = `${(authenticatedSurname || '').toUpperCase()}_${(authenticatedIdNumber || '').toUpperCase()}`;
-      console.log('🔍 Expected roster display name:', expectedRosterName);
       
       // Filter entries - For ADMIN, show all entries; for others, only their own
       const staffEntries = allEntries.filter(entry => {
@@ -178,27 +159,10 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
         
         const matches = exactMatch || (hasSurname && hasIdNumber);
         
-        console.log(`🔍 Entry: ${entry.assigned_name} | Surname match: ${hasSurname} | ID match: ${hasIdNumber} | Exact: ${exactMatch} | Final: ${matches}`);
-        
         return matches;
       });
       
-      console.log(`📊 Found ${staffEntries.length} entries for ${authenticatedStaffName}`);
-      
-      // Log the actual entries found
-      console.log('📋 ENTRIES FOUND FOR EXPORT:');
-      staffEntries.forEach(entry => {
-        console.log(`  📅 ${entry.date} - ${entry.shift_type} - ${entry.assigned_name}`);
-      });
-      
-      // Also log all entries to see what's available
-      console.log('📋 ALL ROSTER ENTRIES (first 10):');
-      allEntries.slice(0, 10).forEach(entry => {
-        console.log(`  📅 ${entry.date} - ${entry.shift_type} - ${entry.assigned_name}`);
-      });
-      
       if (staffEntries.length === 0) {
-        console.log('❌ No entries found for this staff member and month');
         setExportResult({
           success: false,
           filename: '',
@@ -210,19 +174,15 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
       }
       
       // Now convert to calendar format and update the calendar
-      console.log('🔄 Converting roster entries to calendar format...');
-      
       const calendarUpdates: Record<string, string[]> = {};
       const specialDateUpdates: Record<string, boolean> = {};
       
       // First, check for special dates in ALL entries (not just staff entries)
-      console.log('🌟 Checking for special dates in all entries...');
       allEntries.forEach(entry => {
         if (entry.change_description && entry.change_description.includes('Special Date:')) {
           const match = entry.change_description.match(/Special Date:\s*([^;]+)/);
           if (match && match[1].trim()) {
             specialDateUpdates[entry.date] = true;
-            console.log(`🌟 Found special date: ${entry.date} - "${match[1].trim()}"`);
           }
         }
       });
@@ -279,9 +239,6 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
             // This ensures both NARAYYA and NARAYYA(R) can have shifts on the same date
             const uniqueShiftId = `${calendarShiftId}-${entry.assigned_name.replace(/[^a-zA-Z0-9]/g, '')}`;
             calendarUpdates[date].push(uniqueShiftId);
-            console.log(`✅ Added shift: ${uniqueShiftId} on ${date}`);
-          } else {
-            console.log(`⚠️ Shift ${calendarShiftId} already exists on ${date}, skipping`);
           }
           
           // Check if this shift requires special date marking
@@ -295,11 +252,7 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
         }
       });
       
-      console.log('📅 Calendar updates to apply:', calendarUpdates);
-      console.log('📌 Special date updates to apply:', specialDateUpdates);
-      
       // Dispatch bulk update event to App.tsx
-      console.log('🔄 Dispatching bulk calendar update with', Object.keys(calendarUpdates).length, 'dates');
       window.dispatchEvent(new CustomEvent('bulkCalendarUpdate', {
         detail: {
           calendarUpdates,
@@ -318,10 +271,7 @@ export const CalendarExportModal: React.FC<CalendarExportModalProps> = ({
         errors: []
       });
       setStep('result');
-      
-      console.log('✅ Export completed successfully!');
     } catch (error) {
-      console.error('❌ Calendar export error:', error);
       setExportResult({
         success: false,
         filename: '',
