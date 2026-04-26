@@ -1373,7 +1373,6 @@ export const Calendar: React.FC<CalendarProps> = ({
                       {/* All shifts displayed */}
                       {dayShifts.map((shiftId, idx) => {
                         const shift = getShiftDisplay(shiftId);
-                        console.log('🔍 [RENDER SHIFT]', { shiftId, shiftFound: !!shift, shiftData: shift });
                         return shift ? (
                           <div
                             key={`${shiftId}-${idx}`}
