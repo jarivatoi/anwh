@@ -551,7 +551,6 @@ class WorkScheduleDB {
       
       // Check if object store exists
       if (!db.objectStoreNames.contains('monthlySalaries')) {
-        console.warn('⚠️ monthlySalaries object store not found, returning 0');
         return 0;
       }
       
@@ -572,7 +571,6 @@ class WorkScheduleDB {
         };
       });
     } catch (error) {
-      console.error('❌ Failed to load monthly salary:', error);
       return 0; // Return 0 as fallback
     }
   }
@@ -636,7 +634,6 @@ class WorkScheduleDB {
       
       // Check if object store exists
       if (!db.objectStoreNames.contains('dateNotes')) {
-        console.warn('⚠️ dateNotes object store not found, returning empty object');
         return {};
       }
       
@@ -658,7 +655,6 @@ class WorkScheduleDB {
         };
       });
     } catch (error) {
-      console.error('❌ Failed to get date notes:', error);
       return {}; // Return empty object as fallback
     }
   }
