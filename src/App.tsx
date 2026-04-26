@@ -780,8 +780,33 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
           const allShifts = [...existingShifts];
           
           (shifts as string[]).forEach(shift => {
-            if (!allShifts.includes(shift)) {
+            // Extract base shift ID from the new shift
+            const parts = shift.split('-');
+            let newBaseId: string;
+            if (parts.length >= 2 && parts[0].match(/^\d+$/) && parts[1].match(/^\d+$/)) {
+              // Format like '9-4' or '9-4-NARAYYA'
+              newBaseId = `${parts[0]}-${parts[1]}`;
+            } else {
+              // Simple format like 'N'
+              newBaseId = shift;
+            }
+            
+            // Check if base shift ID already exists
+            const alreadyExists = allShifts.some((existingShift: string) => {
+              const existingParts = existingShift.split('-');
+              let existingBaseId: string;
+              if (existingParts.length >= 2 && existingParts[0].match(/^\d+$/) && existingParts[1].match(/^\d+$/)) {
+                existingBaseId = `${existingParts[0]}-${existingParts[1]}`;
+              } else {
+                existingBaseId = existingShift;
+              }
+              return existingBaseId === newBaseId;
+            });
+            
+            if (!alreadyExists) {
               allShifts.push(shift);
+            } else {
+              console.log(`⚠️ Shift ${newBaseId} already exists on ${date}, skipping`);
             }
           });
           
