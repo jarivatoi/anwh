@@ -786,6 +786,9 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
             if (parts.length >= 2 && parts[0].match(/^\d+$/) && parts[1].match(/^\d+$/)) {
               // Format like '9-4' or '9-4-NARAYYA'
               newBaseId = `${parts[0]}-${parts[1]}`;
+            } else if (parts.length > 1) {
+              // Format like 'N-NARAYYA'
+              newBaseId = parts[0];
             } else {
               // Simple format like 'N'
               newBaseId = shift;
@@ -797,6 +800,8 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
               let existingBaseId: string;
               if (existingParts.length >= 2 && existingParts[0].match(/^\d+$/) && existingParts[1].match(/^\d+$/)) {
                 existingBaseId = `${existingParts[0]}-${existingParts[1]}`;
+              } else if (existingParts.length > 1) {
+                existingBaseId = existingParts[0];
               } else {
                 existingBaseId = existingShift;
               }
@@ -1204,7 +1209,7 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
     return true;
   };
 
-  const toggleShift = (shiftId: string) => {
+  const toggleShift = async (shiftId: string) => {
     if (!selectedDate) return;
     
     
@@ -1265,9 +1270,22 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
           }));
         }
         
+        // Get current user session to create unique shift ID with staff name
+        const session = await getUserSession();
+        let shiftWithSuffix = shiftId;
+        
+        if (session && session.surname && session.idNumber) {
+          // Create unique shift ID: e.g., 'N-NARAYYAN280881240162C'
+          const staffSuffix = `${session.surname.toUpperCase()}${session.idNumber.toUpperCase()}`;
+          shiftWithSuffix = `${shiftId}-${staffSuffix}`;
+          console.log('✅ Adding shift with staff suffix:', shiftWithSuffix);
+        } else {
+          console.warn('⚠️ No user session found, adding shift without suffix');
+        }
+        
         setSchedule(prev => ({
           ...prev,
-          [selectedDate]: [...currentShifts, shiftId]
+          [selectedDate]: [...currentShifts, shiftWithSuffix]
         }));
       } else {
       }
