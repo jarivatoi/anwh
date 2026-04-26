@@ -388,19 +388,6 @@ export const syncRosterToCalendar = (
   // Check if we're in batch import mode
   const isBatchImport = (window as any).batchImportMode === true;
   
-  console.log('🔄 ROSTER SYNC: Sync triggered with data:', {
-    date,
-    shiftType,
-    assignedName,
-    editorName,
-    action,
-    calendarLabel,
-    isBatchImport,
-    currentScheduleKeys: Object.keys(schedule).length,
-    currentSpecialDates: Object.keys(specialDates).length,
-    currentScheduleForDate: schedule[date] || []
-  });
-  
   // CRITICAL: Only sync if the assigned name matches the calendar label
   // This prevents other people's roster changes from affecting your personal calendar
   // Handle both NARAYYA and NARAYYA(R) as the same person
@@ -516,11 +503,25 @@ export const syncRosterToCalendar = (
   
   // Get current shifts for this date
   const currentShifts = schedule[date] || [];
-  console.log(`🔍 ROSTER SYNC: Current shifts for ${date}:`, currentShifts);
+  
+  // Check if base shift ID already exists (prevent duplicates)
+  // Manual shifts now have staff suffix (e.g., 'N-NARAYYA...'), roster sync adds base ID (e.g., 'N')
+  const hasBaseShift = currentShifts.some((existingShift: string) => {
+    const parts = existingShift.split('-');
+    if (parts.length >= 2 && parts[0].match(/^\d+$/) && parts[1].match(/^\d+$/)) {
+      // Format like '9-4' or '9-4-NARAYYA'
+      const baseId = `${parts[0]}-${parts[1]}`;
+      return baseId === calendarShiftId;
+    }
+    // Simple format like 'N' or 'N-NARAYYA'
+    if (parts.length > 1) {
+      return parts[0] === calendarShiftId;
+    }
+    return existingShift === calendarShiftId;
+  });
   
   // Check for conflicts
   if (checkShiftConflicts(date, shiftType, currentShifts)) {
-    console.log(`❌ ROSTER SYNC: Shift conflict detected for ${calendarShiftId} on ${date} with existing shifts:`, currentShifts);
     return false; // Don't sync if there are conflicts
   }
   
@@ -529,7 +530,6 @@ export const syncRosterToCalendar = (
   
   // Mark as special if roster date is special OR if shift requires special marking
   if ((needsSpecial || isRosterSpecialDate) && !currentIsSpecial) {
-    console.log(`✅ ROSTER SYNC: Marking ${date} as special date`);
     setSpecialDates(prev => ({
       ...prev,
       [date]: true
@@ -538,18 +538,13 @@ export const syncRosterToCalendar = (
   }
   
   // Add shift to calendar if not already present
-  if (!currentShifts.includes(calendarShiftId)) {
-    console.log(`✅ ROSTER SYNC: Adding shift ${calendarShiftId} to calendar on ${date}`);
+  if (!hasBaseShift) {
     setSchedule(prev => ({
       ...prev,
       [date]: [...currentShifts, calendarShiftId]
     }));
     calendarUpdated = true;
-  } else {
-    console.log(`ℹ️ ROSTER SYNC: Shift ${calendarShiftId} already exists in calendar on ${date}`);
   }
-  
-  console.log(`🔍 ROSTER SYNC: Calendar updated: ${calendarUpdated}, Final schedule keys: ${Object.keys(schedule).length}`);
   
   if (calendarUpdated) {
     // Only show individual notifications if NOT in batch import mode
