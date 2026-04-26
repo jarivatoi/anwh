@@ -25,8 +25,6 @@ export const validateShiftForDate = (date: string, shiftType: string, isSpecialD
   const dateObj = new Date(date);
   const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 6 = Saturday
   
-  console.log(`🔍 Validating shift: ${shiftType} on ${date} (day ${dayOfWeek}, special: ${isSpecialDate})`);
-  
   // Map roster shift types to calendar shift IDs
   // Support both legacy full names AND modern shift IDs
   const shiftMapping: Record<string, string> = {
@@ -50,7 +48,6 @@ export const validateShiftForDate = (date: string, shiftType: string, isSpecialD
   }
   
   if (!calendarShiftId) {
-    console.log(`❌ Unknown shift type: ${shiftType}`);
     return false;
   }
   
@@ -59,24 +56,20 @@ export const validateShiftForDate = (date: string, shiftType: string, isSpecialD
     // Special dates allow: 9-4, 4-10, N (but not 12-10)
     const allowedOnSpecial = ['9-4', '4-10', 'N'];
     const isValid = allowedOnSpecial.includes(calendarShiftId);
-    console.log(`🔍 Special date validation: ${calendarShiftId} ${isValid ? 'allowed' : 'not allowed'}`);
     return isValid;
   } else {
     // Regular day validation
     if (dayOfWeek === 6) { // Saturday
       const allowedOnSaturday = ['12-10', 'N'];
       const isValid = allowedOnSaturday.includes(calendarShiftId);
-      console.log(`🔍 Saturday validation: ${calendarShiftId} ${isValid ? 'allowed' : 'not allowed'}`);
       return isValid;
     } else if (dayOfWeek === 0) { // Sunday
       const allowedOnSunday = ['9-4', '4-10', 'N'];
       const isValid = allowedOnSunday.includes(calendarShiftId);
-      console.log(`🔍 Sunday validation: ${calendarShiftId} ${isValid ? 'allowed' : 'not allowed'}`);
       return isValid;
     } else { // Weekdays (Monday-Friday)
       const allowedOnWeekday = ['4-10', 'N'];
       const isValid = allowedOnWeekday.includes(calendarShiftId);
-      console.log(`🔍 Weekday validation: ${calendarShiftId} ${isValid ? 'allowed' : 'not allowed'}`);
       return isValid;
     }
   }
@@ -167,13 +160,6 @@ const handleRemovalSync = (
 ): boolean => {
   const { calendarLabel, schedule, specialDates, setSchedule, setSpecialDates } = options;
   
-  console.log('🗑️ rosterCalendarSync.ts: Processing removal for:', {
-    date,
-    shiftType,
-    assignedName,
-    calendarLabel
-  });
-  
   // CRITICAL: Only sync removal if the assigned name matches the calendar label
   // Handle both NARAYYA and NARAYYA(R) as the same person
   // ALSO handle ID-based names like NARAYYA_N280881240162C -> extract NARAYYA
@@ -195,22 +181,10 @@ const handleRemovalSync = (
   const assignedBaseName = extractBaseName(assignedName);
   const calendarBaseName = extractBaseName(calendarLabel);
   
-  console.log('🔍 rosterCalendarSync.ts: Removal name matching check (handles R variants and ID-based names):', {
-    assignedName,
-    calendarLabel,
-    assignedBaseName,
-    calendarBaseName,
-    namesMatch: assignedBaseName === calendarBaseName,
-    note: 'Supports: NARAYYA, NARAYYA(R), NARAYYA_N280881240162C'
-  });
-  
   // If names don't match, don't sync removal to calendar
   if (assignedBaseName !== calendarBaseName) {
-    console.log(`❌ rosterCalendarSync.ts: Base names don't match for removal - skipping sync. Assigned base: "${assignedBaseName}", Calendar base: "${calendarBaseName}"`);
     return false;
   }
-  
-  console.log(`✅ rosterCalendarSync.ts: Base names match for removal - proceeding with sync (${assignedName} matches ${calendarLabel})`);
   
   // Map roster shift type to calendar shift ID
   // Support both legacy full names AND modern shift IDs
@@ -235,119 +209,132 @@ const handleRemovalSync = (
   }
   
   if (!calendarShiftId) {
-    console.log(`❌ rosterCalendarSync.ts: Cannot map shift type for removal: ${shiftType}`);
     return false;
   }
   
   // Get current shifts for this date
   const currentShifts = schedule[date] || [];
-  console.log(`🔍 rosterCalendarSync.ts: Current shifts for ${date}:`, currentShifts);
+  
+  // Find shifts that match the base shift ID (handles staff suffix format)
+  const matchingShifts = currentShifts.filter((existingShift: string) => {
+    const parts = existingShift.split('-');
+    if (parts.length >= 2 && parts[0].match(/^\d+$/) && parts[1].match(/^\d+$/)) {
+      // Format like '9-4' or '9-4-NARAYYA'
+      const baseId = `${parts[0]}-${parts[1]}`;
+      return baseId === calendarShiftId;
+    }
+    // Simple format like 'N' or 'N-NARAYYA'
+    if (parts.length > 1) {
+      return parts[0] === calendarShiftId;
+    }
+    return existingShift === calendarShiftId;
+  });
   
   // Check if the shift exists in calendar
-  if (!currentShifts.includes(calendarShiftId)) {
-    console.log(`ℹ️ rosterCalendarSync.ts: Shift ${calendarShiftId} not found in calendar for ${date}`);
+  if (matchingShifts.length === 0) {
     return false;
   }
   
-  // Remove the shift from calendar
-  console.log(`🗑️ rosterCalendarSync.ts: Removing shift ${calendarShiftId} from calendar on ${date}`);
+  // Remove ALL matching shifts from calendar (including staff-suffixed versions)
   setSchedule(prev => {
     const newSchedule = { ...prev };
-    const updatedShifts = currentShifts.filter(shift => shift !== calendarShiftId);
+    const updatedShifts = currentShifts.filter((shift: string) => {
+      const parts = shift.split('-');
+      if (parts.length >= 2 && parts[0].match(/^\d+$/) && parts[1].match(/^\d+$/)) {
+        const baseId = `${parts[0]}-${parts[1]}`;
+        return baseId !== calendarShiftId;
+      }
+      if (parts.length > 1) {
+        return parts[0] !== calendarShiftId;
+      }
+      return shift !== calendarShiftId;
+    });
     
     if (updatedShifts.length === 0) {
       // If no shifts left, remove the date entry completely
       delete newSchedule[date];
-      console.log(`🗑️ rosterCalendarSync.ts: No shifts left for ${date}, removing date entry completely`);
     } else {
       // Otherwise, update with remaining shifts
       newSchedule[date] = updatedShifts;
-      console.log(`🗑️ rosterCalendarSync.ts: Updated ${date} with remaining shifts:`, updatedShifts);
     }
     
-    console.log(`🗑️ rosterCalendarSync.ts: Schedule update completed for ${date}`);
     return newSchedule;
   });
   
   // Note: We don't remove special date marking when removing shifts
   // because the person might have special activities without any shifts
   
-  // Show enhanced removal notification with person's name
-  console.log('🔔 rosterCalendarSync.ts: Creating removal notification...');
-  
-  // Extract display name from ID-based format for clean notifications
-  // Handles: NARAYYA_N280881240162C → NARAYYA
-  //          NARAYYA_(T)_N280881240162C → NARAYYA (T)
-  //          NARAYYA_(THOMAS)_N280881240162C → NARAYYA (THOMAS)
-  let displayName = assignedName;
-  if (assignedName.includes('_')) {
-    const parts = assignedName.split('_');
-    const surname = parts[0];
-    
-    // Check if there's a disambiguation part in parentheses
-    const hasDisambiguation = parts[1]?.startsWith('(') && parts[1]?.endsWith(')');
-    
-    if (hasDisambiguation) {
-      // Remove trailing underscore and ID number
-      const withoutId = parts.slice(0, -1).join('_'); // Remove last part (ID)
-      // Convert NARAYYA_(T) → NARAYYA (T)
-      displayName = withoutId.replace(/_\(([^)]+)\)/, ' ($1)');
-    } else {
-      // Simple format: just surname
-      displayName = surname;
-    }
-  } else {
-    // Fallback: just remove (R) suffix
-    displayName = assignedName.replace(/\(R\)$/, '').trim();
-  }
-  
-  const notification = document.createElement('div');
-  notification.style.cssText = `
-    position: fixed;
-    top: 80px;
-    right: 20px;
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-    color: white;
-    padding: 16px 20px;
-    border-radius: 12px;
-    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
-    z-index: 999999;
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    max-width: 320px;
-    animation: slideInRight 0.3s ease-out;
-    border: 2px solid rgba(255, 255, 255, 0.2);
-  `;
-  
-  notification.innerHTML = `
-    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-      <div style="width: 8px; height: 8px; background: white; border-radius: 50%; opacity: 0.9;"></div>
-      <strong style="font-size: 15px;">Calendar Updated</strong>
-    </div>
-    <div style="font-size: 13px; line-height: 1.4; opacity: 0.95;">
-      <strong>${displayName}</strong> removed from <strong>${calendarLabel}</strong>'s calendar<br>
-      📅 <strong>${date}</strong> - ${shiftType}
-    </div>
-  `;
-  
-  document.body.appendChild(notification);
-  console.log('🔔 rosterCalendarSync.ts: Removal notification created and added to DOM');
-  
-  // Auto-remove after 4 seconds (longer for removal notifications)
+  // Delay removal notification to check if this is part of a name update
+  const removalKey = `${date}-${shiftType}`;
   setTimeout(() => {
-    if (document.body.contains(notification)) {
-      notification.style.animation = 'slideInRight 0.3s ease-out reverse';
-      setTimeout(() => {
-        if (document.body.contains(notification)) {
-          document.body.removeChild(notification);
-          console.log('🔔 rosterCalendarSync.ts: Removal notification removed from DOM');
-        }
-      }, 300);
+    // Check if this removal was part of an update (tracked removal was deleted)
+    if (!recentRemovals.has(removalKey)) {
+      // This was part of an update, don't show removal toast
+      return;
     }
-  }, 4000);
+    
+    // Show enhanced removal notification with person's name
+    // Extract display name from ID-based format for clean notifications
+    let displayName = assignedName;
+    if (assignedName.includes('_')) {
+      const parts = assignedName.split('_');
+      const surname = parts[0];
+      const hasDisambiguation = parts[1]?.startsWith('(') && parts[1]?.endsWith(')');
+      if (hasDisambiguation) {
+        const withoutId = parts.slice(0, -1).join('_');
+        displayName = withoutId.replace(/_\(([^)]+)\)/, ' ($1)');
+      } else {
+        displayName = surname;
+      }
+    } else {
+      displayName = assignedName.replace(/\(R\)$/, '').trim();
+    }
+    
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+      padding: 16px 20px;
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+      z-index: 999999;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      max-width: 320px;
+      animation: slideInRight 0.3s ease-out;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    `;
+    
+    notification.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+        <div style="width: 8px; height: 8px; background: white; border-radius: 50%; opacity: 0.9;"></div>
+        <strong style="font-size: 15px;">Calendar Updated</strong>
+      </div>
+      <div style="font-size: 13px; line-height: 1.4; opacity: 0.95;">
+        <strong>${displayName}</strong> removed from <strong>${calendarLabel}</strong>'s calendar<br>
+        📅 <strong>${date}</strong> - ${shiftType}
+      </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 4 seconds
+    setTimeout(() => {
+      if (document.body.contains(notification)) {
+        notification.style.animation = 'slideInRight 0.3s ease-out reverse';
+        setTimeout(() => {
+          if (document.body.contains(notification)) {
+            document.body.removeChild(notification);
+          }
+        }, 300);
+      }
+    }, 4000);
+  }, REMOVAL_TRACKING_WINDOW + 50); // Wait longer than the tracking window
   
-  console.log(`✅ ROSTER SYNC: Calendar updated successfully for ${date}`);
   return true;
 };
 
@@ -374,6 +361,14 @@ const addNotificationStyles = () => {
 
 // Initialize styles
 addNotificationStyles();
+
+// Track recent removal events to detect name updates
+const recentRemovals = new Map<string, { name: string, timestamp: number }>();
+const REMOVAL_TRACKING_WINDOW = 200; // ms - if add follows removal within this window, it's an update
+
+// Track recent update toasts to prevent duplicate green toast
+const recentUpdateToasts = new Set<string>();
+const UPDATE_TOAST_WINDOW = 500; // ms
 
 /**
  * Main synchronization function
@@ -410,22 +405,10 @@ export const syncRosterToCalendar = (
   const assignedBaseName = extractBaseName(assignedName);
   const calendarBaseName = extractBaseName(calendarLabel);
   
-  console.log('🔍 ROSTER SYNC: Name matching check (handles R variants and ID-based names):', {
-    assignedName,
-    calendarLabel,
-    assignedBaseName,
-    calendarBaseName,
-    namesMatch: assignedBaseName === calendarBaseName,
-    note: 'Supports: NARAYYA, NARAYYA(R), NARAYYA_N280881240162C'
-  });
-  
   // If names don't match, don't sync to calendar
   if (assignedBaseName !== calendarBaseName) {
-    console.log(`❌ ROSTER SYNC: Base names don't match - skipping sync. Assigned base: "${assignedBaseName}", Calendar base: "${calendarBaseName}"`);
     return false;
   }
-  
-  console.log(`✅ ROSTER SYNC: Base names match - proceeding with sync (${assignedName} matches ${calendarLabel})`);
   
   // Track imports for batch notification
   if (isBatchImport) {
@@ -442,32 +425,123 @@ export const syncRosterToCalendar = (
   
   // Handle removal action
   if (action === 'removed') {
-    console.log('🗑️ ROSTER SYNC: Processing removal action');
+    // Track this removal to detect name updates
+    const removalKey = `${date}-${shiftType}`;
+    recentRemovals.set(removalKey, { name: assignedName, timestamp: Date.now() });
+    
+    // Clean up old removals (older than tracking window)
+    const now = Date.now();
+    for (const [key, value] of recentRemovals.entries()) {
+      if (now - value.timestamp > REMOVAL_TRACKING_WINDOW * 2) {
+        recentRemovals.delete(key);
+      }
+    }
+    
     return handleRemovalSync(date, shiftType, assignedName, { calendarLabel, schedule, specialDates, setSchedule, setSpecialDates });
+  }
+  
+  // Check if this is part of a name update (removal + addition within short window)
+  if (action === 'added' || action === 'updated') {
+    const removalKey = `${date}-${shiftType}`;
+    const recentRemoval = recentRemovals.get(removalKey);
+    
+    if (recentRemoval && (Date.now() - recentRemoval.timestamp) <= REMOVAL_TRACKING_WINDOW) {
+      // This is a name update! Show yellow "updated" toast instead
+      // Extract display names for notification
+      let oldDisplayName = recentRemoval.name;
+      let newDisplayName = assignedName;
+      
+      // Simplify names for display (remove ID suffix)
+      if (oldDisplayName.includes('_')) {
+        const parts = oldDisplayName.split('_');
+        const surname = parts[0];
+        const hasDisambiguation = parts[1]?.startsWith('(') && parts[1]?.endsWith(')');
+        oldDisplayName = hasDisambiguation 
+          ? parts.slice(0, -1).join('_').replace(/_\(([^)]+)\)/, ' ($1)')
+          : surname;
+      } else {
+        oldDisplayName = oldDisplayName.replace(/\(R\)$/, '').trim();
+      }
+      
+      if (newDisplayName.includes('_')) {
+        const parts = newDisplayName.split('_');
+        const surname = parts[0];
+        const hasDisambiguation = parts[1]?.startsWith('(') && parts[1]?.endsWith(')');
+        newDisplayName = hasDisambiguation 
+          ? parts.slice(0, -1).join('_').replace(/_\(([^)]+)\)/, ' ($1)')
+          : surname;
+      } else {
+        newDisplayName = newDisplayName.replace(/\(R\)$/, '').trim();
+      }
+      
+      // Show yellow update notification
+      if (!isBatchImport) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+          position: fixed;
+          top: 80px;
+          right: 20px;
+          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+          color: white;
+          padding: 16px 20px;
+          border-radius: 12px;
+          box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+          z-index: 999999;
+          font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+          font-size: 14px;
+          font-weight: 500;
+          max-width: 320px;
+          animation: slideInRight 0.3s ease-out;
+          border: 2px solid rgba(255, 255, 255, 0.2);
+        `;
+        
+        notification.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <div style="width: 8px; height: 8px; background: white; border-radius: 50%; opacity: 0.9;"></div>
+            <strong style="font-size: 15px;">Calendar Updated</strong>
+          </div>
+          <div style="font-size: 13px; line-height: 1.4; opacity: 0.95;">
+            <strong>${oldDisplayName}</strong> calendar updated<br>
+            📅 <strong>${date}</strong> - ${shiftType}<br>
+            <span style="font-size: 11px; opacity: 0.8;">${oldDisplayName} → ${newDisplayName}</span>
+          </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+          if (document.body.contains(notification)) {
+            notification.style.animation = 'slideInRight 0.3s ease-out reverse';
+            setTimeout(() => {
+              if (document.body.contains(notification)) {
+                document.body.removeChild(notification);
+              }
+            }, 300);
+          }
+        }, 3000);
+      }
+      
+      // Remove the tracked removal to prevent duplicate toast
+      recentRemovals.delete(removalKey);
+      
+      // Track that we showed an update toast to prevent green toast
+      const updateKey = `${date}-${shiftType}`;
+      recentUpdateToasts.add(updateKey);
+      setTimeout(() => recentUpdateToasts.delete(updateKey), UPDATE_TOAST_WINDOW);
+      
+      // Still need to ensure the shift exists in calendar
+      // Continue with normal sync logic below
+    }
   }
   
   // Get all entries to check for special date status
   const allEntries = options.entries || [];
-  // Check if this date is marked as special in the roster
   const isRosterSpecialDate = checkIfRosterDateIsSpecial(date, allEntries);
-  console.log('🌟 ROSTER SYNC: Checking if roster date is special:', {
-    date,
-    isRosterSpecialDate,
-    currentCalendarSpecial: specialDates[date]
-  });
   
   // Check if this date needs special marking for the shift to be valid
   const needsSpecial = requiresSpecialDate(date, shiftType);
   const currentIsSpecial = specialDates[date] === true;
-  
-  console.log('🔍 ROSTER SYNC: Special date analysis:', {
-    date,
-    shiftType,
-    needsSpecial,
-    currentIsSpecial,
-    isRosterSpecialDate,
-    dayOfWeek: new Date(date).getDay()
-  });
   
   // Determine final special date status
   const finalSpecialStatus = needsSpecial || currentIsSpecial || isRosterSpecialDate;
@@ -495,11 +569,8 @@ export const syncRosterToCalendar = (
   }
   
   if (!calendarShiftId) {
-    console.log(`❌ ROSTER SYNC: Cannot map shift type: ${shiftType}`);
     return false;
   }
-  
-  console.log(`🔍 ROSTER SYNC: Mapped shift "${shiftType}" to calendar ID "${calendarShiftId}"`);
   
   // Get current shifts for this date
   const currentShifts = schedule[date] || [];
@@ -520,13 +591,17 @@ export const syncRosterToCalendar = (
     return existingShift === calendarShiftId;
   });
   
-  // Check for conflicts
-  if (checkShiftConflicts(date, shiftType, currentShifts)) {
-    return false; // Don't sync if there are conflicts
+  // If base shift already exists, skip conflict check and proceed to show toast
+  if (!hasBaseShift) {
+    // Check for conflicts only if shift doesn't already exist
+    if (checkShiftConflicts(date, shiftType, currentShifts)) {
+      return false; // Don't sync if there are conflicts
+    }
   }
   
   // Apply changes to calendar
   let calendarUpdated = false;
+  let shiftAlreadyExisted = false;
   
   // Mark as special if roster date is special OR if shift requires special marking
   if ((needsSpecial || isRosterSpecialDate) && !currentIsSpecial) {
@@ -544,9 +619,19 @@ export const syncRosterToCalendar = (
       [date]: [...currentShifts, calendarShiftId]
     }));
     calendarUpdated = true;
+  } else {
+    shiftAlreadyExisted = true;
   }
   
-  if (calendarUpdated) {
+  // Show toast notification if calendar was updated OR if shift already existed (sync confirmation)
+  if (calendarUpdated || shiftAlreadyExisted) {
+    // Check if we already showed an update toast for this date/shift
+    const updateKey = `${date}-${shiftType}`;
+    if (recentUpdateToasts.has(updateKey)) {
+      // Skip green toast - yellow update toast already shown
+      return calendarUpdated;
+    }
+    
     // Only show individual notifications if NOT in batch import mode
     if (!isBatchImport) {
       // Extract display name from ID-based format for clean notifications
@@ -598,12 +683,13 @@ export const syncRosterToCalendar = (
       notification.innerHTML = `
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
           <div style="width: 8px; height: 8px; background: white; border-radius: 50%; opacity: 0.9;"></div>
-          <strong style="font-size: 15px;">Calendar Updated</strong>
+          <strong style="font-size: 15px;">Calendar ${shiftAlreadyExisted ? 'Synced' : 'Updated'}</strong>
         </div>
         <div style="font-size: 13px; line-height: 1.4; opacity: 0.95;">
-          <strong>${displayName}</strong> added to <strong>${calendarLabel}</strong>'s calendar<br>
+          <strong>${displayName}</strong> ${shiftAlreadyExisted ? 'synced to' : 'added to'} <strong>${calendarLabel}</strong>'s calendar<br>
           📅 <strong>${date}</strong> - ${shiftType}
           ${(needsSpecial || isRosterSpecialDate) ? '<br>📌 Date marked as special' : ''}
+          ${shiftAlreadyExisted ? '<br><span style="font-size: 11px; opacity: 0.8;">(Shift already existed)</span>' : ''}
         </div>
       `;
       
@@ -630,26 +716,18 @@ export const syncRosterToCalendar = (
  * Check if a date is marked as special in the roster entries
  */
 const checkIfRosterDateIsSpecial = (date: string, entries: RosterEntry[]): boolean => {
-  console.log(`🌟 Checking if ${date} is special in roster entries...`);
-  
   // Get all entries for this date
   const dateEntries = entries.filter(entry => entry.date === date);
-  console.log(`🌟 Found ${dateEntries.length} entries for ${date}`);
   
   // Check if any entry has special date info in change_description
   for (const entry of dateEntries) {
-    console.log(`🌟 Checking entry: ${entry.assigned_name} - ${entry.shift_type}`);
-    console.log(`🌟 Change description: "${entry.change_description}"`);
-    
     if (entry.change_description && entry.change_description.includes('Special Date:')) {
       const match = entry.change_description.match(/Special Date:\s*([^;]+)/);
       if (match && match[1].trim()) {
-        console.log(`🌟 Found special date info: "${match[1].trim()}"`);
         return true;
       }
     }
   }
   
-  console.log(`🌟 No special date info found for ${date}`);
   return false;
 };
