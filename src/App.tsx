@@ -22,7 +22,7 @@ import { gsap } from 'gsap';
 import { RosterPanel } from './components/RosterPanel';
 import { syncRosterToCalendar } from './utils/rosterCalendarSync';
 import { fetchRosterEntries } from './utils/rosterApi';
-import { exportCompleteDatabase } from './utils/databaseExport';
+import { exportCompleteDatabase, downloadExportFile } from './utils/databaseExport';
 import { MaintenanceMode } from './components/MaintenanceMode';
 import { supabase } from './lib/supabase';
 
@@ -1498,7 +1498,8 @@ const MainApp: React.FC<{ user: UserSession | null; onLogout: () => void; onLogi
 
   const handleExportCompleteDatabase = async () => {
     try {
-      await exportCompleteDatabase();
+      const exportData = await exportCompleteDatabase();
+      await downloadExportFile(exportData);
     } catch (error) {
       console.error('Complete database export failed:', error);
       throw error;
