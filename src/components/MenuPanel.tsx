@@ -86,7 +86,8 @@ export const MenuPanel: React.FC<MenuPanelProps> = ({
     setIsExportingDatabase(true);
     try {
       await onExportCompleteDatabase();
-      alert('✅ Complete database exported successfully! Check your downloads folder.');
+      // Success message is now handled by downloadExportFile
+      // No need to show additional alert since Web Share API or clipboard message already shown
     } catch (error) {
       console.error('Database export failed:', error);
       alert('❌ Database export failed. Please check console for details.');
@@ -122,7 +123,13 @@ export const MenuPanel: React.FC<MenuPanelProps> = ({
       try {
         // Try clipboard copy for PWA
         await navigator.clipboard.writeText(dataStr);
-        alert(`📋 Data copied to clipboard!\n\nTo save as file:\n1. Open Notes app\n2. Paste the data\n3. Tap Share → Save to Files\n4. Name it: ${filename}`);
+        alert(`📋 Data copied to clipboard!
+
+To save as file:
+1. Open Notes app
+2. Paste the data
+3. Tap Share → Save to Files
+4. Name it: ${filename}`);
         return;
       } catch (error) {
         console.log('Clipboard failed in PWA');
