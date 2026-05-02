@@ -82,8 +82,8 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
     // Convert to array and sort
     const staffArray = Array.from(staffSet).sort();
     
-    // Filter by current institution - SAME AS MONTHLY REPORTS
-    // This prevents showing staff who changed names or don't exist in staff_users
+    // Filter by current institution - match using roster_display_name for accuracy
+    // This prevents showing staff who don't have entries in the selected month
     const { getCurrentInstitutionDetails } = await import('../utils/institutionHelper');
     const institution = await getCurrentInstitutionDetails();
     const userInstitution = institution?.code;
@@ -93,27 +93,28 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
       return staffArray;
     }
     
-    // Filter staff by institution using Supabase
+    // Filter staff by institution using Supabase - match by roster_display_name
     const filteredStaff: string[] = [];
     for (const staffName of staffArray) {
       try {
-        // Extract base surname for database lookup (strip _(X) suffix if present)
-        const cleanSurname = staffName.replace(/_\([^)]+\)$/, '').replace(/\(R\)$/, '').trim();
-        
+        // Try to match by roster_display_name first (most accurate)
         const { data: userData, error } = await supabase
           .from('staff_users')
           .select('id, name, surname, roster_display_name')
-          .eq('surname', cleanSurname)
           .eq('institution_code', userInstitution)
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .filter('roster_display_name', 'like', `${staffName}%`);
         
         if (error) {
-          console.warn(`⚠️ Error fetching ${cleanSurname}:`, error.message);
+          console.warn(`⚠️ Error fetching ${staffName}:`, error.message);
         }
         
         // Check if any results returned - if YES, include this staff member
         if (userData && userData.length > 0) {
           filteredStaff.push(staffName);
+          console.log(`✅ Found in DB: ${staffName}`);
+        } else {
+          console.log(`⚠️ Not found in DB: ${staffName}`);
         }
       } catch (err) {
         // Staff not found in this institution, skip
