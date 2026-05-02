@@ -888,6 +888,9 @@ export class BatchPrintManager {
       return !!staffInfo;
     });
     
+    console.log('🔍 getUniqueStaffMembers - Raw staff from entries:', Array.from(staffSet));
+    console.log('🔍 getUniqueStaffMembers - Validated staff:', validStaffArray);
+    
     return validStaffArray.sort();
   }
   
@@ -895,39 +898,41 @@ export class BatchPrintManager {
    * Get unique staff members with their user IDs for PDF generation
    */
   private async getUniqueStaffWithIds(entries: RosterEntry[], institution: string): Promise<Array<{ name: string; userId?: string }>> {
+    // First, get unique staff names from entries
     const staffNames = this.getUniqueStaffMembers(entries);
+    
+    console.log('🔍 BatchPrint - Getting staff IDs for:', staffNames);
     
     // Fetch staff users from Supabase to get their IDs and roster_display_names
     const { data: staffUsers } = await supabase
       .from('staff_users')
-      .select('id, surname, name, roster_display_name')
+      .select('id, surname, name, roster_display_name, id_number')
       .eq('institution_code', institution)
       .eq('is_active', true);
     
     console.log('🔍 BatchPrint - Staff users from DB:', staffUsers?.length || 0);
-    console.log('🔍 BatchPrint - Staff names from entries:', staffNames);
     
     return staffNames.map(name => {
-      // Try to match by roster_display_name first (preferred method)
-      let user = staffUsers?.find((u: any) => u.roster_display_name === name);
+      // Try to match staff by surname
+      let user = staffUsers?.find((u: any) => u.surname === name);
       
-      // If not found by roster_display_name, try matching by surname as fallback
+      // If not found by surname alone, try more sophisticated matching
       if (!user) {
-        console.log('⚠️ Not found by roster_display_name, trying surname:', name);
-        user = staffUsers?.find((u: any) => u.surname === name);
+        // Try to find user where roster_display_name contains this surname
+        user = staffUsers?.find((u: any) => u.roster_display_name && u.roster_display_name.startsWith(name + '_'));
+      }
+      
+      if (!user) {
+        console.log('⚠️ Could not find user for name:', name);
+      } else {
+        console.log('✅ Matched user for', name, ':', user.roster_display_name);
       }
       
       // Use formatDisplayNameForUI to strip ID number, then remove (R) suffix ONLY if it's a modification marker
-      // formatDisplayNameForUI returns:
-      //   - "NARAYYA_(Viraj)(R)" for modifications ((R) separate from name parentheses)
-      //   - "NARAYYA_(R)" when (R) IS the name/initials (preceded by underscore)
-      // We strip (R) only when NOT preceded by underscore (modification marker)
       let displayName = user?.roster_display_name || name;
       displayName = formatDisplayNameForUI(displayName); // Strips ID, preserves structure
       
       // Strip (R) suffix ONLY if it's a modification marker (not preceded by underscore)
-      // e.g., "NARAYYA(R)" → "NARAYYA" (modification marker - no underscore before R)
-      // But "NARAYYA_(R)" stays as "NARAYYA_(R)" ((R) IS the identifier - has underscore)
       if (displayName.endsWith('(R)')) {
         const beforeR = displayName.slice(0, -3); // Remove trailing (R)
         if (!beforeR.endsWith('_')) {
@@ -941,7 +946,6 @@ export class BatchPrintManager {
         userId: user?.id
       };
       
-      console.log('📋 Mapped staff:', { input: name, output: result.name, userId: result.userId });
       return result;
     });
   }
