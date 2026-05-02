@@ -59,70 +59,82 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
       return entryDate.getMonth() === selectedMonth && entryDate.getFullYear() === selectedYear;
     });
 
-    const staffSet = new Set<string>();
+    // First, get all unique roster_display_names from entries for this month
+    const rosterDisplayNameSet = new Set<string>();
     monthEntries.forEach(entry => {
-      // Use formatDisplayNameForUI to strip ID number first
-      let displayName = formatDisplayNameForUI(entry.assigned_name);
-      
-      // Strip (R) suffix ONLY if it's a modification marker (not preceded by underscore)
-      // e.g., "NARAYYA(R)" → "NARAYYA" (modification marker - no underscore before R)
-      // But "NARAYYA_(R)" stays as "NARAYYA_(R)" ((R) IS the identifier - has underscore)
-      if (displayName.endsWith('(R)')) {
-        // Check if there's an underscore immediately before (R)
-        const beforeR = displayName.slice(0, -3); // Remove trailing (R)
-        if (!beforeR.endsWith('_')) {
-          // No underscore before (R) = modification marker, safe to strip
-          displayName = beforeR.trim();
-        }
-      }
-      
-      staffSet.add(displayName);
+      // Keep the full roster_display_name from entries
+      rosterDisplayNameSet.add(entry.assigned_name);
     });
 
-    // Convert to array and sort
-    const staffArray = Array.from(staffSet).sort();
-    
-    // Filter by current institution - match using roster_display_name for accuracy
-    // This prevents showing staff who don't have entries in the selected month
+    // Get current user's institution
     const { getCurrentInstitutionDetails } = await import('../utils/institutionHelper');
     const institution = await getCurrentInstitutionDetails();
     const userInstitution = institution?.code;
     
     if (!userInstitution) {
       console.warn('⚠️ No institution code found');
-      return staffArray;
+      return [];
     }
     
-    // Filter staff by institution using Supabase - match by roster_display_name
-    const filteredStaff: string[] = [];
-    for (const staffName of staffArray) {
-      try {
-        // Try to match by roster_display_name first (most accurate)
-        const { data: userData, error } = await supabase
-          .from('staff_users')
-          .select('id, name, surname, roster_display_name')
-          .eq('institution_code', userInstitution)
-          .eq('is_active', true)
-          .filter('roster_display_name', 'like', `${staffName}%`);
+    console.log('🔍 BatchPrint - Fetching staff for institution:', userInstitution);
+    console.log('🔍 BatchPrint - Roster display names from entries:', Array.from(rosterDisplayNameSet));
+    
+    // Fetch all active staff from the institution
+    const { data: staffUsers, error } = await supabase
+      .from('staff_users')
+      .select('id, surname, name, roster_display_name')
+      .eq('institution_code', userInstitution)
+      .eq('is_active', true);
+    
+    if (error) {
+      console.error('❌ Error fetching staff users:', error);
+      return [];
+    }
+    
+    console.log('🔍 BatchPrint - Staff users from DB:', staffUsers?.length || 0);
+    
+    // Match roster entries with staff users
+    const validStaffNames: string[] = [];
+    
+    for (const rosterDisplayName of rosterDisplayNameSet) {
+      // Try to find a matching staff user
+      // First, try exact match on roster_display_name
+      let matchedUser = staffUsers?.find((u: any) => u.roster_display_name === rosterDisplayName);
+      
+      // If not found, try matching by parsing the roster display name
+      if (!matchedUser) {
+        const { parseRosterDisplayName } = await import('../utils/rosterDisplayName');
+        const parsed = parseRosterDisplayName(rosterDisplayName);
         
-        if (error) {
-          console.warn(`⚠️ Error fetching ${staffName}:`, error.message);
+        // Try matching by surname + id_number (more strict)
+        matchedUser = staffUsers?.find((u: any) => 
+          u.surname === parsed.surname && u.id_number === parsed.idNumber
+        );
+      }
+      
+      // NO fallback to surname-only matching - this was causing staff from other months to appear
+      
+      if (matchedUser) {
+        // Use formatDisplayNameForUI to get the clean display name for UI
+        const { formatDisplayNameForUI } = await import('../utils/rosterDisplayName');
+        let displayName = formatDisplayNameForUI(matchedUser.roster_display_name || rosterDisplayName);
+        
+        // Strip (R) suffix ONLY if it's a modification marker
+        if (displayName.endsWith('(R)')) {
+          const beforeR = displayName.slice(0, -3);
+          if (!beforeR.endsWith('_')) {
+            displayName = beforeR.trim();
+          }
         }
         
-        // Check if any results returned - if YES, include this staff member
-        if (userData && userData.length > 0) {
-          filteredStaff.push(staffName);
-          console.log(`✅ Found in DB: ${staffName}`);
-        } else {
-          console.log(`⚠️ Not found in DB: ${staffName}`);
-        }
-      } catch (err) {
-        // Staff not found in this institution, skip
-        console.log(`⚠️ Not found: ${staffName}`);
+        validStaffNames.push(displayName);
+        console.log(`✅ Matched: ${rosterDisplayName} → ${displayName}`);
+      } else {
+        console.log(`⚠️ No match for roster entry: ${rosterDisplayName} (staff may have been deleted)`);
       }
     }
     
-    return filteredStaff.sort();
+    return validStaffNames.sort();
   };
 
   // Load staff when month/year changes
