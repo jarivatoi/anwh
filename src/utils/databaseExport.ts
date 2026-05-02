@@ -114,7 +114,7 @@ export const exportCompleteDatabase = async (): Promise<DatabaseExportData> => {
   }
 };
 
-export const downloadExportFile = (data: DatabaseExportData) => {
+export const downloadExportFile = async (data: DatabaseExportData): Promise<void> => {
   const now = new Date();
   const day = now.getDate().toString().padStart(2, '0');
   const month = (now.getMonth() + 1).toString().padStart(2, '0');
@@ -125,17 +125,63 @@ export const downloadExportFile = (data: DatabaseExportData) => {
   const filename = `ANWH_Database_Backup_${day}-${month}-${year}_${hour}-${minute}.json`;
   
   const dataStr = JSON.stringify(data, null, 2);
-  const dataBlob = new Blob([dataStr], { type: 'application/json' });
-  const url = URL.createObjectURL(dataBlob);
+  const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+               (window.navigator as any).standalone === true;
   
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
+  // Try Web Share API first (works well on iPhone)
+  if (navigator.share && navigator.canShare) {
+    try {
+      const file = new File([dataStr], filename, { type: 'application/json' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'ANWH Database Backup',
+          text: 'Complete database export including all roster entries, staff users, and settings'
+        });
+        return;
+      }
+    } catch (error) {
+      console.log('Web Share API failed, trying fallback');
+    }
+  }
   
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  // PWA-specific handling (iPhone)
+  if (isPWA) {
+    try {
+      // Try clipboard copy for PWA
+      await navigator.clipboard.writeText(dataStr);
+      alert(`📋 Database backup copied to clipboard!
+
+To save as file:
+1. Open Notes app
+2. Paste the data
+3. Tap Share → Save to Files
+4. Name it: ${filename}`);
+      return;
+    } catch (error) {
+      console.log('Clipboard failed in PWA');
+    }
+  }
   
-  console.log(`📥 Downloaded as ${filename}`);
+  // Fallback: Create download link
+  try {
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    // Last resort: Open in new tab
+    const newWindow = window.open();
+    if (newWindow) {
+      newWindow.document.write(`<pre>${dataStr}</pre>`);
+      alert(`Database backup opened in new tab. To save:\n1. Right-click → Save As\n2. Name it: ${filename}`);
+    }
+  }
+  
+  console.log(`📥 Database backup exported: ${filename}`);
 };
