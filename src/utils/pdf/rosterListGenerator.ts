@@ -352,7 +352,7 @@ export class RosterListGenerator {
           0: { cellWidth: 35, halign: 'center', valign: 'middle' },   // Date (fixed width)
           1: { cellWidth: 45, halign: 'center', valign: 'middle' },   // Shift (fixed width)
           2: { cellWidth: 80, halign: 'left', valign: 'middle' },   // Staff Names (80mm width, left aligned for readability)
-          3: { cellWidth: 35, halign: 'center', valign: 'top' }   // Remarks (fixed width, top aligned)
+          3: { cellWidth: 35, halign: 'center', valign: 'middle' }   // Remarks (fixed width, middle aligned)
         },
         tableLineWidth: 0.1,
         tableLineColor: [150, 150, 150],
@@ -527,12 +527,71 @@ export class RosterListGenerator {
     });
     
     return matchingEntries.map(entry => {
-      // Use formatDisplayNameForUI to strip ID number from assigned_name
-      let staffName = formatDisplayNameForUI(entry.assigned_name);
+      // For roster list PDF, we need to ADD the * marker based on change_description
+      // Check if this entry has a center assignment (Center Added or - Center:)
+      let hasCenter = false;
+      let markerPrefix = '';
+      
+      if (entry.change_description) {
+        // Split by | and check from RIGHT to LEFT to find the LAST center action
+        const logEntries = entry.change_description.split('|').map(e => e.trim());
+        
+        // Process from end to beginning to find the most recent center action
+        for (let i = logEntries.length - 1; i >= 0; i--) {
+          const logEntry = logEntries[i];
+          
+          // Check for "Center Added:" or "Center Removed:" patterns
+          const addedMatch = logEntry.match(/Center Added:\s*([^;|]+)/);
+          const removedMatch = logEntry.match(/Center Removed:\s*([^;|]+)/);
+          const markerMatch = logEntry.match(/- Marker:\s*(\*+)/);
+          
+          if (addedMatch && addedMatch[1].trim()) {
+            hasCenter = true;
+            markerPrefix = markerMatch ? markerMatch[1] : '*';
+            break; // Found the last action, stop searching
+          } else if (removedMatch && removedMatch[1].trim()) {
+            hasCenter = false; // Center was removed
+            break;
+          }
+        }
+        
+        // Also check for "- Center:" format (old format)
+        if (!hasCenter && entry.change_description.includes('- Center:')) {
+          const centerMatch = entry.change_description.match(/- Center:\s*([^;]+?)(?:\s*-\s*Marker:|$)/);
+          const markerMatch = entry.change_description.match(/- Marker:\s*(\*+)/);
+          if (centerMatch && centerMatch[1].trim()) {
+            hasCenter = true;
+            markerPrefix = markerMatch ? markerMatch[1] : '*';
+          }
+        }
+      }
+      
+      // Format the name without ID
+      let staffName = entry.assigned_name;
+      
+      // Strip ID number if present (e.g., "NARAYYA_N280881240165C" → "NARAYYA")
+      const parts = staffName.split('_');
+      if (parts.length >= 2) {
+        // Check if last part is an ID (starts with a letter followed by numbers)
+        const lastPart = parts[parts.length - 1];
+        if (/^[A-Z]\d+$/i.test(lastPart)) {
+          parts.pop();
+        }
+        staffName = parts.join('_');
+      }
+      
+      // Handle surname_initials format (e.g., "NARAYYA_(V.T)" → "NARAYYA(V.T)")
+      if (staffName.includes('_(')) {
+        staffName = staffName.replace(/_\(([^)]+)\)/g, '($1)');
+      } else if (staffName.includes('_')) {
+        // Simple format: "SURNAME_NAME" → "SURNAME"
+        const surnameParts = staffName.split('_');
+        if (surnameParts.length > 1) {
+          staffName = surnameParts[0];
+        }
+      }
       
       // Strip (R) suffix ONLY if it's a modification marker (not preceded by underscore)
-      // e.g., "NARAYYA(R)" → "NARAYYA" (modification marker)
-      // But "NARAYYA_(R)" stays as "NARAYYA_(R)" ((R) IS the identifier)
       if (staffName.endsWith('(R)')) {
         const beforeR = staffName.slice(0, -3);
         if (!beforeR.endsWith('_')) {
@@ -540,8 +599,13 @@ export class RosterListGenerator {
         }
       }
       
+      // Add marker prefix if this entry has a center assignment
+      if (hasCenter && markerPrefix) {
+        staffName = `${markerPrefix}${staffName}`;
+      }
+      
       return {
-        name: staffName, // Clean name without ID
+        name: staffName, // Name with * marker added based on center assignment
         color: this.getTextColor(entry)
       };
     });
@@ -598,12 +662,71 @@ export class RosterListGenerator {
         
         // Combine all staff names with individual colors
         const staffNamesWithColors = shiftEntries.map(entry => {
-          // Use formatDisplayNameForUI to strip ID number from assigned_name
-          let staffName = formatDisplayNameForUI(entry.assigned_name);
+          // For roster list PDF, we need to ADD the * marker based on change_description
+          // Check if this entry has a center assignment (Center Added or - Center:)
+          let hasCenter = false;
+          let markerPrefix = '';
+          
+          if (entry.change_description) {
+            // Split by | and check from RIGHT to LEFT to find the LAST center action
+            const logEntries = entry.change_description.split('|').map(e => e.trim());
+            
+            // Process from end to beginning to find the most recent center action
+            for (let i = logEntries.length - 1; i >= 0; i--) {
+              const logEntry = logEntries[i];
+              
+              // Check for "Center Added:" or "Center Removed:" patterns
+              const addedMatch = logEntry.match(/Center Added:\s*([^;|]+)/);
+              const removedMatch = logEntry.match(/Center Removed:\s*([^;|]+)/);
+              const markerMatch = logEntry.match(/- Marker:\s*(\*+)/);
+              
+              if (addedMatch && addedMatch[1].trim()) {
+                hasCenter = true;
+                markerPrefix = markerMatch ? markerMatch[1] : '*';
+                break; // Found the last action, stop searching
+              } else if (removedMatch && removedMatch[1].trim()) {
+                hasCenter = false; // Center was removed
+                break;
+              }
+            }
+            
+            // Also check for "- Center:" format (old format)
+            if (!hasCenter && entry.change_description.includes('- Center:')) {
+              const centerMatch = entry.change_description.match(/- Center:\s*([^;]+?)(?:\s*-\s*Marker:|$)/);
+              const markerMatch = entry.change_description.match(/- Marker:\s*(\*+)/);
+              if (centerMatch && centerMatch[1].trim()) {
+                hasCenter = true;
+                markerPrefix = markerMatch ? markerMatch[1] : '*';
+              }
+            }
+          }
+          
+          // Format the name without ID
+          let staffName = entry.assigned_name;
+          
+          // Strip ID number if present (e.g., "NARAYYA_N280881240165C" → "NARAYYA")
+          const parts = staffName.split('_');
+          if (parts.length >= 2) {
+            // Check if last part is an ID (starts with a letter followed by numbers)
+            const lastPart = parts[parts.length - 1];
+            if (/^[A-Z]\d+$/i.test(lastPart)) {
+              parts.pop();
+            }
+            staffName = parts.join('_');
+          }
+          
+          // Handle surname_initials format (e.g., "NARAYYA_(V.T)" → "NARAYYA(V.T)")
+          if (staffName.includes('_(')) {
+            staffName = staffName.replace(/_\(([^)]+)\)/g, '($1)');
+          } else if (staffName.includes('_')) {
+            // Simple format: "SURNAME_NAME" → "SURNAME"
+            const surnameParts = staffName.split('_');
+            if (surnameParts.length > 1) {
+              staffName = surnameParts[0];
+            }
+          }
           
           // Strip (R) suffix ONLY if it's a modification marker (not preceded by underscore)
-          // e.g., "NARAYYA(R)" → "NARAYYA" (modification marker)
-          // But "NARAYYA_(R)" stays as "NARAYYA_(R)" ((R) IS the identifier)
           if (staffName.endsWith('(R)')) {
             const beforeR = staffName.slice(0, -3);
             if (!beforeR.endsWith('_')) {
@@ -611,8 +734,13 @@ export class RosterListGenerator {
             }
           }
           
+          // Add marker prefix if this entry has a center assignment
+          if (hasCenter && markerPrefix) {
+            staffName = `${markerPrefix}${staffName}`;
+          }
+          
           return {
-            name: staffName, // Clean name without ID
+            name: staffName, // Name with * marker added based on center assignment
             color: this.getTextColor(entry)
           };
         });
@@ -651,15 +779,60 @@ export class RosterListGenerator {
         }
       }
       
-      // Extract attached center from change_description (format: "Imported from PDF - Center: ENT Hospital")
-      if (entry.change_description && entry.change_description.includes('- Center:')) {
-        // Extract center name, stopping before "- Marker:" or ";"
-        const centerMatch = entry.change_description.match(/- Center:\s*([^;]+?)(?:\s*-\s*Marker:|$)/);
-        if (centerMatch && centerMatch[1].trim()) {
-          const centerName = centerMatch[1].trim();
-          if (!remarksList.includes(centerName)) {
-            remarksList.push(centerName);
+      // Extract attached center from change_description
+      // Check ONLY the last center action (Added or Removed)
+      if (entry.change_description) {
+        // Split by | and check from RIGHT to LEFT to find the LAST center action
+        const logEntries = entry.change_description.split('|').map(e => e.trim());
+        let lastCenterAction: { action: 'Added' | 'Removed', centerName: string, marker?: string } | null = null;
+        
+        // Process from end to beginning to find the most recent center action
+        for (let i = logEntries.length - 1; i >= 0; i--) {
+          const logEntry = logEntries[i];
+          
+          // Check for "Center Added:" or "Center Removed:" patterns
+          const addedMatch = logEntry.match(/Center Added:\s*([^;|]+)/);
+          const removedMatch = logEntry.match(/Center Removed:\s*([^;|]+)/);
+          const markerMatch = logEntry.match(/- Marker:\s*(\*+)/);
+          
+          if (addedMatch && addedMatch[1].trim()) {
+            lastCenterAction = {
+              action: 'Added',
+              centerName: addedMatch[1].trim().replace(/\s*-\s*Marker:.*$/, '').trim(),
+              marker: markerMatch ? markerMatch[1] : '*'
+            };
+            break; // Found the last action, stop searching
+          } else if (removedMatch && removedMatch[1].trim()) {
+            lastCenterAction = {
+              action: 'Removed',
+              centerName: removedMatch[1].trim()
+            };
+            break; // Found the last action, stop searching
           }
+        }
+        
+        // Also check for "- Center:" format (old format)
+        if (!lastCenterAction && entry.change_description.includes('- Center:')) {
+          const centerMatch = entry.change_description.match(/- Center:\s*([^;]+?)(?:\s*-\s*Marker:|$)/);
+          const markerMatch = entry.change_description.match(/- Marker:\s*(\*+)/);
+          if (centerMatch && centerMatch[1].trim()) {
+            lastCenterAction = {
+              action: 'Added',
+              centerName: centerMatch[1].trim(),
+              marker: markerMatch ? markerMatch[1] : '*'
+            };
+          }
+        }
+        
+        // Only add center if last action was Added (not Removed)
+        if (lastCenterAction && lastCenterAction.action === 'Added') {
+          const centerWithMarker = `${lastCenterAction.marker}${lastCenterAction.centerName}`;
+          if (!remarksList.includes(centerWithMarker)) {
+            remarksList.push(centerWithMarker);
+            console.log(`[REMARKS] Extracted center from entry: ${centerWithMarker}`);
+          }
+        } else if (lastCenterAction && lastCenterAction.action === 'Removed') {
+          console.log(`[REMARKS] Center was removed, not adding to remarks`);
         }
       }
     }
