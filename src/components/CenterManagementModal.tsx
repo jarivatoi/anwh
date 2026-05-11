@@ -301,24 +301,29 @@ export const CenterManagementModal: React.FC<CenterManagementModalProps> = ({
       const second = now.getSeconds().toString().padStart(2, '0');
       const formattedTimestamp = `${day}-${month}-${year} ${hour}:${minute}:${second}`;
           
-      // If adding a center, first remove old marker and center entries
-      if (isAdding) {
-        // Remove old marker if exists
-        newChangeDescription = newChangeDescription.replace(/\s*\|\s*- Marker:\s*\*+/g, '').replace(/- Marker:\s*\*+/g, '');
-      }
+      // STEP 1: Remove ALL old center-related entries (both Added and Removed)
+      // Remove pipe-separated entries like "| [timestamp] Editor: Center Added: XXX"
+      newChangeDescription = newChangeDescription
+        .replace(/\s*\|\s*\[[^\]]+\]\s+[^:]+:\s+Center (Added|Removed):\s*[^|]+/g, '')
+        .trim();
+      
+      // Remove standalone entries at the start (no pipe)
+      newChangeDescription = newChangeDescription
+        .replace(/^\s*\[[^\]]+\]\s+[^:]+:\s+Center (Added|Removed):\s*[^|]+\s*\|?\s*/g, '')
+        .trim();
+      
+      // STEP 2: Remove ALL old markers
+      newChangeDescription = newChangeDescription
+        .replace(/\s*\|\s*- Marker:\s*\*+/g, '')
+        .replace(/- Marker:\s*\*+/g, '')
+        .trim();
           
-      // Create a log entry with action, center, timestamp, and editor
-      // Use simple format: "Center Added: X" or "Center Removed: X"
+      // STEP 3: Add ONLY the new center action (Added or Removed)
       const logEntry = `[${formattedTimestamp}] ${editorName}: Center ${isAdding ? 'Added' : 'Removed'}: ${centerName}`;
+      newChangeDescription = logEntry;
       
-      // Append the new log entry to existing change_description
-      newChangeDescription = newChangeDescription 
-        ? `${newChangeDescription} | ${logEntry}`
-        : logEntry;
-      
-      // If adding, also add the new marker from the center (MUST BE LAST)
+      // STEP 4: If adding, also add the new marker (MUST BE LAST)
       if (isAdding) {
-        // Find the center to get its marker
         const centerData = availableCenters.find(c => c.center_name === centerName);
         if (centerData) {
           newChangeDescription = `${newChangeDescription} | - Marker: ${centerData.marker}`;
@@ -424,45 +429,40 @@ export const CenterManagementModal: React.FC<CenterManagementModalProps> = ({
         const second = now.getSeconds().toString().padStart(2, '0');
         const formattedTimestamp = `${day}-${month}-${year} ${hour}:${minute}:${second}`;
         
-        // Remove ALL old markers (both pipe-separated and standalone)
+        // STEP 1: Remove ALL old center-related entries
+        newChangeDescription = newChangeDescription
+          .replace(/\s*\|\s*\[[^\]]+\]\s+[^:]+:\s+Center (Added|Removed):\s*[^|]+/g, '')
+          .trim();
+        
+        newChangeDescription = newChangeDescription
+          .replace(/^\s*\[[^\]]+\]\s+[^:]+:\s+Center (Added|Removed):\s*[^|]+\s*\|?\s*/g, '')
+          .trim();
+        
+        // STEP 2: Remove ALL old markers
         newChangeDescription = newChangeDescription
           .replace(/\s*\|\s*- Marker:\s*\*+/g, '')
           .replace(/- Marker:\s*\*+/g, '')
           .trim();
         
-        // Add removal log
+        // STEP 3: Build clean change_description with only the new center
+        // Start with removal log (optional - we could skip this if you want ONLY the Added)
         const removeLogEntry = `[${formattedTimestamp}] ${editorName}: Center Removed: ${confirmModal.currentCenter}`;
-        newChangeDescription = newChangeDescription 
-          ? `${newChangeDescription} | ${removeLogEntry}`
-          : removeLogEntry;
+        newChangeDescription = removeLogEntry;
         
-        await supabase
-          .from('roster_entries')
-          .update({
-            change_description: newChangeDescription || null,
-            last_edited_by: editorName,
-            last_edited_at: formattedTimestamp
-          })
-          .eq('id', entry.id);
-        
-        // Now add the new center directly (without going through handleToggleCenter to avoid re-triggering confirmation)
+        // Add the new center
         const newCenterData = availableCenters.find(c => c.center_name === confirmModal.newCenter);
         const addLogEntry = `[${formattedTimestamp}] ${editorName}: Center Added: ${confirmModal.newCenter}`;
-        let finalChangeDescription = newChangeDescription;
+        newChangeDescription = `${newChangeDescription} | ${addLogEntry}`;
         
-        finalChangeDescription = finalChangeDescription 
-          ? `${finalChangeDescription} | ${addLogEntry}`
-          : addLogEntry;
-        
-        // Add the marker for the new center
+        // Add the marker for the new center (MUST BE LAST)
         if (newCenterData) {
-          finalChangeDescription = `${finalChangeDescription} | - Marker: ${newCenterData.marker}`;
+          newChangeDescription = `${newChangeDescription} | - Marker: ${newCenterData.marker}`;
         }
         
         await supabase
           .from('roster_entries')
           .update({
-            change_description: finalChangeDescription || null,
+            change_description: newChangeDescription || null,
             last_edited_by: editorName,
             last_edited_at: formattedTimestamp
           })
