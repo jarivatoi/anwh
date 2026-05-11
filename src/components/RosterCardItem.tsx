@@ -513,12 +513,7 @@ export const RosterCardItem: React.FC<RosterCardItemProps> = ({
             </span>
           )}
           <div
-            onClick={(e: React.MouseEvent) => {
-              e.stopPropagation();
-              setShowAuthModal(true);
-            }}
             className="relative flex-1 min-w-0"
-            style={{ cursor: 'pointer' }}
           >
             {animateNameChange ? (
               <div
