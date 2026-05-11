@@ -649,8 +649,8 @@ export class ListParser {
     // PRIORITY 1: Perfect exact match (with or without marker)
     for (const nameUpper of availableNames) {
       if (textWithoutMarker === nameUpper || cleanText === nameUpper) {
-        // Return WITHOUT marker - marker is stored separately in change_description
-        return nameUpper;
+        // Return WITH marker prefix if it existed in the PDF
+        return markerPrefix ? `${markerPrefix}${nameUpper}` : nameUpper;
       }
     }
     
@@ -664,15 +664,15 @@ export class ListParser {
         if (textWithoutMarker.includes('(R)')) {
           const rVersion = availableNames.find(name => name === baseName + '(R)');
           if (rVersion) {
-            // Return WITHOUT marker
-            return rVersion;
+            // Return WITH marker prefix if it existed
+            return markerPrefix ? `${markerPrefix}${rVersion}` : rVersion;
           }
         } else {
           // If text doesn't have (R), return the non-(R) version
           const nonRVersion = availableNames.find(name => name === baseName && !name.includes('(R)'));
           if (nonRVersion) {
-            // Return WITHOUT marker
-            return nonRVersion;
+            // Return WITH marker prefix if it existed
+            return markerPrefix ? `${markerPrefix}${nonRVersion}` : nonRVersion;
           }
         }
       }
