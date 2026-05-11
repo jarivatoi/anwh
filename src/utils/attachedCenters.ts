@@ -12,6 +12,7 @@ export interface AttachedCenter {
   institution_code: string;
   marker: string;
   center_name: string;
+  center_code?: string; // Optional abbreviation (e.g., "ENT", "SOUIL")
   created_at: string;
 }
 
