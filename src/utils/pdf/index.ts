@@ -60,34 +60,32 @@ class PDFRosterParser {
           return hasDate && hasShift && hasStaff;
         })
         .map(async (entry) => {
-          // STEP 1: Check if original PDF text has marker (use originalPdfText if available)
-          const pdfText = (entry as any).originalPdfText || entry.assignedName;
-          const hadMarker = pdfText.startsWith('*');
-          
-          // Extract the actual marker prefix (*, **, ***) from PDF text
-          const markerMatch = pdfText.match(/^(\*+)/);
-          const actualMarker = markerMatch ? markerMatch[1] : '*';
+          // STEP 1: Check if assignedName has marker prefix (from boxParser/listParser)
+          const nameMatch = entry.assignedName.match(/^(\*+)(.+)/);
+          const hasMarkerInName = nameMatch !== null;
+          const actualMarker = hasMarkerInName ? nameMatch[1] : '';
+          const cleanNameWithoutMarker = hasMarkerInName ? nameMatch[2] : entry.assignedName;
           
           // STEP 2: Process marker to extract center information (if institution supports attached centers)
-          let processedName = entry.assignedName;
+          let processedName = cleanNameWithoutMarker;
           let centerRemark: string | undefined;
           let markerPrefix: string | undefined;
           
-          if (hadMarker && institution?.code) {
-            const nameWithMarker = `${actualMarker}${entry.assignedName}`;
+          if (hasMarkerInName && institution?.code) {
+            const nameWithMarker = `${actualMarker}${cleanNameWithoutMarker}`;
             
             const processed = await processStaffWithAttachedCenter(nameWithMarker, institution.code);
-            // Store the name WITHOUT marker in assignedName
-            processedName = processed.cleanName;
+            // Store the name WITH marker in assignedName (for display in roster)
+            processedName = nameWithMarker;
             centerRemark = processed.remark || undefined;
-            markerPrefix = actualMarker; // Store marker separately
-          } else if (hadMarker) {
-            // Has marker but no institution - strip marker from name
-            processedName = entry.assignedName; // Use the name without marker
+            markerPrefix = actualMarker; // Store marker separately for change_description
+          } else if (hasMarkerInName) {
+            // Has marker but no institution - keep marker in the name for display
+            processedName = `${actualMarker}${cleanNameWithoutMarker}`; // Keep the name WITH marker
             markerPrefix = actualMarker;
           } else {
-            // NO marker in PDF - ensure name is stored without marker
-            processedName = entry.assignedName.replace(/^\*+/, '');
+            // NO marker in name - ensure name is stored without marker
+            processedName = cleanNameWithoutMarker;
           }
           
           // STEP 3: Include center remark AND marker in change_description if present
