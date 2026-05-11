@@ -316,11 +316,53 @@ export class PDFExporter {
     }
     
     // Look for attached center information
-    if (entry.change_description && entry.change_description.includes('- Center:')) {
-      // Extract center name, stopping before "- Marker:" or ";"
-      const centerMatch = entry.change_description.match(/- Center:\s*([^;]+?)(?:\s*-\s*Marker:|$)/);
-      if (centerMatch && centerMatch[1].trim()) {
-        remarks.push(centerMatch[1].trim());
+    // Check ONLY the last center action (Added or Removed)
+    if (entry.change_description) {
+      // Split by | and check from RIGHT to LEFT to find the LAST center action
+      const logEntries = entry.change_description.split('|').map(e => e.trim());
+      let lastCenterAction: { action: 'Added' | 'Removed', centerName: string, marker?: string } | null = null;
+      
+      // Process from end to beginning to find the most recent center action
+      for (let i = logEntries.length - 1; i >= 0; i--) {
+        const logEntry = logEntries[i];
+        
+        // Check for "Center Added:" or "Center Removed:" patterns
+        const addedMatch = logEntry.match(/Center Added:\s*([^;|]+)/);
+        const removedMatch = logEntry.match(/Center Removed:\s*([^;|]+)/);
+        const markerMatch = logEntry.match(/- Marker:\s*(\*+)/);
+        
+        if (addedMatch && addedMatch[1].trim()) {
+          lastCenterAction = {
+            action: 'Added',
+            centerName: addedMatch[1].trim().replace(/\s*-\s*Marker:.*$/, '').trim(),
+            marker: markerMatch ? markerMatch[1] : '*'
+          };
+          break; // Found the last action, stop searching
+        } else if (removedMatch && removedMatch[1].trim()) {
+          lastCenterAction = {
+            action: 'Removed',
+            centerName: removedMatch[1].trim()
+          };
+          break; // Found the last action, stop searching
+        }
+      }
+      
+      // Also check for "- Center:" format (old format)
+      if (!lastCenterAction && entry.change_description.includes('- Center:')) {
+        const centerMatch = entry.change_description.match(/- Center:\s*([^;]+?)(?:\s*-\s*Marker:|$)/);
+        const markerMatch = entry.change_description.match(/- Marker:\s*(\*+)/);
+        if (centerMatch && centerMatch[1].trim()) {
+          lastCenterAction = {
+            action: 'Added',
+            centerName: centerMatch[1].trim(),
+            marker: markerMatch ? markerMatch[1] : '*'
+          };
+        }
+      }
+      
+      // Only add center if last action was Added (not Removed)
+      if (lastCenterAction && lastCenterAction.action === 'Added') {
+        remarks.push(`${lastCenterAction.marker}${lastCenterAction.centerName}`);
       }
     }
     
