@@ -694,25 +694,55 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
       const targetCenterName = targetCenterMatch ? targetCenterMatch[1].trim() : null;
       
       // Build new change_description for target (remove center assignment)
+      // STEP 1: Remove ALL old center entries
       let targetNewDescription = targetStaffData.entry.change_description || '';
+      targetNewDescription = targetNewDescription
+        .replace(/\s*\|\s*\[[^\]]+\]\s+[^:]+:\s+Center (Added|Removed):\s*[^|]+/g, '')
+        .trim();
+      targetNewDescription = targetNewDescription
+        .replace(/^\s*\[[^\]]+\]\s+[^:]+:\s+Center (Added|Removed):\s*[^|]+\s*\|?\s*/g, '')
+        .trim();
       
+      // STEP 2: Remove ALL old markers
+      targetNewDescription = targetNewDescription
+        .replace(/\s*\|\s*- Marker:\s*\*+/g, '')
+        .replace(/- Marker:\s*\*+/g, '')
+        .trim();
+      
+      // STEP 3: Add ONLY the removal entry
       if (targetCenterName) {
-        // Add Center Removed: entry
         const removeLog = `[${timestamp}] ${editorName}: Center Removed: ${targetCenterName}`;
-        targetNewDescription = targetNewDescription 
-          ? `${targetNewDescription} | ${removeLog}`
-          : removeLog;
+        targetNewDescription = removeLog;
       }
       
       // Build new change_description for current entry (add center assignment)
+      // STEP 1: Remove ALL old center entries
       let newDescription = entry.change_description || '';
+      newDescription = newDescription
+        .replace(/\s*\|\s*\[[^\]]+\]\s+[^:]+:\s+Center (Added|Removed):\s*[^|]+/g, '')
+        .trim();
+      newDescription = newDescription
+        .replace(/^\s*\[[^\]]+\]\s+[^:]+:\s+Center (Added|Removed):\s*[^|]+\s*\|?\s*/g, '')
+        .trim();
       
+      // STEP 2: Remove ALL old markers
+      newDescription = newDescription
+        .replace(/\s*\|\s*- Marker:\s*\*+/g, '')
+        .replace(/- Marker:\s*\*+/g, '')
+        .trim();
+      
+      // STEP 3: Add ONLY the new center assignment
       if (targetCenterName) {
-        // Add Center Added: entry
         const addLog = `[${timestamp}] ${editorName}: Center Added: ${targetCenterName}`;
-        newDescription = newDescription 
-          ? `${newDescription} | ${addLog}`
-          : addLog;
+        newDescription = addLog;
+        
+        // Add marker if available
+        if (entry.change_description) {
+          const markerMatch = entry.change_description.match(/- Marker:\s*(\*+)/);
+          if (markerMatch) {
+            newDescription = `${newDescription} | - Marker: ${markerMatch[1]}`;
+          }
+        }
       }
       
       // Update both entries in database
