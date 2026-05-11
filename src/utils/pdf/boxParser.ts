@@ -75,8 +75,13 @@ export class BoxParser {
     for (const item of textItems) {
       const matchedName = this.findMatchingStaffName(item.text);
       if (matchedName) {
+        // Preserve the original marker prefix (*, **, ***) from the PDF text
+        const markerMatch = item.text.match(/^(\*+)/);
+        const markerPrefix = markerMatch ? markerMatch[1] : '';
+        const nameWithMarker = markerPrefix ? `${markerPrefix}${matchedName}` : matchedName;
+        
         staffNames.push({
-          name: matchedName,
+          name: nameWithMarker, // Include marker in the name (e.g., *BHEKUR, **NARAYYA)
           originalText: item.text, // Preserve original PDF text with marker
           x: item.x,
           y: item.y
@@ -471,7 +476,10 @@ export class BoxParser {
     // PRIORITY 1: Perfect exact match
     for (const nameUpper of this.getStaffNamesList()) {
       if (cleanText === nameUpper || cleanTextWithoutMarker === nameUpper) {
-        return nameUpper;
+        // Return WITH marker prefix if it existed in the PDF
+        const markerMatch = text.trim().match(/^(\*+)/);
+        const markerPrefix = markerMatch ? markerMatch[1] : '';
+        return markerPrefix ? `${markerPrefix}${nameUpper}` : nameUpper;
       }
     }
     
@@ -481,7 +489,10 @@ export class BoxParser {
       if (commaIndex > 0) {
         const surnameOnly = nameUpper.substring(0, commaIndex).trim();
         if (cleanText === surnameOnly && surnameOnly.length >= 3) {
-          return nameUpper;
+          // Return WITH marker prefix if it existed
+          const markerMatch = text.trim().match(/^(\*+)/);
+          const markerPrefix = markerMatch ? markerMatch[1] : '';
+          return markerPrefix ? `${markerPrefix}${nameUpper}` : nameUpper;
         }
       }
     }
@@ -542,7 +553,10 @@ export class BoxParser {
           
           // Match if: same surname+disambiguation AND (R) status matches
           if (dbHasDisambiguation && pdfHasR === dbHasR) {
-            return nameUpper;
+            // Return WITH marker prefix if it existed
+            const markerMatch = text.trim().match(/^(\*+)/);
+            const markerPrefix = markerMatch ? markerMatch[1] : '';
+            return markerPrefix ? `${markerPrefix}${nameUpper}` : nameUpper;
           }
         }
       }
@@ -559,7 +573,10 @@ export class BoxParser {
           continue;
         }
         
-        return nameUpper;
+        // Return WITH marker prefix if it existed
+        const markerMatch = text.trim().match(/^(\*+)/);
+        const markerPrefix = markerMatch ? markerMatch[1] : '';
+        return markerPrefix ? `${markerPrefix}${nameUpper}` : nameUpper;
       }
       
       // PRIORITY 3b: Match by surname + initials pattern
@@ -577,7 +594,10 @@ export class BoxParser {
             const dbInitials = initialsPart.replace(/\./g, '').toUpperCase();
             
             if (dbInitials.startsWith(pdfInitials) || pdfInitials === dbInitials) {
-              return nameUpper;
+              // Return WITH marker prefix if it existed
+              const markerMatch = text.trim().match(/^(\*+)/);
+              const markerPrefix = markerMatch ? markerMatch[1] : '';
+              return markerPrefix ? `${markerPrefix}${nameUpper}` : nameUpper;
             }
           } else {
             const sameSurnameCount = availableNames.filter(name => {
@@ -588,7 +608,10 @@ export class BoxParser {
             }).length;
             
             if (sameSurnameCount === 1) {
-              return nameUpper;
+              // Return WITH marker prefix if it existed
+              const markerMatch = text.trim().match(/^(\*+)/);
+              const markerPrefix = markerMatch ? markerMatch[1] : '';
+              return markerPrefix ? `${markerPrefix}${nameUpper}` : nameUpper;
             }
           }
         }
