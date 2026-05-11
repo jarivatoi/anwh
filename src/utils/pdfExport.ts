@@ -148,70 +148,78 @@ export class PDFExporter {
     // Fetch all unique staff names from entries
     const uniqueStaffNames = Array.from(new Set(sortedEntries.map(e => e.assigned_name)));
     
-    // Build a map of assigned_name -> roster_display_name
-    const displayNameMap = new Map<string, string>();
-    for (const staffName of uniqueStaffNames) {
-      try {
-        // Try to find staff by parsing the name
-        // Format could be "SURNAME" or "SURNAME_NAME" or "SURNAME_ID"
-        const parts = staffName.split('_');
-        const surname = parts[0];
+    // Map entries with display names - process each entry individually
+    return sortedEntries.map(entry => {
+      // Extract marker from THIS entry's change_description only
+      let markerPrefix = '';
+      if (entry.change_description) {
+        const logEntries = entry.change_description.split('|').map(e => e.trim());
         
-        // Search for staff with matching surname
-        const { data: staffList } = await supabase
-          .from('staff_users')
-          .select('id, surname, name, id_number, roster_display_name')
-          .ilike('surname', surname)
-          .limit(5);
-        
-        if (staffList && staffList.length > 0) {
-          // Try to match by full name pattern or ID
-          let matchedStaff = staffList.find((s: any) => {
-            // Check if assigned_name contains the ID number
-            if (staffName.includes(s.id_number)) {
-              return true;
-            }
-            // Check if it matches the SURNAME_NAME pattern
-            if (parts.length > 1 && parts[1] && s.name.toLowerCase().includes(parts[1].toLowerCase())) {
-              return true;
-            }
-            return false;
-          });
+        // Process from end to beginning to find the last center action
+        for (let i = logEntries.length - 1; i >= 0; i--) {
+          const logEntry = logEntries[i];
+          const addedMatch = logEntry.match(/Center Added:\s*([^;|]+)/);
+          const removedMatch = logEntry.match(/Center Removed:\s*([^;|]+)/);
+          const markerMatch = logEntry.match(/- Marker:\s*(\*+)/);
           
-          // If no exact match, use the first result
-          if (!matchedStaff && staffList.length === 1) {
-            matchedStaff = staffList[0];
+          if (addedMatch && addedMatch[1].trim()) {
+            markerPrefix = markerMatch ? markerMatch[1] : '*';
+            break;
+          } else if (removedMatch && removedMatch[1].trim()) {
+            markerPrefix = ''; // Center was removed
+            break;
           }
-          
-          if (matchedStaff) {
-            const displayName = matchedStaff.roster_display_name || 
-                               `${matchedStaff.surname}_${matchedStaff.name}`;
-            const formattedName = formatDisplayNameForUI(displayName);
-            displayNameMap.set(staffName, formattedName);
-          } else {
-            // No match found, keep original
-            displayNameMap.set(staffName, formatDisplayNameForUI(staffName));
-          }
-        } else {
-          // No staff found, keep original
-          displayNameMap.set(staffName, formatDisplayNameForUI(staffName));
         }
-      } catch (error) {
-        console.error('Failed to fetch staff display name:', staffName, error);
-        displayNameMap.set(staffName, formatDisplayNameForUI(staffName));
       }
-    }
-    
-    // Map entries with display names
-    return sortedEntries.map(entry => [
-      this.formatDate(entry.date),
-      this.getDayName(entry.date),
-      this.formatShiftType(entry.shift_type),
-      displayNameMap.get(entry.assigned_name) || entry.assigned_name,
-      entry.last_edited_by || 'System',
-      this.formatTimestamp(entry.last_edited_at),
-      this.extractRemarks(entry)
-    ]);
+      
+      // Format the name: Strip ID number but keep surname and initials
+      let displayName = entry.assigned_name;
+      const parts = displayName.split('_');
+      if (parts.length >= 2) {
+        const lastPart = parts[parts.length - 1];
+        if (/^[A-Z]\d+$/i.test(lastPart)) {
+          parts.pop();
+        }
+        displayName = parts.join('_');
+      }
+      
+      if (displayName.includes('_(')) {
+        displayName = displayName.replace(/_\(([^)]+)\)/g, '($1)');
+      } else if (displayName.includes('_')) {
+        const surnameParts = displayName.split('_');
+        if (surnameParts.length > 1) {
+          displayName = surnameParts[0];
+        }
+      }
+      
+      if (displayName.endsWith('(R)')) {
+        const beforeR = displayName.slice(0, -3);
+        if (!beforeR.endsWith('_')) {
+          displayName = beforeR.trim();
+        }
+      }
+      
+      // Add marker prefix ONLY if THIS entry has a center assignment
+      if (markerPrefix) {
+        displayName = `${markerPrefix}${displayName}`;
+      }
+      
+      // Format last_edited_by: remove comma, replace with space
+      let formattedEditor = entry.last_edited_by || 'System';
+      if (formattedEditor.includes(',')) {
+        formattedEditor = formattedEditor.replace(', ', ' ');
+      }
+      
+      return [
+        this.formatDate(entry.date),
+        this.getDayName(entry.date),
+        this.formatShiftType(entry.shift_type),
+        displayName,
+        formattedEditor,
+        this.formatTimestamp(entry.last_edited_at),
+        this.extractRemarks(entry)
+      ];
+    });
   }
   
   /**
