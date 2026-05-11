@@ -158,22 +158,10 @@ export const RosterLogView: React.FC<RosterLogViewProps> = ({
       }
     };
     
-    // Get the most recent timestamp for each entry
-    const getLatestTimestamp = (entry: RosterEntry) => {
-      // Prioritize last_edited_at (when entry was modified)
-      if (entry.last_edited_at) {
-        return parseTimestamp(entry.last_edited_at);
-      }
-      // Fall back to created_at (when entry was first created)
-      if (entry.created_at) {
-        return parseTimestamp(entry.created_at);
-      }
-      // Last resort: use current date
-      return new Date();
-    };
-    
-    const dateA = getLatestTimestamp(a);
-    const dateB = getLatestTimestamp(b);
+    // ONLY use last_edited_at - do NOT fall back to created_at
+    // If last_edited_at is missing, treat as very old (new Date(0))
+    const dateA = a.last_edited_at ? parseTimestamp(a.last_edited_at) : new Date(0);
+    const dateB = b.last_edited_at ? parseTimestamp(b.last_edited_at) : new Date(0);
     
     // Sort by most recent first (descending order) - latest edits on top
     const timeDiff = dateB.getTime() - dateA.getTime();
