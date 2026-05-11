@@ -242,17 +242,13 @@ export class IndividualBillGenerator {
       console.log(`  ${index + 1}. Date: ${entry.date}, Shift: ${entry.shift_type}, Change: "${entry.change_description}"`);
     });
     
-    // CRITICAL: Also check for special dates by looking at ALL entries for each date
+    // CRITICAL: Also check for special dates by looking at THIS STAFF MEMBER's entries only
     console.log(`🔍 DEBUG: Checking for special dates in the month...`);
-    const allMonthEntries = entries.filter(entry => {
-      const entryDate = new Date(entry.date);
-      return entryDate.getMonth() === month && entryDate.getFullYear() === year;
-    });
-    
     const specialDatesInMonth = new Map<string, string>();
     const attachedCentersInMonth = new Map<string, string>(); // Store center info by date
     
-    allMonthEntries.forEach(entry => {
+    // ONLY check the filtered staff entries, NOT all month entries
+    staffEntries.forEach(entry => {
       if (entry.change_description && entry.change_description.includes('Special Date:')) {
         const match = entry.change_description.match(/Special Date:\s*([^;]+)/);
         if (match && match[1].trim()) {
@@ -261,15 +257,33 @@ export class IndividualBillGenerator {
         }
       }
       
-      // Extract attached center from change_description
-      if (entry.change_description && entry.change_description.includes('- Center:')) {
-        // Extract center name, stopping before "- Marker:" or ";"
-        const centerMatch = entry.change_description.match(/- Center:\s*([^;]+?)(?:\s*-\s*Marker:|$)/);
-        if (centerMatch && centerMatch[1].trim()) {
-          const centerName = centerMatch[1].trim();
-          if (!attachedCentersInMonth.has(entry.date)) {
+      // Extract attached center from change_description (check both formats)
+      // ONLY for THIS staff member's entries
+      // CRITICAL: Only extract center if THIS entry has a marker
+      if (entry.change_description) {
+        // Check if this entry has a marker - only then extract center
+        const hasMarker = entry.change_description.includes('- Marker:');
+        
+        if (hasMarker) {
+          let centerName = '';
+          
+          // Try "Center Added:" format first (new format from PDF import)
+          const centerAddedMatch = entry.change_description.match(/Center Added:\s*([^;|]+)/);
+          if (centerAddedMatch && centerAddedMatch[1].trim()) {
+            // Remove " - Marker:" part if present
+            centerName = centerAddedMatch[1].trim().replace(/\s*-\s*Marker:.*$/, '').trim();
+          }
+          // Try "- Center:" format (old format)
+          else if (entry.change_description.includes('- Center:')) {
+            const centerMatch = entry.change_description.match(/- Center:\s*([^;]+?)(?:\s*-\s*Marker:|$)/);
+            if (centerMatch && centerMatch[1].trim()) {
+              centerName = centerMatch[1].trim();
+            }
+          }
+          
+          if (centerName && !attachedCentersInMonth.has(entry.date)) {
             attachedCentersInMonth.set(entry.date, centerName);
-            console.log(`🏥 Found attached center: ${entry.date} - "${centerName}"`);
+            console.log(`🏥 Found attached center for ${displayName}: ${entry.date} - "${centerName}"`);
           }
         }
       }
@@ -548,14 +562,15 @@ export class IndividualBillGenerator {
         // Combine shifts for the same date
         const shifts: string[] = [];
         let dayHours = 0;
-        let remarks = specialDatesInMonth.get(dateKey) || ''; // Get special date info for this date
+        let remarksParts: string[] = [];
         
-        // Add attached center if exists for this date
-        const centerName = attachedCentersInMonth.get(dateKey);
-        if (centerName) {
-          remarks = remarks ? `${remarks}; ${centerName}` : centerName;
+        // Get special date info for this date
+        const specialDate = specialDatesInMonth.get(dateKey);
+        if (specialDate) {
+          remarksParts.push(specialDate);
         }
         
+        // Process each entry to get shift-specific center assignments
         dayEntries.forEach(entry => {
           shifts.push(entry.shift_type);
           
@@ -567,11 +582,88 @@ export class IndividualBillGenerator {
           // Calculate hours for this shift
           const shiftHours = this.getShiftHours(entry.shift_type, shiftCombinations);
           dayHours += shiftHours;
+          
+          // Debug: Log the full change_description
+          console.log(`  📋 Entry shift: ${entry.shift_type}, change_description: "${entry.change_description}"`);
+          
+          // Check if THIS entry has a center assignment
+          if (entry.change_description) {
+            // Split by | and check from RIGHT to LEFT to find the LAST center action
+            const logEntries = entry.change_description.split('|').map(e => e.trim());
+            let lastCenterAction: { action: 'Added' | 'Removed', centerName: string, marker?: string } | null = null;
+            
+            // Process from end to beginning to find the most recent center action
+            for (let i = logEntries.length - 1; i >= 0; i--) {
+              const logEntry = logEntries[i];
+              
+              // Check for "Center Added:" or "Center Removed:" patterns
+              const addedMatch = logEntry.match(/Center Added:\s*([^;|]+)/);
+              const removedMatch = logEntry.match(/Center Removed:\s*([^;|]+)/);
+              const markerMatch = logEntry.match(/- Marker:\s*(\*+)/);
+              
+              if (addedMatch && addedMatch[1].trim()) {
+                lastCenterAction = {
+                  action: 'Added',
+                  centerName: addedMatch[1].trim().replace(/\s*-\s*Marker:.*$/, '').trim(),
+                  marker: markerMatch ? markerMatch[1] : '*'
+                };
+                console.log(`  🔍 Found LAST Center Added: "${lastCenterAction.centerName}" with marker: "${lastCenterAction.marker}"`);
+                break; // Found the last action, stop searching
+              } else if (removedMatch && removedMatch[1].trim()) {
+                lastCenterAction = {
+                  action: 'Removed',
+                  centerName: removedMatch[1].trim()
+                };
+                console.log(`  🔍 Found LAST Center Removed: "${lastCenterAction.centerName}"`);
+                break; // Found the last action, stop searching
+              }
+            }
+            
+            // Also check for "- Center:" format (old format)
+            if (!lastCenterAction && entry.change_description.includes('- Center:')) {
+              const centerMatch = entry.change_description.match(/- Center:\s*([^;]+?)(?:\s*-\s*Marker:|$)/);
+              const markerMatch = entry.change_description.match(/- Marker:\s*(\*+)/);
+              if (centerMatch && centerMatch[1].trim()) {
+                lastCenterAction = {
+                  action: 'Added',
+                  centerName: centerMatch[1].trim(),
+                  marker: markerMatch ? markerMatch[1] : '*'
+                };
+                console.log(`  🔍 Found - Center: (old format): "${lastCenterAction.centerName}"`);
+              }
+            }
+            
+            // Add shift-specific center remark ONLY if last action was Added
+            if (lastCenterAction && lastCenterAction.action === 'Added') {
+              const shiftAbbr = this.getShiftAbbreviation(entry.shift_type);
+              remarksParts.push(`${shiftAbbr} - ${lastCenterAction.centerName}`);
+              console.log(`🏥 Shift-specific center added to remarks: ${shiftAbbr} - ${lastCenterAction.centerName}`);
+            } else if (lastCenterAction && lastCenterAction.action === 'Removed') {
+              console.log(`  ❌ Center was REMOVED, not adding to remarks`);
+            } else {
+              console.log(`  ⚠️ No center action found`);
+            }
+          }
         });
         
-        // Only show text before asterisk (*) if asterisk exists
-        const finalRemarks = remarks.includes('*') ? remarks.split('*')[0].trim() : remarks;
-        console.log(`📝 Remarks for ${staffName} on ${dateKey}: "${finalRemarks}" (original: "${remarks}")`);
+        // Sort remarks by shift column order: (9-4) → (12-10) → (4-10) → (N)
+        const shiftOrder: Record<string, number> = {
+          '(9-4)': 1,
+          '(12-10)': 2,
+          '(4-10)': 3,
+          '(N)': 4,
+          '(Special)': 5
+        };
+        
+        remarksParts.sort((a, b) => {
+          const orderA = shiftOrder[a.match(/^\([^)]+\)/)?.[0] || ''] || 99;
+          const orderB = shiftOrder[b.match(/^\([^)]+\)/)?.[0] || ''] || 99;
+          return orderA - orderB;
+        });
+        
+        // Combine all remarks parts
+        const finalRemarks = remarksParts.join('; ');
+        console.log(`📝 Remarks for ${staffName} on ${dateKey}: "${finalRemarks}"`);
         
         totalHours += dayHours;
         
@@ -658,6 +750,21 @@ export class IndividualBillGenerator {
     const year = date.getFullYear().toString().slice(-2);
     return `${dayName} ${day}-${month}-${year}`;
   }
+  
+  /**
+   * Get shift abbreviation for remarks display
+   */
+  private getShiftAbbreviation(shiftType: string): string {
+    const abbreviations: Record<string, string> = {
+      'Morning Shift (9-4)': '(9-4)',
+      'Evening Shift (4-10)': '(4-10)',
+      'Saturday Regular (12-10)': '(12-10)',
+      'Night Duty': '(N)',
+      'Sunday/Public Holiday/Special': '(Special)'
+    };
+    return abbreviations[shiftType] || shiftType;
+  }
+  
 }
 
 // Create singleton instance
