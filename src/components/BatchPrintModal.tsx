@@ -182,10 +182,22 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
     setError(null);
     setProgress(null);
 
+    // Fetch fresh entries from Supabase to ensure we have all staff data
+    // (the entries prop may be stale/incomplete compared to what's in the DB)
+    let freshEntries;
+    try {
+      const { fetchRosterEntries } = await import('../utils/rosterApi');
+      freshEntries = await fetchRosterEntries();
+      console.log('📊 Batch print: fetched', freshEntries.length, 'fresh entries from Supabase');
+    } catch (err) {
+      console.warn('⚠️ Could not fetch fresh entries, using prop entries:', err);
+      freshEntries = entries;
+    }
+
     const options: BatchPrintOptions = {
       month: selectedMonth,
       year: selectedYear,
-      entries: entries,
+      entries: freshEntries,
       basicSalary: basicSalary,
       hourlyRate: hourlyRate,
       shiftCombinations: shiftCombinations,
