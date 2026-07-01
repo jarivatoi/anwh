@@ -3,7 +3,7 @@ import autoTable from 'jspdf-autotable';
 import { RosterEntry } from '../../types/roster';
 import { formatMauritianRupees } from '../currency';
 import { getStaffInfo, getStaffSalary } from '../rosterAuth';
-import { extractBaseSurname } from '../rosterFilters';
+import { parseRosterDisplayName } from '../rosterDisplayName';
 import { getCurrentInstitutionDetails, formatInstitutionHeader } from '../institutionHelper';
 import { supabase } from '../../lib/supabase';
 
@@ -487,23 +487,27 @@ export class IndividualBillGenerator {
     year: number
   ): RosterEntry[] {
     return entries.filter(entry => {
-      // Check if entry belongs to this staff member
-      // staffName is now clean (e.g., "NARAYYA") without ID
-      // entry.assigned_name may be ID-based (e.g., "NARAYYA_(Viraj)_N280881240162C")
+      // Parse both names to extract surname + ID
+      // Handles all format combinations:
+      //   entry assigned_name: "VEERASAWMY_V1604664204410" or "VEERASAWMY" or "NARAYYA_(Viraj)_N280881240162C"
+      //   staffName:           "VEERASAWMY_V1604664204410" or "VEERASAWMY" or "NARAYYA_(Viraj)"
+      const parsedEntry = parseRosterDisplayName(entry.assigned_name);
+      const parsedStaff = parseRosterDisplayName(staffName);
       
-      // Extract base name from roster entry for matching
-      const entryBaseName = extractBaseSurname(entry.assigned_name).toUpperCase();
-      const staffBaseName = staffName.toUpperCase();
+      const entrySurname = parsedEntry.surname.toUpperCase();
+      const staffSurname = parsedStaff.surname.toUpperCase();
       
-      // Match if entry starts with the selected surname
-      // e.g., "NARAYYA_N280881240162C" should match selected "NARAYYA"
-      const matches = entryBaseName.startsWith(staffBaseName) && 
-                     (entryBaseName.length === staffBaseName.length || 
-                      entryBaseName[staffBaseName.length] === '_' ||
-                      entryBaseName[staffBaseName.length] === '(');
-      
-      if (!matches) {
+      // Surnames must always match
+      if (entrySurname !== staffSurname) {
         return false;
+      }
+      
+      // If BOTH have ID numbers, they must match (distinguishes duplicates)
+      // If either side has no ID, surname match is sufficient
+      if (parsedEntry.idNumber && parsedStaff.idNumber) {
+        if (parsedEntry.idNumber.toUpperCase() !== parsedStaff.idNumber.toUpperCase()) {
+          return false;
+        }
       }
       
       // Check if entry is in the specified month/year
