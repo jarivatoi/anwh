@@ -220,6 +220,25 @@ export class IndividualBillGenerator {
       'July', 'August', 'September', 'October', 'November', 'December'
     ];
     
+    // DEBUG: Log all unique assigned_name values in entries to diagnose matching issues
+    const uniqueNames = [...new Set(entries.map(e => e.assigned_name))];
+    console.log('🔍 DEBUG: All unique assigned_name values in entries:', uniqueNames);
+    const parsedStaffDebug = parseRosterDisplayName(originalStaffName);
+    console.log('🔍 DEBUG: Parsed staffName:', parsedStaffDebug);
+    // Check if any entry contains the surname
+    const entriesWithSurname = entries.filter(e => {
+      const parsed = parseRosterDisplayName(e.assigned_name);
+      return parsed.surname.toUpperCase() === parsedStaffDebug.surname.toUpperCase();
+    });
+    console.log(`🔍 DEBUG: Entries with matching surname "${parsedStaffDebug.surname}": ${entriesWithSurname.length}`);
+    if (entriesWithSurname.length > 0) {
+      console.log('🔍 DEBUG: Sample matching entries:', entriesWithSurname.slice(0, 3).map(e => ({
+        assigned_name: e.assigned_name,
+        date: e.date,
+        parsed: parseRosterDisplayName(e.assigned_name)
+      })));
+    }
+    
     // Filter entries for the specific staff member and month
     const staffEntries = this.filterEntriesForStaff(entries, originalStaffName, month, year);
     
