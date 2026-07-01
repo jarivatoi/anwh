@@ -35,7 +35,7 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState<BatchPrintProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [availableStaff, setAvailableStaff] = useState<string[]>([]);
+  const [availableStaff, setAvailableStaff] = useState<{label: string, value: string}[]>([]);
 
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -43,7 +43,7 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
   ];
 
   // Get unique staff members for the selected month (formatted for display)
-  const getUniqueStaffMembers = async (): Promise<string[]> => {
+  const getUniqueStaffMembers = async (): Promise<{label: string, value: string}[]> => {
     // Try to fetch fresh data from Supabase first, fallback to props if offline
     let allEntries;
     try {
@@ -87,7 +87,7 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
     }
     
     // Match roster entries with staff users
-    const validStaffNames: string[] = [];
+    const validStaffNames: {label: string, value: string}[] = [];
     
     for (const rosterDisplayName of rosterDisplayNameSet) {
       // Try to find a matching staff user
@@ -108,7 +108,7 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
       // NO fallback to surname-only matching - this was causing staff from other months to appear
       
       if (matchedUser) {
-        // Use formatDisplayNameForUI to get the clean display name for UI
+        // Use formatDisplayNameForUI to get the clean display name for UI label
         const { formatDisplayNameForUI } = await import('../utils/rosterDisplayName');
         let displayName = formatDisplayNameForUI(matchedUser.roster_display_name || rosterDisplayName);
         
@@ -120,11 +120,15 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
           }
         }
         
-        validStaffNames.push(displayName);
+        // label = clean name for display, value = full roster_display_name for pipeline
+        validStaffNames.push({
+          label: displayName,
+          value: matchedUser.roster_display_name || rosterDisplayName
+        });
       }
     }
     
-    return validStaffNames.sort();
+    return validStaffNames.sort((a, b) => a.label.localeCompare(b.label));
   };
 
   // Load staff when month/year changes
@@ -155,7 +159,7 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
   };
 
   const handleSelectAllStaff = () => {
-    setSelectedStaff(availableStaff);
+    setSelectedStaff(availableStaff.map(s => s.value));
   };
 
   const handleDeselectAllStaff = () => {
@@ -332,16 +336,16 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
                   <p className="text-sm text-gray-500">No staff found for selected month</p>
                 ) : (
                   <div className="space-y-2">
-                    {availableStaff.map(staffName => (
-                      <label key={staffName} className="flex items-center">
+                    {availableStaff.map(staff => (
+                      <label key={staff.value} className="flex items-center">
                         <input
                           type="checkbox"
-                          checked={selectedStaff.includes(staffName)}
-                          onChange={(e) => handleStaffSelection(staffName, e.target.checked)}
+                          checked={selectedStaff.includes(staff.value)}
+                          onChange={(e) => handleStaffSelection(staff.value, e.target.checked)}
                           disabled={isProcessing}
                           className="mr-3 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded disabled:opacity-50"
                         />
-                        <span className="text-sm text-gray-700">{staffName}</span>
+                        <span className="text-sm text-gray-700">{staff.label}</span>
                       </label>
                     ))}
                   </div>
