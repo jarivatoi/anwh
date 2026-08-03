@@ -59,11 +59,10 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
       return entryDate.getMonth() === selectedMonth && entryDate.getFullYear() === selectedYear;
     });
 
-    // First, get all unique roster_display_names from entries for this month
-    const rosterDisplayNameSet = new Set<string>();
+    // Get all unique assigned_names from entries for this month
+    const rawNames = new Set<string>();
     monthEntries.forEach(entry => {
-      // Keep the full roster_display_name from entries
-      rosterDisplayNameSet.add(entry.assigned_name);
+      rawNames.add(entry.assigned_name);
     });
 
     // Get current user's institution
@@ -78,44 +77,65 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
     // Fetch all active staff from the institution
     const { data: staffUsers, error } = await supabase
       .from('staff_users')
-      .select('id, surname, name, roster_display_name')
+      .select('id, surname, name, id_number, roster_display_name')
       .eq('institution_code', userInstitution)
       .eq('is_active', true);
     
-    if (error) {
+    if (error || !staffUsers) {
       return [];
     }
     
-    // Match roster entries with staff users
-    const validStaffNames: {label: string, value: string}[] = [];
+    const { formatDisplayNameForUI } = await import('../utils/rosterDisplayName');
     
-    for (const rosterDisplayName of rosterDisplayNameSet) {
-      // Try to find a matching staff user
-      // First, try exact match on roster_display_name
-      let matchedUser = staffUsers?.find((u: any) => u.roster_display_name === rosterDisplayName);
+    // Use a Map keyed by staff user ID to avoid duplicates
+    const matchedStaffMap = new Map<string, any>();
+    
+    for (const rawName of rawNames) {
+      // Strip (R) suffix and marker prefix to get the core name
+      const coreName = rawName.replace(/\(R\)$/, '').replace(/^\*+/, '').trim();
       
-      // If not found, try matching by parsing the roster display name
+      // Try to find a matching staff user with multiple strategies
+      let matchedUser: any = null;
+      
+      // Strategy 1: Exact match on roster_display_name
+      matchedUser = staffUsers.find((u: any) => u.roster_display_name === coreName);
+      
+      // Strategy 2: roster_display_name matches the full raw name (with (R))
       if (!matchedUser) {
+        matchedUser = staffUsers.find((u: any) => u.roster_display_name === rawName);
+      }
+      
+      // Strategy 3: core name is just a surname (no underscore/ID) - match by surname
+      if (!matchedUser && !coreName.includes('_')) {
+        matchedUser = staffUsers.find((u: any) => u.surname === coreName);
+      }
+      
+      // Strategy 4: Parse the core name and match by surname + id_number
+      if (!matchedUser && coreName.includes('_')) {
         const { parseRosterDisplayName } = await import('../utils/rosterDisplayName');
-        const parsed = parseRosterDisplayName(rosterDisplayName);
+        const parsed = parseRosterDisplayName(coreName);
         
         if (parsed.idNumber) {
-          // Full format available - match by surname + id_number (strict)
-          matchedUser = staffUsers?.find((u: any) => 
+          matchedUser = staffUsers.find((u: any) => 
             u.surname === parsed.surname && u.id_number === parsed.idNumber
           );
-        } else {
-          // Legacy format (no ID) - fall back to surname-only matching
-          matchedUser = staffUsers?.find((u: any) => 
-            u.surname === parsed.surname
-          );
+        }
+        
+        // Strategy 5: surname-only fallback when parsed match fails
+        if (!matchedUser && parsed.surname) {
+          matchedUser = staffUsers.find((u: any) => u.surname === parsed.surname);
         }
       }
       
-      if (matchedUser) {
-        // Use formatDisplayNameForUI to get the clean display name for UI label
-        const { formatDisplayNameForUI } = await import('../utils/rosterDisplayName');
-        let displayName = formatDisplayNameForUI(matchedUser.roster_display_name || rosterDisplayName);
+      // Strategy 6: Check if coreName is contained in any roster_display_name or vice versa
+      if (!matchedUser) {
+        matchedUser = staffUsers.find((u: any) => 
+          u.roster_display_name?.includes(coreName) || coreName.includes(u.roster_display_name)
+        );
+      }
+      
+      if (matchedUser && !matchedStaffMap.has(matchedUser.id)) {
+        let displayName = formatDisplayNameForUI(matchedUser.roster_display_name || coreName);
         
         // Strip (R) suffix ONLY if it's a modification marker
         if (displayName.endsWith('(R)')) {
@@ -125,15 +145,14 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
           }
         }
         
-        // label = clean name for display, value = full roster_display_name for pipeline
-        validStaffNames.push({
+        matchedStaffMap.set(matchedUser.id, {
           label: displayName,
-          value: matchedUser.roster_display_name || rosterDisplayName
+          value: matchedUser.roster_display_name || coreName
         });
       }
     }
     
-    return validStaffNames.sort((a, b) => a.label.localeCompare(b.label));
+    return Array.from(matchedStaffMap.values()).sort((a, b) => a.label.localeCompare(b.label));
   };
 
   // Load staff when month/year changes
