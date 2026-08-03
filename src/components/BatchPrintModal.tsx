@@ -106,11 +106,15 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
       }
       
       // Strategy 3: core name is just a surname (no underscore/ID) - match by surname
+      // ONLY if there's a unique match (no duplicate surnames)
       if (!matchedUser && !coreName.includes('_')) {
-        matchedUser = staffUsers.find((u: any) => u.surname === coreName);
+        const surnameMatches = staffUsers.filter((u: any) => u.surname === coreName);
+        if (surnameMatches.length === 1) {
+          matchedUser = surnameMatches[0];
+        }
       }
       
-      // Strategy 4: Parse the core name and match by surname + id_number
+      // Strategy 4: Parse the core name and match by surname + id_number (STRICT - no fallback)
       if (!matchedUser && coreName.includes('_')) {
         const { parseRosterDisplayName } = await import('../utils/rosterDisplayName');
         const parsed = parseRosterDisplayName(coreName);
@@ -120,18 +124,18 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
             u.surname === parsed.surname && u.id_number === parsed.idNumber
           );
         }
-        
-        // Strategy 5: surname-only fallback when parsed match fails
-        if (!matchedUser && parsed.surname) {
-          matchedUser = staffUsers.find((u: any) => u.surname === parsed.surname);
-        }
+        // NO surname-only fallback when ID is present - would match wrong person with duplicate surnames
       }
       
-      // Strategy 6: Check if coreName is contained in any roster_display_name or vice versa
+      // Strategy 5: Check if coreName is contained in any roster_display_name or vice versa
+      // ONLY if there's a unique match (no duplicate surnames)
       if (!matchedUser) {
-        matchedUser = staffUsers.find((u: any) => 
+        const containsMatches = staffUsers.filter((u: any) => 
           u.roster_display_name?.includes(coreName) || coreName.includes(u.roster_display_name)
         );
+        if (containsMatches.length === 1) {
+          matchedUser = containsMatches[0];
+        }
       }
       
       if (matchedUser && !matchedStaffMap.has(matchedUser.id)) {
