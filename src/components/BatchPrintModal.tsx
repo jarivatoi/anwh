@@ -99,13 +99,18 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
         const { parseRosterDisplayName } = await import('../utils/rosterDisplayName');
         const parsed = parseRosterDisplayName(rosterDisplayName);
         
-        // Try matching by surname + id_number (more strict)
-        matchedUser = staffUsers?.find((u: any) => 
-          u.surname === parsed.surname && u.id_number === parsed.idNumber
-        );
+        if (parsed.idNumber) {
+          // Full format available - match by surname + id_number (strict)
+          matchedUser = staffUsers?.find((u: any) => 
+            u.surname === parsed.surname && u.id_number === parsed.idNumber
+          );
+        } else {
+          // Legacy format (no ID) - fall back to surname-only matching
+          matchedUser = staffUsers?.find((u: any) => 
+            u.surname === parsed.surname
+          );
+        }
       }
-      
-      // NO fallback to surname-only matching - this was causing staff from other months to appear
       
       if (matchedUser) {
         // Use formatDisplayNameForUI to get the clean display name for UI label
