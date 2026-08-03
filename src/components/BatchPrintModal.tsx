@@ -65,6 +65,23 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
       rawNames.add(entry.assigned_name);
     });
 
+    // Build a surname → ID-based names map from ALL entries in this month
+    // This helps disambiguate bare surnames (e.g., "MAUDHOO") when there are duplicates
+    // If any entry for MAUDHOO has the full format "MAUDHOO_N123...", we know which MAUDHOO it is
+    const surnameToIdNames = new Map<string, Set<string>>();
+    rawNames.forEach(name => {
+      const clean = name.replace(/\(R\)$/, '').replace(/^\*+/, '').trim();
+      if (clean.includes('_')) {
+        // This name has an ID - extract the surname part
+        const parts = clean.split('_');
+        const surname = parts[0];
+        if (!surnameToIdNames.has(surname)) {
+          surnameToIdNames.set(surname, new Set());
+        }
+        surnameToIdNames.get(surname)!.add(clean);
+      }
+    });
+
     // Get current user's institution
     const { getCurrentInstitutionDetails } = await import('../utils/institutionHelper');
     const institution = await getCurrentInstitutionDetails();
@@ -106,11 +123,25 @@ export const BatchPrintModal: React.FC<BatchPrintModalProps> = ({
       }
       
       // Strategy 3: core name is just a surname (no underscore/ID) - match by surname
-      // ONLY if there's a unique match (no duplicate surnames)
       if (!matchedUser && !coreName.includes('_')) {
         const surnameMatches = staffUsers.filter((u: any) => u.surname === coreName);
         if (surnameMatches.length === 1) {
+          // Unique surname - direct match
           matchedUser = surnameMatches[0];
+        } else if (surnameMatches.length > 1) {
+          // Duplicate surnames - use ID-based entries from the same month to disambiguate
+          const idNames = surnameToIdNames.get(coreName);
+          if (idNames && idNames.size > 0) {
+            // Find which staff user has a roster_display_name matching one of the ID-based names
+            for (const idName of idNames) {
+              const user = surnameMatches.find((u: any) => u.roster_display_name === idName);
+              if (user) {
+                matchedUser = user;
+                break;
+              }
+            }
+          }
+          // If still no match from ID-based entries, don't match (safe behavior for duplicates)
         }
       }
       
